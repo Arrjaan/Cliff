@@ -1,0 +1,588 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>SQL::Statement::Syntax - documentation of SQL::Statement's SQL Syntax</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>SQL::Statement::Syntax - documentation of SQL::Statement's SQL Syntax</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<ul>
+
+		<li><a href="#default_supported_sql_syntax___summary">Default Supported SQL syntax - Summary</a></li>
+		<li><a href="#syntax___details">Syntax - Details</a></li>
+		<ul>
+
+			<li><a href="#create_table">CREATE TABLE</a></li>
+			<li><a href="#drop_table">DROP TABLE</a></li>
+			<li><a href="#insert_into">INSERT INTO</a></li>
+			<li><a href="#delete_from">DELETE FROM</a></li>
+			<li><a href="#update">UPDATE</a></li>
+			<li><a href="#select">SELECT</a></li>
+			<li><a href="#search_condition">SEARCH CONDITION</a></li>
+			<li><a href="#operators">OPERATORS</a></li>
+			<li><a href="#built_in_and_user_defined_functions">BUILT-IN AND USER-DEFINED FUNCTIONS</a></li>
+			<li><a href="#identifiers__table___column_names_">Identifiers (table &amp; column names)</a></li>
+			<li><a href="#special_utility_sql_functions">Special Utility SQL Functions</a></li>
+			<ul>
+
+				<li><a href="#import__"><code>IMPORT()</code></a></li>
+				<li><a href="#run__"><a href="../../../lib/pods/perlvar.html#run"><code>RUN()</code></a></a></li>
+			</ul>
+
+		</ul>
+
+		<li><a href="#further_details">Further details</a></li>
+	</ul>
+
+	<li><a href="#extending_sql_syntax_using_sql">Extending SQL syntax using SQL</a></li>
+	<li><a href="#extending_sql_syntax_using_subclasses">Extending SQL syntax using subclasses</a></li>
+	<li><a href="#author___copyright">AUTHOR &amp; COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>SQL::Statement::Syntax - documentation of SQL::Statement's SQL Syntax</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>See <a href="../../../lib/SQL/Statement.html">the SQL::Statement manpage</a> for usage.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The SQL::Statement module can be used either from a DBI driver like DBD::CSV
+or directly.  The syntax below applies to both situations.  In the case of
+DBDs, each DBD can implement its own sub-dialect so be sure to check the DBD
+documentation also.</p>
+<p>SQL::Statement is meant primarly as a base class for DBD drivers
+and as such concentrates on a small but useful subset of SQL.
+It does *not* in any way pretend to be a complete SQL parser for
+all dialects of SQL.  The module will continue to add new supported syntax,
+and users may also extend the syntax (see <a href="#_extending_the_sql_syntax">#Extending the SQL syntax</a>).</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>
+</p>
+<h2><a name="default_supported_sql_syntax___summary">Default Supported SQL syntax - Summary</a></h2>
+<p><strong>SQL Statements</strong></p>
+<pre>
+   CALL &lt;function&gt;
+   CREATE [TEMP] TABLE &lt;table&gt; &lt;column_def_clause&gt;
+   CREATE [TEMP] TABLE &lt;table&gt; AS &lt;select statement&gt;
+   CREATE [TEMP] TABLE &lt;table&gt; AS IMPORT()
+   CREATE FUNCTION &lt;user_defined_function&gt; [ NAME &lt;perl_subroutine&gt; ]
+   CREATE KEYWORD  &lt;user_defined_keyword&gt;  [ NAME &lt;perl_subroutine&gt; ]
+   CREATE OPERATOR &lt;user_defined_operator&gt; [ NAME &lt;perl_subroutine&gt; ]
+   CREATE TYPE     &lt;user_defined_type&gt;     [ NAME &lt;perl_subroutine&gt; ]
+   DELETE FROM &lt;table&gt; [&lt;where_clause&gt;]
+   DROP TABLE [IF EXISTS] &lt;table&gt;
+   DROP FUNCTION &lt;function&gt;
+   DROP KEYWORD  &lt;keyword&gt;
+   DROP OPERATOR &lt;operator&gt;
+   DROP TYPE     &lt;type&gt;
+   INSERT [INTO] &lt;table&gt; [&lt;column_list&gt;] VALUES &lt;value_list&gt;
+   LOAD &lt;user_defined_functions_module&gt;
+   SELECT &lt;function&gt;
+   SELECT &lt;select_clause&gt;
+          &lt;from_clause&gt;
+          [&lt;where_clause&gt;]
+          [ ORDER BY ocol1 [ASC|DESC], ... ocolN [ASC|DESC]] ]
+          [ GROUP BY gcol1 [, ... gcolN] ]
+          [ LIMIT [start,] length ]
+   UPDATE &lt;table&gt; SET &lt;set_clause&gt; [&lt;where_clause&gt;]</pre>
+<p><strong>Explicit Join Qualifiers</strong></p>
+<pre>
+   NATURAL, INNER, OUTER, LEFT, RIGHT, FULL</pre>
+<p><strong>Built-in Functions</strong></p>
+<pre>
+   * Aggregate : MIN, MAX, AVG, SUM, COUNT
+   * Date/Time : CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP
+   * String    : CHAR_LENGTH, CONCAT, COALESCE, DECODE, LOWER, POSITION,
+                 REGEX, REPLACE, SOUNDEX, SUBSTRING, TRIM, UPPER</pre>
+<p><strong>Special Utility Functions</strong></p>
+<pre>
+  * IMPORT  - imports a table from an external RDBMS or perl structure
+  * RUN     - prepares and executes statements in a file of SQL statements</pre>
+<p><strong>Operators and Predicates</strong></p>
+<pre>
+   = , &lt;&gt; , &lt; , &gt; , &lt;= , &gt;= , IS [NOT] (NULL|TRUE|FALSE) , LIKE , CLIKE , IN , BETWEEN</pre>
+<p><strong>Identifiers</strong> and <strong>Aliases</strong></p>
+<pre>
+   * regular identifiers are case insensitive (though see note on table names)
+   * delimited identifiers (inside double quotes) are case sensitive
+   * column and table aliases are supported</pre>
+<p><strong>Concatenation</strong></p>
+<pre>
+   <span class="operator">*</span> <span class="keyword">use</span> <span class="variable">either</span> <span class="variable">ANSI</span> <span class="variable">SQL</span> <span class="operator">||</span> <span class="keyword">or</span> <span class="variable">the</span> <span class="variable">CONCAT</span><span class="operator">()</span> <span class="variable">function</span>
+   <span class="operator">*</span> <span class="variable">e</span><span class="operator">.</span><span class="variable">g</span><span class="operator">.</span> <span class="variable">these</span> <span class="variable">are</span> <span class="variable">the</span> <span class="variable">same</span><span class="operator">:</span>  <span class="operator">{</span><span class="variable">foo</span> <span class="operator">||</span> <span class="variable">bar</span><span class="operator">}</span> <span class="operator">{</span><span class="variable">CONCAT</span><span class="operator">(</span><span class="variable">foo</span><span class="operator">,</span><span class="variable">bar</span><span class="operator">)</span><span class="operator">}</span>
+</pre>
+<p><strong>Comments</strong></p>
+<pre>
+   * comments must occur before or after statements, cannot be embedded
+   * SQL-style single line -- and C-style multi-line /* */ comments are supported</pre>
+<p><strong>NULLs</strong></p>
+<pre>
+   <span class="operator">*</span> <span class="variable">currently</span> <span class="variable">NULLs</span> <span class="keyword">and</span> <span class="variable">empty</span> <span class="variable">strings</span> <span class="variable">are</span> <span class="variable">identical</span> <span class="variable">in</span> <span class="variable">non</span><span class="operator">-</span><span class="variable">ANSI</span> <span class="variable">dialect</span><span class="operator">.</span>
+   <span class="operator">*</span> <span class="keyword">use</span> <span class="operator">{</span><span class="variable">col</span> <span class="variable">IS</span> <span class="variable">NULL</span><span class="operator">}</span> <span class="variable">to</span> <span class="variable">find</span> <span class="variable">NULLs</span><span class="operator">,</span> <span class="keyword">not</span> <span class="operator">{</span><span class="variable">col</span><span class="operator">=</span><span class="string">''</span><span class="operator">}</span> <span class="operator">(</span><span class="variable">though</span> <span class="variable">both</span> <span class="variable">may</span> <span class="variable">work</span> <span class="variable">depending</span> <span class="variable">on</span> <span class="variable">dialect</span><span class="operator">)</span>
+</pre>
+<p>See below for further details.</p>
+<p>
+</p>
+<h2><a name="syntax___details">Syntax - Details</a></h2>
+<p>
+</p>
+<h3><a name="create_table">CREATE TABLE</a></h3>
+<p>Creates permanent and in-memory tables.</p>
+<pre>
+ CREATE [TEMP] TABLE &lt;table_name&gt; ( &lt;column_definitions&gt; )
+ CREATE [TEMP] TABLE &lt;table_name&gt; AS &lt;select statement&gt;
+ CREATE [TEMP] TABLE &lt;table_name&gt; AS IMPORT()</pre>
+<p>Column definitions are standard SQL column names, types, and
+constraints, see <a href="#column_definitions">Column Definitions</a>.</p>
+<pre>
+  <span class="comment"># create a permanent table</span>
+  <span class="comment">#</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux (id INT PRIMARY KEY,word VARCHAR(30))"</span><span class="operator">);</span>
+</pre>
+<p>The &quot;AS SELECT&quot; clause creates and populates the new table using the
+data and column structure specified in the select statement.</p>
+<pre>
+  <span class="comment"># create and populate a table from a query to two other tables</span>
+  <span class="comment">#</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux AS SELECT id,word FROM foo NATURAL JOIN bar"</span><span class="operator">);</span>
+</pre>
+<p>If the optional keyword TEMP (or its synonym TEMPORARY) is used, the table
+will be an in-memory table, available  for the life of the current
+database handle or until  a DROP TABLE command is issued.</p>
+<pre>
+  <span class="comment"># create a temporary table</span>
+  <span class="comment">#</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TEMP TABLE qux (id INT PRIMARY KEY,word VARCHAR(30))"</span><span class="operator">);</span>
+</pre>
+<p>TEMP tables can be modified with SQL commands but the updates are not
+automatically reflected back to any permanent tables they may be
+associated with.  To save a TEMP table - just use an AS SELECT clause:</p>
+<pre>
+ <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span> <span class="string">'dbi:CSV:'</span> <span class="operator">);</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TEMP TABLE qux_temp AS (id INT, word VARCHAR(30))"</span><span class="operator">);</span>
+ <span class="comment">#</span>
+ <span class="comment"># ... modify qux_temp with INSERT, UPDATE, DELETE statements, then save it</span>
+ <span class="comment">#</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux_permanent AS SELECT * FROM qux_temp"</span><span class="operator">);</span>
+</pre>
+<p>Tables, both temporary and permanent may also be created directly from
+perl arrayrefs and from heterogeneous queries to any DBI accessible
+data source, see the <code>IMPORT()</code> function.</p>
+<pre>
+ <span class="variable">CREATE</span> <span class="operator">[</span> <span class="operator">{</span><span class="variable">LOCAL</span><span class="operator">|</span><span class="variable">GLOBAL</span><span class="operator">}</span> <span class="variable">TEMPORARY</span> <span class="operator">]</span> <span class="variable">TABLE</span> <span class="variable">$table</span>
+        <span class="operator">(</span>
+           <span class="variable">$col_1</span> <span class="variable">$col_type1</span> <span class="variable">$col_constraints1</span><span class="operator">,</span>
+           <span class="operator">...,</span>
+           <span class="variable">$col_N</span> <span class="variable">$col_typeN</span> <span class="variable">$col_constraintsN</span><span class="operator">,</span>
+        <span class="operator">)</span>
+        <span class="operator">[</span> <span class="variable">ON</span> <span class="variable">COMMIT</span> <span class="operator">{</span><span class="variable">DELETE</span><span class="operator">|</span><span class="variable">PRESERVE</span><span class="operator">}</span> <span class="variable">ROWS</span> <span class="operator">]</span>
+</pre>
+<pre>
+     * col_type must be a valid data type as defined in the
+       &quot;valid_data_types&quot; section of the dialect file for the
+       current dialect</pre>
+<pre>
+     * col_constraints may be &quot;PRIMARY KEY&quot; or one or both of
+       &quot;UNIQUE&quot; and/or &quot;NOT NULL&quot;</pre>
+<pre>
+     * IMPORTANT NOTE: temporary tables, data types and column
+       constraints are checked for syntax violations but are
+       currently otherwise *IGNORED* -- they are recognized by
+       the parser, but not by the execution engine</pre>
+<pre>
+     * The following valid ANSI SQL92 options are not currently
+       supported: table constraints, named constraints, check
+       constraints, reference constraints, constraint
+       attributes, collations, default clauses, domain names as
+       data types</pre>
+<p>
+</p>
+<h3><a name="drop_table">DROP TABLE</a></h3>
+<pre>
+ DROP TABLE $table [ RESTRICT | CASCADE ]</pre>
+<pre>
+     * IMPORTANT NOTE: drop behavior (cascade or restrict) is
+       checked for valid syntax but is otherwise *IGNORED* -- it
+       is recognized by the parser, but not by the execution
+       engine</pre>
+<p>
+</p>
+<h3><a name="insert_into">INSERT INTO</a></h3>
+<pre>
+ INSERT INTO $table [ ( $col1, ..., $colN ) ] VALUES ( $val1, ... $valN )</pre>
+<pre>
+     * default values are not currently supported
+     * inserting from a subquery is not currently supported</pre>
+<p>
+</p>
+<h3><a name="delete_from">DELETE FROM</a></h3>
+<pre>
+ DELETE FROM $table [ WHERE search_condition ]</pre>
+<pre>
+     * see &quot;search_condition&quot; below</pre>
+<p>
+</p>
+<h3><a name="update">UPDATE</a></h3>
+<pre>
+ UPDATE $table SET $col1 = $val1, ... $colN = $valN [ WHERE search_condition ]</pre>
+<pre>
+     * default values are not currently supported
+     * see &quot;search_condition&quot; below</pre>
+<p>
+</p>
+<h3><a name="select">SELECT</a></h3>
+<pre>
+      SELECT select_clause
+        FROM from_clause
+     [ WHERE search_condition ]
+  [ ORDER BY $ocol1 [ASC|DESC], ... $ocolN [ASC|DESC] ]
+     [ LIMIT [start,] length ]</pre>
+<pre>
+      * select clause ::=
+             [DISTINCT|ALL] *
+           | [DISTINCT|ALL] col1 [,col2, ... colN]
+           | set_function1 [,set_function2, ... set_functionN]</pre>
+<pre>
+      * set function ::=
+             COUNT ( [ALL] * )
+           | COUNT | MIN | MAX | AVG | SUM ( [DISTINCT|ALL] col_name )</pre>
+<pre>
+      * from clause ::=
+             table1 [, table2, ... tableN]
+           | table1 NATURAL [join_type] JOIN table2
+           | table1 [join_type] table2 USING (col1,col2, ... colN)
+           | table1 [join_type] JOIN table2 ON table1.colA = table2.colB</pre>
+<pre>
+      * join type ::=
+             INNER
+           | [OUTER] LEFT | RIGHT | FULL</pre>
+<pre>
+      * if join_type is not specified, INNER is the default
+      * if DISTINCT or ALL is not specified, ALL is the default
+      * if start position is omitted from LIMIT clause, position 0 is
+        the default
+      * ON clauses may only contain equal comparisons and AND combiners
+      * self-joins are not currently supported
+      * if implicit joins are used, the WHERE clause must contain
+        an equijoin condition for each table</pre>
+<p>
+</p>
+<h3><a name="search_condition">SEARCH CONDITION</a></h3>
+<pre>
+       [NOT] $val1 $op1 $val1 [ ... AND|OR $valN $opN $valN ]</pre>
+<p>
+</p>
+<h3><a name="operators">OPERATORS</a></h3>
+<pre>
+       $op  = |  &lt;&gt; |  &lt; | &gt; | &lt;= | &gt;=
+              | IS [NOT] NULL | IS [NOT] TRUE | IS [NOT] FALSE
+              | LIKE | CLIKE | BETWEEN | IN</pre>
+<pre>
+  The &quot;CLIKE&quot; operator works exactly the same as the &quot;LIKE&quot;
+  operator, but is case insensitive.  For example:</pre>
+<pre>
+      WHERE foo LIKE 'bar%'   # succeeds if foo is &quot;barbaz&quot;
+                              # fails if foo is &quot;BARBAZ&quot; or &quot;Barbaz&quot;</pre>
+<pre>
+      WHERE foo CLIKE 'bar%'  # succeeds for &quot;barbaz&quot;, &quot;Barbaz&quot;, and &quot;BARBAZ&quot;</pre>
+<p>
+</p>
+<h3><a name="built_in_and_user_defined_functions">BUILT-IN AND USER-DEFINED FUNCTIONS</a></h3>
+<p>There are many built-in functions and you can also create your
+own new functions from perl subroutines.  See <a href="../../../lib/SQL/Statement/Functions.html">the SQL::Statement::Functions manpage</a>
+for documentation of functions.</p>
+<p>
+</p>
+<h3><a name="identifiers__table___column_names_">Identifiers (table &amp; column names)</a></h3>
+<p>Regular identifiers (table and column names *without* quotes around
+them) are case INSENSITIVE so column foo, fOo, FOO all refer to the
+same column.  Internally they are used in their lower case
+representation, so do not rely on SQL::Statement retaining your case.</p>
+<p>Delimited identifiers (table and column names *with* quotes around them) are
+case SENSITIVE so column &quot;foo&quot;, &quot;fOo&quot;, &quot;FOO&quot; each refer to different columns.</p>
+<p>A delimited identifier is *never* equal to a regular identifer (so &quot;foo&quot; and
+foo are two different columns).  But don't do that :-).</p>
+<p>Remember thought that, in <a href="../../../lib/Bundle/DBD/CSV.html">the DBD::CSV manpage</a> if table names are used directly as file
+names, the case sensitivity depends on the OS e.g. on Windows files named foo,
+FOO, and fOo are the same as each other while on Unix they are different.</p>
+<p>
+</p>
+<h3><a name="special_utility_sql_functions">Special Utility SQL Functions</a></h3>
+<p>
+</p>
+<h4><a name="import__"><code>IMPORT()</code></a></h4>
+<p>Imports the data and structure of a table from an external data source into a
+permanent or temporary table.</p>
+<pre>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux AS IMPORT(?)"</span><span class="operator">,</span><span class="operator">{}</span><span class="operator">,</span><span class="variable">$oracle_sth</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux AS IMPORT(?)"</span><span class="operator">,</span><span class="operator">{}</span><span class="operator">,</span><span class="variable">$AoA</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux AS IMPORT(?)"</span><span class="operator">,</span><span class="operator">{}</span><span class="operator">,</span><span class="variable">$AoH</span><span class="operator">);</span>
+</pre>
+<p><code>IMPORT()</code> can also be used anywhere that table_names can:</p>
+<pre>
+ <span class="variable">$sth</span><span class="operator">=</span><span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"
+    SELECT * FROM IMPORT(?) AS T1 NATURAL JOIN IMPORT(?) AS T2 WHERE T1.id ...
+ "</span><span class="operator">);</span>
+ <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span> <span class="variable">$pg_sth</span><span class="operator">,</span> <span class="variable">$mysql_sth</span> <span class="operator">);</span>
+</pre>
+<p>The <code>IMPORT()</code> function imports the data and structure of a table from an
+external data source.  The <code>IMPORT()</code> function is always used with a placeholder
+parameter which may be 1) a prepared and executed statement handle for any DBI
+accessible data source;  or 2) an AoA whose first row is column names and
+whose succeeding rows are data 3) an AoH.</p>
+<p>The <code>IMPORT()</code> function may be used in the AS clause of a CREATE statement, and
+in the FROM clause of any statement.  When used in a FROM clause, it should
+be used with a column alias e.g. SELECT * FROM IMPORT(?) AS TableA WHERE ...</p>
+<p>You can also write your own <code>IMPORT()</code> functions to treat anything as a data
+source.  See User-Defined Function in <a href="../../../lib/SQL/Statement/Functions.html">the SQL::Statement::Functions manpage</a>.</p>
+<p>Examples:</p>
+<pre>
+ <span class="comment"># create a CSV file from an Oracle query</span>
+ <span class="comment">#</span>
+ <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span><span class="string">'dbi:CSV:'</span><span class="operator">);</span>
+ <span class="variable">$oracle_sth</span> <span class="operator">=</span> <span class="variable">$oracle_dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$any_oracle_query</span><span class="operator">);</span>
+ <span class="variable">$oracle_sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span><span class="variable">@params</span><span class="operator">);</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TABLE qux AS IMPORT(?)"</span><span class="operator">,</span><span class="operator">{}</span><span class="operator">,</span><span class="variable">$oracle_sth</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># create an in-memory table from an AoA</span>
+ <span class="comment">#</span>
+ <span class="variable">$dbh</span>      <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span> <span class="string">'dbi:File:'</span> <span class="operator">);</span>
+ <span class="variable">$arrayref</span> <span class="operator">=</span> <span class="operator">[[</span><span class="string">'id'</span><span class="operator">,</span><span class="string">'word'</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="number">1</span><span class="operator">,</span><span class="string">'foo'</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="number">2</span><span class="operator">,</span><span class="string">'bar'</span><span class="operator">]</span><span class="operator">,</span><span class="operator">]</span><span class="operator">;</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE TEMP TABLE qux AS IMPORT(?)"</span><span class="operator">,</span><span class="operator">{}</span><span class="operator">,</span><span class="variable">$arrayref</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># query a join of a PostgreSQL table and a MySQL table</span>
+ <span class="comment">#</span>
+ <span class="variable">$dbh</span>        <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span> <span class="string">'dbi:File:'</span> <span class="operator">);</span>
+ <span class="variable">$pg_dbh</span>     <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span> <span class="operator">...</span> <span class="variable">DBD::pg</span> <span class="keyword">connect</span> <span class="variable">params</span> <span class="operator">);</span>
+ <span class="variable">$mysql_dbh</span>  <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span> <span class="operator">...</span> <span class="variable">DBD::mysql</span> <span class="keyword">connect</span> <span class="variable">params</span> <span class="operator">);</span>
+ <span class="variable">$pg_sth</span>     <span class="operator">=</span> <span class="variable">$pg_dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span> <span class="operator">...</span> <span class="variable">any</span> <span class="variable">pg</span> <span class="variable">query</span> <span class="operator">);</span>
+ <span class="variable">$pg_sth</span>     <span class="operator">=</span> <span class="variable">$pg_dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span> <span class="operator">...</span> <span class="variable">any</span> <span class="variable">mysql</span> <span class="variable">query</span> <span class="operator">);</span>
+ <span class="comment">#</span>
+ <span class="variable">$sth</span><span class="operator">=</span><span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"
+    SELECT * FROM IMPORT(?) AS T1 NATURAL JOIN IMPORT(?) AS T2
+ "</span><span class="operator">);</span>
+ <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span> <span class="variable">$pg_sth</span><span class="operator">,</span> <span class="variable">$mysql_sth</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h4><a name="run__"><a href="../../../lib/pods/perlvar.html#run"><code>RUN()</code></a></a></h4>
+<p>Run SQL statements from a user supplied file.  <strong>Please Note:</strong> this
+function is experimental, please let me know if you have problems.</p>
+<pre>
+ RUN( sql_file )</pre>
+<p>If the file contains non-SELECT statements such as CREATE and INSERT, use
+the <a href="../../../lib/pods/perlvar.html#run"><code>RUN()</code></a> function with $dbh-&gt;<a href="../../../lib/pods/perlfunc.html#do"><code>do()</code></a>.  For example, this prepares and
+executes all of the SQL statements in a file called &quot;populate.sql&quot;:</p>
+<pre>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">" CALL RUN( 'populate.sql') "</span><span class="operator">);</span>
+</pre>
+<p>If the file contains SELECT statements, the <a href="../../../lib/pods/perlvar.html#run"><code>RUN()</code></a> function may be used
+anywhere a table name may be used, for example, if you have a file called
+&quot;query.sql&quot; containing &quot;SELECT * FROM Employee&quot;, then these two lines
+are exactly the same:</p>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">" SELECT * FROM Employee "</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">" SELECT * FROM RUN( 'query.sql' ) "</span><span class="operator">);</span>
+</pre>
+<p>If the file contains a statement with placeholders, the values for the
+placehoders can be passed in the call to $sth-&gt;<code>execute()</code> as normal. If the
+query.sql file contains &quot;SELECT id,name FROM x WHERE id=?&quot;, then these
+two are the same:</p>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">" SELECT id,name FROM x WHERE id=?"</span><span class="operator">);</span>
+ <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span><span class="number">64</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">" SELECT * FROM RUN( 'query.sql' ) "</span><span class="operator">);</span>
+ <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span><span class="number">64</span><span class="operator">);</span>
+</pre>
+<p><strong>Note</strong> This function assumes that the SQL statements in the file are
+separated by a semi-colon+newline combination (/;\n/).  If you wish to use
+different separators or import SQL from a different source, just override
+the <a href="../../../lib/pods/perlvar.html#run"><code>RUN()</code></a> function with your own user-defined-function.</p>
+<p>
+</p>
+<h2><a name="further_details">Further details</a></h2>
+<dl>
+<dt><strong><a name="integers" class="item">Integers</a></strong></dt>
+
+<dt><strong><a name="reals" class="item">Reals</a></strong></dt>
+
+<dd>
+<p>Syntax obvious</p>
+</dd>
+<dt><strong><a name="strings" class="item">Strings</a></strong></dt>
+
+<dd>
+<p>Surrounded by either single quotes; some characters need to
+be escaped with a backslash, in particular the backslash itself (\\),
+the NUL byte (\0), Line feeds (\n), Carriage return (\r), and the
+quotes (\').</p>
+<p><strong>Note:</strong> Quoting &quot;Strings&quot; using double quotes are recognized as
+quoted identifiers (column or table names).</p>
+</dd>
+<dt><strong><a name="parameters11" class="item">Parameters</a></strong></dt>
+
+<dd>
+<p>Parameters represent scalar values, like Integers, Reals and Strings
+do. However, their values are read inside <code>Execute()</code> and not inside
+<code>Prepare()</code>. Parameters are represented by question marks (?).</p>
+</dd>
+<dt><strong><a name="identifiers" class="item">Identifiers</a></strong></dt>
+
+<dd>
+<p>Identifiers are table or column names. Syntactically they consist of
+alphabetic characters, followed by an arbitrary number of alphanumeric
+characters. Identifiers like SELECT, INSERT, INTO, ORDER, BY, WHERE,
+... are forbidden and reserved for other tokens.  Identifiers are always
+compared case-insensitively, i.e. <code>select foo from bar</code> will be evaluated
+the same as <code>SELECT FOO FROM BAR</code> (<code>FOO</code> will be evaluated as <code>foo</code>,
+similar for <code>BAR</code>).</p>
+<p>Since SQL::Statement is internally using lower cased identifiers (unquoted),
+everytime a wildcard is used, the delivered names of the identifiers are
+lower cased.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="extending_sql_syntax_using_sql">Extending SQL syntax using SQL</a></h1>
+<p>The Supported SQL syntax shown above is the default for SQL::Statement but
+it can be extended (or contracted) either on-the-fly or on a permanent basis.
+In other words, you can modify the SQL syntax accepted as valid by the parser
+and accepted as executable by the executer.  There are two methods for
+extending the syntax - 1) with SQL commands that can be issued directly in
+SQL::Statement or form a DBD or 2) by subclassing SQL::Parser.</p>
+<p>The following SQL commands modify the default SQL syntax:</p>
+<pre>
+  CREATE/DROP FUNCTION
+  CREATE/DROP KEYWORD
+  CREATE/DROP TYPE
+  CREATE/DROP OPERATOR</pre>
+<p>A simple example would be a situation in which you have a table named
+'TABLE'.  Since table is an ANSI reserved key word, by default
+SQL::Statement will produce an error when you attempt to create or
+access it.  You could put the table name inside double quotes since
+quoted identifiers can validly be reserved words, or you could rename
+the table.  If neither of those are options, you would do this:</p>
+<pre>
+  DROP KEYWORD table</pre>
+<p>Once that statement is issued, the parser will no longer object to 'table' as
+a table name.  Careful though, if you drop too many keywords you may confuse
+the parser, especially keywords like FROM and WHERE that are central to
+parsing the statement.</p>
+<p>In the reverse situation, suppose you want to parse some SQL that defines a
+column as type BIG_BLOB.  Since 'BIG_BLOB' isn't a recognized ANSI data type,
+an error will be produced by default.  To make the parser treat it as a valid
+data type, you do this:</p>
+<pre>
+ CREATE TYPE big_blob</pre>
+<p>Keywords and types are case-insensitive.</p>
+<p>Suppose you are working with some SQL that contains the <code>cosh()</code>
+function (an Oracle function for hyperbolic cosine, whatever that is
+:-).  The <code>cosh()</code> function is not currently implemented in
+SQL::Statement so the parser would die with an error.  But you can
+easily trick the parser into accepting the function:</p>
+<pre>
+ CREATE FUNCTION cosh</pre>
+<p>Once the parser has read that CREATE FUNCTION statement, it will no longer
+object to the use of the <code>cosh()</code> function in SQL statements.</p>
+<p>If your only interest is in parsing SQL statements, then <code>CREATE FUNCTION
+cosh</code> is sufficient.  But if you actually want to be able to use the <code>cosh()</code>
+function in executable statements, you need to supply a perl subroutine
+that performs the <code>cosh()</code> function:</p>
+<pre>
+  CREATE FUNCTION cosh AS perl_subroutine_name</pre>
+<p>The subroutine name can refer to a subroutine in your current script, or to
+a subroutine in any available package.  See <a href="../../../lib/SQL/Statement/Functions.html">the SQL::Statement::Functions manpage</a> for
+details of how to create and load functions.</p>
+<p>Functions can be used as  predicates in search clauses, for example:</p>
+<pre>
+ SELECT * FROM x WHERE c1=7 AND SOUNDEX(c3,'foo') AND c8='bar'</pre>
+<p>In the SQL above, the <code>SOUNDEX()</code> function full predicate - it plays the
+same role as <code>c1=7 or c8='bar'</code>.</p>
+<p>Functions can also serve as predicate operators.  An operator, unlike a
+full predicate, has something on the left and right sides.  An equal sign
+is an operator, so is LIKE.  If you really want to you can get the parser
+to not accept LIKE as an operator with</p>
+<pre>
+ DROP OPERATOR like</pre>
+<p>Or, you can invent your own operator.  Suppose you have an operator
+<code>REVERSE_OF</code> that is true if the string on its left side when reversed
+is equal to the string on the right side:</p>
+<pre>
+  CREATE OPERATOR reverse_of
+  SELECT * FROM x WHERE c1=7 AND c3 REVERSE_OF 'foo'</pre>
+<p>The operator could just as well have been written as a function:</p>
+<pre>
+  CREATE FUNCTION reverse_of
+  SELECT * FROM x WHERE c1=7 AND REVERSE_OF(c3,'foo')</pre>
+<p>Like functions, if you want to actually execute a user-defined operator
+as distinct from just parsing it, you need to assign the operator to a
+perl subroutine.  This is done exactly like assigning functions:</p>
+<pre>
+  CREATE OPERATOR reverse_of AS perl_subroutine_name</pre>
+<p>
+</p>
+<hr />
+<h1><a name="extending_sql_syntax_using_subclasses">Extending SQL syntax using subclasses</a></h1>
+<p>In addition to using the SQL shown above to modify the parser's behavior,
+you can also extend the SQL syntax by subclassing SQL::Parser.
+See <a href="../../../lib/SQL/Parser.html">the SQL::Parser manpage</a> for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author___copyright">AUTHOR &amp; COPYRIGHT</a></h1>
+<p>Copyright (c) 2005, Jeff Zucker &lt;jzuckerATcpan.org&gt;, all rights reserved.
+Copyright (c) 2009, Jens Rehsack &lt;rehsackATcpan.org&gt;, all rights reserved.</p>
+<p>This document may be freely modified and distributed under the same
+terms as Perl itself.</p>
+
+</body>
+
+</html>

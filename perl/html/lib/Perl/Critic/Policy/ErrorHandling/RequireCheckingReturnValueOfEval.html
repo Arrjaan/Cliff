@@ -1,0 +1,172 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::ErrorHandling::RequireCheckingReturnValueOfEval - You can't depend upon the value of C&lt;$@&gt;/C&lt;$EVAL_ERROR&gt; to tell whether an C&lt;eval&gt; failed.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::ErrorHandling::RequireCheckingReturnValueOfEval - You can't depend upon the value of C&lt;$@&gt;/C&lt;$EVAL_ERROR&gt; to tell whether an C&lt;eval&gt; failed.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::ErrorHandling::RequireCheckingReturnValueOfEval - You can't depend upon the value of <a href="../../../../../lib/pods/perlvar.html#__"><code>$@</code></a>/<a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a> to tell whether an <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> failed.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A common idiom in perl for dealing with possible errors is to use
+<a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> followed by a check of <a href="../../../../../lib/pods/perlvar.html#__"><code>$@</code></a>/<a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a>:</p>
+<pre>
+    <span class="keyword">eval</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">};</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$EVAL_ERROR</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>There's a problem with this: the value of <a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a> can change
+between the end of the <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> and the <code>if</code> statement.  The issue is
+object destructors:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<pre>
+    ...</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DESTROY </span><span class="operator">{</span>
+        <span class="operator">...</span>
+        <span class="keyword">eval</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">eval</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+        <span class="operator">...</span>
+    <span class="operator">};</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$EVAL_ERROR</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>Assuming there are no other references to <code>$foo</code> created, when the
+<a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> block in <code>main</code> is exited, <code>Foo::DESTROY()</code> will be invoked,
+regardless of whether the <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> finished normally or not.  If the
+<a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> in <code>main</code> fails, but the <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> in <code>Foo::DESTROY()</code>
+succeeds, then <a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a> will be empty by the time that the <code>if</code>
+is executed.  Additional issues arise if you depend upon the exact
+contents of <a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a> and both <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a>s fail, because the
+messages from both will be concatenated.</p>
+<p>Even if there isn't an <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> directly in the <code>DESTROY()</code> method
+code, it may invoke code that does use <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> or otherwise affects
+<a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a>.</p>
+<p>The solution is to ensure that, upon normal exit, an <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> returns a
+true value and to test that value:</p>
+<pre>
+    <span class="comment"># Constructors are no problem.</span>
+    <span class="keyword">my</span> <span class="variable">$object</span> <span class="operator">=</span> <span class="keyword">eval</span> <span class="operator">{</span> <span class="variable">Class</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">()</span> <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="comment"># To cover the possiblity that an operation may correctly return a</span>
+    <span class="comment"># false value, end the block with "1":</span>
+    <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">eval</span> <span class="operator">{</span> <span class="variable">something</span><span class="operator">();</span> <span class="number">1</span> <span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">eval</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+        <span class="number">1</span><span class="operator">;</span>
+    <span class="operator">}</span>
+        <span class="keyword">or</span> <span class="keyword">do</span> <span class="operator">{</span>
+            <span class="comment"># Error handling here</span>
+        <span class="operator">};</span>
+</pre>
+<p>Unfortunately, you can't use the <a href="../../../../../lib/pods/perlfunc.html#defined"><code>defined</code></a> function to test the
+result; <a href="../../../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> returns an empty string on failure.</p>
+<p>Various modules have been written to take some of the pain out of
+properly localizing and checking <a href="../../../../../lib/pods/perlvar.html#__"><code>$@</code></a>/<a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a>. For example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Try::Tiny</span><span class="operator">;</span>
+    <span class="variable">try</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span>
+        <span class="comment"># Error handling here;</span>
+        <span class="comment"># The exception is in $_/$ARG, not $@/$EVAL_ERROR.</span>
+    <span class="operator">};</span>  <span class="comment"># Note semicolon.</span>
+</pre>
+<p>&quot;But we don't use <code>DESTROY()</code> anywhere in our code!&quot; you say.  That may
+be the case, but do any of the third-party modules you use have them?
+What about any you may use in the future or updated versions of the
+ones you already use?</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This Policy is not configurable except for the standard options.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>See thread on perl5-porters starting here:
+<a href="http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2008-06/msg00537.html">http://www.xray.mpe.mpg.de/mailing-lists/perl5-porters/2008-06/msg00537.html</a>.</p>
+<p>For a nice, easy, non-magical way of properly handling exceptions, see
+<a href="../../../../../lib/Try/Tiny.html">Try::Tiny</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Elliot Shank <code>&lt;perl@galumph.com&gt;</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2008-2011 Elliot Shank.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module.</p>
+
+</body>
+
+</html>

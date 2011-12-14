@@ -1,0 +1,163 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>parent - Establish an ISA relationship with base classes at compile time</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>parent - Establish an ISA relationship with base classes at compile time</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#history">HISTORY</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#authors_and_contributors">AUTHORS AND CONTRIBUTORS</a></li>
+	<li><a href="#maintainer">MAINTAINER</a></li>
+	<li><a href="#license">LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>parent - Establish an ISA relationship with base classes at compile time</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Baz</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">parent</span> <span class="string">qw(Foo Bar)</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Allows you to both load one or more modules, while setting up inheritance from
+those modules at the same time.  Mostly similar in effect to</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Baz</span><span class="operator">;</span>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="keyword">require</span> <span class="variable">Foo</span><span class="operator">;</span>
+        <span class="keyword">require</span> <span class="variable">Bar</span><span class="operator">;</span>
+        <span class="keyword">push</span> <span class="variable">@ISA</span><span class="operator">,</span> <span class="string">qw(Foo Bar)</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>By default, every base class needs to live in a file of its own.
+If you want to have a subclass and its parent class in the same file, you
+can tell <code>parent</code> not to load any modules by using the <code>-norequire</code> switch:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> exclaim </span><span class="operator">{</span> <span class="string">"I CAN HAS PERL"</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">DoesNotLoadFooBar</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">parent</span> <span class="operator">-</span><span class="variable">norequire</span><span class="operator">,</span> <span class="string">'Foo'</span><span class="operator">,</span> <span class="string">'Bar'</span><span class="operator">;</span>
+  <span class="comment"># will not go looking for Foo.pm or Bar.pm</span>
+</pre>
+<p>This is equivalent to the following code:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> exclaim </span><span class="operator">{</span> <span class="string">"I CAN HAS PERL"</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">DoesNotLoadFooBar</span><span class="operator">;</span>
+  <span class="keyword">push</span> <span class="variable">@DoesNotLoadFooBar::ISA</span><span class="operator">,</span> <span class="string">'Foo'</span><span class="operator">,</span> <span class="string">'Bar'</span><span class="operator">;</span>
+</pre>
+<p>This is also helpful for the case where a package lives within
+a differently named file:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyHash</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Tie::Hash</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">parent</span> <span class="operator">-</span><span class="variable">norequire</span><span class="operator">,</span> <span class="string">'Tie::StdHash'</span><span class="operator">;</span>
+</pre>
+<p>This is equivalent to the following code:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyHash</span><span class="operator">;</span>
+  <span class="keyword">require</span> <span class="variable">Tie::Hash</span><span class="operator">;</span>
+  <span class="keyword">push</span> <span class="variable">@ISA</span><span class="operator">,</span> <span class="string">'Tie::StdHash'</span><span class="operator">;</span>
+</pre>
+<p>If you want to load a subclass from a file that <a href="../lib/pods/perlfunc.html#require"><code>require</code></a> would
+not consider an eligible filename (that is, it does not end in
+either <code>.pm</code> or <code>.pmc</code>), use the following code:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MySecondPlugin</span><span class="operator">;</span>
+  <span class="keyword">require</span> <span class="string">'./plugins/custom.plugin'</span><span class="operator">;</span> <span class="comment"># contains Plugin::Custom</span>
+  <span class="keyword">use</span> <span class="variable">parent</span> <span class="operator">-</span><span class="variable">norequire</span><span class="operator">,</span> <span class="string">'Plugin::Custom'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="class_foo_tried_to_inherit_from_itself2" class="item">Class 'Foo' tried to inherit from itself</a></strong></dt>
+
+<dd>
+<p>Attempting to inherit from yourself generates a warning.</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">parent</span> <span class="string">'Foo'</span><span class="operator">;</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p>This module was forked from <a href="../lib/base.html">the base manpage</a> to remove the cruft
+that had accumulated in it.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/base.html">the base manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="authors_and_contributors">AUTHORS AND CONTRIBUTORS</a></h1>
+<p>Rafaël Garcia-Suarez, Bart Lateur, Max Maischein, Anno Siegel, Michael Schwern</p>
+<p>
+</p>
+<hr />
+<h1><a name="maintainer">MAINTAINER</a></h1>
+<p>Max Maischein <code> corion@cpan.org </code></p>
+<p>Copyright (c) 2007-10 Max Maischein <code>&lt;corion@cpan.org&gt;</code>
+Based on the idea of <code>base.pm</code>, which was introduced with Perl 5.004_04.</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This module is released under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

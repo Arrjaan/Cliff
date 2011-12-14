@@ -1,0 +1,187 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlpragma - how to write a user pragma</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlpragma - how to write a user pragma</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#a_basic_example">A basic example</a></li>
+	<li><a href="#implementation_details">Implementation details</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlpragma - how to write a user pragma</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A pragma is a module which influences some aspect of the compile time or run
+time behaviour of Perl, such as <code>strict</code> or <code>warnings</code>. With Perl 5.10 you
+are no longer limited to the built in pragmata; you can now create user
+pragmata that modify the behaviour of user functions within a lexical scope.</p>
+<p>
+</p>
+<hr />
+<h1><a name="a_basic_example">A basic example</a></h1>
+<p>For example, say you need to create a class implementing overloaded
+mathematical operators, and would like to provide your own pragma that
+functions much like <code>use integer;</code> You'd like this code</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">MyMaths</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">$l</span> <span class="operator">=</span> <span class="variable">MyMaths</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="number">1.2</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$r</span> <span class="operator">=</span> <span class="variable">MyMaths</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="number">3.4</span><span class="operator">);</span>
+    
+    <span class="keyword">print</span> <span class="string">"A: "</span><span class="operator">,</span> <span class="variable">$l</span> <span class="operator">+</span> <span class="variable">$r</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">myint</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="string">"B: "</span><span class="operator">,</span> <span class="variable">$l</span> <span class="operator">+</span> <span class="variable">$r</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    
+    <span class="operator">{</span>
+        <span class="keyword">no</span> <span class="variable">myint</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"C: "</span><span class="operator">,</span> <span class="variable">$l</span> <span class="operator">+</span> <span class="variable">$r</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="keyword">print</span> <span class="string">"D: "</span><span class="operator">,</span> <span class="variable">$l</span> <span class="operator">+</span> <span class="variable">$r</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    
+    <span class="keyword">no</span> <span class="variable">myint</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="string">"E: "</span><span class="operator">,</span> <span class="variable">$l</span> <span class="operator">+</span> <span class="variable">$r</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>to give the output</p>
+<pre>
+    A: 4.6
+    B: 4
+    C: 4.6
+    D: 4
+    E: 4.6</pre>
+<p><em>i.e.</em>, where <code>use myint;</code> is in effect, addition operations are forced
+to integer, whereas by default they are not, with the default behaviour being
+restored via <code>no myint;</code></p>
+<p>The minimal implementation of the package <code>MyMaths</code> would be something like
+this:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">MyMaths</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">myint</span><span class="operator">();</span>
+    <span class="keyword">use</span> <span class="variable">overload</span> <span class="string">'+'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$l</span><span class="operator">,</span> <span class="variable">$r</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="comment"># Pass 1 to check up one call level from here</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">myint::in_effect</span><span class="operator">(</span><span class="number">1</span><span class="operator">))</span> <span class="operator">{</span>
+            <span class="keyword">int</span><span class="operator">(</span><span class="variable">$$l</span><span class="operator">)</span> <span class="operator">+</span> <span class="keyword">int</span><span class="operator">(</span><span class="variable">$$r</span><span class="operator">);</span>
+        <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+            <span class="variable">$$l</span> <span class="operator">+</span> <span class="variable">$$r</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">};</span>
+    
+    <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$class</span><span class="operator">,</span> <span class="variable">$value</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">bless</span> <span class="operator">\</span><span class="variable">$value</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>Note how we load the user pragma <code>myint</code> with an empty list <code>()</code> to
+prevent its <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> being called.</p>
+<p>The interaction with the Perl compilation happens inside package <code>myint</code>:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">myint</span><span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    
+    <span class="keyword">sub</span><span class="variable"> import </span><span class="operator">{</span>
+        <span class="variable">$^H</span><span class="operator">{</span><span class="string">myint</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="keyword">sub</span><span class="variable"> unimport </span><span class="operator">{</span>
+        <span class="variable">$^H</span><span class="operator">{</span><span class="string">myint</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="keyword">sub</span><span class="variable"> in_effect </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$level</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">//</span> <span class="number">0</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$hinthash</span> <span class="operator">=</span> <span class="operator">(</span><span class="keyword">caller</span><span class="operator">(</span><span class="variable">$level</span><span class="operator">))</span><span class="operator">[</span><span class="number">10</span><span class="operator">]</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="variable">$hinthash</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">myint</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>As pragmata are implemented as modules, like any other module, <code>use myint;</code>
+becomes</p>
+<pre>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="keyword">require</span> <span class="variable">myint</span><span class="operator">;</span>
+        <span class="variable">myint</span><span class="operator">-&gt;</span><span class="variable">import</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+<p>and <code>no myint;</code> is</p>
+<pre>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="keyword">require</span> <span class="variable">myint</span><span class="operator">;</span>
+        <span class="variable">myint</span><span class="operator">-&gt;</span><span class="variable">unimport</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+<p>Hence the <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> and <code>unimport</code> routines are called at <strong>compile time</strong>
+for the user's code.</p>
+<p>User pragmata store their state by writing to the magical hash <a href="../../lib/pods/perlvar.html#__h"><code>%^H</code></a>,
+hence these two routines manipulate it. The state information in <a href="../../lib/pods/perlvar.html#__h"><code>%^H</code></a> is
+stored in the optree, and can be retrieved read-only at runtime with <a href="../../lib/pods/perlfunc.html#caller"><code>caller()</code></a>,
+at index 10 of the list of returned results. In the example pragma, retrieval
+is encapsulated into the routine <code>in_effect()</code>, which takes as parameter
+the number of call frames to go up to find the value of the pragma in the
+user's script. This uses <a href="../../lib/pods/perlfunc.html#caller"><code>caller()</code></a> to determine the value of
+<code>$^H{myint}</code> when each line of the user's script was called, and
+therefore provide the correct semantics in the subroutine implementing the
+overloaded addition.</p>
+<p>
+</p>
+<hr />
+<h1><a name="implementation_details">Implementation details</a></h1>
+<p>The optree is shared between threads.  This means there is a possibility that
+the optree will outlive the particular thread (and therefore the interpreter
+instance) that created it, so true Perl scalars cannot be stored in the
+optree.  Instead a compact form is used, which can only store values that are
+integers (signed and unsigned), strings or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> - references and
+floating point values are stringified.  If you need to store multiple values
+or complex structures, you should serialise them, for example with <a href="../../lib/pods/perlfunc.html#pack"><code>pack</code></a>.
+The deletion of a hash key from <a href="../../lib/pods/perlvar.html#__h"><code>%^H</code></a> is recorded, and as ever can be
+distinguished from the existence of a key with value <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> with
+<a href="../../lib/pods/perlfunc.html#exists"><code>exists</code></a>.</p>
+<p><strong>Don't</strong> attempt to store references to data structures as integers which
+are retrieved via <a href="../../lib/pods/perlfunc.html#caller"><code>caller</code></a> and converted back, as this will not be threadsafe.
+Accesses would be to the structure without locking (which is not safe for
+Perl's scalars), and either the structure has to leak, or it has to be
+freed when its creating thread terminates, which may be before the optree
+referencing it is deleted, if other threads outlive it.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<title>ActivePerl Components</title>
+<link rel="STYLESHEET" href="../Active.css" type="text/css" media="screen">
+<TITLE>PerlEx::DBI - Initiate a persistent database connection</TITLE>
+</HEAD>
+
+<BODY>
+<script>writelinks('__top__',1);</script>
+<h1>PerlEx::DBI - Initiate a Persistent Database Connection</h1>
+
+<A NAME="__index__"></A>
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A class="doc" HREF="#name">NAME</A></LI>
+	<LI><A class="doc" HREF="#synopsis">SYNOPSIS</A></LI>
+	<LI><A class="doc" HREF="#description">DESCRIPTION</A></LI>
+	<LI><A class="doc" HREF="#configuration">CONFIGURATION</A></LI>
+	<LI><A class="doc" HREF="#prerequisites">PREREQUISITES</A></LI>
+	<LI><A class="doc" HREF="#see also">SEE ALSO</A></LI>
+	<LI><A class="doc" HREF="#authors">AUTHORS</A></LI>
+	<LI><A class="doc" HREF="#copyright">COPYRIGHT</A></LI>
+</UL>
+<!-- INDEX END -->
+
+
+<P>
+<h2><A NAME="name">NAME</A></H2>
+<P>PerlEx::DBI - Initiate a persistent database connection</P>
+<P>
+
+<H2><A NAME="synopsis">SYNOPSIS</A></H2>
+<PRE>
+    # add this switch to CommandLineOptions setting in Interpreter Class
+    -mPerlEx::DBI</PRE>
+<PRE>
+    # or add next line to StartupCode setting in the Interpreter Class
+    use PerlEx::DBI ();  # this comes before all other modules using DBI</PRE>
+<P>Note to Apache users: PerlEx::DBI is based on Apache::DBI.  Except for
+the configuration noted above, PerlEx::DBI is functionally identical
+to Apache::DBI.</P>
+<P>You do NOT need to change anything in your scripts. The usage of this
+module is absolutely transparent!</P>
+<P>
+
+<H2><A NAME="description">DESCRIPTION</A></H2>
+<P>This module transparently initiates persistent database connections.</P>
+<P>The database access must be via the DBI module. For supported DBI drivers
+see:</P>
+<PRE>
+    <A HREF="http://www.symbolstone.org/technology/perl/DBI/">http://www.symbolstone.org/technology/perl/DBI/</A></PRE>
+<P>When the DBI module is loaded by your script (do not confuse this with
+the loading of the PerlEx::DBI module itself) DBI looks at the environment
+variable GATEWAY_INTERFACE and checks to see if it starts with 'CGI-Perl',
+and whether an Apache::DBI compatible module (in this case PerlEx::DBI)
+has been loaded.  If that is the case, every connect request will be
+forwarded to the Apache::DBI compatible module.</P>
+<P>PerlEx::DBI then looks at whether a database handle from a previous
+connect request is already cached and whether the cached handle is still
+valid, using the ping method.  If these two conditions are fulfilled it 
+just returns the cached database handle.  The parameters defining the
+connection have to be exactly the same for a cached handle to be selected,
+including the connect attributes.  If there is no appropriate database
+handle or if the ping method fails, a new connection is established and
+the handle is cached for later re-use.  There is no need to remove any
+<CODE>disconnect()</CODE> calls from your code.  They won't do anything because 
+the PerlEx::DBI module overloads the disconnect method.</P>
+<P>The PerlEx::DBI module still has a potential limitation: it keeps database
+connections persistent on a per-interpreter basis. This means that if a
+user accesses a database several times, the http requests may end up
+being handled by different PerlEx interpreters, even though PerlEx tries
+to use as few interpreters as possible.  In this case, every interpreter
+needs to do its own connect.  It would be nice if all interpreters could
+share the database handles, but currently this is not possible because of
+strict isolation of the data space of interpreters, for scalability
+and security reasons.  Also, it is currently not possible to create a
+database handle upon PerlEx startup and later inheriting this handle in
+every subsequent interpreter.</P>
+<P>With these limitations in mind, there may be some scenarios where the usage
+of PerlEx::DBI may not be worthwhile.  Consider a heavily loaded web
+site where every user connects to the database with a unique userid.
+This could cause many database handles to be initialized and kept persistent,
+hogging database resources.</P>
+<P>If you find that PerlEx::DBI results in consumption of excess database
+resources, you should investigate enabling the native connection pooling
+features of your database instead of enabling PerlEx::DBI for your scripts.</P>
+<P>Another potential problem are timeouts: some databases disconnect the client
+after a certain period of inactivity.  PerlEx::DBI normally tries to
+validate the database handle using the ping-method of the DBI-module.
+This method returns true as default.  If the database handle is not valid
+and the driver has no implementation for the ping method, you will get
+an error when accessing the database.  To work around this, you can try
+to replace the ping method by any database command, which is cheap and
+safe, or you may deactivate the usage of the ping method (see CONFIGURATION
+below).</P>
+<P>Here is a generalized ping method, which can be added to the driver module:</P>
+<P>{   package DBD::xxx::db; # ====== DATABASE ======
+    use strict;</P>
+<PRE>
+    sub ping {
+        my($dbh) = @_;
+        my $ret = 0;
+        eval {
+            local $SIG{__DIE__}  = sub { return (0); };
+            local $SIG{__WARN__} = sub { return (0); };
+            # adapt the select statement to your database:
+            $ret = $dbh-&gt;do('select 1');
+        };
+        return ($@) ? 0 : $ret;
+    }
+}</PRE>
+<P>Transactions: a standard DBI script will automatically perform a rollback
+whenever the script exits. In the case of persistent database connections,
+the database handle will not be destroyed and hence no automatic rollback 
+occurs.  While at first glance it might seem practical to handle a transaction 
+over multiple requests, this will not really work because different requests
+may be handled by different interpreters.  One interpreter will not know the
+state of a specific transaction which has been started by another interpreter.</P>
+<P>In general it is good practice to perform an explicit commit or rollback at
+the end of every script.  In order to avoid inconsistencies in the database
+in case AutoCommit is off and the script finishes without an explicit
+rollback, the PerlEx::DBI module uses a cleanup handler to issue a rollback
+at the end of every request.  Note that this cleanup handler will only be
+used if the initial data_source sets AutoCommit = 0. It will not be used
+if AutoCommit is turned off after the connect has been done.</P>
+<P>
+
+<H2><A NAME="configuration">CONFIGURATION</A></H2>
+<P>PerlEx::DBI should be loaded upon startup of a PerlEx Interpreter Class.
+This can be done either by adding the following switch to the
+CommandLineOptions registry setting:</P>
+<PRE>
+    -mPerlEx::DBI</PRE>
+<P>or by adding the following line to the StartupCode setting such that
+it executes before anything else that loads the DBI module:
+</P>
+<PRE>
+
+    use PerlEx::DBI ();</PRE>
+
+<p>Either of the above can be set within an Interpreter Class to restrict
+the setting to a single script or a set of scripts under a given location.
+See the PerlEx documentation for more information on these registry
+settings.</p>
+<P>Note that it is important to load PerlEx::DBI before any other modules
+using DBI!</P>
+<P>There is one configuration which is server-specific and which can be done 
+within the script after $data_source has been initialized:</P>
+<PRE>
+    PerlEx::DBI-&gt;setPingTimeOut($data_source, $timeout);</PRE>
+<P>This configures the usage of the ping method, to validate a connection. 
+Setting the timeout to 0 will always validate the database connection 
+using the ping method (default). Setting the timeout &lt; 0 will de-activate
+the validation of the database handle. This can be used for drivers which 
+do not implement the ping-method. Setting the timeout &gt; 0 will ping the 
+database only if the last access was more than timeout seconds before.</P>
+<P>To enable logging, set the Trace value for your Interpreter Class
+to 1 or higher.  Setting the variable to 1 simply reports every new
+connect.  Setting Trace to 2 enables full debug output.</P>
+<P>
+
+<H2><A NAME="prerequisites">PREREQUISITES</A></H2>
+<P>Note that this module needs PerlEx 2.2 or higher and DBI 1.14 or higher.</P>
+<P>
+
+<H2><A NAME="see also">SEE ALSO</A></H2>
+<P><EM>DBI</EM></P>
+<P>
+
+<H2><A NAME="authors">AUTHORS</A></H2>
+<UL>
+<LI>
+PerlEx::DBI is a modified version of Apache::DBI.
+PerlEx::DBI by Shane Caraveo &lt;<A HREF="mailto:ShaneC@ActiveState.com">ShaneC@ActiveState.com</A>&gt;
+<P></P>
+<LI>
+Apache::DBI by Edmund Mergl &lt;<A HREF="mailto:E.Mergl@bawue.de">E.Mergl@bawue.de</A>&gt;
+<P></P>
+<LI>
+DBI by Tim Bunce &lt;<A HREF="mailto:dbi-users@isc.org">dbi-users@isc.org</A>&gt;
+<P></P></UL>
+<P>
+
+<H2><A NAME="copyright">COPYRIGHT</A></H2>
+<P>The PerlEx::DBI module is based on Apache::DBI
+and is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</P>
+
+</BODY>
+</HTML>

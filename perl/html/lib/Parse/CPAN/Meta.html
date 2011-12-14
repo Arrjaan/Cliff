@@ -1,0 +1,232 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Parse::CPAN::Meta - Parse META.yml and META.json CPAN metadata files</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Parse::CPAN::Meta - Parse META.yml and META.json CPAN metadata files</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#load_file">load_file</a></li>
+		<li><a href="#load_yaml_string">load_yaml_string</a></li>
+		<li><a href="#load_json_string">load_json_string</a></li>
+		<li><a href="#yaml_backend">yaml_backend</a></li>
+		<li><a href="#json_backend">json_backend</a></li>
+	</ul>
+
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#load">Load</a></li>
+		<li><a href="#loadfile">LoadFile</a></li>
+	</ul>
+
+	<li><a href="#environment">ENVIRONMENT</a></li>
+	<ul>
+
+		<li><a href="#perl_json_backend">PERL_JSON_BACKEND</a></li>
+		<li><a href="#perl_yaml_backend">PERL_YAML_BACKEND</a></li>
+	</ul>
+
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Parse::CPAN::Meta - Parse META.yml and META.json CPAN metadata files</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="comment">#############################################</span>
+    <span class="comment"># In your file</span>
+</pre>
+<pre>
+    ---
+    name: My-Distribution
+    version: 1.23
+    resources:
+      homepage: &quot;<a href="http://example.com/dist/My-Distribution&quot">http://example.com/dist/My-Distribution&quot</a>;</pre>
+<pre>
+    <span class="comment">#############################################</span>
+    <span class="comment"># In your program</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$distmeta</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_file</span><span class="operator">(</span><span class="string">'META.yml'</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># Reading properties</span>
+    <span class="keyword">my</span> <span class="variable">$name</span>     <span class="operator">=</span> <span class="variable">$distmeta</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$version</span>  <span class="operator">=</span> <span class="variable">$distmeta</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">version</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$homepage</span> <span class="operator">=</span> <span class="variable">$distmeta</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">resources</span><span class="operator">}{</span><span class="string">homepage</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><strong>Parse::CPAN::Meta</strong> is a parser for <em class="file">META.json</em> and <em class="file">META.yml</em> files, using
+<a href="../../../lib/JSON/PP.html">the JSON::PP manpage</a> and/or <a href="../../../lib/CPAN/Meta/YAML.html">the CPAN::Meta::YAML manpage</a>.</p>
+<p><strong>Parse::CPAN::Meta</strong> provides three methods: <code>load_file</code>, <code>load_json_string</code>,
+and <code>load_yaml_string</code>.  These will read and deserialize CPAN metafiles, and
+are described below in detail.</p>
+<p><strong>Parse::CPAN::Meta</strong> provides a legacy API of only two functions,
+based on the YAML functions of the same name. Wherever possible,
+identical calling semantics are used.  These may only be used with YAML sources.</p>
+<p>All error reporting is done with exceptions (die'ing).</p>
+<p>Note that META files are expected to be in UTF-8 encoding, only.  When
+converted string data, it must first be decoded from UTF-8.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="load_file">load_file</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$metadata_structure</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_file</span><span class="operator">(</span><span class="string">'META.json'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$metadata_structure</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_file</span><span class="operator">(</span><span class="string">'META.yml'</span><span class="operator">);</span>
+</pre>
+<p>This method will read the named file and deserialize it to a data structure,
+determining whether it should be JSON or YAML based on the filename.  On
+Perl 5.8.1 or later, the file will be read using the &quot;:utf8&quot; IO layer.</p>
+<p>
+</p>
+<h2><a name="load_yaml_string">load_yaml_string</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$metadata_structure</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_yaml_string</span><span class="operator">(</span><span class="variable">$yaml_string</span><span class="operator">);</span>
+</pre>
+<p>This method deserializes the given string of YAML and returns the first
+document in it.  (CPAN metadata files should always have only one document.)
+If the source was UTF-8 encoded, the string must be decoded before calling
+<code>load_yaml_string</code>.</p>
+<p>
+</p>
+<h2><a name="load_json_string">load_json_string</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$metadata_structure</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_json_string</span><span class="operator">(</span><span class="variable">$json_string</span><span class="operator">);</span>
+</pre>
+<p>This method deserializes the given string of JSON and the result.
+If the source was UTF-8 encoded, the string must be decoded before calling
+<code>load_json_string</code>.</p>
+<p>
+</p>
+<h2><a name="yaml_backend">yaml_backend</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$backend</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">yaml_backend</span><span class="operator">;</span>
+</pre>
+<p>Returns the module name of the YAML serializer. See <a href="#environment">ENVIRONMENT</a>
+for details.</p>
+<p>
+</p>
+<h2><a name="json_backend">json_backend</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$backend</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">json_backend</span><span class="operator">;</span>
+</pre>
+<p>Returns the module name of the JSON serializer.  This will either
+be <a href="../../../lib/JSON/PP.html">the JSON::PP manpage</a> or <a href="../../../lib/JSON.html">the JSON manpage</a>.  Even if <code>PERL_JSON_BACKEND</code> is set,
+this will return <a href="../../../lib/JSON.html">the JSON manpage</a> as further delegation is handled by
+the <a href="../../../lib/JSON.html">the JSON manpage</a> module.  See <a href="#environment">ENVIRONMENT</a> for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<p>For maintenance clarity, no functions are exported.  These functions are
+available for backwards compatibility only and are best avoided in favor of
+<code>load_file</code>.</p>
+<p>
+</p>
+<h2><a name="load">Load</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">@yaml</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta::Load</span><span class="operator">(</span> <span class="variable">$string</span> <span class="operator">);</span>
+</pre>
+<p>Parses a string containing a valid YAML stream into a list of Perl data
+structures.</p>
+<p>
+</p>
+<h2><a name="loadfile">LoadFile</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">@yaml</span> <span class="operator">=</span> <span class="variable">Parse::CPAN::Meta::LoadFile</span><span class="operator">(</span> <span class="string">'META.yml'</span> <span class="operator">);</span>
+</pre>
+<p>Reads the YAML stream from a file instead of a string.</p>
+<p>
+</p>
+<hr />
+<h1><a name="environment">ENVIRONMENT</a></h1>
+<p>
+</p>
+<h2><a name="perl_json_backend">PERL_JSON_BACKEND</a></h2>
+<p>By default, <a href="../../../lib/JSON/PP.html">the JSON::PP manpage</a> will be used for deserializing JSON data. If the
+<code>PERL_JSON_BACKEND</code> environment variable exists, is true and is not
+&quot;JSON::PP&quot;, then the <a href="../../../lib/JSON.html">the JSON manpage</a> module (version 2.5 or greater) will be loaded and
+used to interpret <code>PERL_JSON_BACKEND</code>.  If <a href="../../../lib/JSON.html">the JSON manpage</a> is not installed or is too
+old, an exception will be thrown.</p>
+<p>
+</p>
+<h2><a name="perl_yaml_backend">PERL_YAML_BACKEND</a></h2>
+<p>By default, <a href="../../../lib/CPAN/Meta/YAML.html">the CPAN::Meta::YAML manpage</a> will be used for deserializing YAML data. If
+the <code>PERL_YAML_BACKEND</code> environment variable is defined, then it is intepreted
+as a module to use for deserialization.  The given module must be installed,
+must load correctly and must implement the <code>Load()</code> function or an exception
+will be thrown.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>Bugs should be reported via the CPAN bug tracker at</p>
+<p><a href="http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Parse-CPAN-Meta">http://rt.cpan.org/NoAuth/ReportBug.html</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Adam Kennedy &lt;<a href="mailto:adamk@cpan.org">adamk@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2006 - 2010 Adam Kennedy.</p>
+<p>This program is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.</p>
+<p>The full text of the license can be found in the
+LICENSE file included with this module.</p>
+
+</body>
+
+</html>

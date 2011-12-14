@@ -1,0 +1,392 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#metadata">Metadata</a></li>
+		<ul>
+
+			<li><a href="#the_following_dbi_attributes_are_handled_by_dbi__dbd__sqlengine_">The following DBI attributes are handled by DBI::DBD::SqlEngine:</a></li>
+			<ul>
+
+				<li><a href="#autocommit">AutoCommit</a></li>
+				<li><a href="#chopblanks">ChopBlanks</a></li>
+				<li><a href="#num_of_fields">NUM_OF_FIELDS</a></li>
+				<li><a href="#num_of_params">NUM_OF_PARAMS</a></li>
+				<li><a href="#name">NAME</a></li>
+				<li><a href="#nullable">NULLABLE</a></li>
+			</ul>
+
+			<li><a href="#the_following_dbi_attributes_and_methods_are_not_supported_">The following DBI attributes and methods are not supported:</a></li>
+			<li><a href="#dbi__dbd__sqlengine_specific_attributes">DBI::DBD::SqlEngine specific attributes</a></li>
+			<ul>
+
+				<li><a href="#sql_engine_version">sql_engine_version</a></li>
+				<li><a href="#sql_nano_version">sql_nano_version</a></li>
+				<li><a href="#sql_statement_version">sql_statement_version</a></li>
+				<li><a href="#sql_handler">sql_handler</a></li>
+				<li><a href="#sql_parser_object">sql_parser_object</a></li>
+				<li><a href="#sql_sponge_driver">sql_sponge_driver</a></li>
+				<li><a href="#sql_valid_attrs">sql_valid_attrs</a></li>
+				<li><a href="#sql_readonly_attrs">sql_readonly_attrs</a></li>
+				<li><a href="#sql_identifier_case">sql_identifier_case</a></li>
+				<li><a href="#sql_quoted_identifier_case">sql_quoted_identifier_case</a></li>
+				<li><a href="#sql_flags">sql_flags</a></li>
+				<li><a href="#sql_dialect">sql_dialect</a></li>
+			</ul>
+
+		</ul>
+
+	</ul>
+
+	<li><a href="#support">SUPPORT</a></li>
+	<ul>
+
+		<li><a href="#where_can_i_go_for_more_help">Where can I go for more help?</a></li>
+	</ul>
+
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DBD::myDriver</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw(DBI::DBD::SqlEngine)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> driver
+    </span><span class="operator">{</span>
+        <span class="operator">...</span>
+        <span class="keyword">my</span> <span class="variable">$drh</span> <span class="operator">=</span> <span class="variable">$proto</span><span class="operator">-&gt;</span><span class="variable">SUPER::driver</span><span class="operator">(</span><span class="variable">$attr</span><span class="operator">);</span>
+        <span class="operator">...</span>
+        <span class="keyword">return</span> <span class="variable">$drh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">class</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DBD::myDriver::dr</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(DBI::DBD::SqlEngine::dr)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> data_sources </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="operator">...</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DBD::myDriver::db</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(DBI::DBD::SqlEngine::db)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> init_valid_attributes </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> init_default_attributes </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> set_versions </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> validate_STORE_attr </span><span class="operator">{</span> <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$dbh</span><span class="operator">,</span> <span class="variable">$attrib</span><span class="operator">,</span> <span class="variable">$value</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> validate_FETCH_attr </span><span class="operator">{</span> <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$dbh</span><span class="operator">,</span> <span class="variable">$attrib</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> get_myd_versions </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> get_avail_tables </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DBD::myDriver::st</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(DBI::DBD::SqlEngine::st)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FETCH </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> STORE </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DBD::myDriver::Statement</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(DBI::DBD::SqlEngine::Statement)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> open_table </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DBD::myDriver::Table</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(DBI::DBD::SqlEngine::Table)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>DBI::DBD::SqlEngine abstracts the usage of SQL engines from the
+DBD. DBD authors can concentrate on the data retrieval they want to
+provide.</p>
+<p>It is strongly recommended that you read <a href="../../../lib/DBD/File/Developers.html">the DBD::File::Developers manpage</a> and
+<a href="../../../lib/DBD/File/Roadmap.html">the DBD::File::Roadmap manpage</a>, because many of the DBD::File API is provided
+by DBI::DBD::SqlEngine.</p>
+<p>Currently the API of DBI::DBD::SqlEngine is experimental and will
+likely change in the near future to provide the table meta data basics
+like DBD::File.</p>
+<p>
+</p>
+<h2><a name="metadata">Metadata</a></h2>
+<p>The following attributes are handled by DBI itself and not by
+DBI::DBD::SqlEngine, thus they all work as expected:</p>
+<pre>
+    Active
+    ActiveKids
+    CachedKids
+    CompatMode             (Not used)
+    InactiveDestroy
+    AutoInactiveDestroy
+    Kids
+    PrintError
+    RaiseError
+    Warn                   (Not used)</pre>
+<p>
+</p>
+<h3><a name="the_following_dbi_attributes_are_handled_by_dbi__dbd__sqlengine_">The following DBI attributes are handled by DBI::DBD::SqlEngine:</a></h3>
+<p>
+</p>
+<h4><a name="autocommit">AutoCommit</a></h4>
+<p>Always on.</p>
+<p>
+</p>
+<h4><a name="chopblanks">ChopBlanks</a></h4>
+<p>Works.</p>
+<p>
+</p>
+<h4><a name="num_of_fields">NUM_OF_FIELDS</a></h4>
+<p>Valid after <code>$sth-&gt;execute</code>.</p>
+<p>
+</p>
+<h4><a name="num_of_params">NUM_OF_PARAMS</a></h4>
+<p>Valid after <code>$sth-&gt;prepare</code>.</p>
+<p>
+</p>
+<h4><a name="name">NAME</a></h4>
+<p>Valid after <code>$sth-&gt;execute</code>; probably undef for Non-Select statements.</p>
+<p>
+</p>
+<h4><a name="nullable">NULLABLE</a></h4>
+<p>Not really working, always returns an array ref of ones, as DBD::CSV
+does not verify input data. Valid after <code>$sth-&gt;execute</code>; undef for
+non-select statements.</p>
+<p>
+</p>
+<h3><a name="the_following_dbi_attributes_and_methods_are_not_supported_">The following DBI attributes and methods are not supported:</a></h3>
+<dl>
+<dt><strong><a name="bind_param_inout" class="item">bind_param_inout</a></strong></dt>
+
+<dt><strong><a name="cursorname2" class="item">CursorName</a></strong></dt>
+
+<dt><strong><a name="longreadlen2" class="item">LongReadLen</a></strong></dt>
+
+<dt><strong><a name="longtruncok2" class="item">LongTruncOk</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<h3><a name="dbi__dbd__sqlengine_specific_attributes">DBI::DBD::SqlEngine specific attributes</a></h3>
+<p>In addition to the DBI attributes, you can use the following dbh
+attributes:</p>
+<p>
+</p>
+<h4><a name="sql_engine_version">sql_engine_version</a></h4>
+<p>Contains the module version of this driver (<strong>readonly</strong>)</p>
+<p>
+</p>
+<h4><a name="sql_nano_version">sql_nano_version</a></h4>
+<p>Contains the module version of DBI::SQL::Nano (<strong>readonly</strong>)</p>
+<p>
+</p>
+<h4><a name="sql_statement_version">sql_statement_version</a></h4>
+<p>Contains the module version of SQL::Statement, if available (<strong>readonly</strong>)</p>
+<p>
+</p>
+<h4><a name="sql_handler">sql_handler</a></h4>
+<p>Contains the SQL Statement engine, either DBI::SQL::Nano or SQL::Statement
+(<strong>readonly</strong>).</p>
+<p>
+</p>
+<h4><a name="sql_parser_object">sql_parser_object</a></h4>
+<p>Contains an instantiated instance of SQL::Parser (<strong>readonly</strong>).
+This is filled when used first time (only when used with SQL::Statement).</p>
+<p>
+</p>
+<h4><a name="sql_sponge_driver">sql_sponge_driver</a></h4>
+<p>Contains an internally used DBD::Sponge handle (<strong>readonly</strong>).</p>
+<p>
+</p>
+<h4><a name="sql_valid_attrs">sql_valid_attrs</a></h4>
+<p>Contains the list of valid attributes for each DBI::DBD::SqlEngine based
+driver (<strong>readonly</strong>).</p>
+<p>
+</p>
+<h4><a name="sql_readonly_attrs">sql_readonly_attrs</a></h4>
+<p>Contains the list of those attributes which are readonly (<strong>readonly</strong>).</p>
+<p>
+</p>
+<h4><a name="sql_identifier_case">sql_identifier_case</a></h4>
+<p>Contains how DBI::DBD::SqlEngine deals with non-quoted SQL identifiers:</p>
+<pre>
+  * SQL_IC_UPPER (1) means all identifiers are internally converted
+    into upper-cased pendants
+  * SQL_IC_LOWER (2) means all identifiers are internally converted
+    into lower-cased pendants
+  * SQL_IC_MIXED (4) means all identifiers are taken as they are</pre>
+<p>These conversions happen if (and only if) no existing identifier matches.
+Once existing identifier is used as known.</p>
+<p>The SQL statement execution classes doesn't have to care, so don't expect
+<code>sql_identifier_case</code> affects column names in statements like</p>
+<pre>
+  SELECT * FROM foo</pre>
+<p>
+</p>
+<h4><a name="sql_quoted_identifier_case">sql_quoted_identifier_case</a></h4>
+<p>Contains how DBI::DBD::SqlEngine deals with quoted SQL identifiers
+(<strong>readonly</strong>). It's fixated to SQL_IC_SENSITIVE (3), which is interpreted
+as SQL_IC_MIXED.</p>
+<p>
+</p>
+<h4><a name="sql_flags">sql_flags</a></h4>
+<p>Contains additional flags to instantiate an SQL::Parser. Because an
+SQL::Parser is instantiated only once, it's recommended to set this flag
+before any statement is executed.</p>
+<p>
+</p>
+<h4><a name="sql_dialect">sql_dialect</a></h4>
+<p>Controls the dialect understood by SQL::Parser. Possible values (delivery
+state of SQL::Statement):</p>
+<pre>
+  * ANSI
+  * CSV
+  * AnyData</pre>
+<p>Defaults to &quot;CSV&quot;.  Because an SQL::Parser is instantiated only once and
+SQL::Parser doesn't allow to modify the dialect once instantiated,
+it's strongly recommended to set this flag before any statement is
+executed (best place is connect attribute hash).</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>You can find documentation for this module with the perldoc command.</p>
+<pre>
+    <a href="../../../lib/pods/perldoc.html">perldoc</a> DBI::DBD::SqlEngine</pre>
+<p>You can also look for information at:</p>
+<ul>
+<li><strong><a name="rt_cpan_s_request_tracker2" class="item">RT: CPAN's request tracker</a></strong>
+
+<p><a href="http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBI">http://rt.cpan.org/NoAuth/Bugs.html</a>
+<a href="http://rt.cpan.org/NoAuth/Bugs.html?Dist=SQL-Statement">http://rt.cpan.org/NoAuth/Bugs.html</a></p>
+</li>
+<li><strong><a name="annocpan_annotated_cpan_documentation2" class="item">AnnoCPAN: Annotated CPAN documentation</a></strong>
+
+<p><a href="http://annocpan.org/dist/DBI">http://annocpan.org/dist/DBI</a>
+<a href="http://annocpan.org/dist/SQL-Statement">http://annocpan.org/dist/SQL-Statement</a></p>
+</li>
+<li><strong><a name="cpan_ratings2" class="item">CPAN Ratings</a></strong>
+
+<p><a href="http://cpanratings.perl.org/d/DBI">http://cpanratings.perl.org/d/DBI</a></p>
+</li>
+<li><strong><a name="search_cpan2" class="item">Search CPAN</a></strong>
+
+<p><a href="http://search.cpan.org/dist/DBI/">http://search.cpan.org/dist/DBI/</a></p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="where_can_i_go_for_more_help">Where can I go for more help?</a></h2>
+<p>For questions about installation or usage, please ask on the
+<a href="mailto:dbi-dev@perl.org">dbi-dev@perl.org</a> mailing list.</p>
+<p>If you have a bug report, patch or suggestion, please open
+a new report ticket on CPAN, if there is not already one for
+the issue you want to report. Of course, you can mail any of the
+module maintainers, but it is less likely to be missed if
+it is reported on RT.</p>
+<p>Report tickets should contain a detailed description of the bug or
+enhancement request you want to report and at least an easy way to
+verify/reproduce the issue and any supplied fix. Patches are always
+welcome, too.</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>Thanks to Tim Bunce, Martin Evans and H.Merijn Brand for their continued
+support while developing DBD::File, DBD::DBM and DBD::AnyData.
+Their support, hints and feedback helped to design and implement this
+module.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This module is currently maintained by</p>
+<p>H.Merijn Brand &lt; h.m.brand at xs4all.nl &gt; and
+Jens Rehsack  &lt; rehsack at googlemail.com &gt;</p>
+<p>The original authors are Jochen Wiedmann and Jeff Zucker.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<pre>
+ Copyright (C) 2009-2010 by H.Merijn Brand &amp; Jens Rehsack
+ Copyright (C) 2004-2009 by Jeff Zucker
+ Copyright (C) 1998-2004 by Jochen Wiedmann</pre>
+<p>All rights reserved.</p>
+<p>You may freely distribute and/or modify this module under the terms of
+either the GNU General Public License (GPL) or the Artistic License, as
+specified in the Perl README file.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../lib/DBI.html">the DBI manpage</a>, <a href="../../../lib/DBD/File.html">the DBD::File manpage</a>, <a href="../../../DBD/AnyData.html">the DBD::AnyData manpage</a> and <a href="../../../DBD/Sys.html">the DBD::Sys manpage</a>.</p>
+
+</body>
+
+</html>

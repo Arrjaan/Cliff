@@ -1,0 +1,1 @@
+{{#ROW}}INSERT INTO `{{TABLE_NAME}}` ({{#COLUMN}}`{{COLUMN_NAME}}`{{#COLUMN_separator}},{{/COLUMN_separator}}{{/COLUMN}}) VALUES ({{#FIELD}}{{FIELD_VALUE:x-sql_quote}}{{#FIELD_separator}},{{/FIELD_separator}}{{/FIELD}});{{/ROW}}

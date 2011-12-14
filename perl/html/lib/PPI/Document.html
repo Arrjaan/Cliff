@@ -1,0 +1,312 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>PPI::Document - Object representation of a Perl document</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>PPI::Document - Object representation of a Perl document</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#inheritance">INHERITANCE</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#storable_support">Storable Support</a></li>
+	</ul>
+
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#new">new</a></li>
+		<li><a href="#set_cache__cache">set_cache $cache</a></li>
+		<li><a href="#get_cache">get_cache</a></li>
+		<li><a href="#readonly">readonly</a></li>
+		<li><a href="#tab_width____width__">tab_width [ $width ]</a></li>
+		<li><a href="#save">save</a></li>
+		<li><a href="#serialize">serialize</a></li>
+		<li><a href="#hex_id">hex_id</a></li>
+		<li><a href="#index_locations">index_locations</a></li>
+		<li><a href="#flush_locations">flush_locations</a></li>
+		<li><a href="#normalized">normalized</a></li>
+	</ul>
+
+	<li><a href="#complete">complete</a></li>
+	<ul>
+
+		<li><a href="#errstr">errstr</a></li>
+	</ul>
+
+	<li><a href="#to_do">TO DO</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>PPI::Document - Object representation of a Perl document</p>
+<p>
+</p>
+<hr />
+<h1><a name="inheritance">INHERITANCE</a></h1>
+<pre>
+  PPI::Document
+  isa PPI::Node
+      isa PPI::Element</pre>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">PPI</span><span class="operator">;</span>
+  
+  <span class="comment"># Load a document from a file</span>
+  <span class="keyword">my</span> <span class="variable">$Document</span> <span class="operator">=</span> <span class="variable">PPI::Document</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'My/Module.pm'</span><span class="operator">);</span>
+  
+  <span class="comment"># Strip out comments</span>
+  <span class="variable">$Document</span><span class="operator">-&gt;</span><span class="variable">prune</span><span class="operator">(</span><span class="string">'PPI::Token::Comment'</span><span class="operator">);</span>
+  
+  <span class="comment"># Find all the named subroutines</span>
+  <span class="keyword">my</span> <span class="variable">$sub_nodes</span> <span class="operator">=</span> <span class="variable">$Document</span><span class="operator">-&gt;</span><span class="variable">find</span><span class="operator">(</span> 
+        <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'PPI::Statement::Sub'</span><span class="operator">)</span> <span class="keyword">and</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">name</span> <span class="operator">}</span>
+  <span class="operator">);</span>
+  <span class="keyword">my</span> <span class="variable">@sub_names</span> <span class="operator">=</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">name</span> <span class="operator">}</span> <span class="variable">@$sub_nodes</span><span class="operator">;</span>
+  
+  <span class="comment"># Save the file</span>
+  <span class="variable">$Document</span><span class="operator">-&gt;</span><span class="variable">save</span><span class="operator">(</span><span class="string">'My/Module.pm.stripped'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>PPI::Document</code> class represents a single Perl &quot;document&quot;. A
+<code>PPI::Document</code> object acts as a root <a href="../../lib/PPI/Node.html">the PPI::Node manpage</a>, with some
+additional methods for loading and saving, and working with
+the line/column locations of Elements within a file.</p>
+<p>The exemption to its <a href="../../lib/PPI/Node.html">the PPI::Node manpage</a>-like behavior this is that a
+<code>PPI::Document</code> object can NEVER have a parent node, and is always
+the root node in a tree.</p>
+<p>
+</p>
+<h2><a name="storable_support">Storable Support</a></h2>
+<p><code>PPI::Document</code> implements the necessary <code>STORABLE_freeze</code> and
+<code>STORABLE_thaw</code> hooks to provide native support for <a href="../../lib/Storable.html">the Storable manpage</a>,
+if you have it installed.</p>
+<p>However if you want to clone clone a Document, you are highly recommended
+to use the internal <code>$Document-&gt;clone</code> method rather than Storable's
+<code>dclone</code> function (although <code>dclone</code> should still work).</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>Most of the things you are likely to want to do with a Document are
+probably going to involve the methods from <a href="../../lib/PPI/Node.html">the PPI::Node manpage</a> class, of which
+this is a subclass.</p>
+<p>The methods listed here are the remaining few methods that are truly
+Document-specific.</p>
+<p>
+</p>
+<h2><a name="new">new</a></h2>
+<pre>
+  <span class="comment"># Simple construction</span>
+  <span class="variable">$doc</span> <span class="operator">=</span> <span class="variable">PPI::Document</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$filename</span> <span class="operator">);</span>
+  <span class="variable">$doc</span> <span class="operator">=</span> <span class="variable">PPI::Document</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">$source</span>  <span class="operator">);</span>
+  
+  <span class="comment"># With the readonly attribute set</span>
+  <span class="variable">$doc</span> <span class="operator">=</span> <span class="variable">PPI::Document</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$filename</span><span class="operator">,</span>
+          <span class="string">readonly</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>The <code>new</code> constructor takes as argument a variety of different sources of
+Perl code, and creates a single cohesive Perl <code>PPI::Document</code>
+for it.</p>
+<p>If passed a file name as a normal string, it will attempt to load the
+document from the file.</p>
+<p>If passed a reference to a <code>SCALAR</code>, this is taken to be source code and
+parsed directly to create the document.</p>
+<p>If passed zero arguments, a &quot;blank&quot; document will be created that contains
+no content at all.</p>
+<p>In all cases, the document is considered to be &quot;anonymous&quot; and not tied back
+to where it was created from. Specifically, if you create a PPI::Document from
+a filename, the document will <strong>not</strong> remember where it was created from.</p>
+<p>The constructor also takes attribute flags.</p>
+<p>At this time, the only available attribute is the <code>readonly</code> flag.</p>
+<p>Setting <code>readonly</code> to true will allow various systems to provide
+additional optimisations and caching. Note that because <code>readonly</code> is an
+optimisation flag, it is off by default and you will need to explicitly
+enable it.</p>
+<p>Returns a <code>PPI::Document</code> object, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if parsing fails.</p>
+<p>
+</p>
+<h2><a name="set_cache__cache">set_cache $cache</a></h2>
+<p>As of <a href="../../lib/PPI.html">the PPI manpage</a> 1.100, <code>PPI::Document</code> supports parser caching.</p>
+<p>The default cache class <a href="../../lib/PPI/Cache.html">the PPI::Cache manpage</a> provides a <a href="../../lib/Storable.html">the Storable manpage</a>-based
+caching or the parsed document based on the MD5 hash of the document as
+a string.</p>
+<p>The static <code>set_cache</code> method is used to set the cache object for
+<code>PPI::Document</code> to use when loading documents. It takes as argument
+a <a href="../../lib/PPI/Cache.html">the PPI::Cache manpage</a> object (or something that <code>isa</code> the same).</p>
+<p>If passed <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, this method will stop using the current cache, if any.</p>
+<p>For more information on caching, see <a href="../../lib/PPI/Cache.html">the PPI::Cache manpage</a>.</p>
+<p>Returns true on success, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if not passed a valid param.</p>
+<p>
+</p>
+<h2><a name="get_cache">get_cache</a></h2>
+<p>If a document cache is currently set, the <code>get_cache</code> method will
+return it.</p>
+<p>Returns a <a href="../../lib/PPI/Cache.html">the PPI::Cache manpage</a> object, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if there is no cache
+currently set for <code>PPI::Document</code>.</p>
+<p>
+</p>
+<h2><a name="readonly">readonly</a></h2>
+<p>The <code>readonly</code> attribute indicates if the document is intended to be
+read-only, and will never be modified. This is an advisory flag, that
+writers of <a href="../../lib/PPI.html">the PPI manpage</a>-related systems may or may not use to enable
+optimisations and caches for your document.</p>
+<p>Returns true if the document is read-only or false if not.</p>
+<p>
+</p>
+<h2><a name="tab_width____width__">tab_width [ $width ]</a></h2>
+<p>In order to handle support for <code>location</code> correctly, <code>Documents</code>
+need to understand the concept of tabs and tab width. The <code>tab_width</code>
+method is used to get and set the size of the tab width.</p>
+<p>At the present time, PPI only supports &quot;naive&quot; (width 1) tabs, but we do
+plan on supporting arbitrary, default and auto-sensing tab widths later.</p>
+<p>Returns the tab width as an integer, or <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>s if you attempt to set the
+tab width.</p>
+<p>
+</p>
+<h2><a name="save">save</a></h2>
+<pre>
+  $document-&gt;save( $file )
+ 
+The C&lt;save&gt; method serializes the C&lt;PPI::Document&gt; object and saves the
+resulting Perl document to a file. Returns C&lt;undef&gt; on failure to open
+or write to the file.</pre>
+<p>
+</p>
+<h2><a name="serialize">serialize</a></h2>
+<p>Unlike the <code>content</code> method, which shows only the immediate content
+within an element, Document objects also have to be able to be written
+out to a file again.</p>
+<p>When doing this we need to take into account some additional factors.</p>
+<p>Primarily, we need to handle here-docs correctly, so that are written
+to the file in the expected place.</p>
+<p>The <code>serialize</code> method generates the actual file content for a given
+Document object. The resulting string can be written straight to a file.</p>
+<p>Returns the serialized document as a string.</p>
+<p>
+</p>
+<h2><a name="hex_id">hex_id</a></h2>
+<p>The <code>hex_id</code> method generates an unique identifier for the Perl document.</p>
+<p>This identifier is basically just the serialized document, with
+Unix-specific newlines, passed through MD5 to produce a hexadecimal string.</p>
+<p>This identifier is used by a variety of systems (such as <a href="../../lib/PPI/Cache.html">the PPI::Cache manpage</a>
+and <a href="../../Perl/Metrics.html">the Perl::Metrics manpage</a>) as a unique key against which to store or cache
+information about a document (or indeed, to cache the document itself).</p>
+<p>Returns a 32 character hexadecimal string.</p>
+<p>
+</p>
+<h2><a name="index_locations">index_locations</a></h2>
+<p>Within a document, all <a href="../../lib/PPI/Element.html">the PPI::Element manpage</a> objects can be considered to have a
+&quot;location&quot;, a line/column position within the document when considered as a
+file. This position is primarily useful for debugging type activities.</p>
+<p>The method for finding the position of a single Element is a bit laborious,
+and very slow if you need to do it a lot. So the <code>index_locations</code> method
+will index and save the locations of every Element within the Document in
+advance, making future calls to &lt;PPI::Element::location&gt; virtually free.</p>
+<p>Please note that this index should always be cleared using <code>flush_locations</code>
+once you are finished with the locations. If content is added to or removed
+from the file, these indexed locations will be <strong>wrong</strong>.</p>
+<p>
+</p>
+<h2><a name="flush_locations">flush_locations</a></h2>
+<p>When no longer needed, the <code>flush_locations</code> method clears all location data
+from the tokens.</p>
+<p>
+</p>
+<h2><a name="normalized">normalized</a></h2>
+<p>The <code>normalized</code> method is used to generate a &quot;Layer 1&quot;
+<a href="../../lib/PPI/Document/Normalized.html">the PPI::Document::Normalized manpage</a> object for the current Document.</p>
+<p>A &quot;normalized&quot; Perl Document is an arbitrary structure that removes any
+irrelevant parts of the document and refactors out variations in style,
+to attempt to approach something that is closer to the &quot;true meaning&quot;
+of the Document.</p>
+<p>See <a href="../../lib/PPI/Normal.html">the PPI::Normal manpage</a> for more information on document normalization and
+the tasks for which it is useful.</p>
+<p>Returns a <a href="../../lib/PPI/Document/Normalized.html">the PPI::Document::Normalized manpage</a> object, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p>
+</p>
+<hr />
+<h1><a name="complete">complete</a></h1>
+<p>The <code>complete</code> method is used to determine if a document is cleanly
+structured, all braces are closed, the final statement is
+fully terminated and all heredocs are fully entered.</p>
+<p>Returns true if the document is complete or false if not.</p>
+<p>
+</p>
+<h2><a name="errstr">errstr</a></h2>
+<p>For error that occur when loading and saving documents, you can use
+<code>errstr</code>, as either a static or object method, to access the error message.</p>
+<p>If a Document loads or saves without error, <code>errstr</code> will return false.</p>
+<p>
+</p>
+<hr />
+<h1><a name="to_do">TO DO</a></h1>
+<p>- May need to overload some methods to forcefully prevent Document
+objects becoming children of another Node.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>See the <a href="../../lib/PPI/support.html">support section</a> in the main module.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Adam Kennedy &lt;<a href="mailto:adamk@cpan.org">adamk@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/PPI.html">the PPI manpage</a>, <a href="http://ali.as/">http://ali.as/</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2001 - 2011 Adam Kennedy.</p>
+<p>This program is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.</p>
+<p>The full text of the license can be found in the
+LICENSE file included with this module.</p>
+
+</body>
+
+</html>

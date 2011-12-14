@@ -1,0 +1,438 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>re - Perl pragma to alter regular expression behaviour</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>re - Perl pragma to alter regular expression behaviour</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#_taint__mode">'taint' mode</a></li>
+		<li><a href="#_eval__mode">'eval' mode</a></li>
+		<li><a href="#__flags__mode">'/flags' mode</a></li>
+		<li><a href="#_debug__mode">'debug' mode</a></li>
+		<li><a href="#_debug__mode">'Debug' mode</a></li>
+		<li><a href="#exportable_functions">Exportable Functions</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>re - Perl pragma to alter regular expression behaviour</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'taint'</span><span class="operator">;</span>
+    <span class="operator">(</span><span class="variable">$x</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$^X</span> <span class="operator">=~</span> <span class="regex">/^(.*)$/s</span><span class="operator">);</span>     <span class="comment"># $x is tainted here</span>
+</pre>
+<pre>
+    <span class="variable">$pat</span> <span class="operator">=</span> <span class="string">'(?{ $foo = 1 })'</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'eval'</span><span class="operator">;</span>
+    <span class="regex">/foo${pat}bar/</span><span class="operator">;</span>                <span class="comment"># won't fail (when not under -T switch)</span>
+</pre>
+<pre>
+    <span class="operator">{</span>
+        <span class="keyword">no</span> <span class="variable">re</span> <span class="string">'taint'</span><span class="operator">;</span>             <span class="comment"># the default</span>
+        <span class="operator">(</span><span class="variable">$x</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$^X</span> <span class="operator">=~</span> <span class="regex">/^(.*)$/s</span><span class="operator">);</span> <span class="comment"># $x is not tainted here</span>
+</pre>
+<pre>
+        <span class="keyword">no</span> <span class="variable">re</span> <span class="string">'eval'</span><span class="operator">;</span>              <span class="comment"># the default</span>
+        <span class="regex">/foo${pat}bar/</span><span class="operator">;</span>            <span class="comment"># disallowed (with or without -T switch)</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'/ix'</span><span class="operator">;</span>
+    <span class="string">"FOO"</span> <span class="operator">=~</span> <span class="regex">/ foo /</span><span class="operator">;</span> <span class="comment"># /ix implied</span>
+    <span class="keyword">no</span> <span class="variable">re</span> <span class="string">'/x'</span><span class="operator">;</span>
+    <span class="string">"FOO"</span> <span class="operator">=~</span> <span class="regex">/foo/</span><span class="operator">;</span> <span class="comment"># just /i implied</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'debug'</span><span class="operator">;</span>                <span class="comment"># output debugging info during</span>
+    <span class="regex">/^(.*)$/s</span><span class="operator">;</span>                     <span class="comment">#     compile and run time</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'debugcolor'</span><span class="operator">;</span>           <span class="comment"># same as 'debug', but with colored output</span>
+    <span class="operator">...</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">qw(Debug All)</span><span class="operator">;</span>          <span class="comment"># Finer tuned debugging options.</span>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">qw(Debug More)</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">re</span> <span class="string">qw(Debug ALL)</span><span class="operator">;</span>           <span class="comment"># Turn of all re debugging in this scope</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">qw(is_regexp regexp_pattern)</span><span class="operator">;</span> <span class="comment"># import utility functions</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$pat</span><span class="operator">,</span><span class="variable">$mods</span><span class="operator">)=</span><span class="variable">regexp_pattern</span><span class="operator">(</span><span class="string">qr/foo/i</span><span class="operator">);</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">is_regexp</span><span class="operator">(</span><span class="variable">$obj</span><span class="operator">))</span> <span class="operator">{</span> 
+        <span class="keyword">print</span> <span class="string">"Got regexp: "</span><span class="operator">,</span>
+            <span class="keyword">scalar</span> <span class="variable">regexp_pattern</span><span class="operator">(</span><span class="variable">$obj</span><span class="operator">);</span> <span class="comment"># just as perl would stringify it</span>
+    <span class="operator">}</span>                                    <span class="comment"># but no hassle with blessed re's.</span>
+</pre>
+<p>(We use $^X in these examples because it's tainted by default.)</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>
+</p>
+<h2><a name="_taint__mode">'taint' mode</a></h2>
+<p>When <code>use re 'taint'</code> is in effect, and a tainted string is the target
+of a regexp, the regexp memories (or values returned by the m// operator
+in list context) are tainted.  This feature is useful when regexp operations
+on tainted data aren't meant to extract safe substrings, but to perform
+other transformations.</p>
+<p>
+</p>
+<h2><a name="_eval__mode">'eval' mode</a></h2>
+<p>When <code>use re 'eval'</code> is in effect, a regexp is allowed to contain
+<code>(?{ ... })</code> zero-width assertions and <code>(??{ ... })</code> postponed
+subexpressions, even if the regular expression contains
+variable interpolation.  That is normally disallowed, since it is a
+potential security risk.  Note that this pragma is ignored when the regular
+expression is obtained from tainted data, i.e.  evaluation is always
+disallowed with tainted regular expressions.  See <a href="../lib/pods/perlre.html#___code___">(?{ code }) in the perlre manpage</a> 
+and <a href="../lib/pods/perlre.html#___code___">(??{ code }) in the perlre manpage</a>.</p>
+<p>For the purpose of this pragma, interpolation of precompiled regular
+expressions (i.e., the result of <a href="../lib/pods/perlfunc.html#qr_"><code>qr//</code></a>) is <em>not</em> considered variable
+interpolation.  Thus:</p>
+<pre>
+    <span class="regex">/foo${pat}bar/</span>
+</pre>
+<p><em>is</em> allowed if $pat is a precompiled regular expression, even
+if $pat contains <code>(?{ ... })</code> assertions or <code>(??{ ... })</code> subexpressions.</p>
+<p>
+</p>
+<h2><a name="__flags__mode">'/flags' mode</a></h2>
+<p>When <code>use re '/flags'</code> is specified, the given flags are automatically
+added to every regular expression till the end of the lexical scope.</p>
+<p><code>no re '/flags'</code> will turn off the effect of <code>use re '/flags'</code> for the
+given flags.</p>
+<p>For example, if you want all your regular expressions to have /msx on by
+default, simply put</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'/msx'</span><span class="operator">;</span>
+</pre>
+<p>at the top of your code.</p>
+<p>The character set /adul flags cancel each other out. So, in this example,</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">"/u"</span><span class="operator">;</span>
+    <span class="string">"ss"</span> <span class="operator">=~</span> <span class="regex">/\xdf/</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">"/d"</span><span class="operator">;</span>
+    <span class="string">"ss"</span> <span class="operator">=~</span> <span class="regex">/\xdf/</span><span class="operator">;</span>
+</pre>
+<p>the second <code>use re</code> does an implicit <code>no re '/u'</code>.</p>
+<p>Turning on one of the character set flags with <code>use re</code> takes precedence over the
+<code>locale</code> pragma and the 'unicode_strings' <code>feature</code>, for regular
+expressions. Turning off one of these flags when it is active reverts to
+the behaviour specified by whatever other pragmata are in scope. For
+example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">"unicode_strings"</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">re</span> <span class="string">"/u"</span><span class="operator">;</span> <span class="comment"># does nothing</span>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">"/l"</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">re</span> <span class="string">"/l"</span><span class="operator">;</span> <span class="comment"># reverts to unicode_strings behaviour</span>
+</pre>
+<p>
+</p>
+<h2><a name="_debug__mode">'debug' mode</a></h2>
+<p>When <code>use re 'debug'</code> is in effect, perl emits debugging messages when
+compiling and using regular expressions.  The output is the same as that
+obtained by running a <code>-DDEBUGGING</code>-enabled perl interpreter with the
+<strong>-Dr</strong> switch. It may be quite voluminous depending on the complexity
+of the match.  Using <code>debugcolor</code> instead of <code>debug</code> enables a
+form of output that can be used to get a colorful display on terminals
+that understand termcap color sequences.  Set <code>$ENV{PERL_RE_TC}</code> to a
+comma-separated list of <code>termcap</code> properties to use for highlighting
+strings on/off, pre-point part on/off.
+See <a href="../lib/pods/perldebug.html#debugging_regular_expressions">Debugging Regular Expressions in the perldebug manpage</a> for additional info.</p>
+<p>As of 5.9.5 the directive <code>use re 'debug'</code> and its equivalents are
+lexically scoped, as the other directives are.  However they have both 
+compile-time and run-time effects.</p>
+<p>See <a href="../lib/pods/perlmodlib.html#pragmatic_modules">Pragmatic Modules in the perlmodlib manpage</a>.</p>
+<p>
+</p>
+<h2><a name="_debug__mode">'Debug' mode</a></h2>
+<p>Similarly <code>use re 'Debug'</code> produces debugging output, the difference
+being that it allows the fine tuning of what debugging output will be
+emitted. Options are divided into three groups, those related to
+compilation, those related to execution and those related to special
+purposes. The options are as follows:</p>
+<dl>
+<dt><strong><a name="compile_related_options" class="item">Compile related options</a></strong></dt>
+
+<dl>
+<dt><strong><a name="compile" class="item">COMPILE</a></strong></dt>
+
+<dd>
+<p>Turns on all compile related debug options.</p>
+</dd>
+<dt><strong><a name="parse" class="item">PARSE</a></strong></dt>
+
+<dd>
+<p>Turns on debug output related to the process of parsing the pattern.</p>
+</dd>
+<dt><strong><a name="optimise" class="item">OPTIMISE</a></strong></dt>
+
+<dd>
+<p>Enables output related to the optimisation phase of compilation.</p>
+</dd>
+<dt><strong><a name="triec" class="item">TRIEC</a></strong></dt>
+
+<dd>
+<p>Detailed info about trie compilation.</p>
+</dd>
+<dt><strong><a name="dump" class="item">DUMP</a></strong></dt>
+
+<dd>
+<p>Dump the final program out after it is compiled and optimised.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="execute_related_options" class="item">Execute related options</a></strong></dt>
+
+<dl>
+<dt><strong><a name="execute" class="item">EXECUTE</a></strong></dt>
+
+<dd>
+<p>Turns on all execute related debug options.</p>
+</dd>
+<dt><strong><a name="match" class="item">MATCH</a></strong></dt>
+
+<dd>
+<p>Turns on debugging of the main matching loop.</p>
+</dd>
+<dt><strong><a name="triee" class="item">TRIEE</a></strong></dt>
+
+<dd>
+<p>Extra debugging of how tries execute.</p>
+</dd>
+<dt><strong><a name="intuit" class="item">INTUIT</a></strong></dt>
+
+<dd>
+<p>Enable debugging of start point optimisations.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="extra_debugging_options" class="item">Extra debugging options</a></strong></dt>
+
+<dl>
+<dt><strong><a name="extra" class="item">EXTRA</a></strong></dt>
+
+<dd>
+<p>Turns on all &quot;extra&quot; debugging options.</p>
+</dd>
+<dt><strong><a name="buffers" class="item">BUFFERS</a></strong></dt>
+
+<dd>
+<p>Enable debugging the capture group storage during match. Warning,
+this can potentially produce extremely large output.</p>
+</dd>
+<dt><strong><a name="triem" class="item">TRIEM</a></strong></dt>
+
+<dd>
+<p>Enable enhanced TRIE debugging. Enhances both TRIEE
+and TRIEC.</p>
+</dd>
+<dt><strong><a name="state" class="item">STATE</a></strong></dt>
+
+<dd>
+<p>Enable debugging of states in the engine.</p>
+</dd>
+<dt><strong><a name="stack" class="item">STACK</a></strong></dt>
+
+<dd>
+<p>Enable debugging of the recursion stack in the engine. Enabling
+or disabling this option automatically does the same for debugging
+states as well. This output from this can be quite large.</p>
+</dd>
+<dt><strong><a name="optimisem" class="item">OPTIMISEM</a></strong></dt>
+
+<dd>
+<p>Enable enhanced optimisation debugging and start point optimisations.
+Probably not useful except when debugging the regexp engine itself.</p>
+</dd>
+<dt><strong><a name="offsets" class="item">OFFSETS</a></strong></dt>
+
+<dd>
+<p>Dump offset information. This can be used to see how regops correlate
+to the pattern. Output format is</p>
+<pre>
+   NODENUM:POSITION[LENGTH]</pre>
+<p>Where 1 is the position of the first char in the string. Note that position
+can be 0, or larger than the actual length of the pattern, likewise length
+can be zero.</p>
+</dd>
+<dt><strong><a name="offsetsdbg" class="item">OFFSETSDBG</a></strong></dt>
+
+<dd>
+<p>Enable debugging of offsets information. This emits copious
+amounts of trace information and doesn't mesh well with other
+debug options.</p>
+<p>Almost definitely only useful to people hacking
+on the offsets part of the debug engine.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="other_useful_flags" class="item">Other useful flags</a></strong></dt>
+
+<dd>
+<p>These are useful shortcuts to save on the typing.</p>
+<dl>
+<dt><strong><a name="all4" class="item">ALL</a></strong></dt>
+
+<dd>
+<p>Enable all options at once except OFFSETS, OFFSETSDBG and BUFFERS</p>
+</dd>
+<dt><strong><a name="all" class="item">All</a></strong></dt>
+
+<dd>
+<p>Enable DUMP and all execute options. Equivalent to:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'debug'</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="more" class="item">MORE</a></strong></dt>
+
+<dt><strong><a name="more" class="item">More</a></strong></dt>
+
+<dd>
+<p>Enable TRIEM and all execute compile and execute options.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>As of 5.9.5 the directive <code>use re 'debug'</code> and its equivalents are
+lexically scoped, as the other directives are.  However they have both
+compile-time and run-time effects.</p>
+<p>
+</p>
+<h2><a name="exportable_functions">Exportable Functions</a></h2>
+<p>As of perl 5.9.5 're' debug contains a number of utility functions that
+may be optionally exported into the caller's namespace. They are listed
+below.</p>
+<dl>
+<dt><strong><a name="is_regexp" class="item"><code>is_regexp($ref)</code></a></strong></dt>
+
+<dd>
+<p>Returns true if the argument is a compiled regular expression as returned
+by <a href="../lib/pods/perlfunc.html#qr_"><code>qr//</code></a>, false if it is not.</p>
+<p>This function will not be confused by overloading or blessing. In
+internals terms, this extracts the regexp pointer out of the
+PERL_MAGIC_qr structure so it cannot be fooled.</p>
+</dd>
+<dt><strong><a name="regexp_pattern" class="item"><code>regexp_pattern($ref)</code></a></strong></dt>
+
+<dd>
+<p>If the argument is a compiled regular expression as returned by <a href="../lib/pods/perlfunc.html#qr_"><code>qr//</code></a>,
+then this function returns the pattern.</p>
+<p>In list context it returns a two element list, the first element
+containing the pattern and the second containing the modifiers used when
+the pattern was compiled.</p>
+<pre>
+  <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$pat</span><span class="operator">,</span> <span class="variable">$mods</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">regexp_pattern</span><span class="operator">(</span><span class="variable">$ref</span><span class="operator">);</span>
+</pre>
+<p>In scalar context it returns the same as perl would when stringifying a raw
+<a href="../lib/pods/perlfunc.html#qr_"><code>qr//</code></a> with the same pattern inside.  If the argument is not a compiled
+reference then this routine returns false but defined in scalar context,
+and the empty list in list context. Thus the following</p>
+<pre>
+    if (regexp_pattern($ref) eq '(?^i:foo)')</pre>
+<p>will be warning free regardless of what $ref actually is.</p>
+<p>Like <a href="#is_regexp"><code>is_regexp</code></a> this function will not be confused by overloading
+or blessing of the object.</p>
+</dd>
+<dt><strong><a name="regmust" class="item"><code>regmust($ref)</code></a></strong></dt>
+
+<dd>
+<p>If the argument is a compiled regular expression as returned by <a href="../lib/pods/perlfunc.html#qr_"><code>qr//</code></a>,
+then this function returns what the optimiser considers to be the longest
+anchored fixed string and longest floating fixed string in the pattern.</p>
+<p>A <em>fixed string</em> is defined as being a substring that must appear for the
+pattern to match. An <em>anchored fixed string</em> is a fixed string that must
+appear at a particular offset from the beginning of the match. A <em>floating
+fixed string</em> is defined as a fixed string that can appear at any point in
+a range of positions relative to the start of the match. For example,</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$qr</span> <span class="operator">=</span> <span class="string">qr/here .* there/x</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$anchored</span><span class="operator">,</span> <span class="variable">$floating</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">regmust</span><span class="operator">(</span><span class="variable">$qr</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"anchored:'</span><span class="variable">$anchored</span><span class="string">'\nfloating:'</span><span class="variable">$floating</span><span class="string">'\n"</span><span class="operator">;</span>
+</pre>
+<p>results in</p>
+<pre>
+    anchored:'here'
+    floating:'there'</pre>
+<p>Because the <code>here</code> is before the <code>.*</code> in the pattern, its position
+can be determined exactly. That's not true, however, for the <code>there</code>;
+it could appear at any point after where the anchored string appeared.
+Perl uses both for its optimisations, prefering the longer, or, if they are
+equal, the floating.</p>
+<p><strong>NOTE:</strong> This may not necessarily be the definitive longest anchored and
+floating string. This will be what the optimiser of the Perl that you
+are using thinks is the longest. If you believe that the result is wrong
+please report it via the <em>perlbug</em> utility.</p>
+</dd>
+<dt><strong><a name="regname" class="item"><code>regname($name,$all)</code></a></strong></dt>
+
+<dd>
+<p>Returns the contents of a named buffer of the last successful match. If
+$all is true, then returns an array ref containing one entry per buffer,
+otherwise returns the first defined buffer.</p>
+</dd>
+<dt><strong><a name="regnames" class="item"><code>regnames($all)</code></a></strong></dt>
+
+<dd>
+<p>Returns a list of all of the named buffers defined in the last successful
+match. If $all is true, then it returns all names defined, if not it returns
+only names which were involved in the match.</p>
+</dd>
+<dt><strong><a name="regnames_count" class="item"><code>regnames_count()</code></a></strong></dt>
+
+<dd>
+<p>Returns the number of distinct names defined in the pattern used
+for the last successful match.</p>
+<p><strong>Note:</strong> this result is always the actual number of distinct
+named buffers defined, it may not actually match that which is
+returned by <a href="#regnames"><code>regnames()</code></a> and related routines when those routines
+have not been called with the $all parameter set.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/pods/perlmodlib.html#pragmatic_modules">Pragmatic Modules in the perlmodlib manpage</a>.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,349 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Basics::Recipe4 - Subtypes, and modeling a simple B&lt;Company&gt; class hierarchy</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Basics::Recipe4 - Subtypes, and modeling a simple B&lt;Company&gt; class hierarchy</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#footnotes">FOOTNOTES</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Basics::Recipe4 - Subtypes, and modeling a simple <strong>Company</strong> class hierarchy</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Address</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Locale::US</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Regexp::Common</span> <span class="string">'zip'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$STATES</span> <span class="operator">=</span> <span class="variable">Locale::US</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">subtype</span> <span class="string">'USState'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">Str</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span>
+             <span class="operator">(</span>    <span class="keyword">exists</span> <span class="variable">$STATES</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">code2state</span><span class="operator">}{</span> <span class="keyword">uc</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span>
+               <span class="operator">||</span> <span class="keyword">exists</span> <span class="variable">$STATES</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">state2code</span><span class="operator">}{</span> <span class="keyword">uc</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="operator">);</span>
+         <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'USZipCode'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">Value</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span>
+             <span class="regex">/^</span><span class="variable">$RE</span><span class="regex">{zip}{US}{-extended =&gt; 'allow'}$/</span><span class="operator">;</span>
+         <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'street'</span>   <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'city'</span>     <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'state'</span>    <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'USState'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'zip_code'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'USZipCode'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Company</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span> <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'address'</span>   <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Address'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'employees'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'ArrayRef[Employee]'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">[]</span> <span class="operator">},</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> BUILD </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$params</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$employee</span> <span class="operator">(</span> <span class="variable">@</span><span class="operator">{</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">employees</span> <span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$employee</span><span class="operator">-&gt;</span><span class="variable">employer</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">);</span>
+      <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="variable">after</span> <span class="string">'employees'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$employees</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="keyword">unless</span> <span class="variable">$employees</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$employee</span> <span class="operator">(</span> <span class="variable">@$employees</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$employee</span><span class="operator">-&gt;</span><span class="variable">employer</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">);</span>
+      <span class="operator">}</span>
+  <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'first_name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span> <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'last_name'</span>  <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span> <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'middle_initial'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_middle_initial'</span>
+  <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'address'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Address'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> full_name </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">first_name</span>
+          <span class="operator">.</span> <span class="operator">(</span>
+          <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">has_middle_initial</span>
+          <span class="operator">?</span> <span class="string">' '</span> <span class="operator">.</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">middle_initial</span> <span class="operator">.</span> <span class="string">'. '</span>
+          <span class="operator">:</span> <span class="string">' '</span>
+          <span class="operator">)</span> <span class="operator">.</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">last_name</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Employee</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">extends</span> <span class="string">'Person'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'title'</span>    <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>     <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'employer'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Company'</span><span class="operator">,</span> <span class="string">weak_ref</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">override</span> <span class="string">'full_name'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">super</span><span class="operator">()</span> <span class="operator">.</span> <span class="string">', '</span> <span class="operator">.</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">title</span><span class="operator">;</span>
+  <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This recipe introduces the <code>subtype</code> sugar function from
+<a href="../../../../lib/Moose/Util/TypeConstraints.html">the Moose::Util::TypeConstraints manpage</a>. The <code>subtype</code> function lets you
+declaratively create type constraints without building an entire
+class.</p>
+<p>In the recipe we also make use of <a href="../../../../Locale/US.html">the Locale::US manpage</a> and <a href="../../../../Regexp/Common.html">the Regexp::Common manpage</a>
+to build constraints, showing how constraints can make use of existing
+CPAN tools for data validation.</p>
+<p>Finally, we introduce the <code>required</code> attribute option.</p>
+<p>In the <code>Address</code> class we define two subtypes. The first uses the
+<a href="../../../../Locale/US.html">the Locale::US manpage</a> module to check the validity of a state. It accepts
+either a state abbreviation of full name.</p>
+<p>A state will be passed in as a string, so we make our <code>USState</code> type
+a subtype of Moose's builtin <code>Str</code> type. This is done using the <code>as</code>
+sugar. The actual constraint is defined using <code>where</code>. This function
+accepts a single subroutine reference. That subroutine will be called
+with the value to be checked in <a href="../../../../lib/pods/perlvar.html#__"><code>$_</code></a> (1). It is expected to return a
+true or false value indicating whether the value is valid for the
+type.</p>
+<p>We can now use the <code>USState</code> type just like Moose's builtin types:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'state'</span>    <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'USState'</span> <span class="operator">);</span>
+</pre>
+<p>When the <a href="../../../../lib/pods/perlfunc.html#state"><code>state</code></a> attribute is set, the value is checked against the
+<code>USState</code> constraint. If the value is not valid, an exception will be
+thrown.</p>
+<p>The next <code>subtype</code>, <code>USZipCode</code>, uses
+<a href="../../../../Regexp/Common.html">the Regexp::Common manpage</a>. <a href="../../../../Regexp/Common.html">the Regexp::Common manpage</a> includes a regex for validating
+US zip codes. We use this constraint for the <code>zip_code</code> attribute.</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'USZipCode'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">Value</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span>
+             <span class="regex">/^</span><span class="variable">$RE</span><span class="regex">{zip}{US}{-extended =&gt; 'allow'}$/</span><span class="operator">;</span>
+         <span class="operator">};</span>
+</pre>
+<p>Using a subtype instead of requiring a class for each type greatly
+simplifies the code. We don't really need a class for these types, as
+they're just strings, but we do want to ensure that they're valid.</p>
+<p>The type constraints we created are reusable. Type constraints are
+stored by name in a global registry, which means that we can refer to
+them in other classes. Because the registry is global, we do recommend
+that you use some sort of namespacing in real applications,
+like <code>MyApp::Type::USState</code> (just as you would do with class names).</p>
+<p>These two subtypes allow us to define a simple <code>Address</code> class.</p>
+<p>Then we define our <code>Company</code> class, which has an address. As we saw
+in earlier recipes, Moose automatically creates a type constraint for
+each our classes, so we can use that for the <code>Company</code> class's
+<code>address</code> attribute:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'address'</span>   <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Address'</span> <span class="operator">);</span>
+</pre>
+<p>A company also needs a name:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span> <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<p>This introduces a new attribute option, <code>required</code>. If an attribute
+is required, then it must be passed to the class's constructor, or an
+exception will be thrown. It's important to understand that a
+<code>required</code> attribute can still be false or <a href="../../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, if its type
+constraint allows that.</p>
+<p>The next attribute, <code>employees</code>, uses a <em>parameterized</em> type
+constraint:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'employees'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'ArrayRef[Employee]'</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">[]</span> <span class="operator">},</span>
+  <span class="operator">);</span>
+</pre>
+<p>This constraint says that <code>employees</code> must be an array reference
+where each element of the array is an <code>Employee</code> object. It's worth
+noting that an <em>empty</em> array reference also satisfies this
+constraint, such as the value given as the default here.</p>
+<p>Parameterizable type constraints (or &quot;container types&quot;), such as
+<code>ArrayRef[`a]</code>, can be made more specific with a type parameter. In
+fact, we can arbitrarily nest these types, producing something like
+<code>HashRef[ArrayRef[Int]]</code>. However, you can also just use the type by
+itself, so <code>ArrayRef</code> is legal. (2)</p>
+<p>If you jump down to the definition of the <code>Employee</code> class, you will
+see that it has an <code>employer</code> attribute.</p>
+<p>When we set the <code>employees</code> for a <code>Company</code> we want to make sure
+that each of these employee objects refers back to the right
+<code>Company</code> in its <code>employer</code> attribute.</p>
+<p>To do that, we need to hook into object construction. Moose lets us do
+this by writing a <code>BUILD</code> method in our class. When your class
+defines a <code>BUILD</code> method, it will be called by the constructor
+immediately after object construction, but before the object is returned
+to the caller. Note that all <code>BUILD</code> methods in your class hierarchy
+will be called automatically; there is no need to (and you should not)
+call the superclass <code>BUILD</code> method.</p>
+<p>The <code>Company</code> class uses the <code>BUILD</code> method to ensure that each
+employee of a company has the proper <code>Company</code> object in its
+<code>employer</code> attribute:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> BUILD </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$params</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$employee</span> <span class="operator">(</span> <span class="variable">@</span><span class="operator">{</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">employees</span> <span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$employee</span><span class="operator">-&gt;</span><span class="variable">employer</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">);</span>
+      <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>The <code>BUILD</code> method is executed after type constraints are checked, so it is
+safe to assume that if <code>$self-&gt;employees</code> has a value, it will be an
+array reference, and that the elements of that array reference will be
+<code>Employee</code> objects.</p>
+<p>We also want to make sure that whenever the <code>employees</code> attribute for
+a <code>Company</code> is changed, we also update the <code>employer</code> for each
+employee.</p>
+<p>To do this we can use an <code>after</code> modifier:</p>
+<pre>
+  <span class="variable">after</span> <span class="string">'employees'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$employees</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="keyword">unless</span> <span class="variable">$employees</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$employee</span> <span class="operator">(</span> <span class="variable">@$employees</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$employee</span><span class="operator">-&gt;</span><span class="variable">employer</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">);</span>
+      <span class="operator">}</span>
+  <span class="operator">};</span>
+</pre>
+<p>Again, as with the <code>BUILD</code> method, we know that the type constraint check has
+already happened, so we know that if <code>$employees</code> is defined it will contain
+an array reference of <code>Employee</code> objects.</p>
+<p>Note that <code>employees</code> is a read/write accessor, so we must return early if
+it's called as a reader.</p>
+<p>The <strong>Person</strong> class does not really demonstrate anything new. It has several
+<code>required</code> attributes. It also has a <code>predicate</code> method, which we
+first used in <a href="../../../../lib/Moose/Cookbook/Basics/Recipe3.html">recipe 3</a>.</p>
+<p>The only new feature in the <code>Employee</code> class is the <code>override</code>
+method modifier:</p>
+<pre>
+  <span class="variable">override</span> <span class="string">'full_name'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">super</span><span class="operator">()</span> <span class="operator">.</span> <span class="string">', '</span> <span class="operator">.</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">title</span><span class="operator">;</span>
+  <span class="operator">};</span>
+</pre>
+<p>This is just a sugary alternative to Perl's built in <code>SUPER::</code>
+feature. However, there is one difference. You cannot pass any
+arguments to <code>super</code>. Instead, Moose simply passes the same
+parameters that were passed to the method.</p>
+<p>A more detailed example of usage can be found in
+<em class="file">t/recipes/moose_cookbook_basics_recipe4.t</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>This recipe was intentionally longer and more complex. It illustrates
+how Moose classes can be used together with type constraints, as well
+as the density of information that you can get out of a small amount
+of typing when using Moose.</p>
+<p>This recipe also introduced the <code>subtype</code> function, the <code>required</code>
+attribute, and the <code>override</code> method modifier.</p>
+<p>We will revisit type constraints in future recipes, and cover type
+coercion as well.</p>
+<p>
+</p>
+<hr />
+<h1><a name="footnotes">FOOTNOTES</a></h1>
+<dl>
+<dt><strong><a name="19" class="item">(1)</a></strong></dt>
+
+<dd>
+<p>The value being checked is also passed as the first argument to
+the <code>where</code> block, so it can be accessed as <code>$_[0]</code>.</p>
+</dd>
+<dt><strong><a name="27" class="item">(2)</a></strong></dt>
+
+<dd>
+<p>Note that <code>ArrayRef[]</code> will not work. Moose will not parse this as a
+container type, and instead you will have a new type named
+&quot;ArrayRef[]&quot;, which doesn't make any sense.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

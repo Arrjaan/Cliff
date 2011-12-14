@@ -1,0 +1,469 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Win32::API - Perl Win32 API Import Facility</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Win32::API - Perl Win32 API Import Facility</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#abstract">ABSTRACT</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#importing_a_function">IMPORTING A FUNCTION</a></li>
+		<li><a href="#importing_a_function_by_prototype">IMPORTING A FUNCTION BY PROTOTYPE</a></li>
+		<li><a href="#importing_a_function_with_a_parameter_list">IMPORTING A FUNCTION WITH A PARAMETER LIST</a></li>
+		<li><a href="#calling_an_imported_function">CALLING AN IMPORTED FUNCTION</a></li>
+		<li><a href="#using_structures">USING STRUCTURES</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#maintainer">MAINTAINER</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Win32::API - Perl Win32 API Import Facility</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="comment">#### Method 1: with prototype</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Win32::API</span><span class="operator">;</span>
+  <span class="variable">$function</span> <span class="operator">=</span> <span class="variable">Win32::API</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+      <span class="string">'mydll, '</span><span class="keyword">int</span> <span class="variable">sum_integers</span><span class="operator">(</span><span class="keyword">int</span> <span class="variable">a</span><span class="operator">,</span> <span class="keyword">int</span> <span class="variable">b</span><span class="operator">)</span><span class="string">',
+  );
+  $return = $function-&gt;Call(3, 2);
+  
+  #### Method 2: with parameter list
+  
+  use Win32::API;
+  $function = Win32::API-&gt;new(
+      '</span><span class="variable">mydll</span><span class="string">', '</span><span class="variable">sum_integers</span><span class="string">', '</span><span class="variable">II</span><span class="string">', '</span><span class="variable">I</span><span class="string">',
+  );
+  $return = $function-&gt;Call(3, 2);
+  
+  #### Method 3: with Import
+   
+  use Win32::API;
+  Win32::API-&gt;Import(
+      '</span><span class="variable">mydll</span><span class="string">', '</span><span class="keyword">int</span> <span class="variable">sum_integers</span><span class="operator">(</span><span class="keyword">int</span> <span class="variable">a</span><span class="operator">,</span> <span class="keyword">int</span> <span class="variable">b</span><span class="operator">)</span><span class="string">',
+  );  
+  $return = sum_integers(3, 2);
+  </span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="abstract">ABSTRACT</a></h1>
+<p>With this module you can import and call arbitrary functions
+from Win32's Dynamic Link Libraries (DLL), without having
+to write an XS extension. Note, however, that this module 
+can't do everything. In fact, parameters input and output is
+limited to simpler cases.</p>
+<p>A regular <strong>XS</strong> extension is always safer and faster anyway.</p>
+<p>The current version of Win32::API is always available at your
+nearest CPAN mirror:</p>
+<pre>
+  <a href="http://search.cpan.org/dist/Win32-API/">http://search.cpan.org/dist/Win32-API/</a></pre>
+<p>A short example of how you can use this module (it just gets the PID of 
+the current process, eg. same as Perl's internal <a href="../../lib/pods/perlvar.html#__"><code>$$</code></a>):</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::API</span><span class="operator">;</span>
+    <span class="variable">Win32::API</span><span class="operator">-&gt;</span><span class="variable">Import</span><span class="operator">(</span><span class="string">"kernel32"</span><span class="operator">,</span> <span class="string">"int GetCurrentProcessId()"</span><span class="operator">);</span>
+    <span class="variable">$PID</span> <span class="operator">=</span> <span class="variable">GetCurrentProcessId</span><span class="operator">();</span>
+</pre>
+<p>The possibilities are nearly infinite (but not all are good :-).
+Enjoy it.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>To use this module put the following line at the beginning of your script:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::API</span><span class="operator">;</span>
+</pre>
+<p>You can now use the <code>new()</code> function of the Win32::API module to create a
+new Win32::API object (see <a href="#importing_a_function">IMPORTING A FUNCTION</a>) and then invoke the 
+<code>Call()</code> method on this object to perform a call to the imported API
+(see <a href="#calling_an_imported_function">CALLING AN IMPORTED FUNCTION</a>).</p>
+<p>Starting from version 0.40, you can also avoid creating a Win32::API object
+and instead automatically define a Perl sub with the same name of the API
+function you're importing. The details of the API definitions are the same,
+just the call is different:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$GetCurrentProcessId</span> <span class="operator">=</span> <span class="variable">Win32::API</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+        <span class="string">"kernel32"</span><span class="operator">,</span> <span class="string">"int GetCurrentProcessId()"</span>
+    <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$PID</span> <span class="operator">=</span> <span class="variable">$GetCurrentProcessId</span><span class="operator">-&gt;</span><span class="variable">Call</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment">#### vs.</span>
+</pre>
+<pre>
+    <span class="variable">Win32::API</span><span class="operator">-&gt;</span><span class="variable">Import</span><span class="operator">(</span><span class="string">"kernel32"</span><span class="operator">,</span> <span class="string">"int GetCurrentProcessId()"</span><span class="operator">);</span>
+    <span class="variable">$PID</span> <span class="operator">=</span> <span class="variable">GetCurrentProcessId</span><span class="operator">();</span>
+</pre>
+<p>Note that <code>Import</code> returns 1 on success and 0 on failure (in which case you
+can check the content of <a href="../../lib/pods/perlvar.html#__e"><code>$^E</code></a>).</p>
+<p>
+</p>
+<h2><a name="importing_a_function">IMPORTING A FUNCTION</a></h2>
+<p>You can import a function from a 32 bit Dynamic Link Library (DLL) file 
+with the <code>new()</code> function. This will create a Perl object that contains the
+reference to that function, which you can later <code>Call()</code>.</p>
+<p>What you need to know is the prototype of the function you're going to import
+(eg. the definition of the function expressed in C syntax).</p>
+<p>Starting from version 0.40, there are 2 different approaches for this step:
+(the preferred) one uses the prototype directly, while the other (now deprecated)
+one uses Win32::API's internal representation for parameters.</p>
+<p>
+</p>
+<h2><a name="importing_a_function_by_prototype">IMPORTING A FUNCTION BY PROTOTYPE</a></h2>
+<p>You need to pass 2 parameters:</p>
+<ol>
+<li>
+<p>The name of the library from which you want to import the function.</p>
+</li>
+<li>
+<p>The C prototype of the function.</p>
+</li>
+</ol>
+<p>When calling a function imported with a prototype, if you pass an
+undefined Perl scalar to one of its arguments, it will be
+automatically turned into a C <code>NULL</code> value.</p>
+<p>See <a href="../../lib/Win32/API/Type.html">the Win32::API::Type manpage</a> for a list of the known parameter types and
+<a href="../../lib/Win32/API/Struct.html">the Win32::API::Struct manpage</a> for information on how to define a structure.</p>
+<p>
+</p>
+<h2><a name="importing_a_function_with_a_parameter_list">IMPORTING A FUNCTION WITH A PARAMETER LIST</a></h2>
+<p>You need to pass 4 parameters:</p>
+<ol>
+<li><strong><a name="the_name_of_the_library_from_which_you_want_to_import_the_function" class="item">The name of the library from which you want to import the function.</a></strong>
+
+</li>
+<li><strong><a name="function" class="item">The name of the function (as exported by the library).</a></strong>
+
+</li>
+<li><strong><a name="the_number_and_types_of_the_arguments_the_function_expects_as_input" class="item">The number and types of the arguments the function expects as input.</a></strong>
+
+</li>
+<li><strong><a name="the_type_of_the_value_returned_by_the_function" class="item">The type of the value returned by the function.</a></strong>
+
+</li>
+<li><strong><a name="and_optionally_you_can_specify_the_calling_convention_this_defaults_to_stdcall_alternatively_you_can_specify_cdecl" class="item">And optionally you can specify the calling convention, this defaults to
+'__stdcall', alternatively you can specify '_cdecl'.</a></strong>
+
+</li>
+</ol>
+<p>To better explain their meaning, let's suppose that we
+want to import and call the Win32 API <code>GetTempPath()</code>.
+This function is defined in C as:</p>
+<pre>
+    <span class="variable">DWORD</span> <span class="variable">WINAPI</span> <span class="variable">GetTempPathA</span><span class="operator">(</span> <span class="variable">DWORD</span> <span class="variable">nBufferLength</span><span class="operator">,</span> <span class="variable">LPSTR</span> <span class="variable">lpBuffer</span> <span class="operator">);</span>
+</pre>
+<p>This is documented in the <strong>Win32 SDK Reference</strong>; you can look
+for it on the Microsoft's WWW site, or in your C compiler's 
+documentation, if you own one.</p>
+<ol>
+<li>
+<p>The first parameter is the name of the library file that 
+exports this function; our function resides in the <em class="file">KERNEL32.DLL</em>
+system file.</p>
+<p>When specifying this name as parameter, the <em class="file">.DLL</em> extension
+is implicit, and if no path is given, the file is searched through
+a couple of directories, including:</p>
+<ol>
+<li><strong><a name="the_directory_from_which_the_application_loaded" class="item">The directory from which the application loaded.</a></strong>
+
+</li>
+<li><strong><a name="the_current_directory" class="item">The current directory.</a></strong>
+
+</li>
+<li><strong><a name="directory" class="item">The Windows system directory (eg. c:\windows\system or system32).</a></strong>
+
+</li>
+<li><strong>The Windows directory (eg. c:\windows).</strong>
+
+</li>
+<li><strong><a name="the_directories_that_are_listed_in_the_path_environment_variable" class="item">The directories that are listed in the PATH environment variable.</a></strong>
+
+</li>
+</ol>
+<p>So, you don't have to write <em class="file">C:\windows\system\kernel32.dll</em>; 
+only <em class="file">kernel32</em> is enough:</p>
+<pre>
+    $GetTempPath = new Win32::API('kernel32', ...</pre>
+</li>
+<li>
+<p>Now for the second parameter: the name of the function.
+It must be written exactly as it is exported 
+by the library (case is significant here). 
+If you are using Windows 95 or NT 4.0, you can use the <strong>Quick View</strong> 
+command on the DLL file to see the function it exports. 
+Remember that you can only import functions from 32 bit DLLs:
+in Quick View, the file's characteristics should report
+somewhere &quot;32 bit word machine&quot;; as a rule of thumb,
+when you see that all the exported functions are in upper case,
+the DLL is a 16 bit one and you can't use it. 
+If their capitalization looks correct, then it's probably a 32 bit
+DLL.</p>
+<p>Also note that many Win32 APIs are exported twice, with the addition of
+a final <strong>A</strong> or <strong>W</strong> to their name, for - respectively - the ASCII 
+and the Unicode version.
+When a function name is not found, Win32::API will actually append
+an <strong>A</strong> to the name and try again; if the extension is built on a
+Unicode system, then it will try with the <strong>W</strong> instead.
+So our function name will be:</p>
+<pre>
+    $GetTempPath = new Win32::API('kernel32', 'GetTempPath', ...</pre>
+<p>In our case <code>GetTempPath</code> is really loaded as <code>GetTempPathA</code>.</p>
+</li>
+<li>
+<p>The third parameter, the input parameter list, specifies how many 
+arguments the function wants, and their types. It can be passed as
+a single string, in which each character represents one parameter, 
+or as a list reference. The following forms are valid:</p>
+<pre>
+    &quot;abcd&quot;
+    [a, b, c, d]
+    \@LIST</pre>
+<p>But those are not:</p>
+<pre>
+    (a, b, c, d)
+    @LIST</pre>
+<p>The number of characters, or elements in the list, specifies the number 
+of parameters, and each character or element specifies the type of an 
+argument; allowed types are:</p>
+<dl>
+<dt><strong><a name="integer" class="item"><code>I</code>: 
+value is an integer (int)</a></strong></dt>
+
+<dt><strong><a name="number" class="item"><code>N</code>: 
+value is a number (long)</a></strong></dt>
+
+<dt><strong><code>F</code>: 
+value is a floating point number (float)</strong></dt>
+
+<dt><strong><code>D</code>: 
+value is a double precision number (double)</strong></dt>
+
+<dt><strong><a name="char" class="item"><code>C</code>: 
+value is a char (char)</a></strong></dt>
+
+<dt><strong><a name="pointer" class="item"><code>P</code>: 
+value is a pointer (to a string, structure, etc...)</a></strong></dt>
+
+<dt><strong><a name="object" class="item"><a href="../../lib/pods/perlrun.html#s"><code>S</code></a>: 
+value is a Win32::API::Struct object (see below)</a></strong></dt>
+
+<dt><strong><code>K</code>:
+value is a Win32::API::Callback object (see <a href="../../lib/Win32/API/Callback.html">the Win32::API::Callback manpage</a>)</strong></dt>
+
+</dl>
+<p>Our function needs two parameters: a number (<code>DWORD</code>) and a pointer to a 
+string (<code>LPSTR</code>):</p>
+<pre>
+    $GetTempPath = new Win32::API('kernel32', 'GetTempPath', 'NP', ...</pre>
+</li>
+<li>
+<p>The fourth and final parameter is the type of the value returned by the 
+function. It can be one of the types seen above, plus another type named <strong>V</strong> 
+(for <code>void</code>), used for functions that do not return a value.
+In our example the value returned by <code>GetTempPath()</code> is a <code>DWORD</code>, so 
+our return type will be <strong>N</strong>:</p>
+<pre>
+    <span class="variable">$GetTempPath</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::API</span><span class="operator">(</span><span class="string">'kernel32'</span><span class="operator">,</span> <span class="string">'GetTempPath'</span><span class="operator">,</span> <span class="string">'NP'</span><span class="operator">,</span> <span class="string">'N'</span><span class="operator">);</span>
+</pre>
+<p>Now the line is complete, and the <code>GetTempPath()</code> API is ready to be used
+in Perl. Before calling it, you should test that $GetTempPath is 
+<a href="../../lib/pods/perlfunc.html#defined"><code>defined</code></a>, otherwise either the function or the library could not be
+loaded; in this case, <a href="../../lib/pods/perlvar.html#__"><code>$!</code></a> will be set to the error message reported 
+by Windows.
+Our definition, with error checking added, should then look like this:</p>
+<pre>
+    <span class="variable">$GetTempPath</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::API</span><span class="operator">(</span><span class="string">'kernel32'</span><span class="operator">,</span> <span class="string">'GetTempPath'</span><span class="operator">,</span> <span class="string">'NP'</span><span class="operator">,</span> <span class="string">'N'</span><span class="operator">);</span>
+    <span class="keyword">if</span><span class="operator">(</span><span class="keyword">not</span> <span class="keyword">defined</span> <span class="variable">$GetTempPath</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">die</span> <span class="string">"Can't import API GetTempPath: $!\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</li>
+</ol>
+<p>
+</p>
+<h2><a name="calling_an_imported_function">CALLING AN IMPORTED FUNCTION</a></h2>
+<p>To effectively make a call to an imported function you must use the
+<code>Call()</code> method on the Win32::API object you created.
+Continuing with the example from the previous paragraph, 
+the <code>GetTempPath()</code> API can be called using the method:</p>
+<pre>
+    $GetTempPath-&gt;Call(...</pre>
+<p>Of course, parameters have to be passed as defined in the import phase.
+In particular, if the number of parameters does not match (in the example,
+if <code>GetTempPath()</code> is called with more or less than two parameters), 
+Perl will <code>croak</code> an error message and <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>.</p>
+<p>The two parameters needed here are the length of the buffer
+that will hold the returned temporary path, and a pointer to the 
+buffer itself.
+For numerical parameters, you can use either a constant expression
+or a variable, while <strong>for pointers you must use a variable name</strong> (no 
+Perl references, just a plain variable name).
+Also note that <strong>memory must be allocated before calling the function</strong>,
+just like in C.
+For example, to pass a buffer of 80 characters to <code>GetTempPath()</code>,
+it must be initialized before with:</p>
+<pre>
+    <span class="variable">$lpBuffer</span> <span class="operator">=</span> <span class="string">" "</span> <span class="operator">x</span> <span class="number">80</span><span class="operator">;</span>
+</pre>
+<p>This allocates a string of 80 characters. If you don't do so, you'll
+probably get <code>Runtime exception</code> errors, and generally nothing will 
+work. The call should therefore include:</p>
+<pre>
+    <span class="variable">$lpBuffer</span> <span class="operator">=</span> <span class="string">" "</span> <span class="operator">x</span> <span class="number">80</span><span class="operator">;</span>
+    <span class="variable">$GetTempPath</span><span class="operator">-&gt;</span><span class="variable">Call</span><span class="operator">(</span><span class="number">80</span><span class="operator">,</span> <span class="variable">$lpBuffer</span><span class="operator">);</span>
+</pre>
+<p>And the result will be stored in the $lpBuffer variable.
+Note that you don't need to pass a reference to the variable
+(eg. you <strong>don't need</strong> <code>\$lpBuffer</code>), even if its value will be set 
+by the function.</p>
+<p>A little problem here is that Perl does not trim the variable, 
+so $lpBuffer will still contain 80 characters in return; the exceeding 
+characters will be spaces, because we said <code>&quot; &quot; x 80</code>.</p>
+<p>In this case we're lucky enough, because the value returned by 
+the <code>GetTempPath()</code> function is the length of the string, so to get
+the actual temporary path we can write:</p>
+<pre>
+    <span class="variable">$lpBuffer</span> <span class="operator">=</span> <span class="string">" "</span> <span class="operator">x</span> <span class="number">80</span><span class="operator">;</span>
+    <span class="variable">$return</span> <span class="operator">=</span> <span class="variable">$GetTempPath</span><span class="operator">-&gt;</span><span class="variable">Call</span><span class="operator">(</span><span class="number">80</span><span class="operator">,</span> <span class="variable">$lpBuffer</span><span class="operator">);</span>
+    <span class="variable">$TempPath</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="variable">$lpBuffer</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="variable">$return</span><span class="operator">);</span>
+</pre>
+<p>If you don't know the length of the string, you can usually
+cut it at the <code>\0</code> (ASCII zero) character, which is the string
+delimiter in C:</p>
+<pre>
+    <span class="variable">$TempPath</span> <span class="operator">=</span> <span class="operator">((</span><span class="keyword">split</span><span class="operator">(</span><span class="regex">/\0/</span><span class="operator">,</span> <span class="variable">$lpBuffer</span><span class="operator">))</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>  
+    <span class="comment"># or    </span>
+    <span class="variable">$lpBuffer</span> <span class="operator">=~</span> <span class="regex">s/\0.*$//</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="using_structures">USING STRUCTURES</a></h2>
+<p>Starting from version 0.40, Win32::API comes with a support package
+named Win32::API::Struct. The package is loaded automatically with
+Win32::API, so you don't need to use it explicitly.</p>
+<p>With this module you can conveniently define structures and use
+them as parameters to Win32::API functions. A short example follows:</p>
+<pre>
+    <span class="comment"># the 'POINT' structure is defined in C as:</span>
+    <span class="comment">#     typedef struct {</span>
+    <span class="comment">#        LONG  x;</span>
+    <span class="comment">#        LONG  y;</span>
+    <span class="comment">#     } POINT;</span>
+</pre>
+<pre>
+    <span class="comment">#### define the structure</span>
+    <span class="variable">Win32::API::Struct</span><span class="operator">-&gt;</span><span class="variable">typedef</span><span class="operator">(</span> <span class="string">POINT</span> <span class="operator">=&gt;</span> <span class="string">qw{
+        LONG x; 
+        LONG y; 
+    }</span><span class="operator">);</span>
+    
+    <span class="comment">#### import an API that uses this structure</span>
+    <span class="variable">Win32::API</span><span class="operator">-&gt;</span><span class="variable">Import</span><span class="operator">(</span><span class="string">'user32'</span><span class="operator">,</span> <span class="string">'BOOL GetCursorPos(LPPOINT lpPoint)'</span><span class="operator">);</span>
+    
+    <span class="comment">#### create a 'POINT' object</span>
+    <span class="keyword">my</span> <span class="variable">$pt</span> <span class="operator">=</span> <span class="variable">Win32::API::Struct</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'POINT'</span><span class="operator">);</span>
+    
+    <span class="comment">#### call the function passing our structure object</span>
+    <span class="variable">GetCursorPos</span><span class="operator">(</span><span class="variable">$pt</span><span class="operator">);</span>
+    
+    <span class="comment">#### and now, access its members</span>
+    <span class="keyword">print</span> <span class="string">"The cursor is at: </span><span class="variable">$pt</span><span class="string">-&gt;{x}, </span><span class="variable">$pt</span><span class="string">-&gt;{y}\n"</span><span class="operator">;</span>
+</pre>
+<p>Note that this works only when the function wants a 
+<strong>pointer to a structure</strong>: as you can see, our structure is named 
+'POINT', but the API used 'LPPOINT'. 'LP' is automatically added at 
+the beginning of the structure name when feeding it to a Win32::API
+call.</p>
+<p>For more information, see also <a href="../../lib/Win32/API/Struct.html">the Win32::API::Struct manpage</a>.</p>
+<p>If you don't want (or can't) use the <code>Win32::API::Struct</code> facility,
+you can still use the low-level approach to use structures:</p>
+<ol>
+<li>
+<p>you have to <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> the required elements in a variable:</p>
+<pre>
+    <span class="variable">$lpPoint</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">'LL'</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">0</span><span class="operator">);</span> <span class="comment"># store two LONGs</span>
+</pre>
+</li>
+<li>
+<p>to access the values stored in a structure, <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a> it as required:</p>
+<pre>
+    <span class="operator">(</span><span class="variable">$x</span><span class="operator">,</span> <span class="variable">$y</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'LL'</span><span class="operator">,</span> <span class="variable">$lpPoint</span><span class="operator">);</span> <span class="comment"># get the actual values</span>
+</pre>
+</li>
+</ol>
+<p>The rest is left as an exercise to the reader...</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Aldo Calpini ( <em><a href="mailto:dada@perl.it">dada@perl.it</a></em> ).</p>
+<p>
+</p>
+<hr />
+<h1><a name="maintainer">MAINTAINER</a></h1>
+<p>Cosimo Streppone ( <em><a href="mailto:cosimo@cpan.org">cosimo@cpan.org</a></em> )</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>To finally clarify this, <code>Win32::API</code> is OSI-approved free software;
+you can redistribute it and/or modify it under the same terms as Perl
+itself.</p>
+<p>See <a href="http://dev.perl.org/licenses/artistic.html">http://dev.perl.org/licenses/artistic.html</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>All the credits go to Andrea Frosini for the neat assembler trick
+that makes this thing work. I've also used some work by Dave Roth
+for the prototyping stuff. A big thank you also to Gurusamy Sarathy
+for his unvaluable help in XS development, and to all the Perl
+community for being what it is.</p>
+<p>Cosimo also wants to personally thank everyone that contributed
+to Win32::API with complaints, emails, patches, RT bug reports
+and so on.</p>
+
+</body>
+
+</html>

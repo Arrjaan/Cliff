@@ -1,0 +1,266 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Meta::Recipe3 - Labels implemented via attribute traits</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Meta::Recipe3 - Labels implemented via attribute traits</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#but_first">BUT FIRST</a></li>
+	<li><a href="#motivation">MOTIVATION</a></li>
+	<li><a href="#traits">TRAITS</a></li>
+	<li><a href="#dissection">DISSECTION</a></li>
+	<li><a href="#turning_a_metaclass_into_a_trait">TURNING A METACLASS INTO A TRAIT</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Meta::Recipe3 - Labels implemented via attribute traits</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Meta::Attribute::Trait::Labeled</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">label</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_label'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Moose::Meta::Attribute::Custom::Trait::Labeled</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> register_implementation </span><span class="operator">{</span><span class="string">'MyApp::Meta::Attribute::Trait::Labeled'</span><span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Website</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">url</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">traits</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw/Labeled/</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>    <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="string">label</span>  <span class="operator">=&gt;</span> <span class="string">"The site's URL"</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> dump </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$dump</span> <span class="operator">=</span> <span class="string">''</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$attribute</span> <span class="operator">(</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">get_attribute</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span>
+          <span class="keyword">sort</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">get_attribute_list</span> <span class="operator">)</span> <span class="operator">{</span>
+</pre>
+<pre>
+          <span class="keyword">if</span> <span class="operator">(</span>   <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">does</span><span class="operator">(</span><span class="string">'MyApp::Meta::Attribute::Trait::Labeled'</span><span class="operator">)</span>
+              <span class="operator">&amp;&amp;</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">has_label</span> <span class="operator">)</span> <span class="operator">{</span>
+              <span class="variable">$dump</span> <span class="operator">.=</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">label</span><span class="operator">;</span>
+          <span class="operator">}</span>
+          <span class="keyword">else</span> <span class="operator">{</span>
+              <span class="variable">$dump</span> <span class="operator">.=</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>
+          <span class="operator">}</span>
+</pre>
+<pre>
+          <span class="keyword">my</span> <span class="variable">$reader</span> <span class="operator">=</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">get_read_method</span><span class="operator">;</span>
+          <span class="variable">$dump</span> <span class="operator">.=</span> <span class="string">": "</span> <span class="operator">.</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">$reader</span> <span class="operator">.</span> <span class="string">"\n"</span><span class="operator">;</span>
+                <span class="operator">}</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="variable">$dump</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$app</span> <span class="operator">=</span> <span class="variable">MyApp::Website</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">url</span> <span class="operator">=&gt;</span> <span class="string">"http://google.com"</span><span class="operator">,</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">"Google"</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="but_first">BUT FIRST</a></h1>
+<p>This recipe is a variation on
+<a href="../../../../lib/Moose/Cookbook/Meta/Recipe2.html">the Moose::Cookbook::Meta::Recipe2 manpage</a>. Please read that recipe first.</p>
+<p>
+</p>
+<hr />
+<h1><a name="motivation">MOTIVATION</a></h1>
+<p>In <a href="../../../../lib/Moose/Cookbook/Meta/Recipe2.html">the Moose::Cookbook::Meta::Recipe2 manpage</a>, we created an attribute
+metaclass which lets you provide a label for attributes.</p>
+<p>Using a metaclass works fine until you realize you want to add a label
+<em>and</em> an expiration, or some other combination of new behaviors. You
+could create yet another metaclass which subclasses those two, but
+that makes a mess, especially if you want to mix and match behaviors
+across many attributes.</p>
+<p>Fortunately, Moose provides a much saner alternative, which is to
+encapsulate each extension as a role, not a class. We can make a role
+which adds a label to an attribute, and could make another to
+implement expiration.</p>
+<p>
+</p>
+<hr />
+<h1><a name="traits">TRAITS</a></h1>
+<p>Roles that apply to metaclasses have a special name: traits. Don't let
+the change in nomenclature fool you, <strong>traits are just roles</strong>.</p>
+<p><a href="../../../../lib/Moose/has.html">has in the Moose manpage</a> allows you to pass a <code>traits</code> parameter for an
+attribute. This parameter takes a list of trait names which are
+composed into an anonymous metaclass, and that anonymous metaclass is
+used for the attribute.</p>
+<p>Yes, we still have lots of metaclasses in the background, but they're
+managed by Moose for you.</p>
+<p>Traits can do anything roles can do. They can add or refine
+attributes, wrap methods, provide more methods, define an interface,
+etc. The only difference is that you're now changing the attribute
+metaclass instead of a user-level class.</p>
+<p>
+</p>
+<hr />
+<h1><a name="dissection">DISSECTION</a></h1>
+<p>A side-by-side look of the code examples in this recipe and recipe 2
+show that defining and using a trait is very similar to a full-blown
+metaclass.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Meta::Attribute::Trait::Labeled</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">label</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_label'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Instead of subclassing <a href="../../../../lib/Moose/Meta/Attribute.html">the Moose::Meta::Attribute manpage</a>, we define a role. As
+with our metaclass in <a href="../../../../lib/Moose/Cookbook/Meta/Recipe2.html">recipe 2</a>,
+registering our role allows us to refer to it by a short name.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Moose::Meta::Attribute::Custom::Trait::Labeled</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> register_implementation </span><span class="operator">{</span> <span class="string">'MyApp::Meta::Attribute::Trait::Labeled'</span> <span class="operator">}</span>
+</pre>
+<p>Moose looks for the <code>register_implementation</code> method in
+<code>Moose::Meta::Attribute::Custom::Trait::$TRAIT_NAME</code> to find the full
+name of the trait.</p>
+<p>For the rest of the code, we will only cover what is <em>different</em> from
+<a href="../../../../lib/Moose/Cookbook/Meta/Recipe2.html">recipe 2</a>.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">url</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">traits</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw/Labeled/</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>    <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="string">label</span>  <span class="operator">=&gt;</span> <span class="string">"The site's URL"</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Instead of passing a <code>metaclass</code> parameter, this time we pass
+<code>traits</code>. This contains a list of trait names. Moose will build an
+anonymous attribute metaclass from these traits and use it for this
+attribute. Passing a <code>label</code> parameter works just as it did with the
+metaclass example.</p>
+<pre>
+          <span class="keyword">if</span> <span class="operator">(</span>   <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">does</span><span class="operator">(</span><span class="string">'MyApp::Meta::Attribute::Trait::Labeled'</span><span class="operator">)</span>
+              <span class="operator">&amp;&amp;</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">has_label</span> <span class="operator">)</span> <span class="operator">{</span>
+              <span class="variable">$dump</span> <span class="operator">.=</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">label</span><span class="operator">;</span>
+          <span class="operator">}</span>
+</pre>
+<p>In the metaclass example, we used <code>$attribute-&gt;isa</code>. With a role,
+we instead ask if the meta-attribute object <code>does</code> the required
+role. If it does not do this role, the attribute meta object won't
+have the <code>has_label</code> method.</p>
+<p>That's all. Everything else is the same!</p>
+<p>
+</p>
+<hr />
+<h1><a name="turning_a_metaclass_into_a_trait">TURNING A METACLASS INTO A TRAIT</a></h1>
+<p>&quot;But wait!&quot; you protest. &quot;I've already written all of my extensions as
+attribute metaclasses. I don't want to break all that code out there.&quot;</p>
+<p>Fortunately, you can easily turn a metaclass into a trait and still
+provide the original metaclass:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Meta::Attribute::Labeled</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="variable">extends</span> <span class="string">'Moose::Meta::Attribute'</span><span class="operator">;</span>
+  <span class="variable">with</span> <span class="string">'MyApp::Meta::Attribute::Trait::Labeled'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Moose::Meta::Attribute::Custom::Labeled</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> register_implementation </span><span class="operator">{</span> <span class="string">'MyApp::Meta::Attribute::Labeled'</span> <span class="operator">}</span>
+</pre>
+<p>Unfortunately, going the other way (providing a trait created from a
+metaclass) is more tricky.</p>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>If you're extending your attributes, it's easier and more flexible to
+provide composable bits of behavior than to subclass
+<a href="../../../../lib/Moose/Meta/Attribute.html">the Moose::Meta::Attribute manpage</a>. Using traits lets you cooperate with other
+extensions, either from CPAN or that you might write in the
+future. Moose makes it easy to create attribute metaclasses on the fly
+by providing a list of trait names to <a href="../../../../lib/Moose/has.html">has in the Moose manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

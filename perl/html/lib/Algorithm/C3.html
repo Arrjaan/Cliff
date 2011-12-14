@@ -1,0 +1,272 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<title>Algorithm::C3 - A module for merging hierarchies using the C3 algorithm</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body style="background-color: white">
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr><td class="block" style="background-color: #cccccc" valign="middle">
+<big><strong><span class="block">&nbsp;Algorithm::C3 - A module for merging hierarchies using the C3 algorithm</span></strong></big>
+</td></tr>
+</table>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#what_is_c3">What is C3?</a></li>
+		<li><a href="#how_does_c3_work_">How does C3 work.</a></li>
+	</ul>
+
+	<li><a href="#function">FUNCTION</a></li>
+	<li><a href="#code_coverage">CODE COVERAGE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<ul>
+
+		<li><a href="#the_original_dylan_paper">The original Dylan paper</a></li>
+		<li><a href="#the_prototype_perl_6_object_model_uses_c3">The prototype Perl 6 Object Model uses C3</a></li>
+		<li><a href="#parrot_now_uses_c3">Parrot now uses C3</a></li>
+		<li><a href="#python_2_3_mro_related_links">Python 2.3 MRO related links</a></li>
+		<li><a href="#c3_for_tinyclos">C3 for TinyCLOS</a></li>
+	</ul>
+
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Algorithm::C3 - A module for merging hierarchies using the C3 algorithm</p>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  use Algorithm::C3;</pre>
+<pre>
+  # merging a classic diamond
+  # inheritance graph like this:
+  #
+  #    &lt;A&gt;
+  #   /   \
+  # &lt;B&gt;   &lt;C&gt;
+  #   \   /
+  #    &lt;D&gt;</pre>
+<pre>
+  my @merged = Algorithm::C3::merge(
+      'D',
+      sub {
+          # extract the ISA array
+          # from the package
+          no strict 'refs';
+          @{$_[0] . '::ISA'};
+      }
+  );</pre>
+<pre>
+  print join &quot;, &quot; =&gt; @merged; # prints D, B, C, A</pre>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module implements the C3 algorithm. I have broken this out
+into it's own module because I found myself copying and pasting
+it way too often for various needs. Most of the uses I have for
+C3 revolve around class building and metamodels, but it could
+also be used for things like dependency resolution as well since
+it tends to do such a nice job of preserving local precedence
+orderings.</p>
+<p>Below is a brief explanation of C3 taken from the <a href="../../Class/C3.html">the Class::C3 manpage</a>
+module. For more detailed information, see the <a href="#see_also">SEE ALSO</a> section
+and the links there.</p>
+<p>
+</p>
+<h2><a name="what_is_c3">What is C3?</a></h2>
+<p>C3 is the name of an algorithm which aims to provide a sane method
+resolution order under multiple inheritance. It was first introduced
+in the language Dylan (see links in the <a href="#see_also">SEE ALSO</a> section), and
+then later adopted as the preferred MRO (Method Resolution Order)
+for the new-style classes in Python 2.3. Most recently it has been
+adopted as the 'canonical' MRO for Perl 6 classes, and the default
+MRO for Parrot objects as well.</p>
+<p>
+</p>
+<h2><a name="how_does_c3_work_">How does C3 work.</a></h2>
+<p>C3 works by always preserving local precedence ordering. This
+essentially means that no class will appear before any of it's
+subclasses. Take the classic diamond inheritance pattern for
+instance:</p>
+<pre>
+     &lt;A&gt;
+    /   \
+  &lt;B&gt;   &lt;C&gt;
+    \   /
+     &lt;D&gt;</pre>
+<p>The standard Perl 5 MRO would be (D, B, A, C). The result being that
+<strong>A</strong> appears before <strong>C</strong>, even though <strong>C</strong> is the subclass of <strong>A</strong>.
+The C3 MRO algorithm however, produces the following MRO (D, B, C, A),
+which does not have this same issue.</p>
+<p>This example is fairly trivial, for more complex examples and a deeper
+explanation, see the links in the <a href="#see_also">SEE ALSO</a> section.</p>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="function">FUNCTION</a></h1>
+<dl>
+<dt><strong><a name="merge" class="item"><strong>merge ($root, $func_to_fetch_parent, $cache)</strong></a></strong></dt>
+
+<dd>
+<p>This takes a <code>$root</code> node, which can be anything really it
+is up to you. Then it takes a <code>$func_to_fetch_parent</code> which
+can be either a CODE reference (see <em>SYNOPSIS</em> above for an
+example), or a string containing a method name to be called
+on all the items being linearized. An example of how this
+might look is below:</p>
+<pre>
+  {
+      package A;</pre>
+<pre>
+      sub supers {
+          no strict 'refs';
+          @{$_[0] . '::ISA'};
+      }</pre>
+<pre>
+      package C;
+      our @ISA = ('A');
+      package B;
+      our @ISA = ('A');
+      package D;
+      our @ISA = ('B', 'C');
+  }</pre>
+<pre>
+  print join &quot;, &quot; =&gt; Algorithm::C3::merge('D', 'supers');</pre>
+<p>The purpose of <code>$func_to_fetch_parent</code> is to provide a way
+for <a href="#merge"><code>merge</code></a> to extract the parents of <code>$root</code>. This is
+needed for C3 to be able to do it's work.</p>
+<p>The <code>$cache</code> parameter is an entirely optional performance
+measure, and should not change behavior.</p>
+<p>If supplied, it should be a hashref that merge can use as a
+private cache between runs to speed things up.  Generally
+speaking, if you will be calling merge many times on related
+things, and the parent fetching function will return constant
+results given the same arguments during all of these calls,
+you can and should reuse the same shared cache hash for all
+of the calls.  Example:</p>
+<pre>
+  sub do_some_merging {
+      my %merge_cache;
+      my @foo_mro = Algorithm::C3::Merge('Foo', \&amp;get_supers, \%merge_cache);
+      my @bar_mro = Algorithm::C3::Merge('Bar', \&amp;get_supers, \%merge_cache);
+      my @baz_mro = Algorithm::C3::Merge('Baz', \&amp;get_supers, \%merge_cache);
+      my @quux_mro = Algorithm::C3::Merge('Quux', \&amp;get_supers, \%merge_cache);
+      # ...
+  }</pre>
+</dd>
+</dl>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="code_coverage">CODE COVERAGE</a></h1>
+<p>I use <strong>Devel::Cover</strong> to test the code coverage of my tests, below
+is the <strong>Devel::Cover</strong> report on this module's test suite.</p>
+<pre>
+ ------------------------ ------ ------ ------ ------ ------ ------ ------
+ File                       stmt   bran   cond    sub    pod   time  total
+ ------------------------ ------ ------ ------ ------ ------ ------ ------
+ Algorithm/C3.pm           100.0  100.0  100.0  100.0  100.0  100.0  100.0
+ ------------------------ ------ ------ ------ ------ ------ ------ ------
+ Total                     100.0  100.0  100.0  100.0  100.0  100.0  100.0
+ ------------------------ ------ ------ ------ ------ ------ ------ ------</pre>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>
+</p>
+<h2><a name="the_original_dylan_paper">The original Dylan paper</a></h2>
+<dl>
+<dt><strong><a name="http_www_webcom_com_haahr_dylan_linearization_oopsla96_html" class="item"><a href="http://www.webcom.com/haahr/dylan/linearization-oopsla96.html">http://www.webcom.com/haahr/dylan/linearization-oopsla96.html</a></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<h2><a name="the_prototype_perl_6_object_model_uses_c3">The prototype Perl 6 Object Model uses C3</a></h2>
+<dl>
+<dt><strong><a name="http_svn_openfoundry_org_pugs_perl5_perl6_metamodel" class="item"><a href="http://svn.openfoundry.org/pugs/perl5/Perl6-MetaModel/">http://svn.openfoundry.org/pugs/perl5/Perl6-MetaModel/</a></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<h2><a name="parrot_now_uses_c3">Parrot now uses C3</a></h2>
+<dl>
+<dt><strong><a name="http_aspn_activestate_com_aspn_mail_message_perl6_internals_2746631" class="item"><a href="http://aspn.activestate.com/ASPN/Mail/Message/perl6-internals/2746631">http://aspn.activestate.com/ASPN/Mail/Message/perl6-internals/2746631</a></a></strong></dt>
+
+<dt><strong><a name="http_use_perl_org_autrijus_journal_25768" class="item"><a href="http://use.perl.org/~autrijus/journal/25768">http://use.perl.org/~autrijus/journal/25768</a></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<h2><a name="python_2_3_mro_related_links">Python 2.3 MRO related links</a></h2>
+<dl>
+<dt><strong><a name="http_www_python_org_2_3_mro_html" class="item"><a href="http://www.python.org/2.3/mro.html">http://www.python.org/2.3/mro.html</a></a></strong></dt>
+
+<dt><strong><a name="http_www_python_org_2_2_2_descrintro_html_mro" class="item"><a href="http://www.python.org/2.2.2/descrintro.html#mro">http://www.python.org/2.2.2/descrintro.html#mro</a></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<h2><a name="c3_for_tinyclos">C3 for TinyCLOS</a></h2>
+<dl>
+<dt><strong><a name="http_www_call_with_current_continuation_org_eggs_c3_html" class="item"><a href="http://www.call-with-current-continuation.org/eggs/c3.html">http://www.call-with-current-continuation.org/eggs/c3.html</a></a></strong></dt>
+
+</dl>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p>Stevan Little, &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>Brandon L. Black, &lt;<a href="mailto:blblack@gmail.com">blblack@gmail.com</a>&gt;</p>
+<p>
+<a href="#__index__"><small>Back to Top</small></a>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>Copyright 2006 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+<p><a href="#__index__"><small>Back to Top</small></a></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="3">
+<tr><td class="block" style="background-color: #cccccc" valign="middle">
+<big><strong><span class="block">&nbsp;Algorithm::C3 - A module for merging hierarchies using the C3 algorithm</span></strong></big>
+</td></tr>
+</table>
+
+</body>
+
+</html>

@@ -1,0 +1,342 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perl5131delta - what is new for perl v5.13.1</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perl5131delta - what is new for perl v5.13.1</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#incompatible_changes">Incompatible Changes</a></li>
+	<ul>
+
+		<li><a href="#_cx">&quot;<code>\cX</code>&quot;</a></li>
+		<li><a href="#localised_tied_hashes__arrays_and_scalars_are_no_longed_tied">localised tied hashes, arrays and scalars are no longed tied</a></li>
+		<li><a href="#given_return_values"><a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> return values</a></li>
+	</ul>
+
+	<li><a href="#core_enhancements">Core Enhancements</a></li>
+	<ul>
+
+		<li><a href="#exception_handling_reliability">Exception Handling Reliability</a></li>
+	</ul>
+
+	<li><a href="#modules_and_pragmata">Modules and Pragmata</a></li>
+	<ul>
+
+		<li><a href="#updated_modules">Updated Modules</a></li>
+		<li><a href="#removed_modules_and_pragmata">Removed Modules and Pragmata</a></li>
+	</ul>
+
+	<li><a href="#new_documentation">New Documentation</a></li>
+	<li><a href="#selected_bug_fixes">Selected Bug Fixes</a></li>
+	<li><a href="#changed_internals">Changed Internals</a></li>
+	<li><a href="#deprecations">Deprecations</a></li>
+	<li><a href="#acknowledgements">Acknowledgements</a></li>
+	<li><a href="#reporting_bugs">Reporting Bugs</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perl5131delta - what is new for perl v5.13.1</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes differences between the 5.13.0 release and
+the 5.13.1 release.</p>
+<p>If you are upgrading from an earlier release such as 5.10, first read
+<a href="../../lib/pods/perl5120delta.html">the perl5120delta manpage</a>, which describes differences between 5.10 and
+5.12.</p>
+<p>
+</p>
+<hr />
+<h1><a name="incompatible_changes">Incompatible Changes</a></h1>
+<p>
+</p>
+<h2><a name="_cx">&quot;<code>\cX</code>&quot;</a></h2>
+<p>The backslash-c construct was designed as a way of specifying
+non-printable characters, but there were no restrictions (on ASCII
+platforms) on what the character following the <a href="../../lib/pods/perlrun.html#c"><code>c</code></a> could be.  Now, that
+character must be one of the ASCII characters.</p>
+<p>
+</p>
+<h2><a name="localised_tied_hashes__arrays_and_scalars_are_no_longed_tied">localised tied hashes, arrays and scalars are no longed tied</a></h2>
+<p>In the following:</p>
+<pre>
+    <span class="keyword">tie</span> <span class="variable">@a</span><span class="operator">,</span> <span class="operator">...;</span>
+    <span class="operator">{</span>
+        <span class="keyword">local</span> <span class="variable">@a</span><span class="operator">;</span>
+        <span class="comment"># here, @a is a now a new, untied array</span>
+    <span class="operator">}</span>
+    <span class="comment"># here, @a refers again to the old, tied array</span>
+</pre>
+<p>The new local array used to be made tied too, which was fairly pointless,
+and has now been fixed. This fix could however potentially cause a change
+in behaviour of some code.</p>
+<p>
+</p>
+<h2><a name="given_return_values"><a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> return values</a></h2>
+<p>Starting from this release, <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> blocks returns the last evaluated
+expression, or an empty list if the block was exited by <a href="../../lib/pods/perlfunc.html#break"><code>break</code></a>. Thus you
+can now write:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">do</span> <span class="operator">{</span>
+     <span class="keyword">given</span> <span class="operator">(</span><span class="variable">$num</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">break</span>     <span class="keyword">when</span> <span class="keyword">undef</span><span class="operator">;</span>
+      <span class="string">'integer'</span> <span class="keyword">when</span> <span class="operator">/^</span><span class="operator">[</span><span class="operator">+-</span><span class="operator">]</span><span class="operator">?</span><span class="operator">[</span><span class="number">0</span><span class="operator">-</span><span class="number">9</span><span class="operator">]</span><span class="operator">+</span><span class="variable">$/</span><span class="operator">;</span>
+      <span class="string">'float'</span>   <span class="keyword">when</span> <span class="operator">/^</span><span class="operator">[</span><span class="operator">+-</span><span class="operator">]</span><span class="operator">?</span><span class="operator">[</span><span class="number">0</span><span class="operator">-</span><span class="number">9</span><span class="operator">]</span><span class="operator">+(</span><span class="regex">?:\.[0-9]+)?</span><span class="variable">$/</span><span class="operator">;</span>
+      <span class="string">'unknown'</span><span class="operator">;</span>
+     <span class="operator">}</span>
+    <span class="operator">};</span>
+</pre>
+<p>See <a href="../../lib/pods/perlsyn.html#return_value">Return value in the perlsyn manpage</a> for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="core_enhancements">Core Enhancements</a></h1>
+<p>
+</p>
+<h2><a name="exception_handling_reliability">Exception Handling Reliability</a></h2>
+<p>Several changes have been made to the way <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>, <a href="../../lib/pods/perlfunc.html#warn"><code>warn</code></a>, and <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>
+behave, in order to make them more reliable and consistent.</p>
+<p>When an exception is thrown inside an <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>, the exception is no
+longer at risk of being clobbered by code running during unwinding
+(e.g., destructors).  Previously, the exception was written into <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>
+early in the throwing process, and would be overwritten if <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> was
+used internally in the destructor for an object that had to be freed
+while exiting from the outer <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>.  Now the exception is written
+into <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> last thing before exiting the outer <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>, so the code
+running immediately thereafter can rely on the value in <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> correctly
+corresponding to that <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>.</p>
+<p>Likewise, a <a href="../../lib/pods/perlfunc.html#local"><code>local $@</code></a> inside an <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> will no longer clobber any
+exception thrown in its scope.  Previously, the restoration of <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> upon
+unwinding would overwrite any exception being thrown.  Now the exception
+gets to the <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> anyway.  So <a href="../../lib/pods/perlfunc.html#local"><code>local $@</code></a> is safe inside an <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>,
+albeit of rather limited use.</p>
+<p>Exceptions thrown from object destructors no longer modify the <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>
+of the surrounding context.  (If the surrounding context was exception
+unwinding, this used to be another way to clobber the exception being
+thrown.  Due to the above change it no longer has that significance,
+but there are other situations where <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> is significant.)  Previously
+such an exception was sometimes emitted as a warning, and then either
+string-appended to the surrounding <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> or completely replaced the
+surrounding <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>, depending on whether that exception and the surrounding
+<a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> were strings or objects.  Now, an exception in this situation is
+always emitted as a warning, leaving the surrounding <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> untouched.
+In addition to object destructors, this also affects any function call
+performed by XS code using the <code>G_KEEPERR</code> flag.</p>
+<p><a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> is also no longer used as an internal temporary variable when
+preparing to <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>.  Previously it was internally necessary to put
+any exception object (any non-string exception) into <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> first,
+before it could be used as an exception.  (The C API still offers the
+old option, so an XS module might still clobber <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> in the old way.)
+This change together with the foregoing means that, in various places,
+<a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> may be observed to contain its previously-assigned value, rather
+than having been overwritten by recent exception-related activity.</p>
+<p>Warnings for <a href="../../lib/pods/perlfunc.html#warn"><code>warn</code></a> can now be objects, in the same way as exceptions
+for <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>.  If an object-based warning gets the default handling,
+of writing to standard error, it will of course still be stringified
+along the way.  But a <code>$SIG{__WARN__}</code> handler will now receive an
+object-based warning as an object, where previously it was passed the
+result of stringifying the object.</p>
+<p>
+</p>
+<hr />
+<h1><a name="modules_and_pragmata">Modules and Pragmata</a></h1>
+<p>
+</p>
+<h2><a name="updated_modules">Updated Modules</a></h2>
+<dl>
+<dt><strong><a name="errno3" class="item"><a href="#errno"><code>Errno</code></a></a></strong></dt>
+
+<dd>
+<p>The implementation of <a href="#errno"><code>Errno</code></a> has been refactored to use about 55% less memory.
+There should be no user-visible changes.</p>
+</dd>
+<dt><strong><a name="perl_4_pl_libraries" class="item">Perl 4 <code>.pl</code> libraries</a></strong></dt>
+
+<dd>
+<p>These historical libraries have been minimally modified to avoid using
+<a href="../../lib/pods/perlvar.html#__"><code>$[</code></a>.  This is to prepare them for the deprecation of <a href="../../lib/pods/perlvar.html#__"><code>$[</code></a>.</p>
+</dd>
+<dt><strong><a name="b_deparse5" class="item"><a href="#b_deparse"><code>B::Deparse</code></a></a></strong></dt>
+
+<dd>
+<p>A bug has been fixed when deparsing a nextstate op that has both a
+change of package (relative to the previous nextstate), or a change of
+<a href="../../lib/pods/perlvar.html#__h"><code>%^H</code></a> or other state, and a label.  Previously the label was emitted
+first, leading to syntactically invalid output because a label is not
+permitted immediately before a package declaration, <strong>BEGIN</strong> block,
+or some other things.  Now the label is emitted last.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="removed_modules_and_pragmata">Removed Modules and Pragmata</a></h2>
+<p>The following modules have been removed from the core distribution, and if
+needed should be installed from CPAN instead.</p>
+<dl>
+<dt><strong><a name="class_isa3" class="item"><a href="#class_isa"><code>Class::ISA</code></a></a></strong></dt>
+
+<dt><strong><a name="pod_plainer4" class="item"><a href="#pod_plainer"><code>Pod::Plainer</code></a></a></strong></dt>
+
+<dt><strong><a name="switch5" class="item"><a href="#switch"><code>Switch</code></a></a></strong></dt>
+
+</dl>
+<p>The removal of <code>Shell</code> has been deferred until after 5.14, as the
+implementation of <code>Shell</code> shipped with 5.12.0 did not correctly issue the
+warning that it was to be removed from core.</p>
+<p>
+</p>
+<hr />
+<h1><a name="new_documentation">New Documentation</a></h1>
+<dl>
+<dt><strong><a name="perlgpl" class="item">perlgpl</a></strong></dt>
+
+<dd>
+<p><a href="../../lib/pods/perlgpl.html">the perlgpl manpage</a> has been updated to contain GPL version 1, as is included in the
+<em class="file">README</em> distributed with perl.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="selected_bug_fixes">Selected Bug Fixes</a></h1>
+<ul>
+<li>
+<p>Naming a deprecated character in \N{...} will not leak memory.</p>
+</li>
+<li>
+<p>FETCH is no longer called needlessly on some tied variables.</p>
+</li>
+<li>
+<p>The trie runtime code should no longer allocate massive amounts of memory,
+fixing #74484.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="changed_internals">Changed Internals</a></h1>
+<ul>
+<li>
+<p>The protocol for unwinding the C stack at the last stage of a <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>
+has changed how it identifies the target stack frame.  This now uses
+a separate variable <code>PL_restartjmpenv</code>, where previously it relied on
+the <code>blk_eval.cur_top_env</code> pointer in the <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> context frame that
+has nominally just been discarded.  This change means that code running
+during various stages of Perl-level unwinding no longer needs to take
+care to avoid destroying the ghost frame.</p>
+</li>
+<li>
+<p>The format of entries on the scope stack has been changed, resulting in a
+reduction of memory usage of about 10%. In particular, the memory used by
+the scope stack to record each active lexical variable has been halved.</p>
+</li>
+<li>
+<p>Memory allocation for pointer tables has been changed. Previously
+<code>Perl_ptr_table_store</code> allocated memory from the same arena system as <code>SV</code>
+bodies and <code>HE</code>s, with freed memory remaining bound to those arenas until
+interpreter exit. Now it allocates memory from arenas private to the specific
+pointer table, and that memory is returned to the system when
+<code>Perl_ptr_table_free</code> is called. Additionally, allocation and release are both
+less CPU intensive.</p>
+</li>
+<li>
+<p>A new function, Perl_magic_methcall has been added that wraps the setup needed
+to call a magic method like FETCH (the existing S_magic_methcall function has
+been renamed S_magic_methcall1).</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="deprecations">Deprecations</a></h1>
+<p>The following items are now deprecated.</p>
+<dl>
+<dt><strong><a name="perl_ptr_table_clear" class="item"><code>Perl_ptr_table_clear</code></a></strong></dt>
+
+<dd>
+<p><a href="#perl_ptr_table_clear"><code>Perl_ptr_table_clear</code></a> is no longer part of Perl's public API. Calling it now
+generates a deprecation warning, and it will be removed in a future
+release.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">Acknowledgements</a></h1>
+<p>Perl 5.13.1 represents thirty days of development since Perl 5.13.0 and
+contains 15390 lines of changes across 289 files from 34 authors and
+committers.</p>
+<p>Thank you to the following for contributing to this release:</p>
+<p>Ævar Arnfjörð Bjarmason, Arkturuz, Chris 'BinGOs' Williams, Craig A. Berry,
+Curtis Jewell, Dan Dascalescu, David Golden, David Mitchell, Father
+Chrysostomos, Gene Sullivan, gfx, Gisle Aas, H.Merijn Brand, James E Keenan,
+James Mastros, Jan Dubois, Jesse Vincent, Karl Williamson, Leon Brocard,
+Lubomir Rintel (GoodData), Nicholas Clark, Philippe Bruhat (BooK), Rafael
+Garcia-Suarez, Rainer Tammer, Ricardo Signes, Richard Soderberg, Robin Barker,
+Ruslan Zakirov, Steffen Mueller, Todd Rinaldo, Tony Cook, Vincent Pit, Zefram</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting_bugs">Reporting Bugs</a></h1>
+<p>If you find what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the perl
+bug database at <a href="http://rt.perl.org/perlbug/">http://rt.perl.org/perlbug/</a> .  There may also be
+information at <a href="http://www.perl.org/">http://www.perl.org/</a> , the Perl Home Page.</p>
+<p>If you believe you have an unreported bug, please run the <strong>perlbug</strong>
+program included with your release.  Be sure to trim your bug down
+to a tiny but sufficient test case.  Your bug report, along with the
+output of <code>perl -V</code>, will be sent off to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a> to be
+analysed by the Perl porting team.</p>
+<p>If the bug you are reporting has security implications, which make it
+inappropriate to send to a publicly archived mailing list, then please send
+it to <a href="mailto:perl5-security-report@perl.org.">perl5-security-report@perl.org.</a> This points to a closed subscription
+unarchived mailing list, which includes all the core committers, who be able
+to help assess the impact of issues, figure out a resolution, and help
+co-ordinate the release of patches to mitigate or fix the problem across all
+platforms on which Perl is supported. Please only use this address for
+security issues in the Perl core, not for modules independently
+distributed on CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The <em class="file">Changes</em> file for an explanation of how to view exhaustive details
+on what changed.</p>
+<p>The <em class="file">INSTALL</em> file for how to build Perl.</p>
+<p>The <em class="file">README</em> file for general stuff.</p>
+<p>The <em class="file">Artistic</em> and <em class="file">Copying</em> files for copyright information.</p>
+
+</body>
+
+</html>

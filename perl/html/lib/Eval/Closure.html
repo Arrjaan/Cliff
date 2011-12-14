@@ -1,0 +1,213 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Eval::Closure - safely and cleanly create closures via string eval</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Eval::Closure - safely and cleanly create closures via string eval</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#eval_closure__args_"><code>eval_closure(%args)</code></a></li>
+	</ul>
+
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Eval::Closure - safely and cleanly create closures via string eval</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 0.06</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Eval::Closure</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$code</span> <span class="operator">=</span> <span class="variable">eval_closure</span><span class="operator">(</span>
+      <span class="string">source</span>      <span class="operator">=&gt;</span> <span class="string">'sub { $foo++ }'</span><span class="operator">,</span>
+      <span class="string">environment</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">'$foo'</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="number">1</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">warn</span> <span class="variable">$code</span><span class="operator">-&gt;();</span> <span class="comment"># 1</span>
+  <span class="keyword">warn</span> <span class="variable">$code</span><span class="operator">-&gt;();</span> <span class="comment"># 2</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$code2</span> <span class="operator">=</span> <span class="variable">eval_closure</span><span class="operator">(</span>
+      <span class="string">source</span> <span class="operator">=&gt;</span> <span class="string">'sub { $code-&gt;() }'</span><span class="operator">,</span>
+  <span class="operator">);</span> <span class="comment"># dies, $code isn't in scope</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>String eval is often used for dynamic code generation. For instance, <code>Moose</code>
+uses it heavily, to generate inlined versions of accessors and constructors,
+which speeds code up at runtime by a significant amount. String eval is not
+without its issues however - it's difficult to control the scope it's used in
+(which determines which variables are in scope inside the eval), and it can be
+quite slow, especially if doing a large number of evals.</p>
+<p>This module attempts to solve both of those problems. It provides an
+<code>eval_closure</code> function, which evals a string in a clean environment, other
+than a fixed list of specified variables. It also caches the result of the
+eval, so that doing repeated evals of the same source, even with a different
+environment, will be much faster (but note that the description is part of the
+string to be evaled, so it must also be the same (or non-existent) if caching
+is to work properly).</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<p>
+</p>
+<h2><a name="eval_closure__args_"><code>eval_closure(%args)</code></a></h2>
+<p>This function provides the main functionality of this module. It is exported by
+default. It takes a hash of parameters, with these keys being valid:</p>
+<dl>
+<dt><strong><a name="source" class="item">source</a></strong></dt>
+
+<dd>
+<p>The string to be evaled. It should end by returning a code reference. It can
+access any variable declared in the <a href="#environment"><code>environment</code></a> parameter (and only those
+variables). It can be either a string, or an arrayref of lines (which will be
+joined with newlines to produce the string).</p>
+</dd>
+<dt><strong><a name="environment" class="item">environment</a></strong></dt>
+
+<dd>
+<p>The environment to provide to the eval. This should be a hashref, mapping
+variable names (including sigils) to references of the appropriate type. For
+instance, a valid value for environment would be <code>{ '@foo' =&gt; [] }</code> (which
+would allow the generated function to use an array named <code>@foo</code>). Generally,
+this is used to allow the generated function to access externally defined
+variables (so you would pass in a reference to a variable that already exists).</p>
+</dd>
+<dt><strong><a name="description" class="item">description</a></strong></dt>
+
+<dd>
+<p>This lets you provide a bit more information in backtraces. Normally, when a
+function that was generated through string eval is called, that stack frame
+will show up as &quot;(eval n)&quot;, where 'n' is a sequential identifier for every
+string eval that has happened so far in the program. Passing a <a href="#description"><code>description</code></a>
+parameter lets you override that to something more useful (for instance,
+<a href="../../lib/Moose.html">the Moose manpage</a> overrides the description for accessors to something like &quot;accessor
+foo at MyClass.pm, line 123&quot;).</p>
+</dd>
+<dt><strong><a name="line" class="item">line</a></strong></dt>
+
+<dd>
+<p>This lets you override the particular line number that appears in backtraces,
+much like the <a href="#description"><code>description</code></a> option. The default is 1.</p>
+</dd>
+<dt><strong><a name="terse_error" class="item">terse_error</a></strong></dt>
+
+<dd>
+<p>Normally, this function appends the source code that failed to compile, and
+prepends some explanatory text. Setting this option to true suppresses that
+behavior so you get only the compilation error that Perl actually reported.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>No known bugs.</p>
+<p>Please report any bugs through RT: email
+<code>bug-eval-closure at rt.cpan.org</code>, or browse to
+<a href="http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Eval-Closure">http://rt.cpan.org/NoAuth/ReportBug.html</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>You can find this documentation for this module with the perldoc command.</p>
+<pre>
+    <a href="../../lib/pods/perldoc.html">perldoc</a> Eval::Closure</pre>
+<p>You can also look for information at:</p>
+<ul>
+<li><strong><a name="annocpan_annotated_cpan_documentation4" class="item">AnnoCPAN: Annotated CPAN documentation</a></strong>
+
+<p><a href="http://annocpan.org/dist/Eval-Closure">http://annocpan.org/dist/Eval-Closure</a></p>
+</li>
+<li><strong><a name="cpan_ratings4" class="item">CPAN Ratings</a></strong>
+
+<p><a href="http://cpanratings.perl.org/d/Eval-Closure">http://cpanratings.perl.org/d/Eval-Closure</a></p>
+</li>
+<li><strong><a name="rt_cpan_s_request_tracker4" class="item">RT: CPAN's request tracker</a></strong>
+
+<p><a href="http://rt.cpan.org/NoAuth/Bugs.html?Dist=Eval-Closure">http://rt.cpan.org/NoAuth/Bugs.html</a></p>
+</li>
+<li><strong><a name="search_cpan4" class="item">Search CPAN</a></strong>
+
+<p><a href="http://search.cpan.org/dist/Eval-Closure">http://search.cpan.org/dist/Eval-Closure</a></p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Jesse Luehrs &lt;doy at tozt dot net&gt;</p>
+<p>Based on code from <a href="../../lib/Class/MOP/Method/Accessor.html">the Class::MOP::Method::Accessor manpage</a>, by Stevan Little and the
+Moose Cabal.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<ul>
+<li><strong><a name="class_mop_method_accessor" class="item"><a href="../../lib/Class/MOP/Method/Accessor.html">the Class::MOP::Method::Accessor manpage</a></a></strong>
+
+<p>This module is a factoring out of code that used to live here</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Jesse Luehrs.</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

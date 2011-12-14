@@ -1,0 +1,300 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>Thread - Manipulate threads in Perl</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>Thread - Manipulate threads in Perl</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#deprecated">DEPRECATED</a></li>
+	<li><a href="#history">HISTORY</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<li><a href="#defunct">DEFUNCT</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Thread - Manipulate threads in Perl (for old code only)</p>
+<p>
+</p>
+<hr />
+<h1><a name="deprecated">DEPRECATED</a></h1>
+<p>The <code>Thread</code> module served as the frontend to the old-style thread model,
+called <em>5005threads</em>, that was introduced in release 5.005.  That model was
+deprecated, and has been removed in version 5.10.</p>
+<p>For old code and interim backwards compatibility, the <code>Thread</code> module has
+been reworked to function as a frontend for the new interpreter threads
+(<em>ithreads</em>) model.  However, some previous functionality is not available.
+Further, the data sharing models between the two thread models are completely
+different, and anything to do with data sharing has to be thought differently.
+With <em>ithreads</em>, you must explicitly <code>share()</code> variables between the
+threads.</p>
+<p>You are strongly encouraged to migrate any existing threaded code to the new
+model (i.e., use the <code>threads</code> and <code>threads::shared</code> modules) as soon as
+possible.</p>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p>In Perl 5.005, the thread model was that all data is implicitly shared, and
+shared access to data has to be explicitly synchronized.  This model is called
+<em>5005threads</em>.</p>
+<p>In Perl 5.6, a new model was introduced in which all is was thread local and
+shared access to data has to be explicitly declared.  This model is called
+<em>ithreads</em>, for &quot;interpreter threads&quot;.</p>
+<p>In Perl 5.6, the <em>ithreads</em> model was not available as a public API; only as
+an internal API that was available for extension writers, and to implement
+<a href="../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation on Win32 platforms.</p>
+<p>In Perl 5.8, the <em>ithreads</em> model became available through the <code>threads</code>
+module, and the <em>5005threads</em> model was deprecated.</p>
+<p>In Perl 5.10, the <em>5005threads</em> model was removed from the Perl interpreter.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Thread</span> <span class="string">qw(:DEFAULT async yield)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$t</span> <span class="operator">=</span> <span class="variable">Thread</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(\&amp;</span><span class="variable">start_sub</span><span class="operator">,</span> <span class="variable">@start_args</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$t</span><span class="operator">-&gt;</span><span class="variable">join</span><span class="operator">;</span>
+    <span class="variable">$t</span><span class="operator">-&gt;</span><span class="variable">detach</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$t</span><span class="operator">-&gt;</span><span class="variable">done</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$t</span><span class="operator">-&gt;</span><span class="variable">join</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">if</span><span class="operator">(</span><span class="variable">$t</span><span class="operator">-&gt;</span><span class="variable">equal</span><span class="operator">(</span><span class="variable">$another_thread</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="comment"># ...</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="variable">yield</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$tid</span> <span class="operator">=</span> <span class="variable">Thread</span><span class="operator">-&gt;</span><span class="variable">self</span><span class="operator">-&gt;</span><span class="variable">tid</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">lock</span><span class="operator">(</span><span class="variable">$scalar</span><span class="operator">);</span>
+    <span class="keyword">lock</span><span class="operator">(</span><span class="variable">@array</span><span class="operator">);</span>
+    <span class="keyword">lock</span><span class="operator">(</span><span class="variable">%hash</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">Thread</span><span class="operator">-&gt;</span><span class="variable">list</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>Thread</code> module provides multithreading support for Perl.</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<dl>
+<dt><strong><a name="new" class="item">$thread = Thread-&gt;new(\&amp;start_sub)</a></strong></dt>
+
+<dt><strong>$thread = Thread-&gt;new(\&amp;start_sub, LIST)</strong></dt>
+
+<dd>
+<p><a href="#new"><code>new</code></a> starts a new thread of execution in the referenced subroutine. The
+optional list is passed as parameters to the subroutine. Execution
+continues in both the subroutine and the code after the <a href="#new"><code>new</code></a> call.</p>
+<p><code>Thread-&amp;gt;new</code> returns a thread object representing the newly created
+thread.</p>
+</dd>
+<dt><strong><a name="lock" class="item">lock VARIABLE</a></strong></dt>
+
+<dd>
+<p><a href="#lock"><code>lock</code></a> places a lock on a variable until the lock goes out of scope.</p>
+<p>If the variable is locked by another thread, the <a href="#lock"><code>lock</code></a> call will
+block until it's available.  <a href="#lock"><code>lock</code></a> is recursive, so multiple calls
+to <a href="#lock"><code>lock</code></a> are safe--the variable will remain locked until the
+outermost lock on the variable goes out of scope.</p>
+<p>Locks on variables only affect <a href="#lock"><code>lock</code></a> calls--they do <em>not</em> affect normal
+access to a variable. (Locks on subs are different, and covered in a bit.)
+If you really, <em>really</em> want locks to block access, then go ahead and tie
+them to something and manage this yourself.  This is done on purpose.
+While managing access to variables is a good thing, Perl doesn't force
+you out of its living room...</p>
+<p>If a container object, such as a hash or array, is locked, all the
+elements of that container are not locked. For example, if a thread
+does a <code>lock @a</code>, any other thread doing a <a href="#lock"><code>lock($a[12])</code></a> won't
+block.</p>
+<p>Finally, <a href="#lock"><code>lock</code></a> will traverse up references exactly <em>one</em> level.
+<a href="#lock"><code>lock(\$a)</code></a> is equivalent to <a href="#lock"><code>lock($a)</code></a>, while <a href="#lock"><code>lock(\\$a)</code></a> is not.</p>
+</dd>
+<dt><strong><a name="async_block" class="item">async BLOCK;</a></strong></dt>
+
+<dd>
+<p><code>async</code> creates a thread to execute the block immediately following
+it.  This block is treated as an anonymous sub, and so must have a
+semi-colon after the closing brace. Like <code>Thread-&amp;gt;new</code>, <code>async</code>
+returns a thread object.</p>
+</dd>
+<dt><strong><a name="self" class="item">Thread-&gt;self</a></strong></dt>
+
+<dd>
+<p>The <a href="#self"><code>Thread-&gt;self</code></a> function returns a thread object that represents
+the thread making the <a href="#self"><code>Thread-&gt;self</code></a> call.</p>
+</dd>
+<dt><strong><a name="list" class="item">Thread-&gt;list</a></strong></dt>
+
+<dd>
+<p>Returns a list of all non-joined, non-detached Thread objects.</p>
+</dd>
+<dt><strong><a name="cond_wait" class="item">cond_wait VARIABLE</a></strong></dt>
+
+<dd>
+<p>The <a href="#cond_wait"><code>cond_wait</code></a> function takes a <strong>locked</strong> variable as
+a parameter, unlocks the variable, and blocks until another thread
+does a <a href="#cond_signal"><code>cond_signal</code></a> or <a href="#cond_broadcast"><code>cond_broadcast</code></a> for that same locked
+variable. The variable that <a href="#cond_wait"><code>cond_wait</code></a> blocked on is relocked
+after the <a href="#cond_wait"><code>cond_wait</code></a> is satisfied.  If there are multiple threads
+<a href="#cond_wait"><code>cond_wait</code></a>ing on the same variable, all but one will reblock waiting
+to reaquire the lock on the variable.  (So if you're only using
+<a href="#cond_wait"><code>cond_wait</code></a> for synchronization, give up the lock as soon as
+possible.)</p>
+</dd>
+<dt><strong><a name="cond_signal" class="item">cond_signal VARIABLE</a></strong></dt>
+
+<dd>
+<p>The <a href="#cond_signal"><code>cond_signal</code></a> function takes a locked variable as a parameter and
+unblocks one thread that's <a href="#cond_wait"><code>cond_wait</code></a>ing on that variable. If more than
+one thread is blocked in a <a href="#cond_wait"><code>cond_wait</code></a> on that variable, only one (and
+which one is indeterminate) will be unblocked.</p>
+<p>If there are no threads blocked in a <a href="#cond_wait"><code>cond_wait</code></a> on the variable,
+the signal is discarded.</p>
+</dd>
+<dt><strong><a name="cond_broadcast" class="item">cond_broadcast VARIABLE</a></strong></dt>
+
+<dd>
+<p>The <a href="#cond_broadcast"><code>cond_broadcast</code></a> function works similarly to <a href="#cond_signal"><code>cond_signal</code></a>.
+<a href="#cond_broadcast"><code>cond_broadcast</code></a>, though, will unblock <strong>all</strong> the threads that are
+blocked in a <a href="#cond_wait"><code>cond_wait</code></a> on the locked variable, rather than only
+one.</p>
+</dd>
+<dt><strong><a name="yield" class="item">yield</a></strong></dt>
+
+<dd>
+<p>The <a href="#yield"><code>yield</code></a> function allows another thread to take control of the
+CPU. The exact results are implementation-dependent.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<dl>
+<dt><strong><a name="join" class="item">join</a></strong></dt>
+
+<dd>
+<p><a href="#join"><code>join</code></a> waits for a thread to end and returns any values the thread
+exited with.  <a href="#join"><code>join</code></a> will block until the thread has ended, though
+it won't block if the thread has already terminated.</p>
+<p>If the thread being <a href="#join"><code>join</code></a>ed <a href="../lib/pods/perlfunc.html#die"><code>die</code></a>d, the error it died with will
+be returned at this time. If you don't want the thread performing
+the <a href="#join"><code>join</code></a> to die as well, you should either wrap the <a href="#join"><code>join</code></a> in
+an <a href="#eval"><code>eval</code></a> or use the <a href="#eval"><code>eval</code></a> thread method instead of <a href="#join"><code>join</code></a>.</p>
+</dd>
+<dt><strong><a name="detach" class="item">detach</a></strong></dt>
+
+<dd>
+<p><a href="#detach"><code>detach</code></a> tells a thread that it is never going to be joined i.e.
+that all traces of its existence can be removed once it stops running.
+Errors in detached threads will not be visible anywhere - if you want
+to catch them, you should use $SIG{__DIE__} or something like that.</p>
+</dd>
+<dt><strong><a name="equal" class="item">equal</a></strong></dt>
+
+<dd>
+<p><a href="#equal"><code>equal</code></a> tests whether two thread objects represent the same thread and
+returns true if they do.</p>
+</dd>
+<dt><strong><a name="tid" class="item">tid</a></strong></dt>
+
+<dd>
+<p>The <a href="#tid"><code>tid</code></a> method returns the tid of a thread. The tid is
+a monotonically increasing integer assigned when a thread is
+created. The main thread of a program will have a tid of zero,
+while subsequent threads will have tids assigned starting with one.</p>
+</dd>
+<dt><strong><a name="done" class="item">done</a></strong></dt>
+
+<dd>
+<p>The <a href="#done"><code>done</code></a> method returns true if the thread you're checking has
+finished, and false otherwise.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="defunct">DEFUNCT</a></h1>
+<p>The following were implemented with <em>5005threads</em>, but are no longer
+available with <em>ithreads</em>.</p>
+<dl>
+<dt><strong>lock(\&amp;sub)</strong></dt>
+
+<dd>
+<p>With 5005threads, you could also <a href="#lock"><code>lock</code></a> a sub such that any calls to that sub
+from another thread would block until the lock was released.</p>
+<p>Also, subroutines could be declared with the <code>:locked</code> attribute which would
+serialize access to the subroutine, but allowed different threads
+non-simultaneous access.</p>
+</dd>
+<dt><strong><a name="eval" class="item">eval</a></strong></dt>
+
+<dd>
+<p>The <a href="#eval"><code>eval</code></a> method wrapped an <a href="#eval"><code>eval</code></a> around a <a href="#join"><code>join</code></a>, and so waited for a
+thread to exit, passing along any values the thread might have returned and
+placing any errors into <a href="../lib/pods/perlvar.html#__"><code>$@</code></a>.</p>
+</dd>
+<dt><strong><a name="flags" class="item">flags</a></strong></dt>
+
+<dd>
+<p>The <a href="#flags"><code>flags</code></a> method returned the flags for the thread - an integer value
+corresponding to the internal flags for the thread.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/threads.html">the threads manpage</a>, <a href="../lib/threads/shared.html">the threads::shared manpage</a>, <a href="../lib/Thread/Queue.html">the Thread::Queue manpage</a>, <a href="../lib/Thread/Semaphore.html">the Thread::Semaphore manpage</a></p>
+
+</body>
+
+</html>

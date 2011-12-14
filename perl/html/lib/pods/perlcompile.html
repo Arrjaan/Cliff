@@ -1,0 +1,345 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlcompile - Introduction to the Perl Compiler-Translator</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlcompile - Introduction to the Perl Compiler-Translator</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#layout">Layout</a></li>
+	</ul>
+
+	<li><a href="#using_the_back_ends">Using The Back Ends</a></li>
+	<ul>
+
+		<li><a href="#the_cross_referencing_back_end">The Cross-Referencing Back End</a></li>
+		<li><a href="#the_decompiling_back_end">The Decompiling Back End</a></li>
+		<li><a href="#the_lint_back_end">The Lint Back End</a></li>
+	</ul>
+
+	<li><a href="#module_list_for_the_compiler_suite">Module List for the Compiler Suite</a></li>
+	<li><a href="#known_problems">KNOWN PROBLEMS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlcompile - Introduction to the Perl Compiler-Translator</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Perl has always had a compiler: your source is compiled into an
+internal form (a parse tree) which is then optimized before being
+run.  Since version 5.005, Perl has shipped with a module
+capable of inspecting the optimized parse tree (<a href="#b"><code>B</code></a>), and this has
+been used to write many useful utilities, including a module that lets
+you turn your Perl into C source code that can be compiled into a
+native executable.</p>
+<p>The <a href="#b"><code>B</code></a> module provides access to the parse tree, and other modules
+(&quot;back ends&quot;) do things with the tree.  Some write it out as
+semi-human-readable text.  Another traverses the parse tree to build a
+cross-reference of which subroutines, formats, and variables are used
+where.  Another checks your code for dubious constructs.  Yet another back
+end dumps the parse tree back out as Perl source, acting as a source code
+beautifier or deobfuscator.</p>
+<p>Because its original purpose was to be a way to produce C code
+corresponding to a Perl program, and in turn a native executable, the
+<a href="#b"><code>B</code></a> module and its associated back ends are known as &quot;the
+compiler&quot;, even though they don't really compile anything.
+Different parts of the compiler are more accurately a &quot;translator&quot;,
+or an &quot;inspector&quot;, but people want Perl to have a &quot;compiler
+option&quot; not an &quot;inspector gadget&quot;.  What can you do?</p>
+<p>This document covers the use of the Perl compiler: which modules
+it comprises, how to use the most important of the back end modules,
+what problems there are, and how to work around them.</p>
+<p>
+</p>
+<h2><a name="layout">Layout</a></h2>
+<p>The compiler back ends are in the <a href="#b"><code>B::</code></a> hierarchy, and the front-end
+(the module that you, the user of the compiler, will sometimes
+interact with) is the O module.</p>
+<p>Here are the important back ends to know about, with their status
+expressed as a number from 0 (outline for later implementation) to
+10 (if there's a bug in it, we're very surprised):</p>
+<dl>
+<dt><strong><a name="b_lint6" class="item">B::Lint</a></strong></dt>
+
+<dd>
+<p>Complains if it finds dubious constructs in your source code.  Status:
+6 (it works adequately, but only has a very limited number of areas
+that it checks).</p>
+</dd>
+<dt><strong><a name="b_deparse8" class="item">B::Deparse</a></strong></dt>
+
+<dd>
+<p>Recreates the Perl source, making an attempt to format it coherently.
+Status: 8 (it works nicely, but a few obscure things are missing).</p>
+</dd>
+<dt><strong><a name="b_xref2" class="item">B::Xref</a></strong></dt>
+
+<dd>
+<p>Reports on the declaration and use of subroutines and variables.
+Status: 8 (it works nicely, but still has a few lingering bugs).</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="using_the_back_ends">Using The Back Ends</a></h1>
+<p>The following sections describe how to use the various compiler back
+ends.  They're presented roughly in order of maturity, so that the
+most stable and proven back ends are described first, and the most
+experimental and incomplete back ends are described last.</p>
+<p>The O module automatically enabled the <strong>-c</strong> flag to Perl, which
+prevents Perl from executing your code once it has been compiled.
+This is why all the back ends print:</p>
+<pre>
+  myperlprogram syntax OK</pre>
+<p>before producing any other output.</p>
+<p>
+</p>
+<h2><a name="the_cross_referencing_back_end">The Cross-Referencing Back End</a></h2>
+<p>The cross-referencing back end (B::Xref) produces a report on your program,
+breaking down declarations and uses of subroutines and variables (and
+formats) by file and subroutine.  For instance, here's part of the
+report from the <em>pod2man</em> program that comes with Perl:</p>
+<pre>
+  Subroutine clear_noremap
+    Package (lexical)
+      $ready_to_print   i1069, 1079
+    Package main
+      $&amp;                1086
+      $.                1086
+      $0                1086
+      $1                1087
+      $2                1085, 1085
+      $3                1085, 1085
+      $ARGV             1086
+      %HTML_Escapes     1085, 1085</pre>
+<p>This shows the variables used in the subroutine <code>clear_noremap</code>.  The
+variable <code>$ready_to_print</code> is a <a href="../../lib/pods/perlfunc.html#my"><code>my()</code></a> (lexical) variable,
+<strong>i</strong>ntroduced (first declared with my()) on line 1069, and used on
+line 1079.  The variable <a href="../../lib/pods/perlvar.html#__"><code>$&amp;</code></a> from the main package is used on 1086,
+and so on.</p>
+<p>A line number may be prefixed by a single letter:</p>
+<dl>
+<dt><strong><a name="i" class="item">i</a></strong></dt>
+
+<dd>
+<p>Lexical variable introduced (declared with my()) for the first time.</p>
+</dd>
+<dt><strong><a name="_" class="item">&amp;</a></strong></dt>
+
+<dd>
+<p>Subroutine or method call.</p>
+</dd>
+<dt><strong><a name="s" class="item">s</a></strong></dt>
+
+<dd>
+<p>Subroutine defined.</p>
+</dd>
+<dt><strong><a name="r" class="item">r</a></strong></dt>
+
+<dd>
+<p>Format defined.</p>
+</dd>
+</dl>
+<p>The most useful option the cross referencer has is to save the report
+to a separate file.  For instance, to save the report on
+<em>myperlprogram</em> to the file <em>report</em>:</p>
+<pre>
+  $ perl -MO=Xref,-oreport myperlprogram</pre>
+<p>
+</p>
+<h2><a name="the_decompiling_back_end">The Decompiling Back End</a></h2>
+<p>The Deparse back end turns your Perl source back into Perl source.  It
+can reformat along the way, making it useful as a deobfuscator.  The
+most basic way to use it is:</p>
+<pre>
+  $ perl -MO=Deparse myperlprogram</pre>
+<p>You'll notice immediately that Perl has no idea of how to paragraph
+your code.  You'll have to separate chunks of code from each other
+with newlines by hand.  However, watch what it will do with
+one-liners:</p>
+<pre>
+  <span class="operator">$ </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">MO</span><span class="operator">=</span><span class="variable">Deparse</span> <span class="keyword">-e</span> <span class="string">'$op=shift||die "usage: $0
+  code [...]";chomp(@ARGV=&lt;&gt;)unless@ARGV; for(@ARGV){$was=$_;eval$op;
+  die$@ if$@; rename$was,$_ unless$was eq $_}'</span>
+  <span class="keyword">-e</span> <span class="variable">syntax</span> <span class="variable">OK</span>
+  <span class="variable">$op</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="variable">@ARGV</span> <span class="operator">||</span> <span class="keyword">die</span><span class="operator">(</span><span class="string">"usage: </span><span class="variable">$0</span><span class="string"> code [...]"</span><span class="operator">);</span>
+  <span class="keyword">chomp</span><span class="operator">(</span><span class="variable">@ARGV</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">ARGV</span><span class="operator">&gt;)</span> <span class="keyword">unless</span> <span class="variable">@ARGV</span><span class="operator">;</span>
+  <span class="keyword">foreach</span> <span class="variable">$_</span> <span class="operator">(</span><span class="variable">@ARGV</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="variable">$was</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">;</span>
+      <span class="keyword">eval</span> <span class="variable">$op</span><span class="operator">;</span>
+      <span class="keyword">die</span> <span class="variable">$@</span> <span class="keyword">if</span> <span class="variable">$@</span><span class="operator">;</span>
+      <span class="keyword">rename</span> <span class="variable">$was</span><span class="operator">,</span> <span class="variable">$_</span> <span class="keyword">unless</span> <span class="variable">$was</span> <span class="keyword">eq</span> <span class="variable">$_</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>The decompiler has several options for the code it generates.  For
+instance, you can set the size of each indent from 4 (as above) to
+2 with:</p>
+<pre>
+  $ perl -MO=Deparse,-si2 myperlprogram</pre>
+<p>The <strong>-p</strong> option adds parentheses where normally they are omitted:</p>
+<pre>
+  <span class="operator">$ </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">MO</span><span class="operator">=</span><span class="variable">Deparse</span> <span class="keyword">-e</span> <span class="string">'print "Hello, world\n"'</span>
+  <span class="keyword">-e</span> <span class="variable">syntax</span> <span class="variable">OK</span>
+  <span class="keyword">print</span> <span class="string">"Hello, world\n"</span><span class="operator">;</span>
+  <span class="operator">$ </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">MO</span><span class="operator">=</span><span class="variable">Deparse</span><span class="operator">,</span><span class="keyword">-p</span> <span class="keyword">-e</span> <span class="string">'print "Hello, world\n"'</span>
+  <span class="keyword">-e</span> <span class="variable">syntax</span> <span class="variable">OK</span>
+  <span class="keyword">print</span><span class="operator">(</span><span class="string">"Hello, world\n"</span><span class="operator">);</span>
+</pre>
+<p>See <a href="../../lib/B/Deparse.html">the B::Deparse manpage</a> for more information on the formatting options.</p>
+<p>
+</p>
+<h2><a name="the_lint_back_end">The Lint Back End</a></h2>
+<p>The lint back end (B::Lint) inspects programs for poor style.  One
+programmer's bad style is another programmer's useful tool, so options
+let you select what is complained about.</p>
+<p>To run the style checker across your source code:</p>
+<pre>
+  $ perl -MO=Lint myperlprogram</pre>
+<p>To disable context checks and undefined subroutines:</p>
+<pre>
+  $ perl -MO=Lint,-context,-undefined-subs myperlprogram</pre>
+<p>See <a href="../../lib/B/Lint.html">the B::Lint manpage</a> for information on the options.</p>
+<p>
+</p>
+<hr />
+<h1><a name="module_list_for_the_compiler_suite">Module List for the Compiler Suite</a></h1>
+<dl>
+<dt><strong><a name="b8" class="item">B</a></strong></dt>
+
+<dd>
+<p>This module is the introspective (&quot;reflective&quot; in Java terms)
+module, which allows a Perl program to inspect its innards.  The
+back end modules all use this module to gain access to the compiled
+parse tree.  You, the user of a back end module, will not need to
+interact with B.</p>
+</dd>
+<dt><strong><a name="o4" class="item">O</a></strong></dt>
+
+<dd>
+<p>This module is the front-end to the compiler's back ends.  Normally
+called something like this:</p>
+<pre>
+  $ perl -MO=Deparse myperlprogram</pre>
+<p>This is like saying <code>use O 'Deparse'</code> in your Perl program.</p>
+</dd>
+<dt><strong><a name="b_concise7" class="item">B::Concise</a></strong></dt>
+
+<dd>
+<p>This module prints a concise (but complete) version of the Perl parse
+tree.  Its output is more customizable than the one of B::Terse or
+B::Debug (and it can emulate them). This module is useful for people who
+are writing their own back end, or who are learning about the Perl
+internals.  It's not useful to the average programmer.</p>
+</dd>
+<dt><strong><a name="b_debug5" class="item">B::Debug</a></strong></dt>
+
+<dd>
+<p>This module dumps the Perl parse tree in verbose detail to STDOUT.
+It's useful for people who are writing their own back end, or who
+are learning about the Perl internals.  It's not useful to the
+average programmer.</p>
+</dd>
+<dt><strong><a name="b_deparse9" class="item">B::Deparse</a></strong></dt>
+
+<dd>
+<p>This module produces Perl source code from the compiled parse tree.
+It is useful in debugging and deconstructing other people's code,
+also as a pretty-printer for your own source.  See
+<a href="#the_decompiling_back_end">The Decompiling Back End</a> for details about usage.</p>
+</dd>
+<dt><strong><a name="b_lint7" class="item">B::Lint</a></strong></dt>
+
+<dd>
+<p>This module inspects the compiled form of your source code for things
+which, while some people frown on them, aren't necessarily bad enough
+to justify a warning.  For instance, use of an array in scalar context
+without explicitly saying <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar(@array)</code></a> is something that Lint
+can identify.  See <a href="#the_lint_back_end">The Lint Back End</a> for details about usage.</p>
+</dd>
+<dt><strong><a name="b_showlex" class="item">B::Showlex</a></strong></dt>
+
+<dd>
+<p>This module prints out the <a href="../../lib/pods/perlfunc.html#my"><code>my()</code></a> variables used in a function or a
+file.  To get a list of the <a href="../../lib/pods/perlfunc.html#my"><code>my()</code></a> variables used in the subroutine
+<code>mysub()</code> defined in the file myperlprogram:</p>
+<pre>
+  $ perl -MO=Showlex,mysub myperlprogram</pre>
+<p>To get a list of the <a href="../../lib/pods/perlfunc.html#my"><code>my()</code></a> variables used in the file myperlprogram:</p>
+<pre>
+  $ perl -MO=Showlex myperlprogram</pre>
+<p>[BROKEN]</p>
+</dd>
+<dt><strong><a name="b_terse" class="item">B::Terse</a></strong></dt>
+
+<dd>
+<p>This module prints the contents of the parse tree, but without as much
+information as B::Debug.  For comparison, <code>print &quot;Hello, world.&quot;</code>
+produced 96 lines of output from B::Debug, but only 6 from B::Terse.</p>
+<p>This module is useful for people who are writing their own back end,
+or who are learning about the Perl internals.  It's not useful to the
+average programmer.</p>
+</dd>
+<dt><strong><a name="b_xref3" class="item">B::Xref</a></strong></dt>
+
+<dd>
+<p>This module prints a report on where the variables, subroutines, and
+formats are defined and used within a program and the modules it
+loads.  See <a href="#the_cross_referencing_back_end">The Cross-Referencing Back End</a> for details about
+usage.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="known_problems">KNOWN PROBLEMS</a></h1>
+<p>BEGIN{} blocks are executed while compiling your code.  Any external
+state that is initialized in BEGIN{}, such as opening files, initiating
+database connections etc., do not behave properly.  To work around
+this, Perl has an INIT{} block that corresponds to code being executed
+before your program begins running but after your program has finished
+being compiled.  Execution order: BEGIN{}, (possible save of state
+through compiler back-end), INIT{}, program runs, END{}.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This document was originally written by Nathan Torkington, and is now
+maintained by the perl5-porters mailing list
+<em><a href="mailto:perl5-porters@perl.org">perl5-porters@perl.org</a></em>.</p>
+
+</body>
+
+</html>

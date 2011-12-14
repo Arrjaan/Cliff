@@ -1,0 +1,256 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>List::Util - A selection of general-utility list subroutines</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>List::Util - A selection of general-utility list subroutines</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#known_bugs">KNOWN BUGS</a></li>
+	<li><a href="#suggested_additions">SUGGESTED ADDITIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>List::Util - A selection of general-utility list subroutines</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">List::Util</span> <span class="string">qw(first max maxstr min minstr reduce shuffle sum)</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>List::Util</code> contains a selection of subroutines that people have
+expressed would be nice to have in the perl core, but the usage would
+not really be high enough to warrant the use of a keyword, and the size
+so small such that being individual extensions would be wasteful.</p>
+<p>By default <code>List::Util</code> does not export any subroutines. The
+subroutines defined are</p>
+<dl>
+<dt><strong><a name="first" class="item">first BLOCK LIST</a></strong></dt>
+
+<dd>
+<p>Similar to <a href="../../lib/pods/perlfunc.html#grep"><code>grep</code></a> in that it evaluates BLOCK setting <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> to each element
+of LIST in turn. <a href="#first"><code>first</code></a> returns the first element where the result from
+BLOCK is a true value. If BLOCK never returns true or LIST was empty then
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">first</span> <span class="operator">{</span> <span class="keyword">defined</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="variable">@list</span>    <span class="comment"># first defined value in @list</span>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">first</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&gt;</span> <span class="variable">$value</span> <span class="operator">}</span> <span class="variable">@list</span>    <span class="comment"># first value in @list which</span>
+                                          <span class="comment"># is greater than $value</span>
+</pre>
+<p>This function could be implemented using <a href="#reduce"><code>reduce</code></a> like this</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="keyword">defined</span><span class="operator">(</span><span class="variable">$a</span><span class="operator">)</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">wanted</span><span class="operator">(</span><span class="variable">$b</span><span class="operator">)</span> <span class="operator">?</span> <span class="variable">$b</span> <span class="operator">:</span> <span class="keyword">undef</span> <span class="operator">}</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="variable">@list</span>
+</pre>
+<p>for example <code>wanted()</code> could be <a href="../../lib/pods/perlfunc.html#defined"><code>defined()</code></a> which would return the first
+defined value in @list</p>
+</dd>
+<dt><strong><a name="max" class="item">max LIST</a></strong></dt>
+
+<dd>
+<p>Returns the entry in the list with the highest numerical value. If the
+list is empty then <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<pre>
+    $foo = max 1..10                # 10
+    $foo = max 3,9,12               # 12
+    $foo = max @bar, @baz           # whatever</pre>
+<p>This function could be implemented using <a href="#reduce"><code>reduce</code></a> like this</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">&gt;</span> <span class="variable">$b</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="number">1</span><span class="operator">..</span><span class="number">10</span>
+</pre>
+</dd>
+<dt><strong><a name="maxstr" class="item">maxstr LIST</a></strong></dt>
+
+<dd>
+<p>Similar to <a href="#max"><code>max</code></a>, but treats all the entries in the list as strings
+and returns the highest string as defined by the <code>gt</code> operator.
+If the list is empty then <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<pre>
+    $foo = maxstr 'A'..'Z'          # 'Z'
+    $foo = maxstr &quot;hello&quot;,&quot;world&quot;   # &quot;world&quot;
+    $foo = maxstr @bar, @baz        # whatever</pre>
+<p>This function could be implemented using <a href="#reduce"><code>reduce</code></a> like this</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="keyword">gt</span> <span class="variable">$b</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="string">'A'</span><span class="operator">..</span><span class="string">'Z'</span>
+</pre>
+</dd>
+<dt><strong><a name="min" class="item">min LIST</a></strong></dt>
+
+<dd>
+<p>Similar to <a href="#max"><code>max</code></a> but returns the entry in the list with the lowest
+numerical value. If the list is empty then <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<pre>
+    $foo = min 1..10                # 1
+    $foo = min 3,9,12               # 3
+    $foo = min @bar, @baz           # whatever</pre>
+<p>This function could be implemented using <a href="#reduce"><code>reduce</code></a> like this</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">&lt;</span> <span class="variable">$b</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="number">1</span><span class="operator">..</span><span class="number">10</span>
+</pre>
+</dd>
+<dt><strong><a name="minstr" class="item">minstr LIST</a></strong></dt>
+
+<dd>
+<p>Similar to <a href="#min"><code>min</code></a>, but treats all the entries in the list as strings
+and returns the lowest string as defined by the <code>lt</code> operator.
+If the list is empty then <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<pre>
+    $foo = minstr 'A'..'Z'          # 'A'
+    $foo = minstr &quot;hello&quot;,&quot;world&quot;   # &quot;hello&quot;
+    $foo = minstr @bar, @baz        # whatever</pre>
+<p>This function could be implemented using <a href="#reduce"><code>reduce</code></a> like this</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="keyword">lt</span> <span class="variable">$b</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="string">'A'</span><span class="operator">..</span><span class="string">'Z'</span>
+</pre>
+</dd>
+<dt><strong><a name="reduce" class="item">reduce BLOCK LIST</a></strong></dt>
+
+<dd>
+<p>Reduces LIST by calling BLOCK, in a scalar context, multiple times,
+setting <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> and <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a> each time. The first call will be with <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a>
+and <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a> set to the first two elements of the list, subsequent
+calls will be done by setting <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> to the result of the previous
+call and <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a> to the next element in the list.</p>
+<p>Returns the result of the last call to BLOCK. If LIST is empty then
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned. If LIST only contains one element then that
+element is returned and BLOCK is not executed.</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">&lt;</span> <span class="variable">$b</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="number">1</span><span class="operator">..</span><span class="number">10</span>       <span class="comment"># min</span>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="keyword">lt</span> <span class="variable">$b</span> <span class="operator">?</span> <span class="variable">$a</span> <span class="operator">:</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="string">'aa'</span><span class="operator">..</span><span class="string">'zz'</span> <span class="comment"># minstr</span>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">+</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="number">1</span> <span class="operator">..</span> <span class="number">10</span>               <span class="comment"># sum</span>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">.</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="variable">@bar</span>                  <span class="comment"># concat</span>
+</pre>
+<p>If your algorithm requires that <a href="#reduce"><code>reduce</code></a> produce an identity value, then
+make sure that you always pass that identity value as the first argument to prevent
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> being returned</p>
+<pre>
+  <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">+</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="number">0</span><span class="operator">,</span> <span class="variable">@values</span><span class="operator">;</span>             <span class="comment"># sum with 0 identity value</span>
+</pre>
+</dd>
+<dt><strong><a name="shuffle" class="item">shuffle LIST</a></strong></dt>
+
+<dd>
+<p>Returns the elements of LIST in a random order</p>
+<pre>
+    @cards = shuffle 0..51      # 0..51 in a random order</pre>
+</dd>
+<dt><strong><a name="sum" class="item">sum LIST</a></strong></dt>
+
+<dd>
+<p>Returns the sum of all the elements in LIST. If LIST is empty then
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<pre>
+    $foo = sum 1..10                # 55
+    $foo = sum 3,9,12               # 24
+    $foo = sum @bar, @baz           # whatever</pre>
+<p>This function could be implemented using <a href="#reduce"><code>reduce</code></a> like this</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">reduce</span> <span class="operator">{</span> <span class="variable">$a</span> <span class="operator">+</span> <span class="variable">$b</span> <span class="operator">}</span> <span class="number">1</span><span class="operator">..</span><span class="number">10</span>
+</pre>
+<p>If your algorithm requires that <a href="#sum"><code>sum</code></a> produce an identity of 0, then
+make sure that you always pass <code>0</code> as the first argument to prevent
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> being returned</p>
+<pre>
+  <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">sum</span> <span class="number">0</span><span class="operator">,</span> <span class="variable">@values</span><span class="operator">;</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="known_bugs">KNOWN BUGS</a></h1>
+<p>With perl versions prior to 5.005 there are some cases where reduce
+will return an incorrect result. This will show up as test 7 of
+reduce.t failing.</p>
+<p>
+</p>
+<hr />
+<h1><a name="suggested_additions">SUGGESTED ADDITIONS</a></h1>
+<p>The following are additions that have been requested, but I have been reluctant
+to add due to them being very simple to implement in perl</p>
+<pre>
+  <span class="comment"># One argument is true</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> any </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&amp;&amp;</span> <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">for</span> <span class="variable">@_</span><span class="operator">;</span> <span class="number">0</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># All arguments are true</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> all </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">||</span> <span class="keyword">return</span> <span class="number">0</span> <span class="keyword">for</span> <span class="variable">@_</span><span class="operator">;</span> <span class="number">1</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># All arguments are false</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> none </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&amp;&amp;</span> <span class="keyword">return</span> <span class="number">0</span> <span class="keyword">for</span> <span class="variable">@_</span><span class="operator">;</span> <span class="number">1</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># One argument is false</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> notall </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">||</span> <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">for</span> <span class="variable">@_</span><span class="operator">;</span> <span class="number">0</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># How many elements are true</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> true </span><span class="operator">{</span> <span class="keyword">scalar</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">}</span> <span class="variable">@_</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># How many elements are false</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> false </span><span class="operator">{</span> <span class="keyword">scalar</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="operator">!</span><span class="variable">$_</span> <span class="operator">}</span> <span class="variable">@_</span> <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/Scalar/Util.html">the Scalar::Util manpage</a>, <a href="../../lib/List/MoreUtils.html">the List::MoreUtils manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 1997-2007 Graham Barr &lt;<a href="mailto:gbarr@pobox.com">gbarr@pobox.com</a>&gt;. All rights reserved.
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

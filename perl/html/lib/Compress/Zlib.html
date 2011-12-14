@@ -1,0 +1,936 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Compress::Zlib - Interface to zlib compression library</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Compress::Zlib - Interface to zlib compression library</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#notes_for_users_of_compress__zlib_version_1">Notes for users of Compress::Zlib version 1</a></li>
+	</ul>
+
+	<li><a href="#gzip_interface">GZIP INTERFACE</a></li>
+	<ul>
+
+		<li><a href="#examples">Examples</a></li>
+		<li><a href="#compress__zlib__memgzip">Compress::Zlib::memGzip</a></li>
+		<li><a href="#compress__zlib__memgunzip">Compress::Zlib::memGunzip</a></li>
+	</ul>
+
+	<li><a href="#compress_uncompress">COMPRESS/UNCOMPRESS</a></li>
+	<li><a href="#deflate_interface">Deflate Interface</a></li>
+	<ul>
+
+		<li><a href="#__d___status____deflateinit___opt___"><strong>($d, $status) = deflateInit( [OPT] )</strong></a></li>
+		<li><a href="#__out___status_____d__deflate__buffer_"><strong>($out, $status) = $d-&gt;deflate($buffer)</strong></a></li>
+		<li><a href="#__out___status_____d__flush__"><strong>($out, $status) = $d-&gt;flush()</strong></a></li>
+		<li><a href="#_status____d__deflateparams__opt__"><strong>$status = $d-&gt;deflateParams([OPT])</strong></a></li>
+		<li><a href="#_d__dict_adler__"><strong>$d-&gt;dict_adler()</strong></a></li>
+		<li><a href="#_d__msg__"><strong>$d-&gt;msg()</strong></a></li>
+		<li><a href="#_d__total_in__"><strong>$d-&gt;total_in()</strong></a></li>
+		<li><a href="#_d__total_out__"><strong>$d-&gt;total_out()</strong></a></li>
+		<li><a href="#example">Example</a></li>
+	</ul>
+
+	<li><a href="#inflate_interface">Inflate Interface</a></li>
+	<ul>
+
+		<li><a href="#__i___status____inflateinit__"><strong>($i, $status) = inflateInit()</strong></a></li>
+		<li><a href="#__out___status_____i__inflate__buffer_"><strong>($out, $status) = $i-&gt;inflate($buffer)</strong></a></li>
+		<li><a href="#_status____i__inflatesync__buffer_"><strong>$status = $i-&gt;inflateSync($buffer)</strong></a></li>
+		<li><a href="#_i__dict_adler__"><strong>$i-&gt;dict_adler()</strong></a></li>
+		<li><a href="#_i__msg__"><strong>$i-&gt;msg()</strong></a></li>
+		<li><a href="#_i__total_in__"><strong>$i-&gt;total_in()</strong></a></li>
+		<li><a href="#_i__total_out__"><strong>$i-&gt;total_out()</strong></a></li>
+		<li><a href="#example">Example</a></li>
+	</ul>
+
+	<li><a href="#checksum_functions">CHECKSUM FUNCTIONS</a></li>
+	<li><a href="#misc">Misc</a></li>
+	<ul>
+
+		<li><a href="#my__version___compress__zlib__zlib_version___">my $version = Compress::Zlib::zlib_version();</a></li>
+	</ul>
+
+	<li><a href="#constants">CONSTANTS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#modification_history">MODIFICATION HISTORY</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Compress::Zlib - Interface to zlib compression library</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Compress::Zlib</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="operator">(</span><span class="variable">$d</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">deflateInit</span><span class="operator">(</span> <span class="operator">[</span><span class="variable">OPT</span><span class="operator">]</span> <span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">deflate</span><span class="operator">(</span><span class="variable">$input</span><span class="operator">,</span> <span class="variable">$output</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">flush</span><span class="operator">(</span><span class="operator">[</span><span class="variable">$flush_type</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">deflateParams</span><span class="operator">(</span><span class="variable">OPTS</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">deflateTune</span><span class="operator">(</span><span class="variable">OPTS</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">dict_adler</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">crc32</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">adler32</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">total_in</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">total_out</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">msg</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">get_Strategy</span><span class="operator">();</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">get_Level</span><span class="operator">();</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">get_BufSize</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="operator">(</span><span class="variable">$i</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">inflateInit</span><span class="operator">(</span> <span class="operator">[</span><span class="variable">OPT</span><span class="operator">]</span> <span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$i</span><span class="operator">-&gt;</span><span class="variable">inflate</span><span class="operator">(</span><span class="variable">$input</span><span class="operator">,</span> <span class="variable">$output</span> <span class="operator">[</span><span class="operator">,</span> <span class="variable">$eof</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$i</span><span class="operator">-&gt;</span><span class="variable">inflateSync</span><span class="operator">(</span><span class="variable">$input</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$i</span><span class="operator">-&gt;</span><span class="variable">dict_adler</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">crc32</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">adler32</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$i</span><span class="operator">-&gt;</span><span class="variable">total_in</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$i</span><span class="operator">-&gt;</span><span class="variable">total_out</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$i</span><span class="operator">-&gt;</span><span class="variable">msg</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$d</span><span class="operator">-&gt;</span><span class="variable">get_BufSize</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="variable">$dest</span> <span class="operator">=</span> <span class="variable">compress</span><span class="operator">(</span><span class="variable">$source</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$dest</span> <span class="operator">=</span> <span class="variable">uncompress</span><span class="operator">(</span><span class="variable">$source</span><span class="operator">)</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$gz</span> <span class="operator">=</span> <span class="variable">gzopen</span><span class="operator">(</span><span class="variable">$filename</span> <span class="keyword">or</span> <span class="variable">filehandle</span><span class="operator">,</span> <span class="variable">$mode</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$bytesread</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzread</span><span class="operator">(</span><span class="variable">$buffer</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">$size</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$bytesread</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzreadline</span><span class="operator">(</span><span class="variable">$line</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$byteswritten</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzwrite</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzflush</span><span class="operator">(</span><span class="variable">$flush</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$offset</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gztell</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzseek</span><span class="operator">(</span><span class="variable">$offset</span><span class="operator">,</span> <span class="variable">$whence</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzclose</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzeof</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="variable">$status</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzsetparams</span><span class="operator">(</span><span class="variable">$level</span><span class="operator">,</span> <span class="variable">$strategy</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$errstring</span> <span class="operator">=</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzerror</span><span class="operator">()</span> <span class="operator">;</span> 
+    <span class="variable">$gzerrno</span>
+</pre>
+<pre>
+    <span class="variable">$dest</span> <span class="operator">=</span> <span class="variable">Compress::Zlib::memGzip</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$dest</span> <span class="operator">=</span> <span class="variable">Compress::Zlib::memGunzip</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$crc</span> <span class="operator">=</span> <span class="variable">adler32</span><span class="operator">(</span><span class="variable">$buffer</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">$crc</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$crc</span> <span class="operator">=</span> <span class="variable">crc32</span><span class="operator">(</span><span class="variable">$buffer</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">$crc</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+</pre>
+<pre>
+    $crc = adler32_combine($crc1, $crc2, $len2)l
+    $crc = crc32_combine($adler1, $adler2, $len2)</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$version</span> <span class="operator">=</span> <span class="variable">Compress::Raw::Zlib::zlib_version</span><span class="operator">();</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <em>Compress::Zlib</em> module provides a Perl interface to the <em>zlib</em>
+compression library (see <a href="#author">AUTHOR</a> for details about where to get
+<em>zlib</em>).</p>
+<p>The <code>Compress::Zlib</code> module can be split into two general areas of
+functionality, namely a simple read/write interface to <em>gzip</em> files
+and a low-level in-memory compression/decompression interface.</p>
+<p>Each of these areas will be discussed in the following sections.</p>
+<p>
+</p>
+<h2><a name="notes_for_users_of_compress__zlib_version_1">Notes for users of Compress::Zlib version 1</a></h2>
+<p>The main change in <code>Compress::Zlib</code> version 2.x is that it does not now
+interface directly to the zlib library. Instead it uses the
+<code>IO::Compress::Gzip</code> and <code>IO::Uncompress::Gunzip</code> modules for
+reading/writing gzip files, and the <code>Compress::Raw::Zlib</code> module for some
+low-level zlib access.</p>
+<p>The interface provided by version 2 of this module should be 100% backward
+compatible with version 1. If you find a difference in the expected
+behaviour please contact the author (See <a href="#author">AUTHOR</a>). See <a href="#gzip_interface">GZIP INTERFACE</a></p>
+<p>With the creation of the <code>IO::Compress</code> and <code>IO::Uncompress</code> modules no
+new features are planned for <code>Compress::Zlib</code> - the new modules do
+everything that <code>Compress::Zlib</code> does and then some. Development on
+<code>Compress::Zlib</code> will be limited to bug fixes only.</p>
+<p>If you are writing new code, your first port of call should be one of the
+new <code>IO::Compress</code> or <code>IO::Uncompress</code> modules.</p>
+<p>
+</p>
+<hr />
+<h1><a name="gzip_interface">GZIP INTERFACE</a></h1>
+<p>A number of functions are supplied in <em>zlib</em> for reading and writing
+<em>gzip</em> files that conform to <a href="http://www.ietf.org/rfc/rfc1952.txt" class="rfc">RFC 1952</a>. This module provides an interface
+to most of them.</p>
+<p>If you have previously used <code>Compress::Zlib</code> 1.x, the following
+enhancements/changes have been made to the <a href="#gzopen"><code>gzopen</code></a> interface:</p>
+<ol>
+<li>
+<p>If you want to open either STDIN or STDOUT with <a href="#gzopen"><code>gzopen</code></a>, you can now
+optionally use the special filename &quot;<code>-</code>&quot; as a synonym for <code>\*STDIN</code> and
+<code>\*STDOUT</code>.</p>
+</li>
+<li>
+<p>In <code>Compress::Zlib</code> version 1.x, <a href="#gzopen"><code>gzopen</code></a> used the zlib library to open
+the underlying file. This made things especially tricky when a Perl
+filehandle was passed to <a href="#gzopen"><code>gzopen</code></a>. Behind the scenes the numeric C file
+descriptor had to be extracted from the Perl filehandle and this passed to
+the zlib library.</p>
+<p>Apart from being non-portable to some operating systems, this made it
+difficult to use <a href="#gzopen"><code>gzopen</code></a> in situations where you wanted to extract/create
+a gzip data stream that is embedded in a larger file, without having to
+resort to opening and closing the file multiple times.</p>
+<p>It also made it impossible to pass a perl filehandle that wasn't associated
+with a real filesystem file, like, say, an <code>IO::String</code>.</p>
+<p>In <code>Compress::Zlib</code> version 2.x, the <a href="#gzopen"><code>gzopen</code></a> interface has been
+completely rewritten to use the <a href="../../lib/IO/Compress/Gzip.html">IO::Compress::Gzip</a>
+for writing gzip files and <a href="../../lib/IO/Uncompress/Gunzip.html">IO::Uncompress::Gunzip</a>
+for reading gzip files. None of the limitations mentioned above apply.</p>
+</li>
+<li>
+<p>Addition of <a href="#gzseek"><code>gzseek</code></a> to provide a restricted <a href="../../lib/pods/perlfunc.html#seek"><code>seek</code></a> interface.</p>
+</li>
+<li>
+<p>Added <a href="#gztell"><code>gztell</code></a>.</p>
+</li>
+</ol>
+<p>A more complete and flexible interface for reading/writing gzip
+files/buffers is included with the module <code>IO-Compress-Zlib</code>. See
+<a href="../../lib/IO/Compress/Gzip.html">IO::Compress::Gzip</a> and
+<a href="../../lib/IO/Uncompress/Gunzip.html">IO::Uncompress::Gunzip</a> for more details.</p>
+<dl>
+<dt><strong><a name="gzopen" class="item"><strong>$gz = gzopen($filename, $mode)</strong></a></strong></dt>
+
+<dt><strong><strong>$gz = gzopen($filehandle, $mode)</strong></strong></dt>
+
+<dd>
+<p>This function opens either the <em>gzip</em> file <code>$filename</code> for reading or
+writing or attaches to the opened filehandle, <code>$filehandle</code>. 
+It returns an object on success and <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on failure.</p>
+<p>When writing a gzip file this interface will <em>always</em> create the smallest
+possible gzip header (exactly 10 bytes). If you want greater control over
+what gets stored in the gzip header (like the original filename or a
+comment) use <a href="../../lib/IO/Compress/Gzip.html">IO::Compress::Gzip</a> instead. Similarly if
+you want to read the contents of the gzip header use
+<a href="../../lib/IO/Uncompress/Gunzip.html">IO::Uncompress::Gunzip</a>.</p>
+<p>The second parameter, <code>$mode</code>, is used to specify whether the file is
+opened for reading or writing and to optionally specify a compression
+level and compression strategy when writing. The format of the <code>$mode</code>
+parameter is similar to the mode parameter to the 'C' function <code>fopen</code>,
+so &quot;rb&quot; is used to open for reading, &quot;wb&quot; for writing and &quot;ab&quot; for
+appending (writing at the end of the file).</p>
+<p>To specify a compression level when writing, append a digit between 0
+and 9 to the mode string -- 0 means no compression and 9 means maximum
+compression.
+If no compression level is specified Z_DEFAULT_COMPRESSION is used.</p>
+<p>To specify the compression strategy when writing, append 'f' for filtered
+data, 'h' for Huffman only compression, or 'R' for run-length encoding.
+If no strategy is specified Z_DEFAULT_STRATEGY is used.</p>
+<p>So, for example, &quot;wb9&quot; means open for writing with the maximum compression
+using the default strategy and &quot;wb4R&quot; means open for writing with compression
+level 4 and run-length encoding.</p>
+<p>Refer to the <em>zlib</em> documentation for the exact format of the <code>$mode</code>
+parameter.</p>
+</dd>
+<dt><strong><a name="gzread" class="item"><strong>$bytesread = $gz-&gt;gzread($buffer [, $size]) ;</strong></a></strong></dt>
+
+<dd>
+<p>Reads <code>$size</code> bytes from the compressed file into <code>$buffer</code>. If
+<code>$size</code> is not specified, it will default to 4096. If the scalar
+<code>$buffer</code> is not large enough, it will be extended automatically.</p>
+<p>Returns the number of bytes actually read. On EOF it returns 0 and in
+the case of an error, -1.</p>
+</dd>
+<dt><strong><a name="gzreadline" class="item"><strong>$bytesread = $gz-&gt;gzreadline($line) ;</strong></a></strong></dt>
+
+<dd>
+<p>Reads the next line from the compressed file into <code>$line</code>.</p>
+<p>Returns the number of bytes actually read. On EOF it returns 0 and in
+the case of an error, -1.</p>
+<p>It is legal to intermix calls to <a href="#gzread"><code>gzread</code></a> and <a href="#gzreadline"><code>gzreadline</code></a>.</p>
+<p>To maintain backward compatibility with version 1.x of this module
+<a href="#gzreadline"><code>gzreadline</code></a> ignores the <a href="../../lib/pods/perlvar.html#__"><code>$/</code></a> variable - it <em>always</em> uses the string
+<a href="../../lib/pods/perlrun.html#n"><code>&quot;\n&quot;</code></a> as the line delimiter.</p>
+<p>If you want to read a gzip file a line at a time and have it respect the
+<a href="../../lib/pods/perlvar.html#__"><code>$/</code></a> variable (or <a href="../../lib/pods/perlvar.html#_input_record_separator"><code>$INPUT_RECORD_SEPARATOR</code></a>, or <a href="../../lib/pods/perlvar.html#_rs"><code>$RS</code></a> when <code>English</code> is
+in use) see <a href="../../lib/IO/Uncompress/Gunzip.html">IO::Uncompress::Gunzip</a>.</p>
+</dd>
+<dt><strong><a name="gzwrite" class="item"><strong>$byteswritten = $gz-&gt;gzwrite($buffer) ;</strong></a></strong></dt>
+
+<dd>
+<p>Writes the contents of <code>$buffer</code> to the compressed file. Returns the
+number of bytes actually written, or 0 on error.</p>
+</dd>
+<dt><strong><a name="gzflush" class="item"><strong>$status = $gz-&gt;gzflush($flush_type) ;</strong></a></strong></dt>
+
+<dd>
+<p>Flushes all pending output into the compressed file.</p>
+<p>This method takes an optional parameter, <code>$flush_type</code>, that controls
+how the flushing will be carried out. By default the <code>$flush_type</code>
+used is <code>Z_FINISH</code>. Other valid values for <code>$flush_type</code> are
+<code>Z_NO_FLUSH</code>, <code>Z_SYNC_FLUSH</code>, <code>Z_FULL_FLUSH</code> and <code>Z_BLOCK</code>. It is
+strongly recommended that you only set the <code>flush_type</code> parameter if
+you fully understand the implications of what it does - overuse of <code>flush</code>
+can seriously degrade the level of compression achieved. See the <code>zlib</code>
+documentation for details.</p>
+<p>Returns 0 on success.</p>
+</dd>
+<dt><strong><a name="gztell" class="item"><strong>$offset = $gz-&gt;gztell() ;</strong></a></strong></dt>
+
+<dd>
+<p>Returns the uncompressed file offset.</p>
+</dd>
+<dt><strong><a name="gzseek" class="item"><strong>$status = $gz-&gt;gzseek($offset, $whence) ;</strong></a></strong></dt>
+
+<dd>
+<p>Provides a sub-set of the <a href="../../lib/pods/perlfunc.html#seek"><code>seek</code></a> functionality, with the restriction
+that it is only legal to seek forward in the compressed file.
+It is a fatal error to attempt to seek backward.</p>
+<p>When opened for writing, empty parts of the file will have NULL (0x00)
+bytes written to them.</p>
+<p>The <code>$whence</code> parameter should be one of SEEK_SET, SEEK_CUR or SEEK_END.</p>
+<p>Returns 1 on success, 0 on failure.</p>
+</dd>
+<dt><strong><a name="gzclose" class="item"><strong>$gz-&gt;gzclose</strong></a></strong></dt>
+
+<dd>
+<p>Closes the compressed file. Any pending data is flushed to the file
+before it is closed.</p>
+<p>Returns 0 on success.</p>
+</dd>
+<dt><strong><a name="gzsetparams" class="item"><strong>$gz-&gt;gzsetparams($level, $strategy</strong></a></strong></dt>
+
+<dd>
+<p>Change settings for the deflate stream <code>$gz</code>.</p>
+<p>The list of the valid options is shown below. Options not specified
+will remain unchanged.</p>
+<p>Note: This method is only available if you are running zlib 1.0.6 or better.</p>
+<dl>
+<dt><strong><a name="_level" class="item"><strong>$level</strong></a></strong></dt>
+
+<dd>
+<p>Defines the compression level. Valid values are 0 through 9,
+<code>Z_NO_COMPRESSION</code>, <code>Z_BEST_SPEED</code>, <code>Z_BEST_COMPRESSION</code>, and
+<code>Z_DEFAULT_COMPRESSION</code>.</p>
+</dd>
+<dt><strong><a name="_strategy" class="item"><strong>$strategy</strong></a></strong></dt>
+
+<dd>
+<p>Defines the strategy used to tune the compression. The valid values are
+<code>Z_DEFAULT_STRATEGY</code>, <code>Z_FILTERED</code> and <code>Z_HUFFMAN_ONLY</code>.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="gzerror" class="item"><strong>$gz-&gt;gzerror</strong></a></strong></dt>
+
+<dd>
+<p>Returns the <em>zlib</em> error message or number for the last operation
+associated with <code>$gz</code>. The return value will be the <em>zlib</em> error
+number when used in a numeric context and the <em>zlib</em> error message
+when used in a string context. The <em>zlib</em> error number constants,
+shown below, are available for use.</p>
+<pre>
+    Z_OK
+    Z_STREAM_END
+    Z_ERRNO
+    Z_STREAM_ERROR
+    Z_DATA_ERROR
+    Z_MEM_ERROR
+    Z_BUF_ERROR</pre>
+</dd>
+<dt><strong><a name="_gzerrno" class="item"><strong>$gzerrno</strong></a></strong></dt>
+
+<dd>
+<p>The <a href="#_gzerrno"><code>$gzerrno</code></a> scalar holds the error code associated with the most
+recent <em>gzip</em> routine. Note that unlike <a href="#gzerror"><code>gzerror()</code></a>, the error is
+<em>not</em> associated with a particular file.</p>
+<p>As with <a href="#gzerror"><code>gzerror()</code></a> it returns an error number in numeric context and
+an error message in string context. Unlike <a href="#gzerror"><code>gzerror()</code></a> though, the
+error message will correspond to the <em>zlib</em> message when the error is
+associated with <em>zlib</em> itself, or the UNIX error message when it is
+not (i.e. <em>zlib</em> returned <code>Z_ERRORNO</code>).</p>
+<p>As there is an overlap between the error numbers used by <em>zlib</em> and
+UNIX, <a href="#_gzerrno"><code>$gzerrno</code></a> should only be used to check for the presence of
+<em>an</em> error in numeric context. Use <a href="#gzerror"><code>gzerror()</code></a> to check for specific
+<em>zlib</em> errors. The <em>gzcat</em> example below shows how the variable can
+be used safely.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="examples">Examples</a></h2>
+<p>Here is an example script which uses the interface. It implements a
+<em>gzcat</em> function.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">Compress::Zlib</span> <span class="operator">;</span>
+    
+    <span class="comment"># use stdin if no files supplied</span>
+    <span class="variable">@ARGV</span> <span class="operator">=</span> <span class="string">'-'</span> <span class="keyword">unless</span> <span class="variable">@ARGV</span> <span class="operator">;</span>
+    
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">(</span><span class="variable">@ARGV</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$buffer</span> <span class="operator">;</span>
+    
+        <span class="keyword">my</span> <span class="variable">$gz</span> <span class="operator">=</span> <span class="variable">gzopen</span><span class="operator">(</span><span class="variable">$file</span><span class="operator">,</span> <span class="string">"rb"</span><span class="operator">)</span> 
+             <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot open </span><span class="variable">$file</span><span class="string">: </span><span class="variable">$gzerrno</span><span class="string">\n"</span> <span class="operator">;</span>
+    
+        <span class="keyword">print</span> <span class="variable">$buffer</span> <span class="keyword">while</span> <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzread</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)</span> <span class="operator">&gt;</span> <span class="number">0</span> <span class="operator">;</span>
+    
+        <span class="keyword">die</span> <span class="string">"Error reading from </span><span class="variable">$file</span><span class="string">: </span><span class="variable">$gzerrno</span><span class="string">"</span> <span class="operator">.</span> <span class="operator">(</span><span class="variable">$gzerrno</span><span class="operator">+</span><span class="number">0</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">"\n"</span> 
+            <span class="keyword">if</span> <span class="variable">$gzerrno</span> <span class="operator">!=</span> <span class="variable">Z_STREAM_END</span> <span class="operator">;</span>
+        
+        <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzclose</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Below is a script which makes use of <a href="#gzreadline"><code>gzreadline</code></a>. It implements a
+very simple <em>grep</em> like script.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">Compress::Zlib</span> <span class="operator">;</span>
+    
+    <span class="keyword">die</span> <span class="string">"Usage: gzgrep pattern [file...]\n"</span>
+        <span class="keyword">unless</span> <span class="variable">@ARGV</span> <span class="operator">&gt;=</span> <span class="number">1</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">$pattern</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">;</span>
+    
+    <span class="comment"># use stdin if no files supplied</span>
+    <span class="variable">@ARGV</span> <span class="operator">=</span> <span class="string">'-'</span> <span class="keyword">unless</span> <span class="variable">@ARGV</span> <span class="operator">;</span>
+    
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">(</span><span class="variable">@ARGV</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$gz</span> <span class="operator">=</span> <span class="variable">gzopen</span><span class="operator">(</span><span class="variable">$file</span><span class="operator">,</span> <span class="string">"rb"</span><span class="operator">)</span> 
+             <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot open </span><span class="variable">$file</span><span class="string">: </span><span class="variable">$gzerrno</span><span class="string">\n"</span> <span class="operator">;</span>
+    
+        <span class="keyword">while</span> <span class="operator">(</span><span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzreadline</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">&gt;</span> <span class="number">0</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">print</span> <span class="keyword">if</span> <span class="regex">/</span><span class="variable">$pattern</span><span class="regex">/</span> <span class="operator">;</span>
+        <span class="operator">}</span>
+    
+        <span class="keyword">die</span> <span class="string">"Error reading from </span><span class="variable">$file</span><span class="string">: </span><span class="variable">$gzerrno</span><span class="string">\n"</span> 
+            <span class="keyword">if</span> <span class="variable">$gzerrno</span> <span class="operator">!=</span> <span class="variable">Z_STREAM_END</span> <span class="operator">;</span>
+        
+        <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzclose</span><span class="operator">()</span> <span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>This script, <em>gzstream</em>, does the opposite of the <em>gzcat</em> script
+above. It reads from standard input and writes a gzip data stream to
+standard output.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">Compress::Zlib</span> <span class="operator">;</span>
+    
+    <span class="keyword">binmode</span> <span class="variable">STDOUT</span><span class="operator">;</span>  <span class="comment"># gzopen only sets it on the fd</span>
+    
+    <span class="keyword">my</span> <span class="variable">$gz</span> <span class="operator">=</span> <span class="variable">gzopen</span><span class="operator">(\</span><span class="variable">*STDOUT</span><span class="operator">,</span> <span class="string">"wb"</span><span class="operator">)</span>
+          <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot open stdout: </span><span class="variable">$gzerrno</span><span class="string">\n"</span> <span class="operator">;</span>
+    
+    <span class="keyword">while</span> <span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+        <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzwrite</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> 
+          <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"error writing: </span><span class="variable">$gzerrno</span><span class="string">\n"</span> <span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="variable">$gz</span><span class="operator">-&gt;</span><span class="variable">gzclose</span> <span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="compress__zlib__memgzip">Compress::Zlib::memGzip</a></h2>
+<p>This function is used to create an in-memory gzip file with the minimum
+possible gzip header (exactly 10 bytes).</p>
+<pre>
+    <span class="variable">$dest</span> <span class="operator">=</span> <span class="variable">Compress::Zlib::memGzip</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)</span> 
+        <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot compress: </span><span class="variable">$gzerrno</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<p>If successful, it returns the in-memory gzip file. Otherwise it returns
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> and the <a href="#_gzerrno"><code>$gzerrno</code></a> variable will store the zlib error code.</p>
+<p>The <code>$buffer</code> parameter can either be a scalar or a scalar reference.</p>
+<p>See <a href="../../lib/IO/Compress/Gzip.html">IO::Compress::Gzip</a> for an alternative way to
+carry out in-memory gzip compression.</p>
+<p>
+</p>
+<h2><a name="compress__zlib__memgunzip">Compress::Zlib::memGunzip</a></h2>
+<p>This function is used to uncompress an in-memory gzip file.</p>
+<pre>
+    <span class="variable">$dest</span> <span class="operator">=</span> <span class="variable">Compress::Zlib::memGunzip</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)</span> 
+        <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot uncompress: </span><span class="variable">$gzerrno</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<p>If successful, it returns the uncompressed gzip file. Otherwise it
+returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> and the <a href="#_gzerrno"><code>$gzerrno</code></a> variable will store the zlib error
+code.</p>
+<p>The <code>$buffer</code> parameter can either be a scalar or a scalar reference. The
+contents of the <code>$buffer</code> parameter are destroyed after calling this function.</p>
+<p>If <code>$buffer</code> consists of multiple concatenated gzip data streams only the
+first will be uncompressed. Use <code>gunzip</code> with the <code>MultiStream</code> option in
+the <code>IO::Uncompress::Gunzip</code> module if you need to deal with concatenated
+data streams.</p>
+<p>See <a href="../../lib/IO/Uncompress/Gunzip.html">IO::Uncompress::Gunzip</a> for an alternative way
+to carry out in-memory gzip uncompression.</p>
+<p>
+</p>
+<hr />
+<h1><a name="compress_uncompress">COMPRESS/UNCOMPRESS</a></h1>
+<p>Two functions are provided to perform in-memory compression/uncompression of
+<a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a> data streams. They are called <a href="#compress"><code>compress</code></a> and <a href="#uncompress"><code>uncompress</code></a>.</p>
+<dl>
+<dt><strong><a name="compress" class="item"><strong>$dest = compress($source [, $level] ) ;</strong></a></strong></dt>
+
+<dd>
+<p>Compresses <code>$source</code>. If successful it returns the compressed
+data. Otherwise it returns <em>undef</em>.</p>
+<p>The source buffer, <code>$source</code>, can either be a scalar or a scalar
+reference.</p>
+<p>The <a href="#_level"><code>$level</code></a> parameter defines the compression level. Valid values are
+0 through 9, <code>Z_NO_COMPRESSION</code>, <code>Z_BEST_SPEED</code>,
+<code>Z_BEST_COMPRESSION</code>, and <code>Z_DEFAULT_COMPRESSION</code>.
+If <a href="#_level"><code>$level</code></a> is not specified <code>Z_DEFAULT_COMPRESSION</code> will be used.</p>
+</dd>
+<dt><strong><a name="uncompress" class="item"><strong>$dest = uncompress($source) ;</strong></a></strong></dt>
+
+<dd>
+<p>Uncompresses <code>$source</code>. If successful it returns the uncompressed
+data. Otherwise it returns <em>undef</em>.</p>
+<p>The source buffer can either be a scalar or a scalar reference.</p>
+</dd>
+</dl>
+<p>Please note: the two functions defined above are <em>not</em> compatible with
+the Unix commands of the same name.</p>
+<p>See <a href="../../IO/Deflate.html">IO::Deflate</a> and <a href="../../IO/Inflate.html">IO::Inflate</a> included with
+this distribution for an alternative interface for reading/writing <a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a>
+files/buffers.</p>
+<p>
+</p>
+<hr />
+<h1><a name="deflate_interface">Deflate Interface</a></h1>
+<p>This section defines an interface that allows in-memory compression using
+the <em>deflate</em> interface provided by zlib.</p>
+<p>Here is a definition of the interface available:</p>
+<p>
+</p>
+<h2><a name="__d___status____deflateinit___opt___"><strong>($d, $status) = deflateInit( [OPT] )</strong></a></h2>
+<p>Initialises a deflation stream.</p>
+<p>It combines the features of the <em>zlib</em> functions <code>deflateInit</code>,
+<code>deflateInit2</code> and <code>deflateSetDictionary</code>.</p>
+<p>If successful, it will return the initialised deflation stream, <code>$d</code>
+and <code>$status</code> of <code>Z_OK</code> in a list context. In scalar context it
+returns the deflation stream, <code>$d</code>, only.</p>
+<p>If not successful, the returned deflation stream (<code>$d</code>) will be
+<em>undef</em> and <code>$status</code> will hold the exact <em>zlib</em> error code.</p>
+<p>The function optionally takes a number of named options specified as
+<code>-Name=&gt;value</code> pairs. This allows individual options to be
+tailored without having to specify them all in the parameter list.</p>
+<p>For backward compatibility, it is also possible to pass the parameters
+as a reference to a hash containing the name=&gt;value pairs.</p>
+<p>The function takes one optional parameter, a reference to a hash.  The
+contents of the hash allow the deflation interface to be tailored.</p>
+<p>Here is a list of the valid options:</p>
+<dl>
+<dt><strong><a name="level3" class="item"><strong>-Level</strong></a></strong></dt>
+
+<dd>
+<p>Defines the compression level. Valid values are 0 through 9,
+<code>Z_NO_COMPRESSION</code>, <code>Z_BEST_SPEED</code>, <code>Z_BEST_COMPRESSION</code>, and
+<code>Z_DEFAULT_COMPRESSION</code>.</p>
+<p>The default is Z_DEFAULT_COMPRESSION.</p>
+</dd>
+<dt><strong><a name="method2" class="item"><strong>-Method</strong></a></strong></dt>
+
+<dd>
+<p>Defines the compression method. The only valid value at present (and
+the default) is Z_DEFLATED.</p>
+</dd>
+<dt><strong><a name="windowbits3" class="item"><strong>-WindowBits</strong></a></strong></dt>
+
+<dd>
+<p>To create an <a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a> data stream, set <a href="#windowbits"><code>WindowBits</code></a> to a positive number.</p>
+<p>To create an <a href="http://www.ietf.org/rfc/rfc1951.txt" class="rfc">RFC 1951</a> data stream, set <a href="#windowbits"><code>WindowBits</code></a> to <code>-MAX_WBITS</code>.</p>
+<p>For a full definition of the meaning and valid values for <a href="#windowbits"><code>WindowBits</code></a> refer
+to the <em>zlib</em> documentation for <em>deflateInit2</em>.</p>
+<p>Defaults to MAX_WBITS.</p>
+</dd>
+<dt><strong><a name="memlevel2" class="item"><strong>-MemLevel</strong></a></strong></dt>
+
+<dd>
+<p>For a definition of the meaning and valid values for <a href="#memlevel"><code>MemLevel</code></a>
+refer to the <em>zlib</em> documentation for <em>deflateInit2</em>.</p>
+<p>Defaults to MAX_MEM_LEVEL.</p>
+</dd>
+<dt><strong><a name="strategy3" class="item"><strong>-Strategy</strong></a></strong></dt>
+
+<dd>
+<p>Defines the strategy used to tune the compression. The valid values are
+<code>Z_DEFAULT_STRATEGY</code>, <code>Z_FILTERED</code> and <code>Z_HUFFMAN_ONLY</code>.</p>
+<p>The default is Z_DEFAULT_STRATEGY.</p>
+</dd>
+<dt><strong><a name="dictionary3" class="item"><strong>-Dictionary</strong></a></strong></dt>
+
+<dd>
+<p>When a dictionary is specified <em>Compress::Zlib</em> will automatically
+call <code>deflateSetDictionary</code> directly after calling <code>deflateInit</code>. The
+Adler32 value for the dictionary can be obtained by calling the method 
+<code>$d-</code>dict_adler()&gt;.</p>
+<p>The default is no dictionary.</p>
+</dd>
+<dt><strong><a name="bufsize3" class="item"><strong>-Bufsize</strong></a></strong></dt>
+
+<dd>
+<p>Sets the initial size for the deflation buffer. If the buffer has to be
+reallocated to increase the size, it will grow in increments of
+<a href="#bufsize"><code>Bufsize</code></a>.</p>
+<p>The default is 4096.</p>
+</dd>
+</dl>
+<p>Here is an example of using the <code>deflateInit</code> optional parameter list
+to override the default buffer size and compression level. All other
+options will take their default values.</p>
+<pre>
+    <span class="variable">deflateInit</span><span class="operator">(</span> <span class="string">-Bufsize</span> <span class="operator">=&gt;</span> <span class="number">300</span><span class="operator">,</span> 
+                 <span class="string">-Level</span> <span class="operator">=&gt;</span> <span class="variable">Z_BEST_SPEED</span>  <span class="operator">)</span> <span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="__out___status_____d__deflate__buffer_"><strong>($out, $status) = $d-&gt;deflate($buffer)</strong></a></h2>
+<p>Deflates the contents of <code>$buffer</code>. The buffer can either be a scalar
+or a scalar reference.  When finished, <code>$buffer</code> will be
+completely processed (assuming there were no errors). If the deflation
+was successful it returns the deflated output, <code>$out</code>, and a status
+value, <code>$status</code>, of <code>Z_OK</code>.</p>
+<p>On error, <code>$out</code> will be <em>undef</em> and <code>$status</code> will contain the
+<em>zlib</em> error code.</p>
+<p>In a scalar context <code>deflate</code> will return <code>$out</code> only.</p>
+<p>As with the <em>deflate</em> function in <em>zlib</em>, it is not necessarily the
+case that any output will be produced by this method. So don't rely on
+the fact that <code>$out</code> is empty for an error test.</p>
+<p>
+</p>
+<h2><a name="__out___status_____d__flush____head2___out___status_____d__flush__flush_type_"><strong>($out, $status) = $d-&gt;flush()</strong>
+=head2 <strong>($out, $status) = $d-&gt;flush($flush_type)</strong></a></h2>
+<p>Typically used to finish the deflation. Any pending output will be
+returned via <code>$out</code>.
+<code>$status</code> will have a value <code>Z_OK</code> if successful.</p>
+<p>In a scalar context <code>flush</code> will return <code>$out</code> only.</p>
+<p>Note that flushing can seriously degrade the compression ratio, so it
+should only be used to terminate a decompression (using <code>Z_FINISH</code>) or
+when you want to create a <em>full flush point</em> (using <code>Z_FULL_FLUSH</code>).</p>
+<p>By default the <code>flush_type</code> used is <code>Z_FINISH</code>. Other valid values
+for <code>flush_type</code> are <code>Z_NO_FLUSH</code>, <code>Z_PARTIAL_FLUSH</code>, <code>Z_SYNC_FLUSH</code>
+and <code>Z_FULL_FLUSH</code>. It is strongly recommended that you only set the
+<code>flush_type</code> parameter if you fully understand the implications of
+what it does. See the <code>zlib</code> documentation for details.</p>
+<p>
+</p>
+<h2><a name="_status____d__deflateparams__opt__"><strong>$status = $d-&gt;deflateParams([OPT])</strong></a></h2>
+<p>Change settings for the deflate stream <code>$d</code>.</p>
+<p>The list of the valid options is shown below. Options not specified
+will remain unchanged.</p>
+<dl>
+<dt><strong><a name="level4" class="item"><strong>-Level</strong></a></strong></dt>
+
+<dd>
+<p>Defines the compression level. Valid values are 0 through 9,
+<code>Z_NO_COMPRESSION</code>, <code>Z_BEST_SPEED</code>, <code>Z_BEST_COMPRESSION</code>, and
+<code>Z_DEFAULT_COMPRESSION</code>.</p>
+</dd>
+<dt><strong><a name="strategy4" class="item"><strong>-Strategy</strong></a></strong></dt>
+
+<dd>
+<p>Defines the strategy used to tune the compression. The valid values are
+<code>Z_DEFAULT_STRATEGY</code>, <code>Z_FILTERED</code> and <code>Z_HUFFMAN_ONLY</code>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="_d__dict_adler__"><strong>$d-&gt;dict_adler()</strong></a></h2>
+<p>Returns the adler32 value for the dictionary.</p>
+<p>
+</p>
+<h2><a name="_d__msg__"><strong>$d-&gt;msg()</strong></a></h2>
+<p>Returns the last error message generated by zlib.</p>
+<p>
+</p>
+<h2><a name="_d__total_in__"><strong>$d-&gt;total_in()</strong></a></h2>
+<p>Returns the total number of bytes uncompressed bytes input to deflate.</p>
+<p>
+</p>
+<h2><a name="_d__total_out__"><strong>$d-&gt;total_out()</strong></a></h2>
+<p>Returns the total number of compressed bytes output from deflate.</p>
+<p>
+</p>
+<h2><a name="example">Example</a></h2>
+<p>Here is a trivial example of using <code>deflate</code>. It simply reads standard
+input, deflates it and writes it to standard output.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Compress::Zlib</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">binmode</span> <span class="variable">STDIN</span><span class="operator">;</span>
+    <span class="keyword">binmode</span> <span class="variable">STDOUT</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">deflateInit</span><span class="operator">()</span>
+       <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot create a deflation stream\n"</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$output</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(&lt;&gt;)</span>
+    <span class="operator">{</span>
+        <span class="operator">(</span><span class="variable">$output</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">deflate</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">;</span>
+    
+        <span class="variable">$status</span> <span class="operator">==</span> <span class="variable">Z_OK</span>
+            <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"deflation failed\n"</span> <span class="operator">;</span>
+    
+        <span class="keyword">print</span> <span class="variable">$output</span> <span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="operator">(</span><span class="variable">$output</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">flush</span><span class="operator">()</span> <span class="operator">;</span>
+    
+    <span class="variable">$status</span> <span class="operator">==</span> <span class="variable">Z_OK</span>
+        <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"deflation failed\n"</span> <span class="operator">;</span>
+    
+    <span class="keyword">print</span> <span class="variable">$output</span> <span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="inflate_interface">Inflate Interface</a></h1>
+<p>This section defines the interface available that allows in-memory
+uncompression using the <em>deflate</em> interface provided by zlib.</p>
+<p>Here is a definition of the interface:</p>
+<p>
+</p>
+<h2><a name="__i___status____inflateinit__"><strong>($i, $status) = inflateInit()</strong></a></h2>
+<p>Initialises an inflation stream.</p>
+<p>In a list context it returns the inflation stream, <code>$i</code>, and the
+<em>zlib</em> status code in <code>$status</code>. In a scalar context it returns the
+inflation stream only.</p>
+<p>If successful, <code>$i</code> will hold the inflation stream and <code>$status</code> will
+be <code>Z_OK</code>.</p>
+<p>If not successful, <code>$i</code> will be <em>undef</em> and <code>$status</code> will hold the
+<em>zlib</em> error code.</p>
+<p>The function optionally takes a number of named options specified as
+<code>-Name=&gt;value</code> pairs. This allows individual options to be
+tailored without having to specify them all in the parameter list.</p>
+<pre>
+
+For backward compatibility, it is also possible to pass the parameters
+as a reference to a hash containing the name=&gt;value pairs.</pre>
+<pre>
+
+The function takes one optional parameter, a reference to a hash.  The
+contents of the hash allow the deflation interface to be tailored.</pre>
+<pre>
+
+Here is a list of the valid options:</pre>
+<dl>
+<dt><strong><a name="windowbits4" class="item"><strong>-WindowBits</strong></a></strong></dt>
+
+<dd>
+<p>To uncompress an <a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a> data stream, set <a href="#windowbits"><code>WindowBits</code></a> to a positive number.</p>
+<p>To uncompress an <a href="http://www.ietf.org/rfc/rfc1951.txt" class="rfc">RFC 1951</a> data stream, set <a href="#windowbits"><code>WindowBits</code></a> to <code>-MAX_WBITS</code>.</p>
+<p>For a full definition of the meaning and valid values for <a href="#windowbits"><code>WindowBits</code></a> refer
+to the <em>zlib</em> documentation for <em>inflateInit2</em>.</p>
+<p>Defaults to MAX_WBITS.</p>
+</dd>
+<dt><strong><a name="bufsize4" class="item"><strong>-Bufsize</strong></a></strong></dt>
+
+<dd>
+<p>Sets the initial size for the inflation buffer. If the buffer has to be
+reallocated to increase the size, it will grow in increments of
+<a href="#bufsize"><code>Bufsize</code></a>.</p>
+<p>Default is 4096.</p>
+</dd>
+<dt><strong><a name="dictionary4" class="item"><strong>-Dictionary</strong></a></strong></dt>
+
+<dd>
+<p>The default is no dictionary.</p>
+</dd>
+</dl>
+<p>Here is an example of using the <code>inflateInit</code> optional parameter to
+override the default buffer size.</p>
+<pre>
+    <span class="variable">inflateInit</span><span class="operator">(</span> <span class="string">-Bufsize</span> <span class="operator">=&gt;</span> <span class="number">300</span> <span class="operator">)</span> <span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="__out___status_____i__inflate__buffer_"><strong>($out, $status) = $i-&gt;inflate($buffer)</strong></a></h2>
+<p>Inflates the complete contents of <code>$buffer</code>. The buffer can either be
+a scalar or a scalar reference.</p>
+<p>Returns <code>Z_OK</code> if successful and <code>Z_STREAM_END</code> if the end of the
+compressed data has been successfully reached. 
+If not successful, <code>$out</code> will be <em>undef</em> and <code>$status</code> will hold
+the <em>zlib</em> error code.</p>
+<p>The <code>$buffer</code> parameter is modified by <code>inflate</code>. On completion it
+will contain what remains of the input buffer after inflation. This
+means that <code>$buffer</code> will be an empty string when the return status is
+<code>Z_OK</code>. When the return status is <code>Z_STREAM_END</code> the <code>$buffer</code>
+parameter will contains what (if anything) was stored in the input
+buffer after the deflated data stream.</p>
+<p>This feature is useful when processing a file format that encapsulates
+a  compressed data stream (e.g. gzip, zip).</p>
+<p>
+</p>
+<h2><a name="_status____i__inflatesync__buffer_"><strong>$status = $i-&gt;inflateSync($buffer)</strong></a></h2>
+<p>Scans <code>$buffer</code> until it reaches either a <em>full flush point</em> or the
+end of the buffer.</p>
+<p>If a <em>full flush point</em> is found, <code>Z_OK</code> is returned and <code>$buffer</code>
+will be have all data up to the flush point removed. This can then be
+passed to the <code>deflate</code> method.</p>
+<p>Any other return code means that a flush point was not found. If more
+data is available, <code>inflateSync</code> can be called repeatedly with more
+compressed data until the flush point is found.</p>
+<p>
+</p>
+<h2><a name="_i__dict_adler__"><strong>$i-&gt;dict_adler()</strong></a></h2>
+<p>Returns the adler32 value for the dictionary.</p>
+<p>
+</p>
+<h2><a name="_i__msg__"><strong>$i-&gt;msg()</strong></a></h2>
+<p>Returns the last error message generated by zlib.</p>
+<p>
+</p>
+<h2><a name="_i__total_in__"><strong>$i-&gt;total_in()</strong></a></h2>
+<p>Returns the total number of bytes compressed bytes input to inflate.</p>
+<p>
+</p>
+<h2><a name="_i__total_out__"><strong>$i-&gt;total_out()</strong></a></h2>
+<p>Returns the total number of uncompressed bytes output from inflate.</p>
+<p>
+</p>
+<h2><a name="example">Example</a></h2>
+<p>Here is an example of using <code>inflate</code>.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">Compress::Zlib</span> <span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">inflateInit</span><span class="operator">()</span>
+       <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot create a inflation stream\n"</span> <span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">$input</span> <span class="operator">=</span> <span class="string">''</span> <span class="operator">;</span>
+    <span class="keyword">binmode</span> <span class="variable">STDIN</span><span class="operator">;</span>
+    <span class="keyword">binmode</span> <span class="variable">STDOUT</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$output</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">read</span><span class="operator">(</span><span class="variable">STDIN</span><span class="operator">,</span> <span class="variable">$input</span><span class="operator">,</span> <span class="number">4096</span><span class="operator">))</span>
+    <span class="operator">{</span>
+        <span class="operator">(</span><span class="variable">$output</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">inflate</span><span class="operator">(\</span><span class="variable">$input</span><span class="operator">)</span> <span class="operator">;</span>
+    
+        <span class="keyword">print</span> <span class="variable">$output</span> 
+            <span class="keyword">if</span> <span class="variable">$status</span> <span class="operator">==</span> <span class="variable">Z_OK</span> <span class="keyword">or</span> <span class="variable">$status</span> <span class="operator">==</span> <span class="variable">Z_STREAM_END</span> <span class="operator">;</span>
+    
+        <span class="keyword">last</span> <span class="keyword">if</span> <span class="variable">$status</span> <span class="operator">!=</span> <span class="variable">Z_OK</span> <span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="keyword">die</span> <span class="string">"inflation failed\n"</span>
+        <span class="keyword">unless</span> <span class="variable">$status</span> <span class="operator">==</span> <span class="variable">Z_STREAM_END</span> <span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="checksum_functions">CHECKSUM FUNCTIONS</a></h1>
+<p>Two functions are provided by <em>zlib</em> to calculate checksums. For the
+Perl interface, the order of the two parameters in both functions has
+been reversed. This allows both running checksums and one off
+calculations to be done.</p>
+<pre>
+    <span class="variable">$crc</span> <span class="operator">=</span> <span class="variable">adler32</span><span class="operator">(</span><span class="variable">$buffer</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">$crc</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+    <span class="variable">$crc</span> <span class="operator">=</span> <span class="variable">crc32</span><span class="operator">(</span><span class="variable">$buffer</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">$crc</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">;</span>
+</pre>
+<p>The buffer parameters can either be a scalar or a scalar reference.</p>
+<p>If the $crc parameters is <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, the crc value will be reset.</p>
+<p>If you have built this module with zlib 1.2.3 or better, two more
+CRC-related functions are available.</p>
+<pre>
+    $crc = adler32_combine($crc1, $crc2, $len2)l
+    $crc = crc32_combine($adler1, $adler2, $len2)</pre>
+<p>These functions allow checksums to be merged.</p>
+<p>
+</p>
+<hr />
+<h1><a name="misc">Misc</a></h1>
+<p>
+</p>
+<h2><a name="my__version___compress__zlib__zlib_version___">my $version = Compress::Zlib::zlib_version();</a></h2>
+<p>Returns the version of the zlib library.</p>
+<p>
+</p>
+<hr />
+<h1><a name="constants">CONSTANTS</a></h1>
+<p>All the <em>zlib</em> constants are automatically imported when you make use
+of <em>Compress::Zlib</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/IO/Compress/Gzip.html">the IO::Compress::Gzip manpage</a>, <a href="../../lib/IO/Uncompress/Gunzip.html">the IO::Uncompress::Gunzip manpage</a>, <a href="../../lib/IO/Compress/Deflate.html">the IO::Compress::Deflate manpage</a>, <a href="../../lib/IO/Uncompress/Inflate.html">the IO::Uncompress::Inflate manpage</a>, <a href="../../lib/IO/Compress/RawDeflate.html">the IO::Compress::RawDeflate manpage</a>, <a href="../../lib/IO/Uncompress/RawInflate.html">the IO::Uncompress::RawInflate manpage</a>, <a href="../../lib/IO/Compress/Bzip2.html">the IO::Compress::Bzip2 manpage</a>, <a href="../../lib/IO/Uncompress/Bunzip2.html">the IO::Uncompress::Bunzip2 manpage</a>, <a href="../../IO/Compress/Lzma.html">the IO::Compress::Lzma manpage</a>, <a href="../../IO/Uncompress/UnLzma.html">the IO::Uncompress::UnLzma manpage</a>, <a href="../../IO/Compress/Xz.html">the IO::Compress::Xz manpage</a>, <a href="../../IO/Uncompress/UnXz.html">the IO::Uncompress::UnXz manpage</a>, <a href="../../IO/Compress/Lzop.html">the IO::Compress::Lzop manpage</a>, <a href="../../IO/Uncompress/UnLzop.html">the IO::Uncompress::UnLzop manpage</a>, <a href="../../IO/Compress/Lzf.html">the IO::Compress::Lzf manpage</a>, <a href="../../IO/Uncompress/UnLzf.html">the IO::Uncompress::UnLzf manpage</a>, <a href="../../lib/IO/Uncompress/AnyInflate.html">the IO::Uncompress::AnyInflate manpage</a>, <a href="../../lib/IO/Uncompress/AnyUncompress.html">the IO::Uncompress::AnyUncompress manpage</a></p>
+<p><a href="../../Compress/Zlib/FAQ.html">Compress::Zlib::FAQ</a></p>
+<p><a href="../../lib/File/GlobMapper.html">File::GlobMapper</a>, <a href="../../lib/Archive/Zip.html">Archive::Zip</a>,
+<a href="../../lib/Archive/Tar.html">Archive::Tar</a>,
+<a href="../../lib/IO/Zlib.html">IO::Zlib</a></p>
+<p>For <a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a>, 1951 and 1952 see 
+<em class="file"><a href="http://www.faqs.org/rfcs/rfc1950.html">http://www.faqs.org/rfcs/rfc1950.html</a></em>,
+<em class="file"><a href="http://www.faqs.org/rfcs/rfc1951.html">http://www.faqs.org/rfcs/rfc1951.html</a></em> and
+<em class="file"><a href="http://www.faqs.org/rfcs/rfc1952.html">http://www.faqs.org/rfcs/rfc1952.html</a></em></p>
+<p>The <em>zlib</em> compression library was written by Jean-loup Gailly
+<em class="file"><a href="mailto:gzip@prep.ai.mit.edu">gzip@prep.ai.mit.edu</a></em> and Mark Adler <em class="file"><a href="mailto:madler@alumni.caltech.edu">madler@alumni.caltech.edu</a></em>.</p>
+<p>The primary site for the <em>zlib</em> compression library is
+<em class="file"><a href="http://www.zlib.org">http://www.zlib.org</a></em>.</p>
+<p>The primary site for gzip is <em class="file"><a href="http://www.gzip.org">http://www.gzip.org</a></em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This module was written by Paul Marquess, <em class="file"><a href="mailto:pmqs@cpan.org">pmqs@cpan.org</a></em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="modification_history">MODIFICATION HISTORY</a></h1>
+<p>See the Changes file.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>Copyright (c) 1995-2011 Paul Marquess. All rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

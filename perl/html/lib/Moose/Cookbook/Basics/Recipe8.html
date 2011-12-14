@@ -1,0 +1,184 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Basics::Recipe8 - Builder methods and lazy_build</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Basics::Recipe8 - Builder methods and lazy_build</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#the_lazy_build_shortcut">The lazy_build shortcut</a></li>
+	</ul>
+
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Basics::Recipe8 - Builder methods and lazy_build</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">BinaryTree</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'node'</span> <span class="operator">=&gt;</span> <span class="operator">(</span><span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Any'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'parent'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_parent'</span><span class="operator">,</span>
+      <span class="string">weak_ref</span>  <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'left'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_left'</span><span class="operator">,</span>
+      <span class="string">lazy</span>      <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">builder</span>   <span class="operator">=&gt;</span> <span class="string">'_build_child_tree'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'right'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_right'</span><span class="operator">,</span>
+      <span class="string">lazy</span>      <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">builder</span>   <span class="operator">=&gt;</span> <span class="string">'_build_child_tree'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">before</span> <span class="string">'right'</span><span class="operator">,</span> <span class="string">'left'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$tree</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">parent</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">)</span> <span class="keyword">if</span> <span class="keyword">defined</span> <span class="variable">$tree</span><span class="operator">;</span>
+  <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _build_child_tree </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="variable">BinaryTree</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">parent</span> <span class="operator">=&gt;</span> <span class="variable">$self</span> <span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>If you've already read <a href="../../../../lib/Moose/Cookbook/Basics/Recipe3.html">the Moose::Cookbook::Basics::Recipe3 manpage</a>, then this
+example should look very familiar. In fact, all we've done here is
+replace the attribute's <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a> parameter with a <code>builder</code>.</p>
+<p>In this particular case, the <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a> and <code>builder</code> options act in
+exactly the same way. When the <code>left</code> or <code>right</code> attribute is read,
+Moose calls the builder method to initialize the attribute.</p>
+<p>Note that Moose calls the builder method <em>on the object which has the
+attribute</em>. Here's an example:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$tree</span> <span class="operator">=</span> <span class="variable">BinaryTree</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$left</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">left</span><span class="operator">();</span>
+</pre>
+<p>When <code>$tree-&gt;left()</code> is called, Moose calls <code>&lt;
+$tree-</code><code>_build_child_tree()</code> &gt;&gt; in order to populate the <code>left</code>
+attribute. If we had passed <code>left</code> to the original constructor, the
+builder would not be called.</p>
+<p>There are some differences between <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a> and <code>builder</code>. Notably,
+a builder is subclassable, and can be composed from a role. See
+<a href="../../../../lib/Moose/Manual/Attributes.html">the Moose::Manual::Attributes manpage</a> for more details.</p>
+<p>
+</p>
+<h2><a name="the_lazy_build_shortcut">The lazy_build shortcut</a></h2>
+<p>The <code>lazy_build</code> attribute option can be used as sugar to specify
+a whole set of attribute options at once:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'animal'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>         <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>        <span class="operator">=&gt;</span> <span class="string">'Animal'</span><span class="operator">,</span>
+      <span class="string">lazy_build</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This is a shorthand for:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'animal'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'Animal'</span><span class="operator">,</span>
+      <span class="string">required</span>  <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">lazy</span>      <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">builder</span>   <span class="operator">=&gt;</span> <span class="string">'_build_animal'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_animal'</span><span class="operator">,</span>
+      <span class="string">clearer</span>   <span class="operator">=&gt;</span> <span class="string">'clear_animal'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>If your attribute starts with an underscore, Moose is smart and will
+do the right thing with the <code>predicate</code> and <code>clearer</code>, making them
+both start with an underscore. The <code>builder</code> method <em>always</em> starts
+with an underscore.</p>
+<p>You can read more about <code>lazy_build</code> in <a href="../../../../lib/Moose/Meta/Attribute.html">the Moose::Meta::Attribute manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>The <code>builder</code> option is a more OO-friendly version of the <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a>
+functionality. It also separates the default-generating code into a
+well-defined method. Sprinkling your attribute definitions with
+anonymous subroutines can be quite ugly and hard to follow.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

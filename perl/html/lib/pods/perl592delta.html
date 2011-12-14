@@ -1,0 +1,395 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perl592delta - what is new for perl v5.9.2</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perl592delta - what is new for perl v5.9.2</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#incompatible_changes">Incompatible Changes</a></li>
+	<ul>
+
+		<li><a href="#packing_and_utf_8_strings">Packing and UTF-8 strings</a></li>
+		<li><a href="#miscellaneous">Miscellaneous</a></li>
+	</ul>
+
+	<li><a href="#core_enhancements">Core Enhancements</a></li>
+	<ul>
+
+		<li><a href="#malloc_wrapping">Malloc wrapping</a></li>
+		<li><a href="#unicode_character_database_4_0_1">Unicode Character Database 4.0.1</a></li>
+		<li><a href="#suidperl_less_insecure">suidperl less insecure</a></li>
+		<li><a href="#perlio_debug">PERLIO_DEBUG</a></li>
+		<li><a href="#formats">Formats</a></li>
+		<li><a href="#unicode_character_classes">Unicode Character Classes</a></li>
+		<li><a href="#byte_order_modifiers_for_pack___and_unpack__">Byte-order modifiers for <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> and <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a></a></li>
+		<li><a href="#byte_count_feature_in_pack__">Byte count feature in <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a></a></li>
+		<li><a href="#new_variables">New variables</a></li>
+	</ul>
+
+	<li><a href="#modules_and_pragmata">Modules and Pragmata</a></li>
+	<ul>
+
+		<li><a href="#new_modules">New modules</a></li>
+		<li><a href="#updated_and_improved_modules_and_pragmata">Updated And Improved Modules and Pragmata</a></li>
+	</ul>
+
+	<li><a href="#utility_changes">Utility Changes</a></li>
+	<li><a href="#performance_enhancements">Performance Enhancements</a></li>
+	<li><a href="#installation_and_configuration_improvements">Installation and Configuration Improvements</a></li>
+	<li><a href="#selected_bug_fixes">Selected Bug Fixes</a></li>
+	<li><a href="#new_or_changed_diagnostics">New or Changed Diagnostics</a></li>
+	<li><a href="#changed_internals">Changed Internals</a></li>
+	<li><a href="#known_problems">Known Problems</a></li>
+	<li><a href="#plans_for_the_next_release">Plans for the next release</a></li>
+	<li><a href="#reporting_bugs">Reporting Bugs</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perl592delta - what is new for perl v5.9.2</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes differences between the 5.9.1 and the 5.9.2
+development releases. See <a href="../../lib/pods/perl590delta.html">the perl590delta manpage</a> and <a href="../../lib/pods/perl591delta.html">the perl591delta manpage</a> for the
+differences between 5.8.0 and 5.9.1.</p>
+<p>
+</p>
+<hr />
+<h1><a name="incompatible_changes">Incompatible Changes</a></h1>
+<p>
+</p>
+<h2><a name="packing_and_utf_8_strings">Packing and UTF-8 strings</a></h2>
+<p>The semantics of <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> and <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a> regarding UTF-8-encoded data has been
+changed. Processing is now by default character per character instead of
+byte per byte on the underlying encoding. Notably, code that used things
+like <a href="../../lib/pods/perlfunc.html#pack"><code>pack(&quot;a*&quot;, $string)</code></a> to see through the encoding of string will now
+simply get back the original $string. Packed strings can also get upgraded
+during processing when you store upgraded characters. You can get the old
+behaviour by using <code>use bytes</code>.</p>
+<p>To be consistent with <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a>, the <code>C0</code> in <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a> templates indicates
+that the data is to be processed in character mode, i.e. character by
+character; on the contrary, <code>U0</code> in <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a> indicates UTF-8 mode, where
+the packed string is processed in its UTF-8-encoded Unicode form on a byte
+by byte basis. This is reversed with regard to perl 5.8.X.</p>
+<p>Moreover, <code>C0</code> and <code>U0</code> can also be used in <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> templates to specify
+respectively character and byte modes.</p>
+<p><code>C0</code> and <code>U0</code> in the middle of a pack or unpack format now switch to the
+specified encoding mode, honoring parens grouping. Previously, parens were
+ignored.</p>
+<p>Also, there is a new <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> character format, <a href="../../lib/pods/perlrun.html#w"><code>W</code></a>, which is intended to
+replace the old <code>C</code>. <code>C</code> is kept for unsigned chars coded as bytes in
+the strings internal representation. <a href="../../lib/pods/perlrun.html#w"><code>W</code></a> represents unsigned (logical)
+character values, which can be greater than 255. It is therefore more
+robust when dealing with potentially UTF-8-encoded data (as <code>C</code> will wrap
+values outside the range 0..255, and not respect the string encoding).</p>
+<p>In practice, that means that pack formats are now encoding-neutral, except
+<code>C</code>.</p>
+<p>For consistency, <a href="../../lib/pods/perlguts.html#a"><code>A</code></a> in <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a> format now trims all Unicode whitespace
+from the end of the string. Before perl 5.9.2, it used to strip only the
+classical ASCII space characters.</p>
+<p>
+</p>
+<h2><a name="miscellaneous">Miscellaneous</a></h2>
+<p>The internal dump output has been improved, so that non-printable characters
+such as newline and backspace are output in <a href="../../lib/pods/perlrun.html#x"><code>\x</code></a> notation, rather than
+octal.</p>
+<p>The <strong>-C</strong> option can no longer be used on the <code>#!</code> line. It wasn't
+working there anyway.</p>
+<p>
+</p>
+<hr />
+<h1><a name="core_enhancements">Core Enhancements</a></h1>
+<p>
+</p>
+<h2><a name="malloc_wrapping">Malloc wrapping</a></h2>
+<p>Perl can now be built to detect attempts to assign pathologically large chunks
+of memory.  Previously such assignments would suffer from integer wrap-around
+during size calculations causing a misallocation, which would crash perl, and
+could theoretically be used for &quot;stack smashing&quot; attacks.  The wrapping
+defaults to enabled on platforms where we know it works (most AIX
+configurations, BSDi, Darwin, DEC OSF/1, FreeBSD, HP-UX, GNU Linux, OpenBSD,
+Solaris, VMS and most Win32 compilers) and defaults to disabled on other
+platforms.</p>
+<p>
+</p>
+<h2><a name="unicode_character_database_4_0_1">Unicode Character Database 4.0.1</a></h2>
+<p>The copy of the Unicode Character Database included in Perl 5.9 has
+been updated to 4.0.1 from 4.0.0.</p>
+<p>
+</p>
+<h2><a name="suidperl_less_insecure">suidperl less insecure</a></h2>
+<p>Paul Szabo has analysed and patched <code>suidperl</code> to remove existing known
+insecurities. Currently there are no known holes in <code>suidperl</code>, but previous
+experience shows that we cannot be confident that these were the last. You may
+no longer invoke the set uid perl directly, so to preserve backwards
+compatibility with scripts that invoke #!/usr/bin/suidperl the only set uid
+binary is now <code>sperl5.9.</code><em>n</em> (<code>sperl5.9.2</code> for this release). <code>suidperl</code>
+is installed as a hard link to <code>perl</code>; both <code>suidperl</code> and <code>perl</code> will
+invoke <code>sperl5.9.2</code> automatically the set uid binary, so this change should
+be completely transparent.</p>
+<p>For new projects the core perl team would strongly recommend that you use
+dedicated, single purpose security tools such as <code>sudo</code> in preference to
+<code>suidperl</code>.</p>
+<p>
+</p>
+<h2><a name="perlio_debug">PERLIO_DEBUG</a></h2>
+<p>The <a href="../../lib/pods/perlrun.html#perlio_debug"><code>PERLIO_DEBUG</code></a> environment variable has no longer any effect for
+setuid scripts and for scripts run with <strong>-T</strong>.</p>
+<p>Moreover, with a thread-enabled perl, using <a href="../../lib/pods/perlrun.html#perlio_debug"><code>PERLIO_DEBUG</code></a> could lead to
+an internal buffer overflow. This has been fixed.</p>
+<p>
+</p>
+<h2><a name="formats">Formats</a></h2>
+<p>In addition to bug fixes, <a href="../../lib/pods/perlfunc.html#format"><code>format</code></a>'s features have been enhanced. See
+<a href="../../lib/pods/perlform.html">the perlform manpage</a>.</p>
+<p>
+</p>
+<h2><a name="unicode_character_classes">Unicode Character Classes</a></h2>
+<p>Perl's regular expression engine now contains support for matching on the
+intersection of two Unicode character classes. You can also now refer to
+user-defined character classes from within other user defined character
+classes.</p>
+<p>
+</p>
+<h2><a name="byte_order_modifiers_for_pack___and_unpack__">Byte-order modifiers for <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> and <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a></a></h2>
+<p>There are two new byte-order modifiers, <code>&gt;</code> (big-endian) and <code>&lt;</code>
+(little-endian), that can be appended to most <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> and <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack()</code></a> template
+characters and groups to force a certain byte-order for that type or group.
+See <a href="../../lib/pods/perlfunc.html#pack">pack in the perlfunc manpage</a> and <a href="../../lib/pods/perlpacktut.html">the perlpacktut manpage</a> for details.</p>
+<p>
+</p>
+<h2><a name="byte_count_feature_in_pack__">Byte count feature in <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a></a></h2>
+<p>A new <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> template character, <code>&quot;.&quot;</code>, returns the number of characters
+read so far.</p>
+<p>
+</p>
+<h2><a name="new_variables">New variables</a></h2>
+<p>A new variable, ${^RE_DEBUG_FLAGS}, controls what debug flags are in
+effect for the regular expression engine when running under <code>use re
+&quot;debug&quot;</code>. See <a href="../../lib/re.html">the re manpage</a> for details.</p>
+<p>A new variable ${^UTF8LOCALE} indicates where a UTF-8 locale was detected
+by perl at startup.</p>
+<p>
+</p>
+<hr />
+<h1><a name="modules_and_pragmata">Modules and Pragmata</a></h1>
+<p>
+</p>
+<h2><a name="new_modules">New modules</a></h2>
+<ul>
+<li>
+<p><code>encoding::warnings</code>, by Audrey Tang, is a module to emit warnings
+whenever an ASCII character string containing high-bit bytes is implicitly
+converted into UTF-8.</p>
+</li>
+<li>
+<p><code>Module::CoreList</code>, by Richard Clamp, is a small handy module that tells
+you what versions of core modules ship with any versions of Perl 5. It
+comes with a command-line frontend, <code>corelist</code>.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="updated_and_improved_modules_and_pragmata">Updated And Improved Modules and Pragmata</a></h2>
+<p>Dual-lived modules have been updated to be kept up-to-date with respect to
+CPAN.</p>
+<p>The dual-lived modules which contain an <code>_</code> in their version number are
+actually <em>ahead</em> of the corresponding CPAN release.</p>
+<dl>
+<dt><strong><a name="b_concise6" class="item">B::Concise</a></strong></dt>
+
+<dd>
+<p><a href="#b_concise"><code>B::Concise</code></a> was significantly improved.</p>
+</dd>
+<dt><strong><a name="socket4" class="item">Socket</a></strong></dt>
+
+<dd>
+<p>There is experimental support for Linux abstract Unix domain sockets.</p>
+</dd>
+<dt><strong><a name="sys_syslog7" class="item">Sys::Syslog</a></strong></dt>
+
+<dd>
+<p><code>syslog()</code> can now use numeric constants for facility names and priorities,
+in addition to strings.</p>
+</dd>
+<dt><strong><a name="threads" class="item">threads</a></strong></dt>
+
+<dd>
+<p>Detached threads are now also supported on Windows.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="utility_changes">Utility Changes</a></h1>
+<ul>
+<li>
+<p>The <code>corelist</code> utility is now installed with perl (see <a href="#new_modules">New modules</a>
+above).</p>
+</li>
+<li>
+<p><code>h2ph</code> and <code>h2xs</code> have been made a bit more robust with regard to
+&quot;modern&quot; C code.</p>
+</li>
+<li>
+<p>Several bugs have been fixed in <code>find2perl</code>, regarding <a href="../../lib/pods/perlfunc.html#exec"><code>-exec</code></a> and
+<a href="../../lib/pods/perlfunc.html#eval"><code>-eval</code></a>. Also the options <code>-path</code>, <code>-ipath</code> and <code>-iname</code> have been
+added.</p>
+</li>
+<li>
+<p>The Perl debugger can now save all debugger commands for sourcing later;
+notably, it can now emulate stepping backwards, by restarting and
+rerunning all bar the last command from a saved command history.</p>
+<p>It can also display the parent inheritance tree of a given class.</p>
+<p>Perl has a new -dt command-line flag, which enables threads support in the
+debugger.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="performance_enhancements">Performance Enhancements</a></h1>
+<ul>
+<li>
+<p>Unicode case mappings (<code>/i</code>, <a href="../../lib/pods/perlfunc.html#lc"><code>lc</code></a>, <a href="../../lib/pods/perlfunc.html#uc"><code>uc</code></a>, etc) are faster.</p>
+</li>
+<li>
+<p><code>@a = sort @a</code> was optimized to do in-place sort. Likewise, <code>reverse
+sort ...</code> is now optimized to sort in reverse, avoiding the generation of
+a temporary intermediate list.</p>
+</li>
+<li>
+<p>Unnecessary assignments are optimised away in</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$s</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">@a</span> <span class="operator">=</span> <span class="operator">();</span>
+  <span class="keyword">my</span> <span class="variable">%h</span> <span class="operator">=</span> <span class="operator">();</span>
+</pre>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#map"><code>map</code></a> in scalar context is now optimized.</p>
+</li>
+<li>
+<p>The regexp engine now implements the trie optimization : it's able to
+factor out common prefixes and suffixes in regular expressions. A new
+special variable, ${^RE_TRIE_MAXBUF}, has been added to fine-tune this
+optimization.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="installation_and_configuration_improvements">Installation and Configuration Improvements</a></h1>
+<p>Run-time customization of @INC can be enabled by passing the
+<code>-Dusesitecustomize</code> flag to configure. When enabled, this will make perl
+run <em class="file">$sitelibexp/sitecustomize.pl</em> before anything else.  This script can
+then be set up to add additional entries to @INC.</p>
+<p>There is alpha support for relocatable @INC entries.</p>
+<p>Perl should build on Interix and on GNU/kFreeBSD.</p>
+<p>
+</p>
+<hr />
+<h1><a name="selected_bug_fixes">Selected Bug Fixes</a></h1>
+<p>Most of those bugs were reported in the perl 5.8.x maintenance track.
+Notably, quite a few utf8 bugs were fixed, and several memory leaks were
+suppressed. The perl58Xdelta manpages have more details on them.</p>
+<p>Development-only bug fixes include :</p>
+<p><code>$Foo::_</code> was wrongly forced as <code>$main::_</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="new_or_changed_diagnostics">New or Changed Diagnostics</a></h1>
+<p>A new warning, <code>!=~ should be !~</code>, is emitted to prevent this misspelling
+of the non-matching operator.</p>
+<p>The warning <em>Newline in left-justified string</em> has been removed.</p>
+<p>The error <em>Too late for &quot;-T&quot; option</em> has been reformulated to be more
+descriptive.</p>
+<p>There is a new compilation error, <em>Illegal declaration of subroutine</em>,
+for an obscure case of syntax errors.</p>
+<p>The diagnostic output of Carp has been changed slightly, to add a space after
+the comma between arguments. This makes it much easier for tools such as
+web browsers to wrap it, but might confuse any automatic tools which perform
+detailed parsing of Carp output.</p>
+<p><code>perl -V</code> has several improvements, making it more useable from shell
+scripts to get the value of configuration variables. See <a href="../../lib/pods/perlrun.html">the perlrun manpage</a> for
+details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="changed_internals">Changed Internals</a></h1>
+<p>The perl core has been refactored and reorganised in several places.
+In short, this release will not be binary compatible with any previous
+perl release.</p>
+<p>
+</p>
+<hr />
+<h1><a name="known_problems">Known Problems</a></h1>
+<p>For threaded builds, <em class="file">ext/threads/shared/t/wait.t</em> has been reported to
+fail some tests on HP-UX 10.20.</p>
+<p>Net::Ping might fail some tests on HP-UX 11.00 with the latest OS
+upgrades.</p>
+<p><em class="file">t/io/dup.t</em>, <em class="file">t/io/open.t</em> and <em class="file">lib/ExtUtils/t/Constant.t</em> fail some
+tests on some BSD flavours.</p>
+<p>
+</p>
+<hr />
+<h1><a name="plans_for_the_next_release">Plans for the next release</a></h1>
+<p>The current plan for perl 5.9.3 is to add CPANPLUS as a core module.
+More regular expression optimizations are also in the works.</p>
+<p>It is planned to release a development version of perl more frequently,
+i.e. each time something major changes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting_bugs">Reporting Bugs</a></h1>
+<p>If you find what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the perl
+bug database at <a href="http://bugs.perl.org/">http://bugs.perl.org/</a> .  There may also be
+information at <a href="http://www.perl.org/">http://www.perl.org/</a> , the Perl Home Page.</p>
+<p>If you believe you have an unreported bug, please run the <strong>perlbug</strong>
+program included with your release.  Be sure to trim your bug down
+to a tiny but sufficient test case.  Your bug report, along with the
+output of <code>perl -V</code>, will be sent off to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a> to be
+analysed by the Perl porting team.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The <em class="file">Changes</em> file for exhaustive details on what changed.</p>
+<p>The <em class="file">INSTALL</em> file for how to build Perl.</p>
+<p>The <em class="file">README</em> file for general stuff.</p>
+<p>The <em class="file">Artistic</em> and <em class="file">Copying</em> files for copyright information.</p>
+
+</body>
+
+</html>

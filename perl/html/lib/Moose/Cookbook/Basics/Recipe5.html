@@ -1,0 +1,256 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Basics::Recipe5 - More subtypes, coercion in a B&lt;Request&gt; class</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Basics::Recipe5 - More subtypes, coercion in a B&lt;Request&gt; class</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#footnotes">FOOTNOTES</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Basics::Recipe5 - More subtypes, coercion in a <strong>Request</strong> class</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Request</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">HTTP::Headers</span>  <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Params::Coerce</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">URI</span>            <span class="operator">();</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'My::Types::HTTP::Headers'</span> <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="variable">class_type</span><span class="operator">(</span><span class="string">'HTTP::Headers'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'My::Types::HTTP::Headers'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'ArrayRef'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">}</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'HashRef'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">%</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'My::Types::URI'</span> <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="variable">class_type</span><span class="operator">(</span><span class="string">'URI'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'My::Types::URI'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'Object'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'URI'</span><span class="operator">)</span>
+                   <span class="operator">?</span> <span class="variable">$_</span>
+                   <span class="operator">:</span> <span class="variable">Params::Coerce::coerce</span><span class="operator">(</span> <span class="string">'URI'</span><span class="operator">,</span> <span class="variable">$_</span> <span class="operator">);</span> <span class="operator">}</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'Str'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="string">'http'</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'Protocol'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">'Str'</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="regex">/^HTTP\/[0-9]\.[0-9]$/</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'base'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'My::Types::URI'</span><span class="operator">,</span> <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'uri'</span>  <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'My::Types::URI'</span><span class="operator">,</span> <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'method'</span>   <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'protocol'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Protocol'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'headers'</span>  <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'My::Types::HTTP::Headers'</span><span class="operator">,</span>
+      <span class="string">coerce</span>  <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span> <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This recipe introduces type coercions, which are defined with the
+<code>coerce</code> sugar function. Coercions are attached to existing type
+constraints, and define a (one-way) transformation from one type to
+another.</p>
+<p>This is very powerful, but it can also have unexpected consequences, so
+you have to explicitly ask for an attribute to be coerced. To do this,
+you must set the <code>coerce</code> attribute option to a true value.</p>
+<p>First, we create the subtype to which we will coerce the other types:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'My::Types::HTTP::Headers'</span> <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="variable">class_type</span><span class="operator">(</span><span class="string">'HTTP::Headers'</span><span class="operator">);</span>
+</pre>
+<p>We are creating a subtype rather than using <code>HTTP::Headers</code> as a type
+directly. The reason we do this is that coercions are global, and a
+coercion defined for <code>HTTP::Headers</code> in our <code>Request</code> class would
+then be defined for <em>all</em> Moose-using classes in the current Perl
+interpreter. It's a <a href="../../../../lib/Moose/Manual/BestPractices.html">best practice</a> to
+avoid this sort of namespace pollution.</p>
+<p>The <code>class_type</code> sugar function is simply a shortcut for this:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'HTTP::Headers'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">'Object'</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'HTTP::Headers'</span><span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>Internally, Moose creates a type constraint for each Moose-using
+class, but for non-Moose classes, the type must be declared
+explicitly.</p>
+<p>We could go ahead and use this new type directly:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'headers'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'My::Types::HTTP::Headers'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span> <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>This creates a simple attribute which defaults to an empty instance of
+<a href="../../../../lib/HTTP/Headers.html">the HTTP::Headers manpage</a>.</p>
+<p>The constructor for <a href="../../../../lib/HTTP/Headers.html">the HTTP::Headers manpage</a> accepts a list of key-value pairs
+representing the HTTP header fields. In Perl, such a list could be
+stored in an ARRAY or HASH reference. We want our <code>headers</code> attribute
+to accept those data structures instead of an <strong>HTTP::Headers</strong>
+instance, and just do the right thing. This is exactly what coercion
+is for:</p>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'My::Types::HTTP::Headers'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'ArrayRef'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">}</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'HashRef'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">%</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>The first argument to <code>coerce</code> is the type <em>to</em> which we are
+coercing. Then we give it a set of <code>from</code>/<code>via</code> clauses. The <code>from</code>
+function takes some other type name and <code>via</code> takes a subroutine
+reference which actually does the coercion.</p>
+<p>However, defining the coercion doesn't do anything until we tell Moose
+we want a particular attribute to be coerced:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'headers'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'My::Types::HTTP::Headers'</span><span class="operator">,</span>
+      <span class="string">coerce</span>  <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span> <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>Now, if we use an <code>ArrayRef</code> or <code>HashRef</code> to populate <code>headers</code>, it
+will be coerced into a new <a href="../../../../lib/HTTP/Headers.html">the HTTP::Headers manpage</a> instance. With the
+coercion in place, the following lines of code are all equivalent:</p>
+<pre>
+  <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">headers</span><span class="operator">(</span> <span class="variable">HTTP::Headers</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">bar</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span> <span class="string">baz</span> <span class="operator">=&gt;</span> <span class="number">2</span> <span class="operator">)</span> <span class="operator">);</span>
+  <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">headers</span><span class="operator">(</span> <span class="operator">[</span> <span class="string">'bar'</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="string">'baz'</span><span class="operator">,</span> <span class="number">2</span> <span class="operator">]</span> <span class="operator">);</span>
+  <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">headers</span><span class="operator">(</span> <span class="operator">{</span> <span class="string">bar</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span> <span class="string">baz</span> <span class="operator">=&gt;</span> <span class="number">2</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>As you can see, careful use of coercions can produce a very open
+interface for your class, while still retaining the &quot;safety&quot; of your
+type constraint checks. (1)</p>
+<p>Our next coercion shows how we can leverage existing CPAN modules to
+help implement coercions. In this case we use <a href="../../../../Params/Coerce.html">the Params::Coerce manpage</a>.</p>
+<p>Once again, we need to declare a class type for our non-Moose <a href="../../../../lib/URI.html">the URI manpage</a>
+class:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'My::Types::URI'</span> <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="variable">class_type</span><span class="operator">(</span><span class="string">'URI'</span><span class="operator">);</span>
+</pre>
+<p>Then we define the coercion:</p>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'My::Types::URI'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'Object'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'URI'</span><span class="operator">)</span>
+                   <span class="operator">?</span> <span class="variable">$_</span>
+                   <span class="operator">:</span> <span class="variable">Params::Coerce::coerce</span><span class="operator">(</span> <span class="string">'URI'</span><span class="operator">,</span> <span class="variable">$_</span> <span class="operator">);</span> <span class="operator">}</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'Str'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="string">'http'</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>The first coercion takes any object and makes it a <code>URI</code> object. The
+coercion system isn't that smart, and does not check if the object is
+already a <a href="../../../../lib/URI.html">the URI manpage</a>, so we check for that ourselves. If it's not a <a href="../../../../lib/URI.html">the URI manpage</a>
+already, we let <a href="../../../../Params/Coerce.html">the Params::Coerce manpage</a> do its magic, and we just use its
+return value.</p>
+<p>If <a href="../../../../Params/Coerce.html">the Params::Coerce manpage</a> didn't return a <a href="../../../../lib/URI.html">the URI manpage</a> object (for whatever
+reason), Moose would throw a type constraint error.</p>
+<p>The other coercion takes a string and converts it to a <a href="../../../../lib/URI.html">the URI manpage</a>. In this
+case, we are using the coercion to apply a default behavior, where a
+string is assumed to be an <code>http</code> URI.</p>
+<p>Finally, we need to make sure our attributes enable coercion.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'base'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'My::Types::URI'</span><span class="operator">,</span> <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'uri'</span>  <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'My::Types::URI'</span><span class="operator">,</span> <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<p>Re-using the coercion lets us enforce a consistent API across multiple
+attributes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>This recipe showed the use of coercions to create a more flexible and
+DWIM-y API. Like any powerful feature, we recommend some
+caution. Sometimes it's better to reject a value than just guess at
+how to DWIM.</p>
+<p>We also showed the use of the <code>class_type</code> sugar function as a
+shortcut for defining a new subtype of <code>Object</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="footnotes">FOOTNOTES</a></h1>
+<dl>
+<dt><strong><a name="110" class="item">(1)</a></strong></dt>
+
+<dd>
+<p>This particular example could be safer. Really we only want to coerce
+an array with an <em>even</em> number of elements. We could create a new
+<code>EvenElementArrayRef</code> type, and then coerce from that type, as
+opposed to a plain <code>ArrayRef</code></p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,176 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>Shell - run shell commands transparently within perl</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>Shell - run shell commands transparently within perl</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#caveats">Caveats</a></li>
+		<li><a href="#escaping_magic_characters">Escaping Magic Characters</a></li>
+		<li><a href="#configuration">Configuration</a></li>
+	</ul>
+
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Shell - run shell commands transparently within perl</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Shell</span> <span class="string">qw(cat ps cp)</span><span class="operator">;</span>
+   <span class="variable">$passwd</span> <span class="operator">=</span> <span class="variable">cat</span><span class="operator">(</span><span class="string">'&lt;/etc/passwd'</span><span class="operator">);</span>
+   <span class="variable">@pslines</span> <span class="operator">=</span> <span class="variable">ps</span><span class="operator">(</span><span class="string">'-ww'</span><span class="operator">),</span>
+   <span class="variable">cp</span><span class="operator">(</span><span class="string">"/etc/passwd"</span><span class="operator">,</span> <span class="string">"/tmp/passwd"</span><span class="operator">);</span>
+</pre>
+<pre>
+   <span class="comment"># object oriented </span>
+   <span class="keyword">my</span> <span class="variable">$sh</span> <span class="operator">=</span> <span class="variable">Shell</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+   <span class="keyword">print</span> <span class="variable">$sh</span><span class="operator">-&gt;</span><span class="variable">ls</span><span class="operator">(</span><span class="string">'-l'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>
+</p>
+<h2><a name="caveats">Caveats</a></h2>
+<p>This package is included as a show case, illustrating a few Perl features.
+It shouldn't be used for production programs. Although it does provide a 
+simple interface for obtaining the standard output of arbitrary commands,
+there may be better ways of achieving what you need.</p>
+<p>Running shell commands while obtaining standard output can be done with the
+<a href="../lib/pods/perlfunc.html#qx_"><code>qx/STRING/</code></a> operator, or by calling <a href="../lib/pods/perlfunc.html#open"><code>open</code></a> with a filename expression that
+ends with <code>|</code>, giving you the option to process one line at a time.
+If you don't need to process standard output at all, you might use <a href="../lib/pods/perlfunc.html#system"><code>system</code></a>
+(in preference of doing a print with the collected standard output).</p>
+<p>Since Shell.pm and all of the aforementioned techniques use your system's
+shell to call some local command, none of them is portable across different 
+systems. Note, however, that there are several built in functions and 
+library packages providing portable implementations of functions operating
+on files, such as: <a href="../lib/pods/perlfunc.html#glob"><code>glob</code></a>, <a href="../lib/pods/perlfunc.html#link"><code>link</code></a> and <a href="../lib/pods/perlfunc.html#unlink"><code>unlink</code></a>, <a href="../lib/pods/perlfunc.html#mkdir"><code>mkdir</code></a> and <a href="../lib/pods/perlfunc.html#rmdir"><code>rmdir</code></a>, 
+<a href="../lib/pods/perlfunc.html#rename"><code>rename</code></a>, <code>File::Compare</code>, <code>File::Copy</code>, <code>File::Find</code> etc.</p>
+<p>Using Shell.pm while importing <code>foo</code> creates a subroutine <code>foo</code> in the
+namespace of the importing package. Calling <code>foo</code> with arguments <code>arg1</code>,
+<code>arg2</code>,... results in a shell command <code>foo arg1 arg2...</code>, where the 
+function name and the arguments are joined with a blank. (See the subsection 
+on Escaping magic characters.) Since the result is essentially a command
+line to be passed to the shell, your notion of arguments to the Perl
+function is not necessarily identical to what the shell treats as a
+command line token, to be passed as an individual argument to the program.
+Furthermore, note that this implies that <code>foo</code> is callable by file name
+only, which frequently depends on the setting of the program's environment.</p>
+<p>Creating a Shell object gives you the opportunity to call any command
+in the usual OO notation without requiring you to announce it in the
+<code>use Shell</code> statement. Don't assume any additional semantics being
+associated with a Shell object: in no way is it similar to a shell
+process with its environment or current working directory or any
+other setting.</p>
+<p>
+</p>
+<h2><a name="escaping_magic_characters">Escaping Magic Characters</a></h2>
+<p>It is, in general, impossible to take care of quoting the shell's
+magic characters. For some obscure reason, however, Shell.pm quotes
+apostrophes (<code>'</code>) and backslashes (<code>\</code>) on UNIX, and spaces and
+quotes (<code>&quot;</code>) on Windows.</p>
+<p>
+</p>
+<h2><a name="configuration">Configuration</a></h2>
+<p>If you set $Shell::capture_stderr to 1, the module will attempt to
+capture the standard error output of the process as well. This is
+done by adding <code>2&gt;&amp;1</code> to the command line, so don't try this on
+a system not supporting this redirection.</p>
+<p>Setting $Shell::capture_stderr to -1 will send standard error to the
+bit bucket (i.e., the equivalent of adding <code>2&gt;/dev/null</code> to the
+command line).  The same caveat regarding redirection applies.</p>
+<p>If you set $Shell::raw to true no quoting whatsoever is done.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Quoting should be off by default.</p>
+<p>It isn't possible to call shell built in commands, but it can be
+done by using a workaround, e.g. shell( '-c', 'set' ).</p>
+<p>Capturing standard error does not work on some systems (e.g. VMS).</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<pre>
+  Date: Thu, 22 Sep 94 16:18:16 -0700
+  Message-Id: &lt;9409222318.AA17072@scalpel.netlabs.com&gt;
+  To: perl5-porters@isu.edu
+  From: Larry Wall &lt;lwall@scalpel.netlabs.com&gt;
+  Subject: a new module I just wrote</pre>
+<p>Here's one that'll whack your mind a little out.</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Shell</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">echo</span><span class="operator">(</span><span class="string">"howdy"</span><span class="operator">,</span> <span class="string">"&lt;funny&gt;"</span><span class="operator">,</span> <span class="string">"world"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$foo</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$passwd</span> <span class="operator">=</span> <span class="variable">cat</span><span class="operator">(</span><span class="string">"&lt;/etc/passwd"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$passwd</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> ps</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">ps</span> <span class="operator">-</span><span class="variable">ww</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">cp</span><span class="operator">(</span><span class="string">"/etc/passwd"</span><span class="operator">,</span> <span class="string">"/etc/passwd.orig"</span><span class="operator">);</span>
+</pre>
+<p>That's maybe too gonzo.  It actually exports an AUTOLOAD to the current
+package (and uncovered a bug in Beta 3, by the way).  Maybe the usual
+usage should be</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Shell</span> <span class="string">qw(echo cat ps cp)</span><span class="operator">;</span>
+</pre>
+<p>Larry Wall</p>
+<p>Changes by <a href="mailto:Jenda@Krynicky.cz">Jenda@Krynicky.cz</a> and Dave Cottle &lt;<a href="mailto:d.cottle@csc.canterbury.ac.nz">d.cottle@csc.canterbury.ac.nz</a>&gt;.</p>
+<p>Changes for OO syntax and bug fixes by Casey West &lt;<a href="mailto:casey@geeknest.com">casey@geeknest.com</a>&gt;.</p>
+<p><code>$Shell::raw</code> and pod rewrite by Wolfgang Laun.</p>
+<p>Rewritten to use closures rather than <code>eval &quot;string&quot;</code> by Adriano Ferreira.</p>
+
+</body>
+
+</html>

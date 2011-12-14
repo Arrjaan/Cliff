@@ -1,0 +1,582 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Date::Calendar - Calendar objects for different holiday schemes</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Date::Calendar - Calendar objects for different holiday schemes</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#motto">MOTTO</a></li>
+	<li><a href="#preface">PREFACE</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#interface">INTERFACE</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#known_bugs">KNOWN BUGS</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#disclaimer">DISCLAIMER</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Date::Calendar - Calendar objects for different holiday schemes</p>
+<p>
+</p>
+<hr />
+<h1><a name="motto">MOTTO</a></h1>
+<p>There is more than one way to do it - this is just one of them!</p>
+<p>
+</p>
+<hr />
+<h1><a name="preface">PREFACE</a></h1>
+<p>Basically, Date::Calendar is just a caching proxy class for
+Date::Calendar::Year objects, which are embedded in each
+Date::Calendar object.</p>
+<p>However, and in contrast to Date::Calendar::Year methods, Date::Calendar
+methods permit calculations spanning an arbitrary number of years, without
+loss of efficiency.</p>
+<p>So you should usually use Date::Calendar and not Date::Calendar::Year,
+since that way you don't have to worry about calculations crossing year
+boundaries.</p>
+<p>Note however that Date::Calendar and Date::Calendar::Year can only deal
+with years lying within the range [1583..2299].</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Date::Calendar::Profiles</span> <span class="string">qw( $Profiles )</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Date::Calendar</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">$calendar_US_AZ</span>  <span class="operator">=</span> <span class="variable">Date::Calendar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$Profiles</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'US-AZ'</span><span class="operator">}</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">LANG</span><span class="operator">[</span><span class="operator">,</span><span class="variable">WEEKEND</span><span class="operator">]]</span> <span class="operator">);</span>
+  <span class="variable">$calendar_DE_SN</span>  <span class="operator">=</span> <span class="variable">Date::Calendar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$Profiles</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'DE-SN'</span><span class="operator">}</span> <span class="operator">[</span><span class="operator">,</span><span class="variable">LANG</span><span class="operator">[</span><span class="operator">,</span><span class="variable">WEEKEND</span><span class="operator">]]</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$year_2000_US_AZ</span> <span class="operator">=</span> <span class="variable">$calendar_US_AZ</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">(</span> <span class="number">2000</span> <span class="operator">);</span>
+  <span class="variable">$year_2001_DE_SN</span> <span class="operator">=</span> <span class="variable">$calendar_DE_SN</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">(</span> <span class="number">2001</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">@years</span> <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">cache_keys</span><span class="operator">();</span> <span class="comment"># returns list of year numbers</span>
+  <span class="variable">@years</span> <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">cache_vals</span><span class="operator">();</span> <span class="comment"># returns list of year objects</span>
+</pre>
+<pre>
+  <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">cache_clr</span><span class="operator">();</span>
+  <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">cache_add</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">,...);</span>
+  <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">cache_del</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">,...);</span>
+</pre>
+<pre>
+  <span class="variable">$index</span>        <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">date2index</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">@names</span>        <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">labels</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">);</span>
+  <span class="variable">@holidays</span>     <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">labels</span><span class="operator">();</span>
+  <span class="variable">$holidays</span>     <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">labels</span><span class="operator">();</span>
+</pre>
+<pre>
+  <span class="variable">@dates</span>        <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">search</span><span class="operator">(</span><span class="variable">PATTERN</span><span class="operator">);</span>
+  <span class="variable">$dates</span>        <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">search</span><span class="operator">(</span><span class="variable">PATTERN</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$hashref</span>      <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">tags</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$days</span>         <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">delta_workdays</span><span class="operator">(</span><span class="variable">YEAR1</span><span class="operator">,</span><span class="variable">MONTH1</span><span class="operator">,</span><span class="variable">DAY1</span><span class="operator">|</span><span class="variable">DATE1</span>
+                                           <span class="operator">,</span><span class="variable">YEAR2</span><span class="operator">,</span><span class="variable">MONTH2</span><span class="operator">,</span><span class="variable">DAY2</span><span class="operator">|</span><span class="variable">DATE2</span>
+                                           <span class="operator">,</span><span class="variable">FLAG1</span><span class="operator">,</span><span class="variable">FLAG2</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$date</span><span class="operator">,</span><span class="variable">$rest</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">add_delta_workdays</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span>
+                                               <span class="operator">,</span><span class="variable">DELTA</span><span class="operator">);</span>
+  <span class="variable">$date</span>         <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">add_delta_workdays</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span>
+                                               <span class="operator">,</span><span class="variable">DELTA</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$flag</span>         <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">is_full</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">);</span>
+  <span class="variable">$flag</span>         <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">is_half</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">);</span>
+  <span class="variable">$flag</span>         <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">is_work</span><span class="operator">(</span><span class="variable">YEAR</span><span class="operator">,</span><span class="variable">MONTH</span><span class="operator">,</span><span class="variable">DAY</span><span class="operator">|</span><span class="variable">DATE</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="interface">INTERFACE</a></h1>
+<p>Note that whenever a year number, a date, a time or a combined
+date and time are expected as input parameters by one of the
+methods of this class, you can always pass a Date::Calc[::Object]
+date object or an array reference (of an array of appropriate
+length) instead!</p>
+<p>See <a href="../../Date/Calc/Object(3).html">the Date::Calc::Object(3) manpage</a> for more details.</p>
+<p>So instead of calling a given method like this:</p>
+<pre>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method1</span><span class="operator">(</span> <span class="variable">$year</span><span class="operator">,</span><span class="variable">$month</span><span class="operator">,</span><span class="variable">$day</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="variable">$year1</span><span class="operator">,</span><span class="variable">$month1</span><span class="operator">,</span><span class="variable">$day1</span><span class="operator">,</span> <span class="variable">$year2</span><span class="operator">,</span><span class="variable">$month2</span><span class="operator">,</span><span class="variable">$day2</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method3</span><span class="operator">(</span> <span class="variable">$year1</span><span class="operator">,</span> <span class="variable">$year2</span><span class="operator">,</span> <span class="variable">$year3</span> <span class="operator">);</span>
+</pre>
+<p>You can also call it like so:</p>
+<pre>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method1</span><span class="operator">(</span> <span class="variable">$date</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method1</span><span class="operator">(</span> <span class="operator">[</span><span class="number">1964</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">3</span><span class="operator">]</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="variable">$year1</span><span class="operator">,</span><span class="variable">$month1</span><span class="operator">,</span><span class="variable">$day1</span><span class="operator">,</span> <span class="variable">$date2</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="variable">$date1</span><span class="operator">,</span> <span class="variable">$year2</span><span class="operator">,</span><span class="variable">$month2</span><span class="operator">,</span><span class="variable">$day2</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="variable">$date1</span><span class="operator">,</span> <span class="variable">$date2</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="variable">$year1</span><span class="operator">,</span><span class="variable">$month1</span><span class="operator">,</span><span class="variable">$day1</span><span class="operator">,</span> <span class="operator">[</span><span class="number">2001</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span><span class="number">17</span><span class="operator">]</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="operator">[</span><span class="number">1964</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">3</span><span class="operator">]</span><span class="operator">,</span> <span class="variable">$year2</span><span class="operator">,</span><span class="variable">$month2</span><span class="operator">,</span><span class="variable">$day2</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="operator">[</span><span class="number">1964</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">3</span><span class="operator">]</span><span class="operator">,</span> <span class="operator">[</span><span class="number">2001</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span><span class="number">17</span><span class="operator">]</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="variable">$date1</span><span class="operator">,</span> <span class="operator">[</span><span class="number">2001</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span><span class="number">17</span><span class="operator">]</span> <span class="operator">);</span>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method2</span><span class="operator">(</span> <span class="operator">[</span><span class="number">1964</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">3</span><span class="operator">]</span><span class="operator">,</span> <span class="variable">$date2</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">method3</span><span class="operator">(</span> <span class="variable">$year1</span><span class="operator">,</span> <span class="variable">$date2</span><span class="operator">,</span> <span class="operator">[</span><span class="number">2001</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span><span class="number">17</span><span class="operator">]</span> <span class="operator">);</span>
+</pre>
+<p>And similarly if a time or a combined date and time are expected.</p>
+<p>If you substitute an expected year number by an anonymous array
+(this is the recommended way of writing date constants, for
+increased readability of your programs), it must contain three
+values, nevertheless (otherwise the use of an anonymous array
+would be pointless).</p>
+<p>Don't confuse year numbers and their substitutes (a date object
+or an array reference) with Date::Calendar::Year objects, which
+are a totally different thing!</p>
+<p>But incidentally <code>:-)</code>, you may also pass a Date::Calendar::Year
+object whenever a year number is expected. However, and perhaps
+against your expectations at times, especially in conjunction
+with the method &quot;cache_add()&quot;, only the year number from that
+object will be used, not the year object itself (the year
+object in question might be using the wrong profile!).</p>
+<p>Moreover, whenever a method of this class returns a date, it
+does so by returning a Date::Calc[::Object] date object.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<ul>
+<li>
+<p><code>$calendar = Date::Calendar-&gt;new(PROFILE[,LANG[,WEEKEND]]);</code></p>
+<p>The first argument must be the reference of a hash,
+which contains a holiday scheme or &quot;profile&quot; to be used
+in all calculations involving the new calendar object.</p>
+<p>The second argument is optional, and must consist of
+the valid name or number of a language as provided by
+the Date::Calc(3) module if given.</p>
+<p>After the second argument, a list of day numbers which
+will constitute the &quot;weekend&quot; can optionally be specified,
+where 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday,
+5=Friday, 6=Saturday and 7=Sunday.</p>
+<p>If no values are given, 6 and 7 (Saturday and Sunday)
+are automatically taken as default.</p>
+<p>If values outside of the range <code>1..7</code> are given,
+they will be ignored.</p>
+<p>This can be used to switch off this feature and to
+have no regularly recurring holidays at all when
+for instance a zero is given.</p>
+<p>See <a href="../../Date/Calendar/Profiles(3).html">the Date::Calendar::Profiles(3) manpage</a> and <a href="../../Date/Calendar/Year(3).html">the Date::Calendar::Year(3) manpage</a>
+for more details about these arguments and about how
+to roll your own calendar profiles.</p>
+<p>The method creates a new calendar object for a given profile,
+i.e., a given location and its scheme of holidays (or a scheme
+of your own).</p>
+<p>This calendar object is a caching proxy object; it stores the
+reference of the given profile and contains a hash (the cache)
+of Date::Calendar::Year objects.</p>
+</li>
+<li>
+<p><code>$year = $calendar-&gt;year(YEAR|DATE);</code></p>
+<p>This method returns a Date::Calendar::Year object for the given
+year and the profile that was associated with the given calendar
+object.</p>
+<p>If the cache in the given calendar object already contains an
+object for the requested year, the corresponding object reference
+is simply returned.</p>
+<p>If not, a new Date::Calendar::Year object is created using the
+profile that has been associated with the given calendar object.
+The new Date::Calendar::Year object is then stored in the calendar
+object's cache and its object reference is returned.</p>
+<p>A fatal &quot;given year out of range&quot; error will occur if the given
+year number lies outside the valid range of [1583..2299].</p>
+</li>
+<li>
+<p><code>@years = $calendar-&gt;cache_keys();</code></p>
+<p>This method returns the list of <strong>YEAR NUMBERS</strong> of the
+Date::Calendar::Year objects contained in the given
+calendar object's cache.</p>
+</li>
+<li>
+<p><code>@years = $calendar-&gt;cache_vals();</code></p>
+<p>This method returns the list of <strong>OBJECT REFERENCES</strong> of
+the Date::Calendar::Year objects contained in the given
+calendar object's cache.</p>
+</li>
+<li>
+<p><code>$calendar-&gt;cache_clr();</code></p>
+<p>This method clears the entire cache of the given calendar
+object (by destroying the cache hash and creating a new one).</p>
+</li>
+<li>
+<p><code>$calendar-&gt;cache_add(YEAR|DATE,...);</code></p>
+<p>Roughly, this method is a shortcut for</p>
+<pre>
+  <span class="keyword">for</span> <span class="variable">$year</span> <span class="operator">(</span><span class="variable">@list</span><span class="operator">)</span>
+  <span class="operator">{</span>
+      <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">(</span><span class="variable">$year</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+</li>
+<li>
+<p><code>$calendar-&gt;cache_del(YEAR|DATE,...);</code></p>
+<p>This method removes the Date::Calendar::Year objects whose
+year numbers are given from the cache of the given calendar
+object.</p>
+<p>Year numbers for which the calendar object's cache doesn't
+contain an entry are simply ignored.</p>
+</li>
+<li>
+<p><code>$index = $calendar-&gt;date2index(YEAR,MONTH,DAY|DATE);</code></p>
+<p>This method converts a given date into the number of the day in
+that year (this is sometimes also referred to as the &quot;julian&quot;
+date), i.e., a number between 0 (for January 1st) and the number
+of days in the given year minus one, i.e., 364 or 365 (for
+December 31st).</p>
+<p>You may need this in order to access the bit vectors returned
+by the Date::Calendar::Year methods &quot;vec_full()&quot;, &quot;vec_half()&quot;
+and &quot;vec_work()&quot;.</p>
+<p>If the Date::Calendar::Year object for the given YEAR is not in
+the <code>$calendar</code>'s cache yet, it will be created and added.</p>
+<p>An exception (&quot;invalid date&quot;) is thrown if the given arguments
+do not constitute a valid date, or (&quot;given year out of range
+[1583..2299]&quot;) if the given year lies outside of the permitted
+range.</p>
+</li>
+<li>
+<p><code>@names = $calendar-&gt;labels(YEAR,MONTH,DAY|DATE);</code></p>
+<p><code>@holidays = $calendar-&gt;labels();</code></p>
+<p><code>$holidays = $calendar-&gt;labels();</code></p>
+<p>If any arguments are given, they are supposed to represent a
+date. In that case, a list of all labels (= names of holidays)
+associated with that date are returned. The first item returned
+is always the name of the day of week for that date. The
+corresponding year object for the given date's year is
+added to the calendar's cache first if necessary.</p>
+<p>If no arguments are given, the list of all available labels in
+all years that have previously been accessed in the given calendar
+(i.e., the years which are already in the given calendar's cache)
+is constructed. Note that this means that the returned list will
+be empty if there are no year objects in the given calendar's
+cache yet (!). The returned list does <strong>NOT</strong> include any names
+of the days of week (which would be pointless in this case).</p>
+<p>Multiple labels are reported only once.</p>
+<p>Usually all years have the same set of labels, so it may seem
+superfluous to scan all the years in the cache instead of just
+one. But there may be exceptions, because it is possible to
+define calendar profiles which do not contain all possible
+holidays in every year. See <a href="../../Date/Calendar/Profiles(3).html">the Date::Calendar::Profiles(3) manpage</a>
+and <a href="../../Date/Calendar/Year(3).html">the Date::Calendar::Year(3) manpage</a> for more details.</p>
+<p>In list context, the resulting list itself is returned. In scalar
+context, the number of items in the resulting list is returned.</p>
+</li>
+<li>
+<p><code>@dates = $calendar-&gt;search(PATTERN);</code></p>
+<p><code>$dates = $calendar-&gt;search(PATTERN);</code></p>
+<p>This method searches through all the labels in all years that
+have previously been accessed in the given calendar (i.e., the
+years which are already in the given calendar's cache) and
+returns a list of date objects with all dates whose labels
+match the given pattern.</p>
+<p>(Use the methods &quot;cache_clr()&quot;, &quot;cache_add()&quot; and &quot;cache_del()&quot;
+in order to put the year numbers you want into the calendar
+object's cache, or to make sure it only contains the year
+numbers you want to search.)</p>
+<p>Note that this is a simple, case-insensitive substring search,
+<strong>NOT</strong> a full-fledged regular expression search!</p>
+<p>The result is guaranteed to be sorted chronologically.</p>
+<p>In scalar context, only the number of items in the resulting list
+is returned, instead of the resulting list itself (as in list context).</p>
+</li>
+<li>
+<p><code>$hashref = $calendar-&gt;tags(YEAR,MONTH,DAY|DATE);</code></p>
+<p>This method returns a hash reference for the given calendar and
+date. The hash it refers to is a copy of the calendar profile's
+internal hash which contains the names for the given date as keys
+and 0, 1, 2, or 3 as their corresponding values meaning the following:</p>
+<pre>
+    0    =&gt;    commemorative day
+    1    =&gt;    &quot;half&quot; holiday
+    2    =&gt;    &quot;full&quot; holiday
+    3    =&gt;    both a &quot;half&quot; and a &quot;full&quot; holiday</pre>
+<p>The value &quot;3&quot; should only occur if a date has been redefined by the
+underlying profile using the same key (i.e., the same name) but with
+a different type of holiday.</p>
+</li>
+<li>
+<p><code>$days = $calendar-&gt;delta_workdays(YEAR1,MONTH1,DAY1, YEAR2,MONTH2,DAY2, FLAG1,FLAG2);</code></p>
+<p><code>$days = $calendar-&gt;delta_workdays(DATE1,DATE2,FLAG1,FLAG2);</code></p>
+<p>This method calculates the number of work days (i.e., the number
+of days, but excluding all holidays) between two dates.</p>
+<p>In other words, this method is equivalent to the &quot;Delta_Days()&quot;
+function of the Date::Calc module, except that it disregards
+holidays in its counting.</p>
+<p>The two flags indicate whether the start and end dates should be
+included in the counting (that is, of course, only in case they
+aren't holidays), or not.</p>
+<p>It is common, for example, that you want to know how many work
+days are left between the current date and a given deadline.</p>
+<p>Typically, you will want to count the current date but not the
+deadline's date. So you would specify &quot;true&quot; (&quot;1&quot;) for FLAG1
+and &quot;false&quot; (&quot;0&quot;) for FLAG2 in order to achieve that.</p>
+<p>In other words, a value of &quot;true&quot; means &quot;including this date&quot;,
+a value of &quot;false&quot; means &quot;excluding this date&quot;.</p>
+<p>As with the &quot;Delta_Days()&quot; function from the Date::Calc module,
+the dates have to be given in chronological order to yield a
+positive result. If the dates are reversed, the result will
+be negative.</p>
+<p>The parameter FLAG1 is associated with the first given date,
+the parameter FLAG2 with the second given date (regardless
+of whether the dates are in chronological order or not).</p>
+<p>An exception (&quot;invalid date&quot;) is raised if either of the two
+date arguments does not constitute a valid date.</p>
+</li>
+<li>
+<p><code>($date,$rest) = $calendar-&gt;add_delta_workdays(YEAR,MONTH,DAY, DELTA);</code></p>
+<p><code>($date,$rest) = $calendar-&gt;add_delta_workdays(DATE,DELTA);</code></p>
+<p><code>$date = $calendar-&gt;add_delta_workdays(YEAR,MONTH,DAY, DELTA);</code></p>
+<p><code>$date = $calendar-&gt;add_delta_workdays(DATE,DELTA);</code></p>
+<p>This method is the equivalent of the &quot;Add_Delta_Days()&quot; function
+from the Date::Calc module, except that it adds work days and
+skips holidays.</p>
+<p>In other words, you can add or subtract a number of work days
+&quot;DELTA&quot; to/from a given date and get a new date as the result
+(as a Date::Calc object).</p>
+<p>You add days (i.e., you go forward in time) with a positive
+offset &quot;DELTA&quot;, and you subtract days (i.e., you go backwards
+in time) with a negative offset.</p>
+<p>Note that an exception (&quot;invalid date&quot;) is raised if the
+given date argument does not constitute a valid date.</p>
+<p>In scalar context, the method just returns the resulting date
+object, whereas in list context the method not only returns the
+new date, but also a &quot;rest&quot;. This rest is useful for cases in
+which your profile contains &quot;half&quot; holidays, or when you add
+or subtract fractions of a day.</p>
+<p>Sometimes it is not possible to accomodate the requested number
+of work days, and a rest remains.</p>
+<p>This rest can currently only assume the value &quot;0.0&quot; (zero),
+&quot;-0.5&quot; (minus one half) or &quot;0.5&quot; (one half), provided you
+use only integral or multiples of 0.5 as offsets. A rest
+of zero indicates that the calculation yielded an exact
+result. If the rest is 0.5 or -0.5, this is to be interpreted
+as &quot;the resulting date at 12:00 o'clock&quot;, instead of as &quot;the
+resulting date at 0:00 o'clock&quot;.</p>
+<p>The rest is always positive (or zero) if the offset &quot;DELTA&quot;
+is positive (or zero), and always negative (or zero) if the
+offset is negative (or zero).</p>
+<p>Example:</p>
+<pre>
+  <span class="comment">#!perl</span>
+  <span class="keyword">use</span> <span class="variable">Date::Calendar</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Date::Calendar::Profiles</span> <span class="string">qw( $Profiles )</span><span class="operator">;</span>
+  <span class="variable">$year</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+  <span class="variable">$cal</span> <span class="operator">=</span> <span class="variable">Date::Calendar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">$Profiles</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'sdm-MUC'</span><span class="operator">}</span> <span class="operator">);</span>
+  <span class="operator">(</span><span class="variable">$date</span><span class="operator">,</span><span class="variable">$rest</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$cal</span><span class="operator">-&gt;</span><span class="variable">add_delta_workdays</span><span class="operator">(</span><span class="variable">$year</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span> <span class="operator">-</span><span class="number">3</span><span class="operator">);</span>
+  <span class="variable">$date</span><span class="operator">-&gt;</span><span class="variable">date_format</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+  <span class="keyword">print</span> <span class="string">"\$date = </span><span class="variable">$date</span><span class="string">, \$rest = </span><span class="variable">$rest</span><span class="string">.\n"</span><span class="operator">;</span>
+  <span class="comment">__END__
+  </span>
+</pre>
+<p>This program calculates &quot;January 3rd of the given year minus
+3 work days&quot;:</p>
+<pre>
+  &gt; perl test.pl 2001
+  $date = 28-Dec-2000, $rest = 0.
+  &gt; perl test.pl 2002
+  $date = 28-Dec-2001, $rest = -0.5.</pre>
+<p>Note that December 31st is a &quot;half&quot; holiday in 2001 for the
+calendar profile used in this example.</p>
+<p>You can easily verify the results above with the help of the
+&quot;calendar.cgi&quot; CGI script or the &quot;linearcal.pl&quot; script from
+the &quot;examples&quot; subdirectory in the Date::Calc distribution.</p>
+<p><strong>BEWARE</strong> that this method may currently return unexpected
+(i.e., contradicting the above documentation) or plain wrong
+results when going back in time (this is a bug!).</p>
+<p>However, it works correctly and as documented above when
+going forward in time.</p>
+</li>
+<li>
+<p><code>$flag = $calendar-&gt;is_full(YEAR,MONTH,DAY|DATE);</code></p>
+<p>This method returns &quot;true&quot; (&quot;1&quot;) if the bit corresponding to
+the given date is set in the bit vector representing &quot;full&quot;
+holidays, and &quot;false&quot; (&quot;0&quot;) otherwise.</p>
+<p>I.e., the method returns &quot;true&quot; if the given date is a (full)
+holiday (according to the calendar profile associated with the
+given calendar object).</p>
+<p>The corresponding Date::Calendar::Year object is created first
+and stored in the calendar object's cache if necessary (if it's
+not already there).</p>
+<p>Note that you can get a reference to this bit vector (in order
+to use this bit vector in bit vector operations) as follows:</p>
+<pre>
+  <span class="variable">$vec_full</span> <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">(</span><span class="variable">$year</span><span class="operator">)-&gt;</span><span class="variable">vec_full</span><span class="operator">();</span>
+</pre>
+<p>The number of bits in this bit vector is the same as the number
+of days in the given year &quot;<code>$year</code>&quot;, which you can retrieve
+through either &quot;<code>$days = $vec_full-&gt;Size();</code>&quot; or
+&quot;<code>$days = $year-&gt;val_days();</code>&quot;.</p>
+<p>See <a href="../../Date/Calendar/Year(3).html">the Date::Calendar::Year(3) manpage</a> and <a href="../../Bit/Vector(3).html">the Bit::Vector(3) manpage</a> for more
+details.</p>
+</li>
+<li>
+<p><code>$flag = $calendar-&gt;is_half(YEAR,MONTH,DAY|DATE);</code></p>
+<p>This method returns &quot;true&quot; (&quot;1&quot;) if the bit corresponding to
+the given date is set in the bit vector representing &quot;half&quot;
+holidays, and &quot;false&quot; (&quot;0&quot;) otherwise.</p>
+<p>I.e., the method returns &quot;true&quot; if the given date is a half
+holiday (according to the calendar profile associated with the
+given calendar object).</p>
+<p>Note that if a date is a &quot;full&quot; holiday, the &quot;half&quot; bit is
+never set, even if you try to do so in your calendar profile,
+on purpose or by accident.</p>
+<p>The corresponding Date::Calendar::Year object is created first
+and stored in the calendar object's cache if necessary (if it's
+not already there).</p>
+<p>Note that you can get a reference to this bit vector (in order
+to use this bit vector in bit vector operations) as follows:</p>
+<pre>
+  <span class="variable">$vec_half</span> <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">(</span><span class="variable">$year</span><span class="operator">)-&gt;</span><span class="variable">vec_half</span><span class="operator">();</span>
+</pre>
+<p>The number of bits in this bit vector is the same as the number
+of days in the given year &quot;<code>$year</code>&quot;, which you can retrieve
+through either &quot;<code>$days = $vec_half-&gt;Size();</code>&quot; or
+&quot;<code>$days = $year-&gt;val_days();</code>&quot;.</p>
+<p>See <a href="../../Date/Calendar/Year(3).html">the Date::Calendar::Year(3) manpage</a> and <a href="../../Bit/Vector(3).html">the Bit::Vector(3) manpage</a> for more
+details.</p>
+</li>
+<li>
+<p><code>$flag = $calendar-&gt;is_work(YEAR,MONTH,DAY|DATE);</code></p>
+<p>This method returns &quot;true&quot; (&quot;1&quot;) if the bit corresponding to
+the given date is set in the bit vector used to perform all
+sorts of calculations, and &quot;false&quot; (&quot;0&quot;) otherwise.</p>
+<p>The corresponding Date::Calendar::Year object is created first
+and stored in the calendar object's cache if necessary (if it's
+not already there).</p>
+<p><strong>BEWARE</strong> that the &quot;work&quot; in this method's name does <strong>NOT</strong>
+come from &quot;work days&quot;!</p>
+<p>It comes from the fact that the corresponding bit vector can
+be used for any &quot;work&quot; that you need to do. In other words,
+it's a &quot;work space&quot;.</p>
+<p>Therefore, this bit vector might contain about everything you
+could imagine - including a bit pattern which marks all &quot;work
+days&quot; with set bits, if it so happens!</p>
+<p>But you better don't rely on it, unless you put the bit pattern
+there yourself in the first place.</p>
+<p>Note that you can get a reference to this bit vector (in order
+to fill it with any bit pattern you like) as follows:</p>
+<pre>
+  <span class="variable">$vec_work</span> <span class="operator">=</span> <span class="variable">$calendar</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">(</span><span class="variable">$year</span><span class="operator">)-&gt;</span><span class="variable">vec_work</span><span class="operator">();</span>
+</pre>
+<p>The number of bits in this bit vector is the same as the number
+of days in the given year &quot;<code>$year</code>&quot;, which you can retrieve
+through either &quot;<code>$days = $vec_work-&gt;Size();</code>&quot; or
+&quot;<code>$days = $year-&gt;val_days();</code>&quot;.</p>
+<p>See <a href="../../Date/Calendar/Year(3).html">the Date::Calendar::Year(3) manpage</a> and <a href="../../Bit/Vector(3).html">the Bit::Vector(3) manpage</a> for more
+details.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Date::Calendar::Year(3), Date::Calendar::Profiles(3),
+Date::Calc::Object(3), Date::Calc(3), Date::Calc::Util(3),
+Bit::Vector(3).</p>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>The calendar profiles included in <a href="../../Date/Calendar/Profiles(3).html">the Date::Calendar::Profiles(3) manpage</a>
+usually do not take historical irregularities into account
+(even though some do in order to show how this can be done),
+they only provide means for calculating <strong>regularly</strong> recurring
+events (<strong>the profiles should therefore not be relied upon
+for historical faithfulness</strong>).</p>
+<p>
+</p>
+<hr />
+<h1><a name="known_bugs">KNOWN BUGS</a></h1>
+<p>The method &quot;add_delta_workdays()&quot; is known to produce results
+which are sometimes off by one working day when a negative
+offset is used. As a workaround, try to add one working day
+first and then subtract one working day more than initially
+intended. See also the file &quot;examples/bug.pl&quot; for how to do
+this.</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>This man page documents &quot;Date::Calendar&quot; version 6.3.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<pre>
+  Steffen Beyer
+  <a href="mailto:STBEY@cpan.org">mailto:STBEY@cpan.org</a>
+  <a href="http://www.engelschall.com/u/sb/download/">http://www.engelschall.com/u/sb/download/</a></pre>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2000 - 2009 by Steffen Beyer. All rights reserved.</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This package is free software; you can use, modify and redistribute
+it under the same terms as Perl itself, i.e., at your option, under
+the terms either of the &quot;Artistic License&quot; or the &quot;GNU General Public
+License&quot;.</p>
+<p>The C library at the core of the module &quot;Date::Calc::XS&quot; can, at your
+discretion, also be used, modified and redistributed under the terms
+of the &quot;GNU Library General Public License&quot;.</p>
+<p>Please refer to the files &quot;Artistic.txt&quot;, &quot;GNU_GPL.txt&quot; and
+&quot;GNU_LGPL.txt&quot; in the &quot;license&quot; subdirectory of this distribution
+for any details!</p>
+<p>
+</p>
+<hr />
+<h1><a name="disclaimer">DISCLAIMER</a></h1>
+<p>This package is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
+<p>See the &quot;GNU General Public License&quot; for more details.</p>
+
+</body>
+
+</html>

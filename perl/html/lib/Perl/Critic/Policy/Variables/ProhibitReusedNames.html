@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::Variables::ProhibitReusedNames - Do not reuse a variable name in a lexical scope</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::Variables::ProhibitReusedNames - Do not reuse a variable name in a lexical scope</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<ul>
+
+		<li><a href="#crossing_subroutines">Crossing subroutines</a></li>
+		<li><a href="#performance">Performance</a></li>
+	</ul>
+
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::Variables::ProhibitReusedNames - Do not reuse a variable name in a lexical scope</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>It's really hard on future maintenance programmers if you reuse a
+variable name in a lexical scope. The programmer is at risk of
+confusing which variable is which. And, worse, the programmer could
+accidentally remove the inner declaration, thus silently changing the
+meaning of the inner code to use the outer variable.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">(</span><span class="number">0</span> <span class="operator">..</span> <span class="number">10</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$i</span><span class="operator">+</span><span class="number">1</span><span class="operator">;</span>  <span class="comment"># not OK, "$x" reused</span>
+    <span class="operator">}</span>
+</pre>
+<p>With <code>use warnings</code> in effect, Perl will warn you if you reuse a
+variable name at the same scope level but not within nested scopes.  Like so:</p>
+<pre>
+    <span class="operator">% </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">we</span> <span class="string">'my $x; my $x'</span>
+    <span class="string">"my"</span> <span class="variable">variable</span> <span class="variable">$x</span> <span class="variable">masks</span> <span class="variable">earlier</span> <span class="variable">declaration</span> <span class="variable">in</span> <span class="variable">same</span> <span class="variable">scope</span> <span class="variable">at</span> <span class="keyword">-e</span> <span class="variable">line</span> <span class="number">1.</span>
+</pre>
+<p>This policy takes that warning to a stricter level.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>
+</p>
+<h2><a name="crossing_subroutines">Crossing subroutines</a></h2>
+<p>This policy looks across subroutine boundaries.  So, the following may
+be a false positive for you:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> make_accessor </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$fieldname</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+            <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>  <span class="comment"># false positive, $self declared as reused</span>
+            <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$fieldname</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>This is intentional, though, because it catches bugs like this:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$debug_mode</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">sub</span><span class="variable"> set_debug </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$debug_mode</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>  <span class="comment"># accidental redeclaration</span>
+    <span class="operator">}</span>
+</pre>
+<p>I've done this myself several times -- it's a strong habit to put that
+&quot;my&quot; in front of variables at the start of subroutines.</p>
+<p>
+</p>
+<h2><a name="performance">Performance</a></h2>
+<p>The current implementation walks the tree over and over.  For a big
+file, this can be a huge time sink.  I'm considering rewriting to
+search the document just once for variable declarations and cache the
+tree walking on that single analysis.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This policy has a single option, <code>allow</code>, which is a list of names to
+never count as duplicates.  It defaults to containing <code>$self</code> and
+<code>$class</code>.  You add to this by adding something like this to your
+<em class="file">.perlcriticrc</em>:</p>
+<pre>
+    [Variables::ProhibitReusedNames]
+    allow = $self $class @blah</pre>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>This policy is inspired by
+<a href="http://use.perl.org/~jdavidb/journal/37548">http://use.perl.org/~jdavidb/journal/37548</a>.  Java does not allow
+you to reuse variable names declared in outer scopes, which I think is
+a nice feature.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2008-2011 Chris Dolan</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module.</p>
+
+</body>
+
+</html>

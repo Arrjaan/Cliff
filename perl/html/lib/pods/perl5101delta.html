@@ -1,0 +1,1931 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perl5101delta - what is new for perl v5.10.1</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perl5101delta - what is new for perl v5.10.1</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#incompatible_changes">Incompatible Changes</a></li>
+	<ul>
+
+		<li><a href="#switch_statement_changes">Switch statement changes</a></li>
+		<li><a href="#smart_match_changes">Smart match changes</a></li>
+		<ul>
+
+			<li><a href="#changes_to_type_based_dispatch">Changes to type-based dispatch</a></li>
+			<li><a href="#smart_match_and_overloading">Smart match and overloading</a></li>
+		</ul>
+
+		<li><a href="#other_incompatible_changes">Other incompatible changes</a></li>
+	</ul>
+
+	<li><a href="#core_enhancements">Core Enhancements</a></li>
+	<ul>
+
+		<li><a href="#unicode_character_database_5_1_0">Unicode Character Database 5.1.0</a></li>
+		<li><a href="#a_proper_interface_for_pluggable_method_resolution_orders">A proper interface for pluggable Method Resolution Orders</a></li>
+		<li><a href="#the_overloading_pragma">The <code>overloading</code> pragma</a></li>
+		<li><a href="#parallel_tests">Parallel tests</a></li>
+		<li><a href="#dtrace_support">DTrace support</a></li>
+		<li><a href="#support_for_configure_requires_in_cpan_module_metadata">Support for <code>configure_requires</code> in CPAN module metadata</a></li>
+	</ul>
+
+	<li><a href="#modules_and_pragmata">Modules and Pragmata</a></li>
+	<ul>
+
+		<li><a href="#new_modules_and_pragmata">New Modules and Pragmata</a></li>
+		<li><a href="#pragmata_changes">Pragmata Changes</a></li>
+		<li><a href="#updated_modules">Updated Modules</a></li>
+	</ul>
+
+	<li><a href="#utility_changes">Utility Changes</a></li>
+	<li><a href="#new_documentation">New Documentation</a></li>
+	<li><a href="#changes_to_existing_documentation">Changes to Existing Documentation</a></li>
+	<li><a href="#performance_enhancements">Performance Enhancements</a></li>
+	<li><a href="#installation_and_configuration_improvements">Installation and Configuration Improvements</a></li>
+	<ul>
+
+		<li><a href="#ext__reorganisation"><em class="file">ext/</em> reorganisation</a></li>
+		<li><a href="#configuration_improvements">Configuration improvements</a></li>
+		<li><a href="#compilation_improvements">Compilation improvements</a></li>
+		<li><a href="#platform_specific_changes">Platform Specific Changes</a></li>
+	</ul>
+
+	<li><a href="#selected_bug_fixes">Selected Bug Fixes</a></li>
+	<li><a href="#new_or_changed_diagnostics">New or Changed Diagnostics</a></li>
+	<li><a href="#changed_internals">Changed Internals</a></li>
+	<li><a href="#new_tests">New Tests</a></li>
+	<li><a href="#known_problems">Known Problems</a></li>
+	<li><a href="#deprecations">Deprecations</a></li>
+	<li><a href="#acknowledgements">Acknowledgements</a></li>
+	<li><a href="#reporting_bugs">Reporting Bugs</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perl5101delta - what is new for perl v5.10.1</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes differences between the 5.10.0 release and
+the 5.10.1 release.</p>
+<p>If you are upgrading from an earlier release such as 5.8.8, first read
+the <a href="../../lib/pods/perl5100delta.html">the perl5100delta manpage</a>, which describes differences between 5.8.8 and
+5.10.0</p>
+<p>
+</p>
+<hr />
+<h1><a name="incompatible_changes">Incompatible Changes</a></h1>
+<p>
+</p>
+<h2><a name="switch_statement_changes">Switch statement changes</a></h2>
+<p>The handling of complex expressions by the <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a>/<a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> switch
+statement has been enhanced. There are two new cases where <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> now
+interprets its argument as a boolean, instead of an expression to be used
+in a smart match:</p>
+<dl>
+<dt><strong><a name="flip_flop_operators" class="item">flip-flop operators</a></strong></dt>
+
+<dd>
+<p>The <code>..</code> and <code>...</code> flip-flop operators are now evaluated in boolean
+context, following their usual semantics; see <a href="../../lib/pods/perlop.html#range_operators">Range Operators in the perlop manpage</a>.</p>
+<p>Note that, as in perl 5.10.0, <a href="../../lib/pods/perlfunc.html#when"><code>when (1..10)</code></a> will not work to test
+whether a given value is an integer between 1 and 10; you should use
+<a href="../../lib/pods/perlfunc.html#when"><code>when ([1..10])</code></a> instead (note the array reference).</p>
+<p>However, contrary to 5.10.0, evaluating the flip-flop operators in boolean
+context ensures it can now be useful in a <a href="../../lib/pods/perlfunc.html#when"><code>when()</code></a>, notably for
+implementing bistable conditions, like in:</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^=begin/</span> <span class="operator">..</span> <span class="regex">/^=end/</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="comment"># do something</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="defined_or_operator" class="item">defined-or operator</a></strong></dt>
+
+<dd>
+<p>A compound expression involving the defined-or operator, as in
+<a href="../../lib/pods/perlfunc.html#when"><code>when (expr1 // expr2)</code></a>, will be treated as boolean if the first
+expression is boolean. (This just extends the existing rule that applies
+to the regular or operator, as in <a href="../../lib/pods/perlfunc.html#when"><code>when (expr1 || expr2)</code></a>.)</p>
+</dd>
+</dl>
+<p>The next section details more changes brought to the semantics to
+the smart match operator, that naturally also modify the behaviour
+of the switch statements where smart matching is implicitly used.</p>
+<p>
+</p>
+<h2><a name="smart_match_changes">Smart match changes</a></h2>
+<p>
+</p>
+<h3><a name="changes_to_type_based_dispatch">Changes to type-based dispatch</a></h3>
+<p>The smart match operator <code>~~</code> is no longer commutative. The behaviour of
+a smart match now depends primarily on the type of its right hand
+argument. Moreover, its semantics have been adjusted for greater
+consistency or usefulness in several cases. While the general backwards
+compatibility is maintained, several changes must be noted:</p>
+<ul>
+<li>
+<p>Code references with an empty prototype are no longer treated specially.
+They are passed an argument like the other code references (even if they
+choose to ignore it).</p>
+</li>
+<li>
+<p><code>%hash ~~ sub {}</code> and <code>@array ~~ sub {}</code> now test that the subroutine
+returns a true value for each key of the hash (or element of the
+array), instead of passing the whole hash or array as a reference to
+the subroutine.</p>
+</li>
+<li>
+<p>Due to the commutativity breakage, code references are no longer
+treated specially when appearing on the left of the <code>~~</code> operator,
+but like any vulgar scalar.</p>
+</li>
+<li>
+<p><code>undef ~~ %hash</code> is always false (since <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> can't be a key in a
+hash). No implicit conversion to <code>&quot;&quot;</code> is done (as was the case in perl
+5.10.0).</p>
+</li>
+<li>
+<p><code>$scalar ~~ @array</code> now always distributes the smart match across the
+elements of the array. It's true if one element in @array verifies
+<code>$scalar ~~ $element</code>. This is a generalization of the old behaviour
+that tested whether the array contained the scalar.</p>
+</li>
+</ul>
+<p>The full dispatch table for the smart match operator is given in
+<a href="../../lib/pods/perlsyn.html#smart_matching_in_detail">Smart matching in detail in the perlsyn manpage</a>.</p>
+<p>
+</p>
+<h3><a name="smart_match_and_overloading">Smart match and overloading</a></h3>
+<p>According to the rule of dispatch based on the rightmost argument type,
+when an object overloading <code>~~</code> appears on the right side of the
+operator, the overload routine will always be called (with a 3rd argument
+set to a true value, see <a href="../../lib/overload.html">the overload manpage</a>.) However, when the object will
+appear on the left, the overload routine will be called only when the
+rightmost argument is a simple scalar. This way distributivity of smart match
+across arrays is not broken, as well as the other behaviours with complex
+types (coderefs, hashes, regexes). Thus, writers of overloading routines
+for smart match mostly need to worry only with comparing against a scalar,
+and possibly with stringification overloading; the other common cases
+will be automatically handled consistently.</p>
+<p><code>~~</code> will now refuse to work on objects that do not overload it (in order
+to avoid relying on the object's underlying structure). (However, if the
+object overloads the stringification or the numification operators, and
+if overload fallback is active, it will be used instead, as usual.)</p>
+<p>
+</p>
+<h2><a name="other_incompatible_changes">Other incompatible changes</a></h2>
+<ul>
+<li>
+<p>The semantics of <code>use feature :5.10*</code> have changed slightly.
+See <a href="#modules_and_pragmata">Modules and Pragmata</a> for more information.</p>
+</li>
+<li>
+<p>It is now a run-time error to use the smart match operator <code>~~</code>
+with an object that has no overload defined for it. (This way
+<code>~~</code> will not break encapsulation by matching against the
+object's internal representation as a reference.)</p>
+</li>
+<li>
+<p>The version control system used for the development of the perl
+interpreter has been switched from Perforce to git.  This is mainly an
+internal issue that only affects people actively working on the perl core;
+but it may have minor external visibility, for example in some of details
+of the output of <code>perl -V</code>. See <a href="#perlrepository">perlrepository</a> for more information.</p>
+</li>
+<li>
+<p>The internal structure of the <code>ext/</code> directory in the perl source has
+been reorganised. In general, a module <code>Foo::Bar</code> whose source was
+stored under <em class="file">ext/Foo/Bar/</em> is now located under <em class="file">ext/Foo-Bar/</em>. Also,
+some modules have been moved from <em class="file">lib/</em> to <em class="file">ext/</em>. This is purely a
+source tarball change, and should make no difference to the compilation or
+installation of perl, unless you have a very customised build process that
+explicitly relies on this structure, or which hard-codes the <code>nonxs_ext</code>
+<em class="file">Configure</em> parameter. Specifically, this change does not by default
+alter the location of any files in the final installation.</p>
+</li>
+<li>
+<p>As part of the <a href="#test_harness"><code>Test::Harness</code></a> 2.x to 3.x upgrade, the experimental
+<code>Test::Harness::Straps</code> module has been removed.
+See <a href="#updated_modules">Updated Modules</a> for more details.</p>
+</li>
+<li>
+<p>As part of the <a href="#extutils_makemaker"><code>ExtUtils::MakeMaker</code></a> upgrade, the
+<code>ExtUtils::MakeMaker::bytes</code> and <code>ExtUtils::MakeMaker::vmsish</code> modules
+have been removed from this distribution.</p>
+</li>
+<li>
+<p><a href="#module_corelist"><code>Module::CoreList</code></a> no longer contains the <code>%:patchlevel</code> hash.</p>
+</li>
+<li>
+<p>This one is actually a change introduced in 5.10.0, but it was missed
+from that release's perldelta, so it is mentioned here instead.</p>
+<p>A bugfix related to the handling of the <a href="../../lib/pods/perlguts.html#m"><code>/m</code></a> modifier and <code>qr</code> resulted
+in a change of behaviour between 5.8.x and 5.10.0:</p>
+<pre>
+    <span class="comment"># matches in 5.8.x, doesn't match in 5.10.0</span>
+    <span class="variable">$re</span> <span class="operator">=</span> <span class="string">qr/^bar/</span><span class="operator">;</span> <span class="string">"foo\nbar"</span> <span class="operator">=~</span> <span class="regex">/</span><span class="variable">$re</span><span class="regex">/m</span><span class="operator">;</span>
+</pre>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="core_enhancements">Core Enhancements</a></h1>
+<p>
+</p>
+<h2><a name="unicode_character_database_5_1_0">Unicode Character Database 5.1.0</a></h2>
+<p>The copy of the Unicode Character Database included in Perl 5.10.1 has
+been updated to 5.1.0 from 5.0.0. See
+<a href="http://www.unicode.org/versions/Unicode5.1.0/#Notable_Changes">http://www.unicode.org/versions/Unicode5.1.0/#Notable_Changes</a> for the
+notable changes.</p>
+<p>
+</p>
+<h2><a name="a_proper_interface_for_pluggable_method_resolution_orders">A proper interface for pluggable Method Resolution Orders</a></h2>
+<p>As of Perl 5.10.1 there is a new interface for plugging and using method
+resolution orders other than the default (linear depth first search).
+The C3 method resolution order added in 5.10.0 has been re-implemented as
+a plugin, without changing its Perl-space interface. See <a href="../../lib/pods/perlmroapi.html">the perlmroapi manpage</a> for
+more information.</p>
+<p>
+</p>
+<h2><a name="the_overloading_pragma">The <a href="#overloading"><code>overloading</code></a> pragma</a></h2>
+<p>This pragma allows you to lexically disable or enable overloading
+for some or all operations. (Yuval Kogman)</p>
+<p>
+</p>
+<h2><a name="parallel_tests">Parallel tests</a></h2>
+<p>The core distribution can now run its regression tests in parallel on
+Unix-like platforms. Instead of running <code>make test</code>, set <code>TEST_JOBS</code> in
+your environment to the number of tests to run in parallel, and run
+<code>make test_harness</code>. On a Bourne-like shell, this can be done as</p>
+<pre>
+    TEST_JOBS=3 make test_harness  # Run 3 tests in parallel</pre>
+<p>An environment variable is used, rather than parallel make itself, because
+<a href="../../lib/TAP/Harness.html">the TAP::Harness manpage</a> needs to be able to schedule individual non-conflicting test
+scripts itself, and there is no standard interface to <code>make</code> utilities to
+interact with their job schedulers.</p>
+<p>Note that currently some test scripts may fail when run in parallel (most
+notably <code>ext/IO/t/io_dir.t</code>). If necessary run just the failing scripts
+again sequentially and see if the failures go away.</p>
+<p>
+</p>
+<h2><a name="dtrace_support">DTrace support</a></h2>
+<p>Some support for DTrace has been added. See &quot;DTrace support&quot; in <em class="file">INSTALL</em>.</p>
+<p>
+</p>
+<h2><a name="support_for_configure_requires_in_cpan_module_metadata">Support for <code>configure_requires</code> in CPAN module metadata</a></h2>
+<p>Both <a href="#cpan"><code>CPAN</code></a> and <a href="#cpanplus"><code>CPANPLUS</code></a> now support the <code>configure_requires</code> keyword
+in the <code>META.yml</code> metadata file included in most recent CPAN distributions.
+This allows distribution authors to specify configuration prerequisites that
+must be installed before running <em class="file">Makefile.PL</em> or <em class="file">Build.PL</em>.</p>
+<p>See the documentation for <a href="#extutils_makemaker"><code>ExtUtils::MakeMaker</code></a> or <a href="#module_build"><code>Module::Build</code></a> for more
+on how to specify <code>configure_requires</code> when creating a distribution for CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="modules_and_pragmata">Modules and Pragmata</a></h1>
+<p>
+</p>
+<h2><a name="new_modules_and_pragmata">New Modules and Pragmata</a></h2>
+<dl>
+<dt><strong><a name="autodie" class="item"><code>autodie</code></a></strong></dt>
+
+<dd>
+<p>This is a new lexically-scoped alternative for the <a href="#fatal"><code>Fatal</code></a> module.
+The bundled version is 2.06_01. Note that in this release, using a string
+eval when <a href="#autodie"><code>autodie</code></a> is in effect can cause the autodie behaviour to leak
+into the surrounding scope. See <a href="../../lib/autodie/bugs.html">BUGS in the autodie manpage</a> for more details.</p>
+</dd>
+<dt><strong><a name="compress_raw_bzip2" class="item"><code>Compress::Raw::Bzip2</code></a></strong></dt>
+
+<dd>
+<p>This has been added to the core (version 2.020).</p>
+</dd>
+<dt><strong><a name="parent" class="item"><code>parent</code></a></strong></dt>
+
+<dd>
+<p>This pragma establishes an ISA relationship with base classes at compile
+time. It provides the key feature of <a href="#base"><code>base</code></a> without the feature creep.</p>
+</dd>
+<dt><strong><a name="parse_cpan_meta" class="item"><code>Parse::CPAN::Meta</code></a></strong></dt>
+
+<dd>
+<p>This has been added to the core (version 1.39).</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="pragmata_changes">Pragmata Changes</a></h2>
+<dl>
+<dt><strong><a name="attributes" class="item"><code>attributes</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.08 to 0.09.</p>
+</dd>
+<dt><strong><a name="attrs" class="item"><code>attrs</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.02 to 1.03.</p>
+</dd>
+<dt><strong><a name="base" class="item"><code>base</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.13 to 2.14. See <a href="../../lib/parent.html">the parent manpage</a> for a replacement.</p>
+</dd>
+<dt><strong><a name="bigint" class="item"><code>bigint</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.22 to 0.23.</p>
+</dd>
+<dt><strong><a name="bignum" class="item"><code>bignum</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.22 to 0.23.</p>
+</dd>
+<dt><strong><a name="bigrat" class="item"><code>bigrat</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.22 to 0.23.</p>
+</dd>
+<dt><strong><a name="charnames" class="item"><code>charnames</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.06 to 1.07.</p>
+<p>The Unicode <em class="file">NameAliases.txt</em> database file has been added. This has the
+effect of adding some extra <code>\N</code> character names that formerly wouldn't
+have been recognised; for example, <code>&quot;\N{LATIN CAPITAL LETTER GHA}&quot;</code>.</p>
+</dd>
+<dt><strong><a name="constant" class="item"><code>constant</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.13 to 1.17.</p>
+</dd>
+<dt><strong><a name="feature" class="item"><code>feature</code></a></strong></dt>
+
+<dd>
+<p>The meaning of the <code>:5.10</code> and <code>:5.10.X</code> feature bundles has
+changed slightly. The last component, if any (i.e. <a href="../../lib/pods/perlrun.html#x"><code>X</code></a>) is simply ignored.
+This is predicated on the assumption that new features will not, in
+general, be added to maintenance releases. So <code>:5.10</code> and <code>:5.10.X</code>
+have identical effect. This is a change to the behaviour documented for
+5.10.0.</p>
+</dd>
+<dt><strong><a name="fields" class="item"><code>fields</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.13 to 2.14 (this was just a version bump; there
+were no functional changes).</p>
+</dd>
+<dt><strong><a name="lib" class="item"><code>lib</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.5565 to 0.62.</p>
+</dd>
+<dt><strong><a name="open" class="item"><code>open</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.06 to 1.07.</p>
+</dd>
+<dt><strong><a name="overload" class="item"><code>overload</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.06 to 1.07.</p>
+</dd>
+<dt><strong><a name="overloading" class="item"><code>overloading</code></a></strong></dt>
+
+<dd>
+<p>See <a href="#the_c_overloading__pragma">The <a href="#overloading"><code>overloading</code></a> pragma</a> above.</p>
+</dd>
+<dt><strong><a name="version" class="item"><code>version</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.74 to 0.77.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="updated_modules">Updated Modules</a></h2>
+<dl>
+<dt><strong><a name="archive_extract" class="item"><code>Archive::Extract</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.24 to 0.34.</p>
+</dd>
+<dt><strong><a name="archive_tar" class="item"><code>Archive::Tar</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.38 to 1.52.</p>
+</dd>
+<dt><strong><a name="attribute_handlers2" class="item"><a href="#attribute_handlers"><code>Attribute::Handlers</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.79 to 0.85.</p>
+</dd>
+<dt><strong><a name="autoloader" class="item"><code>AutoLoader</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 5.63 to 5.68.</p>
+</dd>
+<dt><strong><a name="autosplit" class="item"><code>AutoSplit</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.05 to 1.06.</p>
+</dd>
+<dt><strong><a name="b3" class="item"><a href="#b"><code>B</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.17 to 1.22.</p>
+</dd>
+<dt><strong><a name="b_debug" class="item"><code>B::Debug</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.05 to 1.11.</p>
+</dd>
+<dt><strong><a name="b_deparse" class="item"><code>B::Deparse</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.83 to 0.89.</p>
+</dd>
+<dt><strong><a name="b_lint2" class="item"><a href="#b_lint"><code>B::Lint</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.09 to 1.11.</p>
+</dd>
+<dt><strong><a name="b_xref" class="item"><code>B::Xref</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.01 to 1.02.</p>
+</dd>
+<dt><strong><a name="benchmark2" class="item"><a href="#benchmark"><code>Benchmark</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.10 to 1.11.</p>
+</dd>
+<dt><strong><a name="carp2" class="item"><a href="#carp"><code>Carp</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.08 to 1.11.</p>
+</dd>
+<dt><strong><a name="cgi2" class="item"><a href="#cgi"><code>CGI</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.29 to 3.43.
+(also includes the &quot;default_value for popup_menu()&quot; fix from 3.45).</p>
+</dd>
+<dt><strong><a name="compress_zlib" class="item"><code>Compress::Zlib</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.008 to 2.020.</p>
+</dd>
+<dt><strong><a name="cpan2" class="item"><a href="#cpan"><code>CPAN</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.9205 to 1.9402. <code>CPAN::FTP</code> has a local fix to
+stop it being too verbose on download failure.</p>
+</dd>
+<dt><strong><a name="cpanplus" class="item"><code>CPANPLUS</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.84 to 0.88.</p>
+</dd>
+<dt><strong><a name="cpanplus_dist_build" class="item"><code>CPANPLUS::Dist::Build</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.06_02 to 0.36.</p>
+</dd>
+<dt><strong><a name="cwd2" class="item"><a href="#cwd"><code>Cwd</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.25_01 to 3.30.</p>
+</dd>
+<dt><strong><a name="data_dumper3" class="item"><a href="#data_dumper"><code>Data::Dumper</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.121_14 to 2.124.</p>
+</dd>
+<dt><strong><a name="db" class="item"><code>DB</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.01 to 1.02.</p>
+</dd>
+<dt><strong><a name="db_file3" class="item"><a href="#db_file"><code>DB_File</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.816_1 to 1.820.</p>
+</dd>
+<dt><strong><a name="devel_ppport" class="item"><code>Devel::PPPort</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.13 to 3.19.</p>
+</dd>
+<dt><strong><a name="digest_md5" class="item"><code>Digest::MD5</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.36_01 to 2.39.</p>
+</dd>
+<dt><strong><a name="digest_sha" class="item"><code>Digest::SHA</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 5.45 to 5.47.</p>
+</dd>
+<dt><strong><a name="dirhandle" class="item"><code>DirHandle</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.01 to 1.03.</p>
+</dd>
+<dt><strong><a name="dumpvalue2" class="item"><a href="#dumpvalue"><code>Dumpvalue</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.12 to 1.13.</p>
+</dd>
+<dt><strong><a name="dynaloader" class="item"><code>DynaLoader</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.08 to 1.10.</p>
+</dd>
+<dt><strong><a name="encode" class="item"><code>Encode</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.23 to 2.35.</p>
+</dd>
+<dt><strong><a name="errno2" class="item"><a href="#errno"><code>Errno</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.10 to 1.11.</p>
+</dd>
+<dt><strong><a name="exporter" class="item"><code>Exporter</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 5.62 to 5.63.</p>
+</dd>
+<dt><strong><a name="extutils_cbuilder" class="item"><code>ExtUtils::CBuilder</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.21 to 0.2602.</p>
+</dd>
+<dt><strong><a name="extutils_command" class="item"><code>ExtUtils::Command</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.13 to 1.16.</p>
+</dd>
+<dt><strong><a name="extutils_constant" class="item"><code>ExtUtils::Constant</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from 0.20 to 0.22. (Note that neither of these versions are
+available on CPAN.)</p>
+</dd>
+<dt><strong><a name="extutils_embed" class="item"><code>ExtUtils::Embed</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.27 to 1.28.</p>
+</dd>
+<dt><strong><a name="extutils_install" class="item"><code>ExtUtils::Install</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.44 to 1.54.</p>
+</dd>
+<dt><strong><a name="extutils_makemaker" class="item"><code>ExtUtils::MakeMaker</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 6.42 to 6.55_02.</p>
+<p>Note that <code>ExtUtils::MakeMaker::bytes</code> and <code>ExtUtils::MakeMaker::vmsish</code>
+have been removed from this distribution.</p>
+</dd>
+<dt><strong><a name="extutils_manifest" class="item"><code>ExtUtils::Manifest</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.51_01 to 1.56.</p>
+</dd>
+<dt><strong><a name="extutils_parsexs" class="item"><code>ExtUtils::ParseXS</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.18_02 to 2.2002.</p>
+</dd>
+<dt><strong><a name="fatal2" class="item"><a href="#fatal"><code>Fatal</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.05 to 2.06_01. See also the new pragma <a href="#autodie"><code>autodie</code></a>.</p>
+</dd>
+<dt><strong><a name="file_basename" class="item"><code>File::Basename</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.76 to 2.77.</p>
+</dd>
+<dt><strong><a name="file_compare" class="item"><code>File::Compare</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.1005 to 1.1006.</p>
+</dd>
+<dt><strong><a name="file_copy" class="item"><code>File::Copy</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.11 to 2.14.</p>
+</dd>
+<dt><strong><a name="file_fetch" class="item"><code>File::Fetch</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.14 to 0.20.</p>
+</dd>
+<dt><strong><a name="file_find" class="item"><code>File::Find</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.12 to 1.14.</p>
+</dd>
+<dt><strong><a name="file_path" class="item"><code>File::Path</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.04 to 2.07_03.</p>
+</dd>
+<dt><strong><a name="file_spec2" class="item"><a href="#file_spec"><code>File::Spec</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.2501 to 3.30.</p>
+</dd>
+<dt><strong><a name="file_stat" class="item"><code>File::stat</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.00 to 1.01.</p>
+</dd>
+<dt><strong><a name="file_temp" class="item"><code>File::Temp</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.18 to 0.22.</p>
+</dd>
+<dt><strong><a name="filecache" class="item"><code>FileCache</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.07 to 1.08.</p>
+</dd>
+<dt><strong><a name="filehandle" class="item"><code>FileHandle</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.01 to 2.02.</p>
+</dd>
+<dt><strong><a name="filter_simple" class="item"><code>Filter::Simple</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.82 to 0.84.</p>
+</dd>
+<dt><strong><a name="filter_util_call" class="item"><code>Filter::Util::Call</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.07 to 1.08.</p>
+</dd>
+<dt><strong><a name="findbin" class="item"><code>FindBin</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.49 to 1.50.</p>
+</dd>
+<dt><strong><a name="gdbm_file2" class="item"><a href="#gdbm_file"><code>GDBM_File</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.08 to 1.09.</p>
+</dd>
+<dt><strong><a name="getopt_long" class="item"><code>Getopt::Long</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.37 to 2.38.</p>
+</dd>
+<dt><strong><a name="hash_util_fieldhash" class="item"><code>Hash::Util::FieldHash</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.03 to 1.04. This fixes a memory leak.</p>
+</dd>
+<dt><strong><a name="i18n_collate" class="item"><code>I18N::Collate</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.00 to 1.01.</p>
+</dd>
+<dt><strong><a name="io2" class="item"><a href="#io"><code>IO</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.23_01 to 1.25.</p>
+<p>This makes non-blocking mode work on Windows in <code>IO::Socket::INET</code>
+[CPAN #43573].</p>
+</dd>
+<dt><strong><a name="io_compress" class="item"><code>IO::Compress::*</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.008 to 2.020.</p>
+</dd>
+<dt><strong><a name="io_dir" class="item"><code>IO::Dir</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.06 to 1.07.</p>
+</dd>
+<dt><strong><a name="io_handle" class="item"><code>IO::Handle</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.27 to 1.28.</p>
+</dd>
+<dt><strong><a name="io_socket" class="item"><code>IO::Socket</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.30_01 to 1.31.</p>
+</dd>
+<dt><strong><a name="io_zlib" class="item"><code>IO::Zlib</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.07 to 1.09.</p>
+</dd>
+<dt><strong><a name="ipc_cmd" class="item"><code>IPC::Cmd</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.40_1 to 0.46.</p>
+</dd>
+<dt><strong><a name="ipc_open3" class="item"><code>IPC::Open3</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.02 to 1.04.</p>
+</dd>
+<dt><strong><a name="ipc_sysv2" class="item"><a href="#ipc_sysv"><code>IPC::SysV</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.05 to 2.01.</p>
+</dd>
+<dt><strong><code>lib</code></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.5565 to 0.62.</p>
+</dd>
+<dt><strong><a name="list_util" class="item"><code>List::Util</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.19 to 1.21.</p>
+</dd>
+<dt><strong><a name="locale_maketext" class="item"><code>Locale::MakeText</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.12 to 1.13.</p>
+</dd>
+<dt><strong><a name="log_message2" class="item"><a href="#log_message"><code>Log::Message</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.01 to 0.02.</p>
+</dd>
+<dt><strong><a name="math_bigfloat" class="item"><code>Math::BigFloat</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.59 to 1.60.</p>
+</dd>
+<dt><strong><a name="math_bigint" class="item"><code>Math::BigInt</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.88 to 1.89.</p>
+</dd>
+<dt><strong><a name="math_bigint_fastcalc" class="item"><code>Math::BigInt::FastCalc</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.16 to 0.19.</p>
+</dd>
+<dt><strong><a name="math_bigrat" class="item"><code>Math::BigRat</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.21 to 0.22.</p>
+</dd>
+<dt><strong><a name="math_complex2" class="item"><a href="#math_complex"><code>Math::Complex</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.37 to 1.56.</p>
+</dd>
+<dt><strong><a name="math_trig2" class="item"><a href="#math_trig"><code>Math::Trig</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.04 to 1.20.</p>
+</dd>
+<dt><strong><a name="memoize" class="item"><code>Memoize</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.01_02 to 1.01_03 (just a minor documentation
+change).</p>
+</dd>
+<dt><strong><a name="module_build" class="item"><code>Module::Build</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.2808_01 to 0.34_02.</p>
+</dd>
+<dt><strong><a name="module_corelist" class="item"><code>Module::CoreList</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.13 to 2.18. This release no longer contains the
+<code>%Module::CoreList::patchlevel</code> hash.</p>
+</dd>
+<dt><strong><a name="module_load" class="item"><code>Module::Load</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.12 to 0.16.</p>
+</dd>
+<dt><strong><a name="module_load_conditional" class="item"><code>Module::Load::Conditional</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.22 to 0.30.</p>
+</dd>
+<dt><strong><a name="module_loaded" class="item"><code>Module::Loaded</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.01 to 0.02.</p>
+</dd>
+<dt><strong><a name="module_pluggable" class="item"><code>Module::Pluggable</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.6 to 3.9.</p>
+</dd>
+<dt><strong><a name="ndbm_file" class="item"><code>NDBM_File</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.07 to 1.08.</p>
+</dd>
+<dt><strong><a name="net_ping" class="item"><code>Net::Ping</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.33 to 2.36.</p>
+</dd>
+<dt><strong><a name="next" class="item"><code>NEXT</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.60_01 to 0.64.</p>
+</dd>
+<dt><strong><a name="object_accessor" class="item"><code>Object::Accessor</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.32 to 0.34.</p>
+</dd>
+<dt><strong><a name="os2_rexx" class="item"><code>OS2::REXX</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.03 to 1.04.</p>
+</dd>
+<dt><strong><a name="package_constants" class="item"><code>Package::Constants</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.01 to 0.02.</p>
+</dd>
+<dt><strong><a name="perlio" class="item"><code>PerlIO</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.04 to 1.06.</p>
+</dd>
+<dt><strong><a name="perlio_via" class="item"><code>PerlIO::via</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.04 to 0.07.</p>
+</dd>
+<dt><strong><a name="pod_man" class="item"><code>Pod::Man</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.16 to 2.22.</p>
+</dd>
+<dt><strong><a name="pod_parser" class="item"><code>Pod::Parser</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.35 to 1.37.</p>
+</dd>
+<dt><strong><a name="pod_simple" class="item"><code>Pod::Simple</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.05 to 3.07.</p>
+</dd>
+<dt><strong><a name="pod_text" class="item"><code>Pod::Text</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.08 to 3.13.</p>
+</dd>
+<dt><strong><a name="posix3" class="item"><a href="#posix"><code>POSIX</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.13 to 1.17.</p>
+</dd>
+<dt><strong><a name="safe" class="item"><code>Safe</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from 2.12 to 2.18.</p>
+</dd>
+<dt><strong><a name="scalar_util" class="item"><code>Scalar::Util</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.19 to 1.21.</p>
+</dd>
+<dt><strong><a name="selectsaver" class="item"><code>SelectSaver</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from 1.01 to 1.02.</p>
+</dd>
+<dt><strong><a name="selfloader" class="item"><code>SelfLoader</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from 1.11 to 1.17.</p>
+</dd>
+<dt><strong><a name="socket" class="item"><code>Socket</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from 1.80 to 1.82.</p>
+</dd>
+<dt><strong><a name="storable2" class="item"><a href="#storable"><code>Storable</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from 2.18 to 2.20.</p>
+</dd>
+<dt><strong><a name="switch" class="item"><code>Switch</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.13 to 2.14. Please see <a href="#deprecations">Deprecations</a>.</p>
+</dd>
+<dt><strong><a name="symbol" class="item"><code>Symbol</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.06 to 1.07.</p>
+</dd>
+<dt><strong><a name="sys_syslog" class="item"><code>Sys::Syslog</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.22 to 0.27.</p>
+</dd>
+<dt><strong><a name="term_ansicolor" class="item"><code>Term::ANSIColor</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.12 to 2.00.</p>
+</dd>
+<dt><strong><a name="term_readline" class="item"><code>Term::ReadLine</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.03 to 1.04.</p>
+</dd>
+<dt><strong><a name="term_ui" class="item"><code>Term::UI</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.18 to 0.20.</p>
+</dd>
+<dt><strong><a name="test_harness" class="item"><code>Test::Harness</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.64 to 3.17.</p>
+<p>Note that one side-effect of the 2.x to 3.x upgrade is that the
+experimental <code>Test::Harness::Straps</code> module (and its supporting
+<code>Assert</code>, <code>Iterator</code>, <code>Point</code> and <code>Results</code> modules) have been
+removed. If you still need this, then they are available in the
+(unmaintained) <code>Test-Harness-Straps</code> distribution on CPAN.</p>
+</dd>
+<dt><strong><a name="test_simple" class="item"><code>Test::Simple</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.72 to 0.92.</p>
+</dd>
+<dt><strong><a name="text_parsewords" class="item"><code>Text::ParseWords</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 3.26 to 3.27.</p>
+</dd>
+<dt><strong><a name="text_tabs" class="item"><code>Text::Tabs</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2007.1117 to 2009.0305.</p>
+</dd>
+<dt><strong><a name="text_wrap" class="item"><code>Text::Wrap</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2006.1117 to 2009.0305.</p>
+</dd>
+<dt><strong><a name="thread_queue" class="item"><code>Thread::Queue</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.00 to 2.11.</p>
+</dd>
+<dt><strong><a name="thread_semaphore" class="item"><code>Thread::Semaphore</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 2.01 to 2.09.</p>
+</dd>
+<dt><strong><a name="threads" class="item"><code>threads</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.67 to 1.72.</p>
+</dd>
+<dt><strong><a name="threads_shared" class="item"><code>threads::shared</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.14 to 1.29.</p>
+</dd>
+<dt><strong><a name="tie_refhash" class="item"><code>Tie::RefHash</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.37 to 1.38.</p>
+</dd>
+<dt><strong><a name="tie_stdhandle" class="item"><code>Tie::StdHandle</code></a></strong></dt>
+
+<dd>
+<p>This has documentation changes, and has been assigned a version for the
+first time: version 4.2.</p>
+</dd>
+<dt><strong><a name="time_hires" class="item"><code>Time::HiRes</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.9711 to 1.9719.</p>
+</dd>
+<dt><strong><a name="time_local" class="item"><code>Time::Local</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.18 to 1.1901.</p>
+</dd>
+<dt><strong><a name="time_piece" class="item"><code>Time::Piece</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.12 to 1.15.</p>
+</dd>
+<dt><strong><a name="unicode_normalize2" class="item"><a href="#unicode_normalize"><code>Unicode::Normalize</code></a></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.02 to 1.03.</p>
+</dd>
+<dt><strong><a name="unicode_ucd" class="item"><code>Unicode::UCD</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.25 to 0.27.</p>
+<p><code>charinfo()</code> now works on Unified CJK code points added to later versions
+of Unicode.</p>
+<p><code>casefold()</code> has new fields returned to provide both a simpler interface
+and previously missing information. The old fields are retained for
+backwards compatibility. Information about Turkic-specific code points is
+now returned.</p>
+<p>The documentation has been corrected and expanded.</p>
+</dd>
+<dt><strong><a name="universal" class="item"><code>UNIVERSAL</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 1.04 to 1.05.</p>
+</dd>
+<dt><strong><a name="win32" class="item"><code>Win32</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.34 to 0.39.</p>
+</dd>
+<dt><strong><a name="win32api_file" class="item"><code>Win32API::File</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.1001_01 to 0.1101.</p>
+</dd>
+<dt><strong><a name="xsloader" class="item"><code>XSLoader</code></a></strong></dt>
+
+<dd>
+<p>Upgraded from version 0.08 to 0.10.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="utility_changes">Utility Changes</a></h1>
+<dl>
+<dt><strong><a name="h2ph" class="item"><em class="file">h2ph</em></a></strong></dt>
+
+<dd>
+<p>Now looks in <code>include-fixed</code> too, which is a recent addition to gcc's
+search path.</p>
+</dd>
+<dt><strong><a name="h2xs" class="item"><em class="file">h2xs</em></a></strong></dt>
+
+<dd>
+<p>No longer incorrectly treats enum values like macros (Daniel Burr).</p>
+<p>Now handles C++ style constants (<code>//</code>) properly in enums. (A patch from
+Rainer Weikusat was used; Daniel Burr also proposed a similar fix).</p>
+</dd>
+<dt><strong><a name="perl5db_pl" class="item"><em class="file">perl5db.pl</em></a></strong></dt>
+
+<dd>
+<p><code>LVALUE</code> subroutines now work under the debugger.</p>
+<p>The debugger now correctly handles proxy constant subroutines, and
+subroutine stubs.</p>
+</dd>
+<dt><strong><a name="perlthanks" class="item"><em class="file">perlthanks</em></a></strong></dt>
+
+<dd>
+<p>Perl 5.10.1 adds a new utility <em class="file">perlthanks</em>, which is a variant of
+<em class="file">perlbug</em>, but for sending non-bug-reports to the authors and maintainers
+of Perl. Getting nothing but bug reports can become a bit demoralising:
+we'll see if this changes things.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="new_documentation">New Documentation</a></h1>
+<dl>
+<dt><strong><a name="perlhaiku" class="item"><a href="../../lib/pods/perlhaiku.html">the perlhaiku manpage</a></a></strong></dt>
+
+<dd>
+<p>This contains instructions on how to build perl for the Haiku platform.</p>
+</dd>
+<dt><strong><a name="perlmroapi" class="item"><a href="../../lib/pods/perlmroapi.html">the perlmroapi manpage</a></a></strong></dt>
+
+<dd>
+<p>This describes the new interface for pluggable Method Resolution Orders.</p>
+</dd>
+<dt><strong><a name="perlperf" class="item"><a href="../../lib/pods/perlperf.html">the perlperf manpage</a></a></strong></dt>
+
+<dd>
+<p>This document, by Richard Foley, provides an introduction to the use of
+performance and optimization techniques which can be used with particular
+reference to perl programs.</p>
+</dd>
+<dt><strong><a name="perlrepository" class="item"><a href="#perlrepository">perlrepository</a></a></strong></dt>
+
+<dd>
+<p>This describes how to access the perl source using the <em>git</em> version
+control system.</p>
+</dd>
+<dt><strong><a href="#perlthanks">perlthanks</a></strong></dt>
+
+<dd>
+<p>This describes the new <em class="file">perlthanks</em> utility.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="changes_to_existing_documentation">Changes to Existing Documentation</a></h1>
+<p>The various large <code>Changes*</code> files (which listed every change made to perl
+over the last 18 years) have been removed, and replaced by a small file,
+also called <code>Changes</code>, which just explains how that same information may
+be extracted from the git version control system.</p>
+<p>The file <em class="file">Porting/patching.pod</em> has been deleted, as it mainly described
+interacting with the old Perforce-based repository, which is now obsolete.
+Information still relevant has been moved to <a href="#perlrepository">perlrepository</a>.</p>
+<p><a href="../../lib/pods/perlapi.html">the perlapi manpage</a>, <a href="../../lib/pods/perlintern.html">the perlintern manpage</a>, <a href="../../lib/pods/perlmodlib.html">the perlmodlib manpage</a> and <a href="../../lib/pods/perltoc.html">the perltoc manpage</a> are now all
+generated at build time, rather than being shipped as part of the release.</p>
+<p>
+</p>
+<hr />
+<h1><a name="performance_enhancements">Performance Enhancements</a></h1>
+<ul>
+<li>
+<p>A new internal cache means that <code>isa()</code> will often be faster.</p>
+</li>
+<li>
+<p>Under <code>use locale</code>, the locale-relevant information is now cached on
+read-only values, such as the list returned by <code>keys %hash</code>. This makes
+operations such as <code>sort keys %hash</code> in the scope of <code>use locale</code> much
+faster.</p>
+</li>
+<li>
+<p>Empty <code>DESTROY</code> methods are no longer called.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="installation_and_configuration_improvements">Installation and Configuration Improvements</a></h1>
+<p>
+</p>
+<h2><a name="ext__reorganisation"><em class="file">ext/</em> reorganisation</a></h2>
+<p>The layout of directories in <em class="file">ext</em> has been revised. Specifically, all
+extensions are now flat, and at the top level, with <code>/</code> in pathnames
+replaced by <code>-</code>, so that <em class="file">ext/Data/Dumper/</em> is now <em class="file">ext/Data-Dumper/</em>,
+etc.  The names of the extensions as specified to <em class="file">Configure</em>, and as
+reported by <code>%Config::Config</code> under the keys <code>dynamic_ext</code>,
+<code>known_extensions</code>, <code>nonxs_ext</code> and <code>static_ext</code> have not changed, and
+still use <code>/</code>. Hence this change will not have any affect once perl is
+installed. However, <a href="#attribute_handlers"><code>Attribute::Handlers</code></a>, <a href="#safe"><code>Safe</code></a> and <code>mro</code> have now
+become extensions in their own right, so if you run <em class="file">Configure</em> with
+options to specify an exact list of extensions to build, you will need to
+change it to account for this.</p>
+<p>For 5.10.2, it is planned that many dual-life modules will have been moved
+from <em class="file">lib</em> to <em class="file">ext</em>; again this will have no effect on an installed
+perl, but will matter if you invoke <em class="file">Configure</em> with a pre-canned list of
+extensions to build.</p>
+<p>
+</p>
+<h2><a name="configuration_improvements">Configuration improvements</a></h2>
+<p>If <code>vendorlib</code> and <code>vendorarch</code> are the same, then they are only added to
+<a href="../../lib/pods/perlvar.html#_inc"><code>@INC</code></a> once.</p>
+<p><code>$Config{usedevel}</code> and the C-level <code>PERL_USE_DEVEL</code> are now defined if
+perl is built with  <code>-Dusedevel</code>.</p>
+<p><em class="file">Configure</em> will enable use of <code>-fstack-protector</code>, to provide protection
+against stack-smashing attacks, if the compiler supports it.</p>
+<p><em class="file">Configure</em> will now determine the correct prototypes for re-entrant
+functions, and for <code>gconvert</code>, if you are using a C++ compiler rather
+than a C compiler.</p>
+<p>On Unix, if you build from a tree containing a git repository, the
+configuration process will note the commit hash you have checked out, for
+display in the output of <code>perl -v</code> and <code>perl -V</code>. Unpushed local commits
+are automatically added to the list of local patches displayed by
+<code>perl -V</code>.</p>
+<p>
+</p>
+<h2><a name="compilation_improvements">Compilation improvements</a></h2>
+<p>As part of the flattening of <em class="file">ext</em>, all extensions on all platforms are
+built by <em class="file">make_ext.pl</em>. This replaces the Unix-specific
+<em class="file">ext/util/make_ext</em>, VMS-specific <em class="file">make_ext.com</em> and Win32-specific
+<em class="file">win32/buildext.pl</em>.</p>
+<p>
+</p>
+<h2><a name="platform_specific_changes">Platform Specific Changes</a></h2>
+<dl>
+<dt><strong><a name="aix" class="item">AIX</a></strong></dt>
+
+<dd>
+<p>Removed <em class="file">libbsd</em> for AIX 5L and 6.1. Only <a href="../../lib/pods/perlfunc.html#flock"><code>flock()</code></a> was used from <em class="file">libbsd</em>.</p>
+<p>Removed <em class="file">libgdbm</em> for AIX 5L and 6.1. The <em class="file">libgdbm</em> is delivered as an
+optional package with the AIX Toolbox. Unfortunately the 64 bit version 
+is broken.</p>
+<p>Hints changes mean that AIX 4.2 should work again.</p>
+</dd>
+<dt><strong><a name="cygwin" class="item">Cygwin</a></strong></dt>
+
+<dd>
+<p>On Cygwin we now strip the last number from the DLL. This has been the
+behaviour in the cygwin.com build for years. The hints files have been
+updated.</p>
+</dd>
+<dt><strong><a name="freebsd" class="item">FreeBSD</a></strong></dt>
+
+<dd>
+<p>The hints files now identify the correct threading libraries on FreeBSD 7
+and later.</p>
+</dd>
+<dt><strong><a name="irix" class="item">Irix</a></strong></dt>
+
+<dd>
+<p>We now work around a bizarre preprocessor bug in the Irix 6.5 compiler:
+<code>cc -E -</code> unfortunately goes into K&amp;R mode, but <code>cc -E file.c</code> doesn't.</p>
+</dd>
+<dt><strong><a name="haiku" class="item">Haiku</a></strong></dt>
+
+<dd>
+<p>Patches from the Haiku maintainers have been merged in. Perl should now
+build on Haiku.</p>
+</dd>
+<dt><strong><a name="miros_bsd" class="item">MirOS BSD</a></strong></dt>
+
+<dd>
+<p>Perl should now build on MirOS BSD.</p>
+</dd>
+<dt><strong><a name="netbsd" class="item">NetBSD</a></strong></dt>
+
+<dd>
+<p>Hints now supports versions 5.*.</p>
+</dd>
+<dt><strong><a name="stratus_vos" class="item">Stratus VOS</a></strong></dt>
+
+<dd>
+<p>Various changes from Stratus have been merged in.</p>
+</dd>
+<dt><strong><a name="symbian" class="item">Symbian</a></strong></dt>
+
+<dd>
+<p>There is now support for Symbian S60 3.2 SDK and S60 5.0 SDK.</p>
+</dd>
+<dt><strong><a name="win322" class="item">Win32</a></strong></dt>
+
+<dd>
+<p>Improved message window handling means that <a href="../../lib/pods/perlfunc.html#alarm"><code>alarm</code></a> and <a href="../../lib/pods/perlfunc.html#kill"><code>kill</code></a> messages
+will no longer be dropped under race conditions.</p>
+</dd>
+<dt><strong><a name="vms" class="item">VMS</a></strong></dt>
+
+<dd>
+<p>Reads from the in-memory temporary files of <code>PerlIO::scalar</code> used to fail
+if <a href="../../lib/pods/perlvar.html#__"><code>$/</code></a> was set to a numeric reference (to indicate record-style reads).
+This is now fixed.</p>
+<p>VMS now supports <a href="../../lib/pods/perlfunc.html#getgrgid"><code>getgrgid</code></a>.</p>
+<p>Many improvements and cleanups have been made to the VMS file name handling
+and conversion code.</p>
+<p>Enabling the <code>PERL_VMS_POSIX_EXIT</code> logical name now encodes a POSIX exit
+status in a VMS condition value for better interaction with GNV's bash
+shell and other utilities that depend on POSIX exit values.  See
+<a href="../../lib/pods/perlvms.html#_">$? in the perlvms manpage</a> for details.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="selected_bug_fixes">Selected Bug Fixes</a></h1>
+<ul>
+<li>
+<p>5.10.0 inadvertently disabled an optimisation, which caused a measurable
+performance drop in list assignment, such as is often used to assign
+function parameters from <a href="../../lib/pods/perlvar.html#__"><code>@_</code></a>. The optimisation has been re-instated, and
+the performance regression fixed.</p>
+</li>
+<li>
+<p>Fixed memory leak on <code>while (1) { map 1, 1 }</code> [RT #53038].</p>
+</li>
+<li>
+<p>Some potential coredumps in PerlIO fixed [RT #57322,54828].</p>
+</li>
+<li>
+<p>The debugger now works with lvalue subroutines.</p>
+</li>
+<li>
+<p>The debugger's <a href="../../lib/pods/perlguts.html#m"><code>m</code></a> command was broken on modules that defined constants
+[RT #61222].</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#crypt"><code>crypt()</code></a> and string complement could return tainted values for untainted
+arguments [RT #59998].</p>
+</li>
+<li>
+<p>The <code>-i.suffix</code> command-line switch now recreates the file using
+restricted permissions, before changing its mode to match the original
+file. This eliminates a potential race condition [RT #60904].</p>
+</li>
+<li>
+<p>On some Unix systems, the value in <a href="../../lib/pods/perlvar.html#_"><code>$?</code></a> would not have the top bit set
+(<a href="../../lib/pods/perlvar.html#_"><code>$? &amp; 128</code></a>) even if the child core dumped.</p>
+</li>
+<li>
+<p>Under some circumstances, $^R could incorrectly become undefined
+[RT #57042].</p>
+</li>
+<li>
+<p>(XS) In various hash functions, passing a pre-computed hash to when the
+key is UTF-8 might result in an incorrect lookup.</p>
+</li>
+<li>
+<p>(XS) Including <em class="file">XSUB.h</em> before <em class="file">perl.h</em> gave a compile-time error
+[RT #57176].</p>
+</li>
+<li>
+<p><code>$object-&gt;isa('Foo')</code> would report false if the package <code>Foo</code> didn't
+exist, even if the object's <code>@ISA</code> contained <code>Foo</code>.</p>
+</li>
+<li>
+<p>Various bugs in the new-to 5.10.0 mro code, triggered by manipulating
+<code>@ISA</code>, have been found and fixed.</p>
+</li>
+<li>
+<p>Bitwise operations on references could crash the interpreter, e.g.
+<code>$x=\$y; $x |= &quot;foo&quot;</code> [RT #54956].</p>
+</li>
+<li>
+<p>Patterns including alternation might be sensitive to the internal UTF-8
+representation, e.g.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$byte</span> <span class="operator">=</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">192</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$utf8</span> <span class="operator">=</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">192</span><span class="operator">);</span> <span class="variable">utf8::upgrade</span><span class="operator">(</span><span class="variable">$utf8</span><span class="operator">);</span>
+    <span class="variable">$utf8</span> <span class="operator">=~</span> <span class="regex">/</span><span class="variable">$byte</span><span class="regex">|X}/i</span><span class="operator">;</span>       <span class="comment"># failed in 5.10.0</span>
+</pre>
+</li>
+<li>
+<p>Within UTF8-encoded Perl source files (i.e. where <code>use utf8</code> is in
+effect), double-quoted literal strings could be corrupted where a <code>\xNN</code>,
+<code>\0NNN</code> or <code>\N{}</code> is followed by a literal character with ordinal value
+greater than 255 [RT #59908].</p>
+</li>
+<li>
+<p><a href="#b_deparse"><code>B::Deparse</code></a> failed to correctly deparse various constructs:
+<a href="../../lib/pods/perlfunc.html#readpipe"><code>readpipe STRING</code></a> [RT #62428], <a href="../../lib/pods/perlfunc.html#require"><code>CORE::require(STRING)</code></a> [RT #62488],
+<code>sub foo(_)</code> [RT #62484].</p>
+</li>
+<li>
+<p>Using <a href="../../lib/pods/perlfunc.html#setpgrp"><code>setpgrp()</code></a> with no arguments could corrupt the perl stack.</p>
+</li>
+<li>
+<p>The block form of <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> is now specifically trappable by <a href="#safe"><code>Safe</code></a> and
+<code>ops</code>.  Previously it was erroneously treated like string <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>.</p>
+</li>
+<li>
+<p>In 5.10.0, the two characters <code>[~</code> were sometimes parsed as the smart
+match operator (<code>~~</code>) [RT #63854].</p>
+</li>
+<li>
+<p>In 5.10.0, the <code>*</code> quantifier in patterns was sometimes treated as
+<code>{0,32767}</code> [RT #60034, #60464]. For example, this match would fail:</p>
+<pre>
+    (&quot;ab&quot; x 32768) =~ /^(ab)*$/</pre>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#shmget"><code>shmget</code></a> was limited to a 32 bit segment size on a 64 bit OS [RT #63924].</p>
+</li>
+<li>
+<p>Using <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a> or <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a> to exit a <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> block no longer produces a
+spurious warning like the following:</p>
+<pre>
+    Exiting given via last at foo.pl line 123</pre>
+</li>
+<li>
+<p>On Windows, <code>'.\foo'</code> and <code>'..\foo'</code>  were treated differently than
+<code>'./foo'</code> and <code>'../foo'</code> by <a href="../../lib/pods/perlfunc.html#do"><code>do</code></a> and <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> [RT #63492].</p>
+</li>
+<li>
+<p>Assigning a format to a glob could corrupt the format; e.g.:</p>
+<pre>
+     <span class="variable">*bar</span><span class="operator">=</span><span class="variable">*foo</span><span class="operator">{</span><span class="string">FORMAT</span><span class="operator">}</span><span class="operator">;</span> <span class="comment"># foo format now bad</span>
+</pre>
+</li>
+<li>
+<p>Attempting to coerce a typeglob to a string or number could cause an
+assertion failure. The correct error message is now generated,
+<code>Can't coerce GLOB to $type</code>.</p>
+</li>
+<li>
+<p>Under <code>use filetest 'access'</code>, <a href="../../lib/pods/perlrun.html#x"><code>-x</code></a> was using the wrong access mode. This
+has been fixed [RT #49003].</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#length"><code>length</code></a> on a tied scalar that returned a Unicode value would not be
+correct the first time. This has been fixed.</p>
+</li>
+<li>
+<p>Using an array <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> inside in array <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> could SEGV. This has been
+fixed. [RT #51636]</p>
+</li>
+<li>
+<p>A race condition inside <code>PerlIOStdio_close()</code> has been identified and
+fixed. This used to cause various threading issues, including SEGVs.</p>
+</li>
+<li>
+<p>In <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack</code></a>, the use of <code>()</code> groups in scalar context was internally
+placing a list on the interpreter's stack, which manifested in various
+ways, including SEGVs.  This is now fixed [RT #50256].</p>
+</li>
+<li>
+<p>Magic was called twice in <a href="../../lib/pods/perlvar.html#substr"><code>substr</code></a>, <a href="../../lib/pods/perlrun.html#x"><code>\&amp;$x</code></a>, <code>tie $x, $m</code> and <a href="../../lib/pods/perlfunc.html#chop"><code>chop</code></a>.
+These have all been fixed.</p>
+</li>
+<li>
+<p>A 5.10.0 optimisation to clear the temporary stack within the implicit
+loop of <a href="../../lib/pods/perlfunc.html#s_"><code>s///ge</code></a> has been reverted, as it turned out to be the cause of
+obscure bugs in seemingly unrelated parts of the interpreter [commit 
+ef0d4e17921ee3de].</p>
+</li>
+<li>
+<p>The line numbers for warnings inside <code>elsif</code> are now correct.</p>
+</li>
+<li>
+<p>The <code>..</code> operator now works correctly with ranges whose ends are at or
+close to the values of the smallest and largest integers.</p>
+</li>
+<li>
+<p><code>binmode STDIN, ':raw'</code> could lead to segmentation faults on some platforms.
+This has been fixed [RT #54828].</p>
+</li>
+<li>
+<p>An off-by-one error meant that <code>index $str, ...</code> was effectively being
+executed as <code>index &quot;$str\0&quot;, ...</code>. This has been fixed [RT #53746].</p>
+</li>
+<li>
+<p>Various leaks associated with named captures in regexes have been fixed
+[RT #57024].</p>
+</li>
+<li>
+<p>A weak reference to a hash would leak. This was affecting <code>DBI</code>
+[RT #56908].</p>
+</li>
+<li>
+<p>Using (?|) in a regex could cause a segfault [RT #59734].</p>
+</li>
+<li>
+<p>Use of a UTF-8 <a href="../../lib/pods/perlfunc.html#tr_"><code>tr//</code></a> within a closure could cause a segfault [RT #61520].</p>
+</li>
+<li>
+<p>Calling <code>sv_chop()</code> or otherwise upgrading an SV could result in an
+unaligned 64-bit access on the SPARC architecture [RT #60574].</p>
+</li>
+<li>
+<p>In the 5.10.0 release, <code>inc_version_list</code> would incorrectly list
+<code>5.10.*</code> after <code>5.8.*</code>; this affected the <a href="../../lib/pods/perlvar.html#_inc"><code>@INC</code></a> search order
+[RT #67628].</p>
+</li>
+<li>
+<p>In 5.10.0, <code>pack &quot;a*&quot;, $tainted_value</code> returned a non-tainted value
+[RT #52552].</p>
+</li>
+<li>
+<p>In 5.10.0, <a href="../../lib/pods/perlfunc.html#printf"><code>printf</code></a> and <a href="../../lib/pods/perlfunc.html#sprintf"><code>sprintf</code></a> could produce the fatal error
+<code>panic: utf8_mg_pos_cache_update</code> when printing UTF-8 strings
+[RT #62666].</p>
+</li>
+<li>
+<p>In the 5.10.0 release, a dynamically created <code>AUTOLOAD</code> method might be
+missed (method cache issue) [RT #60220,60232].</p>
+</li>
+<li>
+<p>In the 5.10.0 release, a combination of <code>use feature</code> and <code>//ee</code> could
+cause a memory leak [RT #63110].</p>
+</li>
+<li>
+<p><code>-C</code> on the shebang (<code>#!</code>) line is once more permitted if it is also
+specified on the command line. <code>-C</code> on the shebang line used to be a
+silent no-op <em>if</em> it was not also on the command line, so perl 5.10.0
+disallowed it, which broke some scripts. Now perl checks whether it is
+also on the command line and only dies if it is not [RT #67880].</p>
+</li>
+<li>
+<p>In 5.10.0, certain types of re-entrant regular expression could crash,
+or cause the following assertion failure [RT #60508]:</p>
+<pre>
+    Assertion rx-&gt;sublen &gt;= (s - rx-&gt;subbeg) + i failed</pre>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="new_or_changed_diagnostics">New or Changed Diagnostics</a></h1>
+<dl>
+<dt><strong><a name="panic_sv_chop_s" class="item"><code>panic: sv_chop %s</code></a></strong></dt>
+
+<dd>
+<p>This new fatal error occurs when the C routine <code>Perl_sv_chop()</code> was
+passed a position that is not within the scalar's string buffer. This
+could be caused by buggy XS code, and at this point recovery is not
+possible.</p>
+</dd>
+<dt><strong><a name="can_t_locate_package_s_for_the_parents_of_s" class="item"><code>Can't locate package %s for the parents of %s</code></a></strong></dt>
+
+<dd>
+<p>This warning has been removed. In general, it only got produced in
+conjunction with other warnings, and removing it allowed an ISA lookup
+optimisation to be added.</p>
+</dd>
+<dt><strong><a name="v_string_in_use_require_is_non_portable2" class="item"><a href="#v_string_in_use_require_is_non_portable"><code>v-string in use/require is non-portable</code></a></a></strong></dt>
+
+<dd>
+<p>This warning has been removed.</p>
+</dd>
+<dt><strong><a name="deep_recursion_on_subroutine_s" class="item"><code>Deep recursion on subroutine &quot;%s&quot;</code></a></strong></dt>
+
+<dd>
+<p>It is now possible to change the depth threshold for this warning from the
+default of 100, by recompiling the <em class="file">perl</em> binary, setting the C
+pre-processor macro <code>PERL_SUB_DEPTH_WARN</code> to the desired value.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="changed_internals">Changed Internals</a></h1>
+<ul>
+<li>
+<p>The J.R.R. Tolkien quotes at the head of C source file have been checked and
+proper citations added, thanks to a patch from Tom Christiansen.</p>
+</li>
+<li>
+<p><code>vcroak()</code> now accepts a null first argument. In addition, a full audit
+was made of the &quot;not NULL&quot; compiler annotations, and those for several
+other internal functions were corrected.</p>
+</li>
+<li>
+<p>New macros <code>dSAVEDERRNO</code>, <code>dSAVE_ERRNO</code>, <code>SAVE_ERRNO</code>, <code>RESTORE_ERRNO</code>
+have been added to formalise the temporary saving of the <code>errno</code>
+variable.</p>
+</li>
+<li>
+<p>The function <code>Perl_sv_insert_flags</code> has been added to augment
+<code>Perl_sv_insert</code>.</p>
+</li>
+<li>
+<p>The function <code>Perl_newSV_type(type)</code> has been added, equivalent to
+<code>Perl_newSV()</code> followed by <code>Perl_sv_upgrade(type)</code>.</p>
+</li>
+<li>
+<p>The function <code>Perl_newSVpvn_flags()</code> has been added, equivalent to
+<code>Perl_newSVpvn()</code> and then performing the action relevant to the flag.</p>
+<p>Two flag bits are currently supported.</p>
+<dl>
+<dt><strong><a name="svf_utf8" class="item"><code>SVf_UTF8</code></a></strong></dt>
+
+<dd>
+<p>This will call <code>SvUTF8_on()</code> for you. (Note that this does not convert an
+sequence of ISO 8859-1 characters to UTF-8). A wrapper, <code>newSVpvn_utf8()</code>
+is available for this.</p>
+</dd>
+<dt><strong><a name="svs_temp" class="item"><code>SVs_TEMP</code></a></strong></dt>
+
+<dd>
+<p>Call <code>sv_2mortal()</code> on the new SV.</p>
+</dd>
+</dl>
+<p>There is also a wrapper that takes constant strings, <code>newSVpvs_flags()</code>.</p>
+</li>
+<li>
+<p>The function <code>Perl_croak_xs_usage</code> has been added as a wrapper to
+<code>Perl_croak</code>.</p>
+</li>
+<li>
+<p>The functions <code>PerlIO_find_layer</code> and <code>PerlIO_list_alloc</code> are now
+exported.</p>
+</li>
+<li>
+<p><code>PL_na</code> has been exterminated from the core code, replaced by local STRLEN
+temporaries, or <code>*_nolen()</code> calls. Either approach is faster than <code>PL_na</code>,
+which is a pointer deference into the interpreter structure under ithreads,
+and a global variable otherwise.</p>
+</li>
+<li>
+<p><code>Perl_mg_free()</code> used to leave freed memory accessible via <code>SvMAGIC()</code> on
+the scalar. It now updates the linked list to remove each piece of magic
+as it is freed.</p>
+</li>
+<li>
+<p>Under ithreads, the regex in <code>PL_reg_curpm</code> is now reference counted. This
+eliminates a lot of hackish workarounds to cope with it not being reference
+counted.</p>
+</li>
+<li>
+<p><code>Perl_mg_magical()</code> would sometimes incorrectly turn on <code>SvRMAGICAL()</code>.
+This has been fixed.</p>
+</li>
+<li>
+<p>The <em>public</em> IV and NV flags are now not set if the string value has
+trailing &quot;garbage&quot;. This behaviour is consistent with not setting the
+public IV or NV flags if the value is out of range for the type.</p>
+</li>
+<li>
+<p>SV allocation tracing has been added to the diagnostics enabled by <code>-Dm</code>.
+The tracing can alternatively output via the <a href="../../lib/pods/perlrun.html#perl_mem_log"><code>PERL_MEM_LOG</code></a> mechanism, if
+that was enabled when the <em class="file">perl</em> binary was compiled.</p>
+</li>
+<li>
+<p>Uses of <code>Nullav</code>, <code>Nullcv</code>, <code>Nullhv</code>, <code>Nullop</code>, <code>Nullsv</code> etc have been
+replaced by <code>NULL</code> in the core code, and non-dual-life modules, as <code>NULL</code>
+is clearer to those unfamiliar with the core code.</p>
+</li>
+<li>
+<p>A macro <code>MUTABLE_PTR(p)</code> has been added, which on (non-pedantic) gcc will
+not cast away <code>const</code>, returning a <code>void *</code>. Macros <code>MUTABLE_SV(av)</code>,
+<code>MUTABLE_SV(cv)</code> etc build on this, casting to <code>AV *</code> etc without
+casting away <code>const</code>. This allows proper compile-time auditing of
+<code>const</code> correctness in the core, and helped picked up some errors (now
+fixed).</p>
+</li>
+<li>
+<p>Macros <code>mPUSHs()</code> and <code>mXPUSHs()</code> have been added, for pushing SVs on the
+stack and mortalizing them.</p>
+</li>
+<li>
+<p>Use of the private structure <code>mro_meta</code> has changed slightly. Nothing
+outside the core should be accessing this directly anyway.</p>
+</li>
+<li>
+<p>A new tool, <code>Porting/expand-macro.pl</code> has been added, that allows you
+to view how a C preprocessor macro would be expanded when compiled.
+This is handy when trying to decode the macro hell that is the perl
+guts.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="new_tests">New Tests</a></h1>
+<p>Many modules updated from CPAN incorporate new tests.</p>
+<p>Several tests that have the potential to hang forever if they fail now
+incorporate a &quot;watchdog&quot; functionality that will kill them after a timeout,
+which helps ensure that <code>make test</code> and <code>make test_harness</code> run to
+completion automatically. (Jerry Hedden).</p>
+<p>Some core-specific tests have been added:</p>
+<dl>
+<dt><strong><a name="t_comp_retainedlines_t" class="item">t/comp/retainedlines.t</a></strong></dt>
+
+<dd>
+<p>Check that the debugger can retain source lines from <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>.</p>
+</dd>
+<dt><strong><a name="t_io_perlio_fail_t" class="item">t/io/perlio_fail.t</a></strong></dt>
+
+<dd>
+<p>Check that bad layers fail.</p>
+</dd>
+<dt><strong><a name="t_io_perlio_leaks_t" class="item">t/io/perlio_leaks.t</a></strong></dt>
+
+<dd>
+<p>Check that PerlIO layers are not leaking.</p>
+</dd>
+<dt><strong><a name="t_io_perlio_open_t" class="item">t/io/perlio_open.t</a></strong></dt>
+
+<dd>
+<p>Check that certain special forms of open work.</p>
+</dd>
+<dt><strong><a name="t_io_perlio_t" class="item">t/io/perlio.t</a></strong></dt>
+
+<dd>
+<p>General PerlIO tests.</p>
+</dd>
+<dt><strong><a name="t_io_pvbm_t" class="item">t/io/pvbm.t</a></strong></dt>
+
+<dd>
+<p>Check that there is no unexpected interaction between the internal types
+<code>PVBM</code> and <code>PVGV</code>.</p>
+</dd>
+<dt><strong><a name="t_mro_package_aliases_t" class="item">t/mro/package_aliases.t</a></strong></dt>
+
+<dd>
+<p>Check that mro works properly in the presence of aliased packages.</p>
+</dd>
+<dt><strong><a name="t_op_dbm_t" class="item">t/op/dbm.t</a></strong></dt>
+
+<dd>
+<p>Tests for <a href="../../lib/pods/perlfunc.html#dbmopen"><code>dbmopen</code></a> and <a href="../../lib/pods/perlfunc.html#dbmclose"><code>dbmclose</code></a>.</p>
+</dd>
+<dt><strong><a name="t_op_index_thr_t" class="item">t/op/index_thr.t</a></strong></dt>
+
+<dd>
+<p>Tests for the interaction of <a href="../../lib/pods/perlfunc.html#index"><code>index</code></a> and threads.</p>
+</dd>
+<dt><strong><a name="t_op_pat_thr_t" class="item">t/op/pat_thr.t</a></strong></dt>
+
+<dd>
+<p>Tests for the interaction of esoteric patterns and threads.</p>
+</dd>
+<dt><strong><a name="t_op_qr_gc_t" class="item">t/op/qr_gc.t</a></strong></dt>
+
+<dd>
+<p>Test that <code>qr</code> doesn't leak.</p>
+</dd>
+<dt><strong><a name="t_op_reg_email_thr_t" class="item">t/op/reg_email_thr.t</a></strong></dt>
+
+<dd>
+<p>Tests for the interaction of regex recursion and threads.</p>
+</dd>
+<dt><strong><a name="t_op_regexp_qr_embed_thr_t" class="item">t/op/regexp_qr_embed_thr.t</a></strong></dt>
+
+<dd>
+<p>Tests for the interaction of patterns with embedded <a href="../../lib/pods/perlfunc.html#qr_"><code>qr//</code></a> and threads.</p>
+</dd>
+<dt><strong><a name="t_op_regexp_unicode_prop_t" class="item">t/op/regexp_unicode_prop.t</a></strong></dt>
+
+<dd>
+<p>Tests for Unicode properties in regular expressions.</p>
+</dd>
+<dt><strong><a name="t_op_regexp_unicode_prop_thr_t" class="item">t/op/regexp_unicode_prop_thr.t</a></strong></dt>
+
+<dd>
+<p>Tests for the interaction of Unicode properties and threads.</p>
+</dd>
+<dt><strong><a name="t_op_reg_nc_tie_t" class="item">t/op/reg_nc_tie.t</a></strong></dt>
+
+<dd>
+<p>Test the tied methods of <code>Tie::Hash::NamedCapture</code>.</p>
+</dd>
+<dt><strong><a name="t_op_reg_posixcc_t" class="item">t/op/reg_posixcc.t</a></strong></dt>
+
+<dd>
+<p>Check that POSIX character classes behave consistently.</p>
+</dd>
+<dt><strong><a name="t_op_re_t" class="item">t/op/re.t</a></strong></dt>
+
+<dd>
+<p>Check that exportable <code>re</code> functions in <em class="file">universal.c</em> work.</p>
+</dd>
+<dt><strong><a name="t_op_setpgrpstack_t" class="item">t/op/setpgrpstack.t</a></strong></dt>
+
+<dd>
+<p>Check that <a href="../../lib/pods/perlfunc.html#setpgrp"><code>setpgrp</code></a> works.</p>
+</dd>
+<dt><strong><a name="t_op_substr_thr_t" class="item">t/op/substr_thr.t</a></strong></dt>
+
+<dd>
+<p>Tests for the interaction of <a href="../../lib/pods/perlvar.html#substr"><code>substr</code></a> and threads.</p>
+</dd>
+<dt><strong><a name="t_op_upgrade_t" class="item">t/op/upgrade.t</a></strong></dt>
+
+<dd>
+<p>Check that upgrading and assigning scalars works.</p>
+</dd>
+<dt><strong><a name="t_uni_lex_utf8_t" class="item">t/uni/lex_utf8.t</a></strong></dt>
+
+<dd>
+<p>Check that Unicode in the lexer works.</p>
+</dd>
+<dt><strong><a name="t_uni_tie_t" class="item">t/uni/tie.t</a></strong></dt>
+
+<dd>
+<p>Check that Unicode and <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> work.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="known_problems">Known Problems</a></h1>
+<p>This is a list of some significant unfixed bugs, which are regressions
+from either 5.10.0 or 5.8.x.</p>
+<ul>
+<li>
+<p><code>List::Util::first</code> misbehaves in the presence of a lexical <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>
+(typically introduced by <a href="../../lib/pods/perlfunc.html#my"><code>my $_</code></a> or implicitly by <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a>). The variable
+which gets set for each iteration is the package variable <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>, not the
+lexical <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> [RT #67694].</p>
+<p>A similar issue may occur in other modules that provide functions which
+take a block as their first argument, like</p>
+<pre>
+    <span class="variable">foo</span> <span class="operator">{</span> <span class="operator">...</span> <span class="variable">$_</span> <span class="operator">...}</span> <span class="variable">list</span>
+</pre>
+</li>
+<li>
+<p>The <a href="#charnames"><code>charnames</code></a> pragma may generate a run-time error when a regex is
+interpolated [RT #56444]:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">charnames</span> <span class="string">':full'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$r1</span> <span class="operator">=</span> <span class="string">qr/\N{THAI CHARACTER SARA I}/</span><span class="operator">;</span>
+    <span class="string">"foo"</span> <span class="operator">=~</span> <span class="variable">$r1</span><span class="operator">;</span>    <span class="comment"># okay</span>
+    <span class="string">"foo"</span> <span class="operator">=~</span> <span class="regex">/</span><span class="variable">$r1</span><span class="regex">+/</span><span class="operator">;</span> <span class="comment"># runtime error</span>
+</pre>
+<p>A workaround is to generate the character outside of the regex:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=</span> <span class="string">"\N{THAI CHARACTER SARA I}"</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$r1</span> <span class="operator">=</span> <span class="string">qr/</span><span class="variable">$a</span><span class="string">/</span><span class="operator">;</span>
+</pre>
+</li>
+<li>
+<p>Some regexes may run much more slowly when run in a child thread compared
+with the thread the pattern was compiled into [RT #55600].</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="deprecations">Deprecations</a></h1>
+<p>The following items are now deprecated.</p>
+<ul>
+<li>
+<p><a href="#switch"><code>Switch</code></a> is buggy and should be avoided. From perl 5.11.0 onwards, it is
+intended that any use of the core version of this module will emit a
+warning, and that the module will eventually be removed from the core
+(probably in perl 5.14.0). See <a href="../../lib/pods/perlsyn.html#switch_statements">Switch statements in the perlsyn manpage</a> for its
+replacement.</p>
+</li>
+<li>
+<p><code>suidperl</code> will be removed in 5.12.0. This provides a mechanism to
+emulate setuid permission bits on systems that don't support it properly.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">Acknowledgements</a></h1>
+<p>Some of the work in this release was funded by a TPF grant.</p>
+<p>Nicholas Clark officially retired from maintenance pumpking duty at the
+end of 2008; however in reality he has put much effort in since then to
+help get 5.10.1 into a fit state to be released, including writing a
+considerable chunk of this perldelta.</p>
+<p>Steffen Mueller and David Golden in particular helped getting CPAN modules
+polished and synchronised with their in-core equivalents.</p>
+<p>Craig Berry was tireless in getting maint to run under VMS, no matter how
+many times we broke it for him.</p>
+<p>The other core committers contributed most of the changes, and applied most
+of the patches sent in by the hundreds of contributors listed in <em class="file">AUTHORS</em>.</p>
+<p>(Sorry to all the people I haven't mentioned by name).</p>
+<p>Finally, thanks to Larry Wall, without whom none of this would be
+necessary.</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting_bugs">Reporting Bugs</a></h1>
+<p>If you find what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the perl
+bug database at <a href="http://rt.perl.org/perlbug/">http://rt.perl.org/perlbug/</a> .  There may also be
+information at <a href="http://www.perl.org/">http://www.perl.org/</a> , the Perl Home Page.</p>
+<p>If you believe you have an unreported bug, please run the <strong>perlbug</strong>
+program included with your release.  Be sure to trim your bug down
+to a tiny but sufficient test case.  Your bug report, along with the
+output of <code>perl -V</code>, will be sent off to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a> to be
+analysed by the Perl porting team.</p>
+<p>If the bug you are reporting has security implications, which make it
+inappropriate to send to a publicly archived mailing list, then please send
+it to <a href="mailto:perl5-security-report@perl.org.">perl5-security-report@perl.org.</a> This points to a closed subscription
+unarchived mailing list, which includes all the core committers, who be able
+to help assess the impact of issues, figure out a resolution, and help
+co-ordinate the release of patches to mitigate or fix the problem across all
+platforms on which Perl is supported. Please only use this address for
+security issues in the Perl core, not for modules independently
+distributed on CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The <em class="file">Changes</em> file for an explanation of how to view exhaustive details
+on what changed.</p>
+<p>The <em class="file">INSTALL</em> file for how to build Perl.</p>
+<p>The <em class="file">README</em> file for general stuff.</p>
+<p>The <em class="file">Artistic</em> and <em class="file">Copying</em> files for copyright information.</p>
+
+</body>
+
+</html>

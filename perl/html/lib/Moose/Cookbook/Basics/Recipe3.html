@@ -1,0 +1,273 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Basics::Recipe3 - A lazy B&lt;BinaryTree&gt; example</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Basics::Recipe3 - A lazy B&lt;BinaryTree&gt; example</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#footnotes">FOOTNOTES</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Basics::Recipe3 - A lazy <strong>BinaryTree</strong> example</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">BinaryTree</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'node'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Any'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'parent'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_parent'</span><span class="operator">,</span>
+      <span class="string">weak_ref</span>  <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'left'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_left'</span><span class="operator">,</span>
+      <span class="string">lazy</span>      <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">default</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">BinaryTree</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">parent</span> <span class="operator">=&gt;</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">)</span> <span class="operator">},</span>
+      <span class="string">trigger</span>   <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_set_parent_for_child</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'right'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_right'</span><span class="operator">,</span>
+      <span class="string">lazy</span>      <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">default</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">BinaryTree</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">parent</span> <span class="operator">=&gt;</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">)</span> <span class="operator">},</span>
+      <span class="string">trigger</span>   <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_set_parent_for_child</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _set_parent_for_child </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$child</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">confess</span> <span class="string">"You cannot insert a tree which already has a parent"</span>
+          <span class="keyword">if</span> <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">has_parent</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">parent</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This recipe shows how various advanced attribute features can be used
+to create complex and powerful behaviors. In particular, we introduce
+a number of new attribute options, including <code>predicate</code>, <code>lazy</code>,
+and <code>trigger</code>.</p>
+<p>The example class is a classic binary tree. Each node in the tree is
+itself an instance of <code>BinaryTree</code>. It has a <code>node</code>, which holds
+some arbitrary value. It has <code>right</code> and <code>left</code> attributes, which
+refer to its child trees, and a <code>parent</code>.</p>
+<p>Let's take a look at the <code>node</code> attribute:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'node'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Any'</span> <span class="operator">);</span>
+</pre>
+<p>Moose generates a read-write accessor for this attribute. The type
+constraint is <code>Any</code>, which literally means it can contain anything.</p>
+<p>We could have left out the <code>isa</code> option, but in this case, we are
+including it for the benefit of other programmers, not the computer.</p>
+<p>Next, let's move on to the <code>parent</code> attribute:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'parent'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_parent'</span><span class="operator">,</span>
+      <span class="string">weak_ref</span>  <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Again, we have a read-write accessor. This time, the <code>isa</code> option
+says that this attribute must always be an instance of
+<code>BinaryTree</code>. In the second recipe, we saw that every time we create
+a Moose-based class, we also get a corresponding class type
+constraint.</p>
+<p>The <code>predicate</code> option is new. It creates a method which can be used
+to check whether or not a given attribute has been initialized. In
+this case, the method is named <code>has_parent</code>.</p>
+<p>This brings us to our last attribute option, <code>weak_ref</code>. Since
+<code>parent</code> is a circular reference (the tree in <code>parent</code> should
+already have a reference to this one, in its <code>left</code> or <code>right</code>
+attribute), we want to make sure that we weaken the reference to avoid
+memory leaks. If <code>weak_ref</code> is true, it alters the accessor function
+so that the reference is weakened when it is set.</p>
+<p>Finally, we have the the <code>left</code> and <code>right</code> attributes. They are
+essentially identical except for their names, so we'll just look at
+<code>left</code>:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'left'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>       <span class="operator">=&gt;</span> <span class="string">'BinaryTree'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_left'</span><span class="operator">,</span>
+      <span class="string">lazy</span>      <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">default</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">BinaryTree</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">parent</span> <span class="operator">=&gt;</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">)</span> <span class="operator">},</span>
+      <span class="string">trigger</span>   <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_set_parent_for_child</span>
+  <span class="operator">);</span>
+</pre>
+<p>There are three new options here, <code>lazy</code>, <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a>, and
+<code>trigger</code>. The <code>lazy</code> and <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a> options options are linked.  In
+fact, you cannot have a <code>lazy</code> attribute unless it has a <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a>
+(or a <code>builder</code>, but we'll cover that later). If you try to make an
+attribute lazy without a default, class creation will fail with an
+exception. (2)</p>
+<p>In the second recipe the <strong>BankAccount</strong>'s <code>balance</code> attribute had a
+default value of <code>0</code>. Given a non-reference, Perl copies the
+<em>value</em>. However, given a reference, it does not do a deep clone,
+instead simply copying the reference. If you just specified a simple
+reference for a default, Perl would create it once and it would be
+shared by all objects with that attribute.</p>
+<p>As a workaround, we use an anonymous subroutine to generate a new
+reference every time the default is called.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'foo'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">[]</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>In fact, using a non-subroutine reference as a default is illegal in Moose.</p>
+<pre>
+  <span class="comment"># will fail</span>
+  <span class="variable">has</span> <span class="string">'foo'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">default</span> <span class="operator">=&gt;</span> <span class="operator">[]</span> <span class="operator">);</span>
+</pre>
+<p>This will blow up, so don't do it.</p>
+<p>You'll notice that we use <code>$_[0]</code> in our default sub. When the
+default subroutine is executed, it is called as a method on the
+object.</p>
+<p>In our case, we're making a new <code>BinaryTree</code> object in our default,
+with the current tree as the parent.</p>
+<p>Normally, when an object is instantiated, any defaults are evaluated
+immediately. With our <code>BinaryTree</code> class, this would be a big
+problem! We'd create the first object, which would immediately try to
+populate its <code>left</code> and <code>right</code> attributes, which would create a new
+<code>BinaryTree</code>, which would populate <em>its</em> <code>left</code> and <code>right</code>
+slots. Kaboom!</p>
+<p>By making our <code>left</code> and <code>right</code> attributes <code>lazy</code>, we avoid this
+problem. If the attribute has a value when it is read, the default is
+never executed at all.</p>
+<p>We still have one last bit of behavior to add. The autogenerated
+<code>right</code> and <code>left</code> accessors are not quite correct. When one of
+these is set, we want to make sure that we update the parent of the
+<code>left</code> or <code>right</code> attribute's tree.</p>
+<p>We could write our own accessors, but then why use Moose at all?
+Instead, we use a <code>trigger</code>. A <code>trigger</code> accepts a subroutine
+reference, which will be called as a method whenever the attribute is
+set. This can happen both during object construction or later by
+passing a new object to the attribute's accessor method. However, it
+is not called when a value is provided by a <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a> or <code>builder</code>.</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _set_parent_for_child </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$child</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">confess</span> <span class="string">"You cannot insert a tree which already has a parent"</span>
+          <span class="keyword">if</span> <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">has_parent</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">parent</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>This trigger does two things. First, it ensures that the new child
+node does not already have a parent. This is done for the sake of
+simplifying the example. If we wanted to be more clever, we would
+remove the child from its old parent tree and add it to the new one.</p>
+<p>If the child has no parent, we will add it to the current tree, and we
+ensure that is has the correct value for its <code>parent</code> attribute.</p>
+<p>As with all the other recipes, <strong>BinaryTree</strong> can be used just like any
+other Perl 5 class. A more detailed example of its usage can be found
+in <em class="file">t/recipes/moose_cookbook_basics_recipe3.t</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>This recipe introduced several of Moose's advanced features. We hope
+that this inspires you to think of other ways these features can be
+used to simplify your code.</p>
+<p>
+</p>
+<hr />
+<h1><a name="footnotes">FOOTNOTES</a></h1>
+<dl>
+<dt><strong><a name="18" class="item">(1)</a></strong></dt>
+
+<dd>
+<p>Weak references are tricky things, and should be used sparingly and
+appropriately (such as in the case of circular refs). If you are not
+careful, attribute values could disappear &quot;mysteriously&quot; because
+Perl's reference counting garbage collector has gone and removed the
+item you are weak-referencing.</p>
+<p>In short, don't use them unless you know what you are doing :)</p>
+</dd>
+<dt><strong><a name="26" class="item">(2)</a></strong></dt>
+
+<dd>
+<p>You <em>can</em> use the <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a> option without the <code>lazy</code> option if you
+like, as we showed in the second recipe.</p>
+<p>Also, you can use <code>builder</code> instead of <a href="../../../../lib/pods/perlfunc.html#default"><code>default</code></a>. See
+<a href="../../../../lib/Moose/Cookbook/Basics/Recipe8.html">the Moose::Cookbook::Basics::Recipe8 manpage</a> for details.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

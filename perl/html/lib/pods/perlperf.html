@@ -1,0 +1,1273 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlperf - Perl Performance and Optimization Techniques</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlperf - Perl Performance and Optimization Techniques</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#overview">OVERVIEW</a></li>
+	<ul>
+
+		<li><a href="#one_step_sideways">ONE STEP SIDEWAYS</a></li>
+		<li><a href="#one_step_forward">ONE STEP FORWARD</a></li>
+		<li><a href="#another_step_sideways">ANOTHER STEP SIDEWAYS</a></li>
+	</ul>
+
+	<li><a href="#general_guidelines">GENERAL GUIDELINES</a></li>
+	<li><a href="#benchmarks">BENCHMARKS</a></li>
+	<ul>
+
+		<li><a href="#assigning_and_dereferencing_variables_">Assigning and Dereferencing Variables.</a></li>
+		<li><a href="#search_and_replace_or_tr">Search and replace or tr</a></li>
+	</ul>
+
+	<li><a href="#profiling_tools">PROFILING TOOLS</a></li>
+	<ul>
+
+		<li><a href="#devel__dprof">Devel::DProf</a></li>
+		<li><a href="#devel__profiler">Devel::Profiler</a></li>
+		<li><a href="#devel__smallprof">Devel::SmallProf</a></li>
+		<li><a href="#devel__fastprof">Devel::FastProf</a></li>
+		<li><a href="#devel__nytprof">Devel::NYTProf</a></li>
+	</ul>
+
+	<li><a href="#sorting">SORTING</a></li>
+	<li><a href="#logging">LOGGING</a></li>
+	<ul>
+
+		<li><a href="#logging_if_debug__constant_">Logging if DEBUG (constant)</a></li>
+	</ul>
+
+	<li><a href="#postscript">POSTSCRIPT</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<ul>
+
+		<li><a href="#perldocs">PERLDOCS</a></li>
+		<li><a href="#man_pages">MAN PAGES</a></li>
+		<li><a href="#modules">MODULES</a></li>
+		<li><a href="#urls">URLS</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlperf - Perl Performance and Optimization Techniques</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This is an introduction to the use of performance and optimization techniques
+which can be used with particular reference to perl programs.  While many perl
+developers have come from other languages, and can use their prior knowledge
+where appropriate, there are many other people who might benefit from a few
+perl specific pointers.  If you want the condensed version, perhaps the best
+advice comes from the renowned Japanese Samurai, Miyamoto Musashi, who said:</p>
+<pre>
+    &quot;Do Not Engage in Useless Activity&quot;</pre>
+<p>in 1645.</p>
+<p>
+</p>
+<hr />
+<h1><a name="overview">OVERVIEW</a></h1>
+<p>Perhaps the most common mistake programmers make is to attempt to optimize
+their code before a program actually does anything useful - this is a bad idea.
+There's no point in having an extremely fast program that doesn't work.  The
+first job is to get a program to <em>correctly</em> do something <strong>useful</strong>, (not to
+mention ensuring the test suite is fully functional), and only then to consider
+optimizing it.  Having decided to optimize existing working code, there are
+several simple but essential steps to consider which are intrinsic to any
+optimization process.</p>
+<p>
+</p>
+<h2><a name="one_step_sideways">ONE STEP SIDEWAYS</a></h2>
+<p>Firstly, you need to establish a baseline time for the existing code, which
+timing needs to be reliable and repeatable.  You'll probably want to use the
+<code>Benchmark</code> or <code>Devel::DProf</code> modules, or something similar, for this step,
+or perhaps the Unix system <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a> utility, whichever is appropriate.  See the
+base of this document for a longer list of benchmarking and profiling modules,
+and recommended further reading.</p>
+<p>
+</p>
+<h2><a name="one_step_forward">ONE STEP FORWARD</a></h2>
+<p>Next, having examined the program for <em>hot spots</em>, (places where the code
+seems to run slowly), change the code with the intention of making it run
+faster.  Using version control software, like <code>subversion</code>, will ensure no
+changes are irreversible.  It's too easy to fiddle here and fiddle there -
+don't change too much at any one time or you might not discover which piece of
+code <strong>really</strong> was the slow bit.</p>
+<p>
+</p>
+<h2><a name="another_step_sideways">ANOTHER STEP SIDEWAYS</a></h2>
+<p>It's not enough to say: &quot;that will make it run faster&quot;, you have to check it.
+Rerun the code under control of the benchmarking or profiling modules, from the
+first step above, and check that the new code executed the <strong>same task</strong> in
+<em>less time</em>.  Save your work and repeat...</p>
+<p>
+</p>
+<hr />
+<h1><a name="general_guidelines">GENERAL GUIDELINES</a></h1>
+<p>The critical thing when considering performance is to remember there is no such
+thing as a <code>Golden Bullet</code>, which is why there are no rules, only guidelines.</p>
+<p>It is clear that inline code is going to be faster than subroutine or method
+calls, because there is less overhead, but this approach has the disadvantage
+of being less maintainable and comes at the cost of greater memory usage -
+there is no such thing as a free lunch.  If you are searching for an element in
+a list, it can be more efficient to store the data in a hash structure, and
+then simply look to see whether the key is defined, rather than to loop through
+the entire array using <a href="../../lib/pods/perlfunc.html#grep"><code>grep()</code></a> for instance.  <a href="../../lib/pods/perlvar.html#substr"><code>substr()</code></a> may be (a lot) faster
+than <a href="../../lib/pods/perlfunc.html#grep"><code>grep()</code></a> but not as flexible, so you have another trade-off to access.  Your
+code may contain a line which takes 0.01 of a second to execute which if you
+call it 1,000 times, quite likely in a program parsing even medium sized files
+for instance, you already have a 10 second delay, in just one single code
+location, and if you call that line 100,000 times, your entire program will
+slow down to an unbearable crawl.</p>
+<p>Using a subroutine as part of your sort is a powerful way to get exactly what
+you want, but will usually be slower than the built-in <em>alphabetic</em> <code>cmp</code> and
+<em>numeric</em> <code>&lt;=&gt;</code> sort operators.  It is possible to make multiple
+passes over your data, building indices to make the upcoming sort more
+efficient, and to use what is known as the <code>OM</code> (Orcish Maneuver) to cache the
+sort keys in advance.  The cache lookup, while a good idea, can itself be a
+source of slowdown by enforcing a double pass over the data - once to setup the
+cache, and once to sort the data.  Using <a href="../../lib/pods/perlfunc.html#pack"><code>pack()</code></a> to extract the required sort
+key into a consistent string can be an efficient way to build a single string
+to compare, instead of using multiple sort keys, which makes it possible to use
+the standard, written in <a href="../../lib/pods/perlrun.html#c"><code>c</code></a> and fast, perl <a href="../../lib/pods/perlfunc.html#sort"><code>sort()</code></a> function on the output,
+and is the basis of the <code>GRT</code> (Guttman Rossler Transform).  Some string
+combinations can slow the <code>GRT</code> down, by just being too plain complex for it's
+own good.</p>
+<p>For applications using database backends, the standard <code>DBIx</code> namespace has
+tries to help with keeping things nippy, not least because it tries to <em>not</em>
+query the database until the latest possible moment, but always read the docs
+which come with your choice of libraries.  Among the many issues facing
+developers dealing with databases should remain aware of is to always use
+<code>SQL</code> placeholders and to consider pre-fetching data sets when this might
+prove advantageous.  Splitting up a large file by assigning multiple processes
+to parsing a single file, using say <code>POE</code>, <code>threads</code> or <a href="../../lib/pods/perlfunc.html#fork"><code>fork</code></a> can also be a
+useful way of optimizing your usage of the available <code>CPU</code> resources, though
+this technique is fraught with concurrency issues and demands high attention to
+detail.</p>
+<p>Every case has a specific application and one or more exceptions, and there is
+no replacement for running a few tests and finding out which method works best
+for your particular environment, this is why writing optimal code is not an
+exact science, and why we love using Perl so much - TMTOWTDI.</p>
+<p>
+</p>
+<hr />
+<h1><a name="benchmarks">BENCHMARKS</a></h1>
+<p>Here are a few examples to demonstrate usage of Perl's benchmarking tools.</p>
+<p>
+</p>
+<h2><a name="assigning_and_dereferencing_variables_">Assigning and Dereferencing Variables.</a></h2>
+<p>I'm sure most of us have seen code which looks like, (or worse than), this:</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_ref</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_myscore</span><span class="operator">}</span> <span class="operator">&gt;=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_ref</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_yourscore</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+</pre>
+<p>This sort of code can be a real eyesore to read, as well as being very
+sensitive to typos, and it's much clearer to dereference the variable
+explicitly.  We're side-stepping the issue of working with object-oriented
+programming techniques to encapsulate variable access via methods, only
+accessible through an object.  Here we're just discussing the technical
+implementation of choice, and whether this has an effect on performance.  We
+can see whether this dereferencing operation, has any overhead by putting
+comparative code in a file and running a <code>Benchmark</code> test.</p>
+<p># dereference</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Benchmark</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$ref</span> <span class="operator">=</span> <span class="operator">{</span>
+            <span class="string">'ref'</span>   <span class="operator">=&gt;</span> <span class="operator">{</span>
+                <span class="string">_myscore</span>    <span class="operator">=&gt;</span> <span class="string">'100 + 1'</span><span class="operator">,</span>
+                <span class="string">_yourscore</span>  <span class="operator">=&gt;</span> <span class="string">'102 - 1'</span><span class="operator">,</span>
+            <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">timethese</span><span class="operator">(</span><span class="number">1000000</span><span class="operator">,</span> <span class="operator">{</span>
+            <span class="string">'direct'</span>       <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ref</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_myscore</span><span class="operator">}</span> <span class="operator">.</span> <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ref</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_yourscore</span><span class="operator">}</span> <span class="operator">;</span>
+            <span class="operator">},</span>
+            <span class="string">'dereference'</span>  <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$ref</span>  <span class="operator">=</span> <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ref</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$myscore</span> <span class="operator">=</span> <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_myscore</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$yourscore</span> <span class="operator">=</span> <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_yourscore</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$myscore</span> <span class="operator">.</span> <span class="variable">$yourscore</span><span class="operator">;</span>
+            <span class="operator">},</span>
+    <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>It's essential to run any timing measurements a sufficient number of times so
+the numbers settle on a numerical average, otherwise each run will naturally
+fluctuate due to variations in the environment, to reduce the effect of
+contention for <code>CPU</code> resources and network bandwidth for instance.  Running
+the above code for one million iterations, we can take a look at the report
+output by the <code>Benchmark</code> module, to see which approach is the most effective.</p>
+<pre>
+    $&gt; perl dereference</pre>
+<pre>
+    Benchmark: timing 1000000 iterations of dereference, direct...
+    dereference:  2 wallclock secs ( 1.59 usr +  0.00 sys =  1.59 CPU) @ 628930.82/s (n=1000000)
+        direct:  1 wallclock secs ( 1.20 usr +  0.00 sys =  1.20 CPU) @ 833333.33/s (n=1000000)</pre>
+<p>The difference is clear to see and the dereferencing approach is slower.  While
+it managed to execute an average of 628,930 times a second during our test, the
+direct approach managed to run an additional 204,403 times, unfortunately.
+Unfortunately, because there are many examples of code written using the
+multiple layer direct variable access, and it's usually horrible.  It is,
+however, minusculy faster.  The question remains whether the minute gain is
+actually worth the eyestrain, or the loss of maintainability.</p>
+<p>
+</p>
+<h2><a name="search_and_replace_or_tr">Search and replace or tr</a></h2>
+<p>If we have a string which needs to be modified, while a regex will almost
+always be much more flexible, <code>tr</code>, an oft underused tool, can still be a
+useful.  One scenario might be replace all vowels with another character.  The
+regex solution might look like this:</p>
+<pre>
+    $str =~ s/[aeiou]/x/g</pre>
+<p>The <code>tr</code> alternative might look like this:</p>
+<pre>
+    $str =~ tr/aeiou/xxxxx/</pre>
+<p>We can put that into a test file which we can run to check which approach is
+the fastest, using a global <code>$STR</code> variable to assign to the <code>my $str</code>
+variable so as to avoid perl trying to optimize any of the work away by
+noticing it's assigned only the once.</p>
+<p># regex-transliterate</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Benchmark</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$STR</span> <span class="operator">=</span> <span class="string">"$$-this and that"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">timethese</span><span class="operator">(</span> <span class="number">1000000</span><span class="operator">,</span> <span class="operator">{</span>
+            <span class="string">'sr'</span>  <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="variable">$STR</span><span class="operator">;</span> <span class="variable">$str</span> <span class="operator">=~</span> <span class="regex">s/[aeiou]/x/g</span><span class="operator">;</span> <span class="keyword">return</span> <span class="variable">$str</span><span class="operator">;</span> <span class="operator">},</span>
+            <span class="string">'tr'</span>  <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="variable">$STR</span><span class="operator">;</span> <span class="variable">$str</span> <span class="operator">=~</span> <span class="regex">tr/aeiou/xxxxx/</span><span class="operator">;</span> <span class="keyword">return</span> <span class="variable">$str</span><span class="operator">;</span> <span class="operator">},</span>
+    <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>Running the code gives us our results:</p>
+<pre>
+    $&gt; perl regex-transliterate</pre>
+<pre>
+    Benchmark: timing 1000000 iterations of sr, tr...
+            sr:  2 wallclock secs ( 1.19 usr +  0.00 sys =  1.19 CPU) @ 840336.13/s (n=1000000)
+            tr:  0 wallclock secs ( 0.49 usr +  0.00 sys =  0.49 CPU) @ 2040816.33/s (n=1000000)</pre>
+<p>The <code>tr</code> version is a clear winner.  One solution is flexible, the other is
+fast - and it's appropriately the programmer's choice which to use.</p>
+<p>Check the <code>Benchmark</code> docs for further useful techniques.</p>
+<p>
+</p>
+<hr />
+<h1><a name="profiling_tools">PROFILING TOOLS</a></h1>
+<p>A slightly larger piece of code will provide something on which a profiler can
+produce more extensive reporting statistics.  This example uses the simplistic
+<code>wordmatch</code> program which parses a given input file and spews out a short
+report on the contents.</p>
+<p># wordmatch</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    =head1 NAME</pre>
+<pre>
+    filewords - word analysis of input file</pre>
+<pre>
+    =head1 SYNOPSIS</pre>
+<pre>
+        filewords -f inputfilename [-d]</pre>
+<pre>
+    =head1 DESCRIPTION</pre>
+<pre>
+    This program parses the given filename, specified with C&lt;-f&gt;, and displays a
+    simple analysis of the words found therein.  Use the C&lt;-d&gt; switch to enable
+    debugging messages.</pre>
+<pre>
+    =cut</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">FileHandle</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Getopt::Long</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$debug</span>   <span class="operator">=</span>  <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$file</span>    <span class="operator">=</span> <span class="string">''</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">GetOptions</span> <span class="operator">(</span>
+        <span class="string">'debug'</span>         <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$debug</span><span class="operator">,</span>
+        <span class="string">'file=s'</span>        <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$file</span><span class="operator">,</span>
+    <span class="operator">);</span>
+    <span class="keyword">die</span><span class="operator">(</span><span class="string">"invalid args"</span><span class="operator">)</span> <span class="keyword">unless</span> <span class="variable">$result</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">unless</span> <span class="operator">(</span> <span class="keyword">-f</span> <span class="variable">$file</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">die</span><span class="operator">(</span><span class="string">"Usage: </span><span class="variable">$0</span><span class="string"> -f filename [-d]"</span><span class="operator">);</span>
+    <span class="operator">}</span>
+    <span class="keyword">my</span> <span class="variable">$FH</span> <span class="operator">=</span> <span class="variable">FileHandle</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"&lt; </span><span class="variable">$file</span><span class="string">"</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span><span class="operator">(</span><span class="string">"unable to open file(</span><span class="variable">$file</span><span class="string">): $!"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$i_LINES</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$i_WORDS</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">%count</span>   <span class="operator">=</span> <span class="operator">();</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@lines</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">$FH</span><span class="operator">&gt;;</span>
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$line</span> <span class="operator">(</span> <span class="variable">@lines</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$i_LINES</span><span class="operator">++;</span>
+        <span class="variable">$line</span> <span class="operator">=~</span> <span class="regex">s/\n//</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">@words</span> <span class="operator">=</span> <span class="keyword">split</span><span class="operator">(</span><span class="regex">/ +/</span><span class="operator">,</span> <span class="variable">$line</span><span class="operator">);</span>
+        <span class="keyword">my</span> <span class="variable">$i_words</span> <span class="operator">=</span> <span class="keyword">scalar</span><span class="operator">(</span><span class="variable">@words</span><span class="operator">);</span>
+        <span class="variable">$i_WORDS</span> <span class="operator">=</span> <span class="variable">$i_WORDS</span> <span class="operator">+</span> <span class="variable">$i_words</span><span class="operator">;</span>
+        <span class="variable">debug</span><span class="operator">(</span><span class="string">"line: </span><span class="variable">$i_LINES</span><span class="string"> supplying </span><span class="variable">$i_words</span><span class="string"> words: </span><span class="variable">@words</span><span class="string">"</span><span class="operator">);</span>
+        <span class="keyword">my</span> <span class="variable">$i_word</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+        <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$word</span> <span class="operator">(</span> <span class="variable">@words</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">$i_word</span><span class="operator">++;</span>
+            <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">spec</span><span class="operator">}</span> <span class="operator">+=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'[^a-zA-Z0-9]'</span><span class="operator">);</span>
+            <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">only</span><span class="operator">}</span> <span class="operator">+=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'^[^a-zA-Z0-9]+$'</span><span class="operator">);</span>
+            <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">cons</span><span class="operator">}</span> <span class="operator">+=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'^[(?i:bcdfghjklmnpqrstvwxyz)]+$'</span><span class="operator">);</span>
+            <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">vows</span><span class="operator">}</span> <span class="operator">+=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'^[(?i:aeiou)]+$'</span><span class="operator">);</span>
+            <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">caps</span><span class="operator">}</span> <span class="operator">+=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'^[(A-Z)]+$'</span><span class="operator">);</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="variable">report</span><span class="operator">(</span> <span class="variable">%count</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> matches </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$i_wd</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$word</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$regex</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$has</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$word</span> <span class="operator">=~</span> <span class="regex">/(</span><span class="variable">$regex</span><span class="regex">)/</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">$has</span><span class="operator">++</span> <span class="keyword">if</span> <span class="variable">$1</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="variable">debug</span><span class="operator">(</span><span class="string">"word: </span><span class="variable">$i_wd</span><span class="string"> "</span><span class="operator">.(</span><span class="variable">$has</span> <span class="operator">?</span> <span class="string">'matches'</span> <span class="operator">:</span> <span class="string">'does not match'</span><span class="operator">).</span><span class="string">" chars: /</span><span class="variable">$regex</span><span class="string">/"</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">return</span> <span class="variable">$has</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> report </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">%report</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">%rep</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$line</span> <span class="operator">(</span> <span class="keyword">keys</span> <span class="variable">%report</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$key</span> <span class="operator">(</span> <span class="keyword">keys</span> <span class="variable">%</span><span class="operator">{</span> <span class="variable">$report</span><span class="operator">{</span><span class="variable">$line</span><span class="operator">}</span> <span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+                <span class="variable">$rep</span><span class="operator">{</span><span class="variable">$key</span><span class="operator">}</span> <span class="operator">+=</span> <span class="variable">$report</span><span class="operator">{</span><span class="variable">$line</span><span class="operator">}{</span><span class="variable">$key</span><span class="operator">}</span><span class="operator">;</span>
+            <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$report</span> <span class="operator">=</span> <span class="string">qq|
+            </span><span class="variable">$0</span><span class="string"> report for </span><span class="variable">$file</span><span class="string">:
+            lines in file: </span><span class="variable">$i_LINES</span><span class="string">
+            words in file: </span><span class="variable">$i_WORDS</span><span class="string">
+            words with special (non-word) characters: </span><span class="variable">$i_spec</span><span class="string">
+            words with only special (non-word) characters: </span><span class="variable">$i_only</span><span class="string">
+            words with only consonants: </span><span class="variable">$i_cons</span><span class="string">
+            words with only capital letters: </span><span class="variable">$i_caps</span><span class="string">
+            words with only vowels: </span><span class="variable">$i_vows</span><span class="string">
+            |</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">return</span> <span class="variable">$report</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> debug </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$message</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$debug</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">print</span> <span class="variable">STDERR</span> <span class="string">"DBG: </span><span class="variable">$message</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">exit</span> <span class="number">0</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="devel__dprof">Devel::DProf</a></h2>
+<p>This venerable module has been the de-facto standard for Perl code profiling
+for more than a decade, but has been replaced by a number of other modules
+which have brought us back to the 21st century.  Although you're recommended to
+evaluate your tool from the several mentioned here and from the CPAN list at
+the base of this document, (and currently <a href="../../lib/Devel/NYTProf.html">the Devel::NYTProf manpage</a> seems to be the
+weapon of choice - see below), we'll take a quick look at the output from
+<a href="../../lib/Devel/DProf.html">the Devel::DProf manpage</a> first, to set a baseline for Perl profiling tools.  Run the
+above program under the control of <code>Devel::DProf</code> by using the <a href="../../lib/pods/perlrun.html#d"><code>-d</code></a> switch on
+the command-line.</p>
+<pre>
+    $&gt; perl -d:DProf wordmatch -f perl5db.pl</pre>
+<pre>
+    &lt;...multiple lines snipped...&gt;</pre>
+<pre>
+    wordmatch report for perl5db.pl:
+    lines in file: 9428
+    words in file: 50243
+    words with special (non-word) characters: 20480
+    words with only special (non-word) characters: 7790
+    words with only consonants: 4801
+    words with only capital letters: 1316
+    words with only vowels: 1701</pre>
+<p><code>Devel::DProf</code> produces a special file, called <em class="file">tmon.out</em> by default, and
+this file is read by the <code>dprofpp</code> program, which is already installed as part
+of the <code>Devel::DProf</code> distribution.  If you call <code>dprofpp</code> with no options,
+it will read the <em class="file">tmon.out</em> file in the current directory and produce a human
+readable statistics report of the run of your program.  Note that this may take
+a little time.</p>
+<pre>
+    $&gt; dprofpp</pre>
+<pre>
+    Total Elapsed Time = 2.951677 Seconds
+      User+System Time = 2.871677 Seconds
+    Exclusive Times
+    %Time ExclSec CumulS #Calls sec/call Csec/c  Name
+     102.   2.945  3.003 251215   0.0000 0.0000  main::matches
+     2.40   0.069  0.069 260643   0.0000 0.0000  main::debug
+     1.74   0.050  0.050      1   0.0500 0.0500  main::report
+     1.04   0.030  0.049      4   0.0075 0.0123  main::BEGIN
+     0.35   0.010  0.010      3   0.0033 0.0033  Exporter::as_heavy
+     0.35   0.010  0.010      7   0.0014 0.0014  IO::File::BEGIN
+     0.00       - -0.000      1        -      -  Getopt::Long::FindOption
+     0.00       - -0.000      1        -      -  Symbol::BEGIN
+     0.00       - -0.000      1        -      -  Fcntl::BEGIN
+     0.00       - -0.000      1        -      -  Fcntl::bootstrap
+     0.00       - -0.000      1        -      -  warnings::BEGIN
+     0.00       - -0.000      1        -      -  IO::bootstrap
+     0.00       - -0.000      1        -      -  Getopt::Long::ConfigDefaults
+     0.00       - -0.000      1        -      -  Getopt::Long::Configure
+     0.00       - -0.000      1        -      -  Symbol::gensym</pre>
+<p><code>dprofpp</code> will produce some quite detailed reporting on the activity of the
+<code>wordmatch</code> program.  The wallclock, user and system, times are at the top of
+the analysis, and after this are the main columns defining which define the
+report.  Check the <code>dprofpp</code> docs for details of the many options it supports.</p>
+<p>See also <code>Apache::DProf</code> which hooks <code>Devel::DProf</code> into <code>mod_perl</code>.</p>
+<p>
+</p>
+<h2><a name="devel__profiler">Devel::Profiler</a></h2>
+<p>Let's take a look at the same program using a different profiler:
+<code>Devel::Profiler</code>, a drop-in Perl-only replacement for <code>Devel::DProf</code>.  The
+usage is very slightly different in that instead of using the special <a href="../../lib/pods/perlrun.html#d"><code>-d:</code></a>
+flag, you pull <code>Devel::Profiler</code> in directly as a module using <a href="../../lib/pods/perlguts.html#m"><code>-M</code></a>.</p>
+<pre>
+    $&gt; perl -MDevel::Profiler wordmatch -f perl5db.pl</pre>
+<pre>
+    &lt;...multiple lines snipped...&gt;</pre>
+<pre>
+    wordmatch report for perl5db.pl:
+    lines in file: 9428
+    words in file: 50243
+    words with special (non-word) characters: 20480
+    words with only special (non-word) characters: 7790
+    words with only consonants: 4801
+    words with only capital letters: 1316
+    words with only vowels: 1701</pre>
+<p><code>Devel::Profiler</code> generates a tmon.out file which is compatible with the
+<code>dprofpp</code> program, thus saving the construction of a dedicated statistics
+reader program.  <code>dprofpp</code> usage is therefore identical to the above example.</p>
+<pre>
+    $&gt; dprofpp</pre>
+<pre>
+    Total Elapsed Time =   20.984 Seconds
+      User+System Time =   19.981 Seconds
+    Exclusive Times
+    %Time ExclSec CumulS #Calls sec/call Csec/c  Name
+     49.0   9.792 14.509 251215   0.0000 0.0001  main::matches
+     24.4   4.887  4.887 260643   0.0000 0.0000  main::debug
+     0.25   0.049  0.049      1   0.0490 0.0490  main::report
+     0.00   0.000  0.000      1   0.0000 0.0000  Getopt::Long::GetOptions
+     0.00   0.000  0.000      2   0.0000 0.0000  Getopt::Long::ParseOptionSpec
+     0.00   0.000  0.000      1   0.0000 0.0000  Getopt::Long::FindOption
+     0.00   0.000  0.000      1   0.0000 0.0000  IO::File::new
+     0.00   0.000  0.000      1   0.0000 0.0000  IO::Handle::new
+     0.00   0.000  0.000      1   0.0000 0.0000  Symbol::gensym
+     0.00   0.000  0.000      1   0.0000 0.0000  IO::File::open</pre>
+<p>Interestingly we get slightly different results, which is mostly because the
+algorithm which generates the report is different, even though the output file
+format was allegedly identical.  The elapsed, user and system times are clearly
+showing the time it took for <code>Devel::Profiler</code> to execute its own run, but
+the column listings feel more accurate somehow than the ones we had earlier
+from <code>Devel::DProf</code>.  The 102% figure has disappeared, for example.  This is
+where we have to use the tools at our disposal, and recognise their pros and
+cons, before using them.  Interestingly, the numbers of calls for each
+subroutine are identical in the two reports, it's the percentages which differ.
+As the author of <code>Devel::Proviler</code> writes:</p>
+<pre>
+    ...running HTML::Template's test suite under Devel::DProf shows output()
+    taking NO time but Devel::Profiler shows around 10% of the time is in output().
+    I don't know which to trust but my gut tells me something is wrong with
+    Devel::DProf.  HTML::Template::output() is a big routine that's called for
+    every test. Either way, something needs fixing.</pre>
+<p>YMMV.</p>
+<p>See also <code>Devel::Apache::Profiler</code> which hooks <code>Devel::Profiler</code> into <code>mod_perl</code>.</p>
+<p>
+</p>
+<h2><a name="devel__smallprof">Devel::SmallProf</a></h2>
+<p>The <code>Devel::SmallProf</code> profiler examines the runtime of your Perl program and
+produces a line-by-line listing to show how many times each line was called,
+and how long each line took to execute.  It is called by supplying the familiar
+<a href="../../lib/pods/perlrun.html#d"><code>-d</code></a> flag to Perl at runtime.</p>
+<pre>
+    $&gt; perl -d:SmallProf wordmatch -f perl5db.pl</pre>
+<pre>
+    &lt;...multiple lines snipped...&gt;</pre>
+<pre>
+    wordmatch report for perl5db.pl:
+    lines in file: 9428
+    words in file: 50243
+    words with special (non-word) characters: 20480
+    words with only special (non-word) characters: 7790
+    words with only consonants: 4801
+    words with only capital letters: 1316
+    words with only vowels: 1701</pre>
+<p><code>Devel::SmallProf</code> writes it's output into a file called <em class="file">smallprof.out</em>, by
+default.  The format of the file looks like this:</p>
+<pre>
+    &lt;num&gt; &lt;time&gt; &lt;ctime&gt; &lt;line&gt;:&lt;text&gt;</pre>
+<p>When the program has terminated, the output may be examined and sorted using
+any standard text filtering utilities.  Something like the following may be
+sufficient:</p>
+<pre>
+    $&gt; cat smallprof.out | grep \d*: | sort -k3 | tac | head -n20</pre>
+<pre>
+    <span class="number">251215</span>   <span class="number">1.65674</span>   <span class="number">7.68000</span>    <span class="number">75</span><span class="operator">:</span> <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$word</span> <span class="operator">=~</span> <span class="regex">/(</span><span class="variable">$regex</span><span class="regex">)/</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="number">251215</span>   <span class="number">0</span><span class="operator">.</span><span class="number">03264</span>   <span class="number">4.40000</span>    <span class="number">79</span><span class="operator">:</span> <span class="variable">debug</span><span class="operator">(</span><span class="string">"word: </span><span class="variable">$i_wd</span><span class="string"> "</span><span class="operator">.(</span><span class="variable">$has</span> <span class="operator">?</span> <span class="string">'matches'</span> <span class="operator">:</span>
+    <span class="number">251215</span>   <span class="number">0</span><span class="operator">.</span><span class="number">02693</span>   <span class="number">4.10000</span>    <span class="number">81</span><span class="operator">:</span> <span class="keyword">return</span> <span class="variable">$has</span><span class="operator">;</span>
+    <span class="number">260643</span>   <span class="number">0</span><span class="operator">.</span><span class="number">02841</span>   <span class="number">4.07000</span>   <span class="number">128</span><span class="operator">:</span> <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$debug</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="number">260643</span>   <span class="number">0</span><span class="operator">.</span><span class="number">02601</span>   <span class="number">4.04000</span>   <span class="number">126</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$message</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="number">251215</span>   <span class="number">0</span><span class="operator">.</span><span class="number">02641</span>   <span class="number">3.91000</span>    <span class="number">73</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$has</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="number">251215</span>   <span class="number">0</span><span class="operator">.</span><span class="number">03311</span>   <span class="number">3.71000</span>    <span class="number">70</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$i_wd</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="number">251215</span>   <span class="number">0</span><span class="operator">.</span><span class="number">02699</span>   <span class="number">3.69000</span>    <span class="number">72</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$regex</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="number">251215</span>   <span class="number">0</span><span class="operator">.</span><span class="number">02766</span>   <span class="number">3.68000</span>    <span class="number">71</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$word</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">59726</span>   <span class="number">1.00000</span>    <span class="number">59</span><span class="operator">:</span>  <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">cons</span><span class="operator">}</span> <span class="operator">=</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">48175</span>   <span class="number">0</span><span class="operator">.</span><span class="number">92000</span>    <span class="number">61</span><span class="operator">:</span>  <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">spec</span><span class="operator">}</span> <span class="operator">=</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">00644</span>   <span class="number">0</span><span class="operator">.</span><span class="number">89000</span>    <span class="number">56</span><span class="operator">:</span>  <span class="keyword">my</span> <span class="variable">$i_cons</span> <span class="operator">=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">48837</span>   <span class="number">0</span><span class="operator">.</span><span class="number">88000</span>    <span class="number">63</span><span class="operator">:</span>  <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">caps</span><span class="operator">}</span> <span class="operator">=</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">00516</span>   <span class="number">0</span><span class="operator">.</span><span class="number">88000</span>    <span class="number">58</span><span class="operator">:</span>  <span class="keyword">my</span> <span class="variable">$i_caps</span> <span class="operator">=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'^[(A-
+     50243   0.00631   0.81000    54:  my $i_spec = matches($i_word, $word, '</span><span class="operator">[</span><span class="operator">^</span><span class="variable">a</span><span class="operator">-</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">00496</span>   <span class="number">0</span><span class="operator">.</span><span class="number">80000</span>    <span class="number">57</span><span class="operator">:</span>  <span class="keyword">my</span> <span class="variable">$i_vows</span> <span class="operator">=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">00688</span>   <span class="number">0</span><span class="operator">.</span><span class="number">80000</span>    <span class="number">53</span><span class="operator">:</span>  <span class="variable">$i_word</span><span class="operator">++;</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">48469</span>   <span class="number">0</span><span class="operator">.</span><span class="number">79000</span>    <span class="number">62</span><span class="operator">:</span>  <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">only</span><span class="operator">}</span> <span class="operator">=</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">48928</span>   <span class="number">0</span><span class="operator">.</span><span class="number">77000</span>    <span class="number">60</span><span class="operator">:</span>  <span class="variable">$count</span><span class="operator">{</span><span class="variable">$i_LINES</span><span class="operator">}{</span><span class="string">vows</span><span class="operator">}</span> <span class="operator">=</span>
+     <span class="number">50243</span>   <span class="number">0</span><span class="operator">.</span><span class="number">00683</span>   <span class="number">0</span><span class="operator">.</span><span class="number">75000</span>    <span class="number">55</span><span class="operator">:</span>  <span class="keyword">my</span> <span class="variable">$i_only</span> <span class="operator">=</span> <span class="variable">matches</span><span class="operator">(</span><span class="variable">$i_word</span><span class="operator">,</span> <span class="variable">$word</span><span class="operator">,</span> <span class="string">'^[^a-
+    </span>
+</pre>
+<p>You can immediately see a slightly different focus to the subroutine profiling
+modules, and we start to see exactly which line of code is taking the most
+time.  That regex line is looking a bit suspicious, for example.  Remember that
+these tools are supposed to be used together, there is no single best way to
+profile your code, you need to use the best tools for the job.</p>
+<p>See also <code>Apache::SmallProf</code> which hooks <code>Devel::SmallProf</code> into <code>mod_perl</code>.</p>
+<p>
+</p>
+<h2><a name="devel__fastprof">Devel::FastProf</a></h2>
+<p><code>Devel::FastProf</code> is another Perl line profiler.  This was written with a view
+to getting a faster line profiler, than is possible with for example
+<code>Devel::SmallProf</code>, because it's written in <code>C</code>.  To use <code>Devel::FastProf</code>,
+supply the <a href="../../lib/pods/perlrun.html#d"><code>-d</code></a> argument to Perl:</p>
+<pre>
+    $&gt; perl -d:FastProf wordmatch -f perl5db.pl</pre>
+<pre>
+    &lt;...multiple lines snipped...&gt;</pre>
+<pre>
+    wordmatch report for perl5db.pl:
+    lines in file: 9428
+    words in file: 50243
+    words with special (non-word) characters: 20480
+    words with only special (non-word) characters: 7790
+    words with only consonants: 4801
+    words with only capital letters: 1316
+    words with only vowels: 1701</pre>
+<p><code>Devel::FastProf</code> writes statistics to the file <em class="file">fastprof.out</em> in the current
+directory.  The output file, which can be specified, can be interpreted by using
+the <code>fprofpp</code> command-line program.</p>
+<pre>
+    $&gt; fprofpp | head -n20</pre>
+<pre>
+    <span class="comment"># fprofpp output format is:</span>
+    <span class="comment"># filename:line time count: source</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">75</span> <span class="number">3.93338</span> <span class="number">251215</span><span class="operator">:</span> <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$word</span> <span class="operator">=~</span> <span class="regex">/(</span><span class="variable">$regex</span><span class="regex">)/</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">79</span> <span class="number">1.77774</span> <span class="number">251215</span><span class="operator">:</span> <span class="variable">debug</span><span class="operator">(</span><span class="string">"word: </span><span class="variable">$i_wd</span><span class="string"> "</span><span class="operator">.(</span><span class="variable">$has</span> <span class="operator">?</span> <span class="string">'matches'</span> <span class="operator">:</span> <span class="string">'does not match'</span><span class="operator">).</span><span class="string">" chars: /</span><span class="variable">$regex</span><span class="string">/"</span><span class="operator">);</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">81</span> <span class="number">1.47604</span> <span class="number">251215</span><span class="operator">:</span> <span class="keyword">return</span> <span class="variable">$has</span><span class="operator">;</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">126</span> <span class="number">1.43441</span> <span class="number">260643</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$message</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">128</span> <span class="number">1.42156</span> <span class="number">260643</span><span class="operator">:</span> <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$debug</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">70</span> <span class="number">1.36824</span> <span class="number">251215</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$i_wd</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">71</span> <span class="number">1.36739</span> <span class="number">251215</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$word</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="variable">wordmatch</span><span class="operator">:</span><span class="number">72</span> <span class="number">1.35939</span> <span class="number">251215</span><span class="operator">:</span> <span class="keyword">my</span> <span class="variable">$regex</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<p>Straightaway we can see that the number of times each line has been called is
+identical to the <code>Devel::SmallProf</code> output, and the sequence is only very
+slightly different based on the ordering of the amount of time each line took
+to execute, <code>if ( $debug ) { </code> and <code>my $message = shift;</code>, for example.  The
+differences in the actual times recorded might be in the algorithm used
+internally, or it could be due to system resource limitations or contention.</p>
+<p>See also the <a href="../../DBIx/Profile.html">the DBIx::Profile manpage</a> which will profile database queries running
+under the <code>DBIx::*</code> namespace.</p>
+<p>
+</p>
+<h2><a name="devel__nytprof">Devel::NYTProf</a></h2>
+<p><code>Devel::NYTProf</code> is the <strong>next generation</strong> of Perl code profiler, fixing many
+shortcomings in other tools and implementing many cool features.  First of all it
+can be used as either a <em>line</em> profiler, a <em>block</em> or a <em>subroutine</em>
+profiler, all at once.  It can also use sub-microsecond (100ns) resolution on
+systems which provide <code>clock_gettime()</code>.  It can be started and stopped even
+by the program being profiled.  It's a one-line entry to profile <code>mod_perl</code>
+applications.  It's written in <a href="../../lib/pods/perlrun.html#c"><code>c</code></a> and is probably the fastest profiler
+available for Perl.  The list of coolness just goes on.  Enough of that, let's
+see how to it works - just use the familiar <a href="../../lib/pods/perlrun.html#d"><code>-d</code></a> switch to plug it in and run
+the code.</p>
+<pre>
+    $&gt; perl -d:NYTProf wordmatch -f perl5db.pl</pre>
+<pre>
+    wordmatch report for perl5db.pl:
+    lines in file: 9427
+    words in file: 50243
+    words with special (non-word) characters: 20480
+    words with only special (non-word) characters: 7790
+    words with only consonants: 4801
+    words with only capital letters: 1316
+    words with only vowels: 1701</pre>
+<p><code>NYTProf</code> will generate a report database into the file <em class="file">nytprof.out</em> by
+default.  Human readable reports can be generated from here by using the
+supplied <code>nytprofhtml</code> (HTML output) and <code>nytprofcsv</code> (CSV output) programs.
+We've used the Unix sytem <code>html2text</code> utility to convert the
+<em class="file">nytprof/index.html</em> file for convenience here.</p>
+<pre>
+    $&gt; html2text nytprof/index.html</pre>
+<pre>
+    Performance Profile Index
+    For wordmatch
+      Run on Fri Sep 26 13:46:39 2008
+    Reported on Fri Sep 26 13:47:23 2008</pre>
+<pre>
+             Top 15 Subroutines -- ordered by exclusive time
+    |Calls |P |F |Inclusive|Exclusive|Subroutine                          |
+    |      |  |  |Time     |Time     |                                    |
+    |251215|5 |1 |13.09263 |10.47692 |main::              |matches        |
+    |260642|2 |1 |2.71199  |2.71199  |main::              |debug          |
+    |1     |1 |1 |0.21404  |0.21404  |main::              |report         |
+    |2     |2 |2 |0.00511  |0.00511  |XSLoader::          |load (xsub)    |
+    |14    |14|7 |0.00304  |0.00298  |Exporter::          |import         |
+    |3     |1 |1 |0.00265  |0.00254  |Exporter::          |as_heavy       |
+    |10    |10|4 |0.00140  |0.00140  |vars::              |import         |
+    |13    |13|1 |0.00129  |0.00109  |constant::          |import         |
+    |1     |1 |1 |0.00360  |0.00096  |FileHandle::        |import         |
+    |3     |3 |3 |0.00086  |0.00074  |warnings::register::|import         |
+    |9     |3 |1 |0.00036  |0.00036  |strict::            |bits           |
+    |13    |13|13|0.00032  |0.00029  |strict::            |import         |
+    |2     |2 |2 |0.00020  |0.00020  |warnings::          |import         |
+    |2     |1 |1 |0.00020  |0.00020  |Getopt::Long::      |ParseOptionSpec|
+    |7     |7 |6 |0.00043  |0.00020  |strict::            |unimport       |</pre>
+<pre>
+    For more information see the full list of 189 subroutines.</pre>
+<p>The first part of the report already shows the critical information regarding
+which subroutines are using the most time.  The next gives some statistics
+about the source files profiled.</p>
+<pre>
+            Source Code Files -- ordered by exclusive time then name
+    |Stmts  |Exclusive|Avg.   |Reports                     |Source File         |
+    |       |Time     |       |                            |                    |
+    |2699761|15.66654 |6e-06  |line   .    block   .    sub|wordmatch           |
+    |35     |0.02187  |0.00062|line   .    block   .    sub|IO/Handle.pm        |
+    |274    |0.01525  |0.00006|line   .    block   .    sub|Getopt/Long.pm      |
+    |20     |0.00585  |0.00029|line   .    block   .    sub|Fcntl.pm            |
+    |128    |0.00340  |0.00003|line   .    block   .    sub|Exporter/Heavy.pm   |
+    |42     |0.00332  |0.00008|line   .    block   .    sub|IO/File.pm          |
+    |261    |0.00308  |0.00001|line   .    block   .    sub|Exporter.pm         |
+    |323    |0.00248  |8e-06  |line   .    block   .    sub|constant.pm         |
+    |12     |0.00246  |0.00021|line   .    block   .    sub|File/Spec/Unix.pm   |
+    |191    |0.00240  |0.00001|line   .    block   .    sub|vars.pm             |
+    |77     |0.00201  |0.00003|line   .    block   .    sub|FileHandle.pm       |
+    |12     |0.00198  |0.00016|line   .    block   .    sub|Carp.pm             |
+    |14     |0.00175  |0.00013|line   .    block   .    sub|Symbol.pm           |
+    |15     |0.00130  |0.00009|line   .    block   .    sub|IO.pm               |
+    |22     |0.00120  |0.00005|line   .    block   .    sub|IO/Seekable.pm      |
+    |198    |0.00085  |4e-06  |line   .    block   .    sub|warnings/register.pm|
+    |114    |0.00080  |7e-06  |line   .    block   .    sub|strict.pm           |
+    |47     |0.00068  |0.00001|line   .    block   .    sub|warnings.pm         |
+    |27     |0.00054  |0.00002|line   .    block   .    sub|overload.pm         |
+    |9      |0.00047  |0.00005|line   .    block   .    sub|SelectSaver.pm      |
+    |13     |0.00045  |0.00003|line   .    block   .    sub|File/Spec.pm        |
+    |2701595|15.73869 |       |Total                       |
+    |128647 |0.74946  |       |Average                     |
+    |       |0.00201  |0.00003|Median                      |
+    |       |0.00121  |0.00003|Deviation                   |</pre>
+<pre>
+    Report produced by the NYTProf 2.03 Perl profiler, developed by Tim Bunce and
+    Adam Kaplan.</pre>
+<p>At this point, if you're using the <em>html</em> report, you can click through the
+various links to bore down into each subroutine and each line of code.  Because
+we're using the text reporting here, and there's a whole directory full of
+reports built for each source file, we'll just display a part of the
+corresponding <em class="file">wordmatch-line.html</em> file, sufficient to give an idea of the
+sort of output you can expect from this cool tool.</p>
+<pre>
+    $&gt; html2text nytprof/wordmatch-line.html</pre>
+<pre>
+    Performance Profile -- -block view-.-line view-.-sub view-
+    For wordmatch
+    Run on Fri Sep 26 13:46:39 2008
+    Reported on Fri Sep 26 13:47:22 2008</pre>
+<pre>
+    File wordmatch</pre>
+<pre>
+     Subroutines -- ordered by exclusive time
+    |Calls |P|F|Inclusive|Exclusive|Subroutine    |
+    |      | | |Time     |Time     |              |
+    |251215|5|1|13.09263 |10.47692 |main::|matches|
+    |260642|2|1|2.71199  |2.71199  |main::|debug  |
+    |1     |1|1|0.21404  |0.21404  |main::|report |
+    |0     |0|0|0        |0        |main::|BEGIN  |</pre>
+<pre>
+    <span class="operator">|</span><span class="variable">Line</span><span class="operator">|</span><span class="variable">Stmts</span><span class="operator">.|</span><span class="variable">Exclusive</span><span class="operator">|</span><span class="variable">Avg</span><span class="operator">.</span>   <span class="operator">|</span><span class="variable">Code</span>                                           <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span><span class="variable">Time</span>     <span class="operator">|</span>       <span class="operator">|</span>                                               <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">1</span>   <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="comment">#!/usr/bin/perl                                |</span>
+    <span class="operator">|</span><span class="number">2</span>   <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span>                                               <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>                                    <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">3</span>   <span class="operator">|</span><span class="number">3</span>     <span class="operator">|</span><span class="number">0</span><span class="operator">.</span><span class="number">00086</span>  <span class="operator">|</span><span class="number">0</span><span class="operator">.</span><span class="number">00029</span><span class="operator">|</span><span class="comment"># spent 0.00003s making 1 calls to strict::    |</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="variable">import</span>                                         <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>                                  <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">4</span>   <span class="operator">|</span><span class="number">3</span>     <span class="operator">|</span><span class="number">0</span><span class="operator">.</span><span class="number">01563</span>  <span class="operator">|</span><span class="number">0</span><span class="operator">.</span><span class="number">00521</span><span class="operator">|</span><span class="comment"># spent 0.00012s making 1 calls to warnings::  |</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="variable">import</span>                                         <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">5</span>   <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span>                                               <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">6</span>   <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|=</span><span class="variable">head1</span> <span class="variable">NAME</span>                                    <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">7</span>   <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span>                                               <span class="operator">|</span>
+    <span class="operator">|</span><span class="number">8</span>   <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="variable">filewords</span> <span class="operator">-</span> <span class="variable">word</span> <span class="variable">analysis</span> <span class="variable">of</span> <span class="variable">input</span> <span class="variable">file</span>        <span class="operator">|</span>
+    <span class="operator">&lt;...</span><span class="variable">snip</span><span class="operator">...&gt;</span>
+    <span class="operator">|</span><span class="number">62</span>  <span class="operator">|</span><span class="number">1</span>     <span class="operator">|</span><span class="number">0</span><span class="operator">.</span><span class="number">00445</span>  <span class="operator">|</span><span class="number">0</span><span class="operator">.</span><span class="number">00445</span><span class="operator">|</span><span class="keyword">print</span> <span class="variable">report</span><span class="operator">(</span> <span class="variable">%count</span> <span class="operator">);</span>                        <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="comment"># spent 0.21404s making 1 calls to main::report|</span>
+    <span class="operator">|</span><span class="number">63</span>  <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span>                                               <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="comment"># spent 23.56955s (10.47692+2.61571) within    |</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="variable">main::matches</span> <span class="variable">which</span> <span class="variable">was</span> <span class="variable">called</span> <span class="number">251215</span> <span class="keyword">times</span><span class="operator">,</span>   <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="variable">avg</span> <span class="number">0</span><span class="operator">.</span><span class="number">00005</span><span class="regex">s/call: # 50243 times               |
+    |    |      |         |       |(2.12134+0.51939s) at line 57 of wordmatch, avg|
+    |    |      |         |       |0.00005s/call # 50243 times (2.17735+0.54550s) |
+    |64  |      |         |       |at line 56 of wordmatch, avg 0.00005s/call</span> <span class="comment">#   |</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="number">50243</span> <span class="keyword">times</span> <span class="operator">(</span><span class="number">2.10992</span><span class="operator">+</span><span class="number">0</span><span class="operator">.</span><span class="number">51797</span><span class="regex">s) at line 58 of   |
+    |    |      |         |       |wordmatch, avg 0.00005s/call # 50243 times     |
+    |    |      |         |       |(2.12696+0.51598s) at line 55 of wordmatch, avg|
+    |    |      |         |       |0.00005s/call # 50243 times (1.94134+0.51687s)</span> <span class="operator">|</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="variable">at</span> <span class="variable">line</span> <span class="number">54</span> <span class="variable">of</span> <span class="variable">wordmatch</span><span class="operator">,</span> <span class="variable">avg</span> <span class="number">0</span><span class="operator">.</span><span class="number">00005</span><span class="regex">s/call     |
+    |    |      |         |       |sub matches {                                  |
+    &lt;...snip...&gt;
+    |102 |      |         |       |                                               |
+    |    |      |         |       |# spent 2.71199s within main::debug which was  |
+    |    |      |         |       |called 260642 times, avg 0.00001s/call: #      |
+    |    |      |         |       |251215 times (2.61571+0s) by main::matches at  |
+    |103 |      |         |       |line 74 of wordmatch, avg 0.00001s/call</span> <span class="comment"># 9427 |</span>
+    <span class="operator">|</span>    <span class="operator">|</span>      <span class="operator">|</span>         <span class="operator">|</span>       <span class="operator">|</span><span class="keyword">times</span> <span class="operator">(</span><span class="number">0</span><span class="operator">.</span><span class="number">09628</span><span class="operator">+</span><span class="number">0</span><span class="regex">s) at line 50 of wordmatch, avg|
+    |    |      |         |       |0.00001s/call                                  |
+    |    |      |         |       |sub debug {                                    |
+    |104 |260642|0.58496  |2e-06  |my </span><span class="variable">$message</span><span class="regex"> = shift;                           |
+    |105 |      |         |       |                                               |
+    |106 |260642|1.09917  |4e-06  |if ( </span><span class="variable">$debug</span><span class="regex"> ) {                                |
+    |107 |      |         |       |print STDERR "DBG: $message\n";                |
+    |108 |      |         |       |}                                              |
+    |109 |      |         |       |}                                              |
+    |110 |      |         |       |                                               |
+    |111 |1     |0.01501  |0.01501|exit 0;                                        |
+    |112 |      |         |       |                                               |
+    </span>
+</pre>
+<p>Oodles of very useful information in there - this seems to be the way forward.</p>
+<p>See also <code>Devel::NYTProf::Apache</code> which hooks <code>Devel::NYTProf</code> into <code>mod_perl</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="sorting">SORTING</a></h1>
+<p>Perl modules are not the only tools a performance analyst has at their
+disposal, system tools like <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a> should not be overlooked as the next
+example shows, where we take a quick look at sorting.  Many books, theses and
+articles, have been written about efficient sorting algorithms, and this is not
+the place to repeat such work, there's several good sorting modules which
+deserve taking a look at too: <code>Sort::Maker</code>, <code>Sort::Key</code> spring to mind.
+However, it's still possible to make some observations on certain Perl specific
+interpretations on issues relating to sorting data sets and give an example or
+two with regard to how sorting large data volumes can effect performance.
+Firstly, an often overlooked point when sorting large amounts of data, one can
+attempt to reduce the data set to be dealt with and in many cases <a href="../../lib/pods/perlfunc.html#grep"><code>grep()</code></a> can
+be quite useful as a simple filter:</p>
+<pre>
+    <span class="variable">@data</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="regex">/</span><span class="variable">$filter</span><span class="regex">/</span> <span class="operator">}</span> <span class="variable">@incoming</span>
+</pre>
+<p>A command such as this can vastly reduce the volume of material to actually
+sort through in the first place, and should not be too lightly disregarded
+purely on the basis of its simplicity.  The <code>KISS</code> principle is too often
+overlooked - the next example uses the simple system <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a> utility to
+demonstrate.  Let's take a look at an actual example of sorting the contents of
+a large file, an apache logfile would do.  This one has over a quarter of a
+million lines, is 50M in size, and a snippet of it looks like this:</p>
+<p># logfile</p>
+<pre>
+    <span class="number">188.209</span><span class="operator">-</span><span class="number">65</span><span class="operator">-</span><span class="number">87.</span><span class="variable">adsl</span><span class="operator">-</span><span class="variable">dyn</span><span class="operator">.</span><span class="variable">isp</span><span class="operator">.</span><span class="variable">belgacom</span><span class="operator">.</span><span class="variable">be</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">16</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /favicon.ico HTTP/1.1"</span> <span class="number">404</span> <span class="number">209</span> <span class="string">"-"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"</span>
+    <span class="number">188.209</span><span class="operator">-</span><span class="number">65</span><span class="operator">-</span><span class="number">87.</span><span class="variable">adsl</span><span class="operator">-</span><span class="variable">dyn</span><span class="operator">.</span><span class="variable">isp</span><span class="operator">.</span><span class="variable">belgacom</span><span class="operator">.</span><span class="variable">be</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">16</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /favicon.ico HTTP/1.1"</span> <span class="number">404</span> <span class="number">209</span> <span class="string">"-"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"</span>
+    <span class="number">151.56</span><span class="operator">.</span><span class="number">71.198</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">41</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /suse-on-vaio.html HTTP/1.1"</span> <span class="number">200</span> <span class="number">2858</span> <span class="string">"http://www.linux-on-laptops.com/sony.html"</span> <span class="string">"Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.8.1.1) Gecko/20061204 Firefox/2.0.0.1"</span>
+    <span class="number">151.56</span><span class="operator">.</span><span class="number">71.198</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">42</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /data/css HTTP/1.1"</span> <span class="number">404</span> <span class="number">206</span> <span class="string">"http://www.rfi.net/suse-on-vaio.html"</span> <span class="string">"Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.8.1.1) Gecko/20061204 Firefox/2.0.0.1"</span>
+    <span class="number">151.56</span><span class="operator">.</span><span class="number">71.198</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">43</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /favicon.ico HTTP/1.1"</span> <span class="number">404</span> <span class="number">209</span> <span class="string">"-"</span> <span class="string">"Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.8.1.1) Gecko/20061204 Firefox/2.0.0.1"</span>
+    <span class="number">217.113</span><span class="operator">.</span><span class="number">68.60</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">02</span><span class="operator">:</span><span class="number">15</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET / HTTP/1.1"</span> <span class="number">304</span> <span class="operator">-</span> <span class="string">"-"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"</span>
+    <span class="number">217.113</span><span class="operator">.</span><span class="number">68.60</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">02</span><span class="operator">:</span><span class="number">16</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /data/css HTTP/1.1"</span> <span class="number">404</span> <span class="number">206</span> <span class="string">"http://www.rfi.net/"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"</span>
+    <span class="variable">debora</span><span class="operator">.</span><span class="variable">to</span><span class="operator">.</span><span class="variable">isac</span><span class="operator">.</span><span class="variable">cnr</span><span class="operator">.</span><span class="variable">it</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">03</span><span class="operator">:</span><span class="number">58</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /suse-on-vaio.html HTTP/1.1"</span> <span class="number">200</span> <span class="number">2858</span> <span class="string">"http://www.linux-on-laptops.com/sony.html"</span> <span class="string">"Mozilla/5.0 (compatible; Konqueror/3.4; Linux) KHTML/3.4.0 (like Gecko)"</span>
+    <span class="variable">debora</span><span class="operator">.</span><span class="variable">to</span><span class="operator">.</span><span class="variable">isac</span><span class="operator">.</span><span class="variable">cnr</span><span class="operator">.</span><span class="variable">it</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">03</span><span class="operator">:</span><span class="number">58</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /data/css HTTP/1.1"</span> <span class="number">404</span> <span class="number">206</span> <span class="string">"http://www.rfi.net/suse-on-vaio.html"</span> <span class="string">"Mozilla/5.0 (compatible; Konqueror/3.4; Linux) KHTML/3.4.0 (like Gecko)"</span>
+    <span class="variable">debora</span><span class="operator">.</span><span class="variable">to</span><span class="operator">.</span><span class="variable">isac</span><span class="operator">.</span><span class="variable">cnr</span><span class="operator">.</span><span class="variable">it</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">03</span><span class="operator">:</span><span class="number">58</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /favicon.ico HTTP/1.1"</span> <span class="number">404</span> <span class="number">209</span> <span class="string">"-"</span> <span class="string">"Mozilla/5.0 (compatible; Konqueror/3.4; Linux) KHTML/3.4.0 (like Gecko)"</span>
+    <span class="number">195.24</span><span class="operator">.</span><span class="number">196.99</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">26</span><span class="operator">:</span><span class="number">48</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET / HTTP/1.0"</span> <span class="number">200</span> <span class="number">3309</span> <span class="string">"-"</span> <span class="string">"Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.0.9) Gecko/20061206 Firefox/1.5.0.9"</span>
+    <span class="number">195.24</span><span class="operator">.</span><span class="number">196.99</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">26</span><span class="operator">:</span><span class="number">58</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /data/css HTTP/1.0"</span> <span class="number">404</span> <span class="number">206</span> <span class="string">"http://www.rfi.net/"</span> <span class="string">"Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.0.9) Gecko/20061206 Firefox/1.5.0.9"</span>
+    <span class="number">195.24</span><span class="operator">.</span><span class="number">196.99</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">26</span><span class="operator">:</span><span class="number">59</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /favicon.ico HTTP/1.0"</span> <span class="number">404</span> <span class="number">209</span> <span class="string">"-"</span> <span class="string">"Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.0.9) Gecko/20061206 Firefox/1.5.0.9"</span>
+    <span class="variable">crawl1</span><span class="operator">.</span><span class="variable">cosmixcorp</span><span class="operator">.</span><span class="variable">com</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">27</span><span class="operator">:</span><span class="number">57</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /robots.txt HTTP/1.0"</span> <span class="number">200</span> <span class="number">179</span> <span class="string">"-"</span> <span class="string">"voyager/1.0"</span>
+    <span class="variable">crawl1</span><span class="operator">.</span><span class="variable">cosmixcorp</span><span class="operator">.</span><span class="variable">com</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">28</span><span class="operator">:</span><span class="number">25</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /links.html HTTP/1.0"</span> <span class="number">200</span> <span class="number">3413</span> <span class="string">"-"</span> <span class="string">"voyager/1.0"</span>
+    <span class="variable">fhm226</span><span class="operator">.</span><span class="variable">internetdsl</span><span class="operator">.</span><span class="variable">tpnet</span><span class="operator">.</span><span class="variable">pl</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">37</span><span class="operator">:</span><span class="number">32</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /suse-on-vaio.html HTTP/1.1"</span> <span class="number">200</span> <span class="number">2858</span> <span class="string">"http://www.linux-on-laptops.com/sony.html"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"</span>
+    <span class="variable">fhm226</span><span class="operator">.</span><span class="variable">internetdsl</span><span class="operator">.</span><span class="variable">tpnet</span><span class="operator">.</span><span class="variable">pl</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">37</span><span class="operator">:</span><span class="number">34</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /data/css HTTP/1.1"</span> <span class="number">404</span> <span class="number">206</span> <span class="string">"http://www.rfi.net/suse-on-vaio.html"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"</span>
+    <span class="number">80.247</span><span class="operator">.</span><span class="number">140.134</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">35</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET / HTTP/1.1"</span> <span class="number">200</span> <span class="number">3309</span> <span class="string">"-"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"</span>
+    <span class="number">80.247</span><span class="operator">.</span><span class="number">140.134</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">13</span><span class="operator">:</span><span class="number">57</span><span class="operator">:</span><span class="number">37</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /data/css HTTP/1.1"</span> <span class="number">404</span> <span class="number">206</span> <span class="string">"http://www.rfi.net"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"</span>
+    <span class="keyword">pop</span><span class="operator">.</span><span class="variable">compuscan</span><span class="operator">.</span><span class="variable">co</span><span class="operator">.</span><span class="variable">za</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">14</span><span class="operator">:</span><span class="number">10</span><span class="operator">:</span><span class="number">43</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET / HTTP/1.1"</span> <span class="number">200</span> <span class="number">3309</span> <span class="string">"-"</span> <span class="string">"www.clamav.net"</span>
+    <span class="variable">livebot</span><span class="operator">-</span><span class="number">207</span><span class="operator">-</span><span class="number">46</span><span class="operator">-</span><span class="number">98</span><span class="operator">-</span><span class="number">57.</span><span class="variable">search</span><span class="operator">.</span><span class="variable">live</span><span class="operator">.</span><span class="variable">com</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">14</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">04</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /robots.txt HTTP/1.0"</span> <span class="number">200</span> <span class="number">179</span> <span class="string">"-"</span> <span class="string">"msnbot/1.0 (+http://search.msn.com/msnbot.htm)"</span>
+    <span class="variable">livebot</span><span class="operator">-</span><span class="number">207</span><span class="operator">-</span><span class="number">46</span><span class="operator">-</span><span class="number">98</span><span class="operator">-</span><span class="number">57.</span><span class="variable">search</span><span class="operator">.</span><span class="variable">live</span><span class="operator">.</span><span class="variable">com</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">14</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">04</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET /html/oracle.html HTTP/1.0"</span> <span class="number">404</span> <span class="number">214</span> <span class="string">"-"</span> <span class="string">"msnbot/1.0 (+http://search.msn.com/msnbot.htm)"</span>
+    <span class="variable">dslb</span><span class="operator">-</span><span class="number">088</span><span class="operator">-</span><span class="number">064</span><span class="operator">-</span><span class="number">005</span><span class="operator">-</span><span class="number">154.</span><span class="variable">pools</span><span class="operator">.</span><span class="variable">arcor</span><span class="operator">-</span><span class="variable">ip</span><span class="operator">.</span><span class="variable">net</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">14</span><span class="operator">:</span><span class="number">12</span><span class="operator">:</span><span class="number">15</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET / HTTP/1.1"</span> <span class="number">200</span> <span class="number">3309</span> <span class="string">"-"</span> <span class="string">"www.clamav.net"</span>
+    <span class="number">196.201</span><span class="operator">.</span><span class="number">92.41</span> <span class="operator">-</span> <span class="operator">-</span> <span class="operator">[</span><span class="number">08</span><span class="operator">/</span><span class="variable">Feb</span><span class="operator">/</span><span class="number">2007</span><span class="operator">:</span><span class="number">14</span><span class="operator">:</span><span class="number">15</span><span class="operator">:</span><span class="number">01</span> <span class="operator">+</span><span class="number">0000</span><span class="operator">]</span> <span class="string">"GET / HTTP/1.1"</span> <span class="number">200</span> <span class="number">3309</span> <span class="string">"-"</span> <span class="string">"MOT-L7/08.B7.DCR MIB/2.2.1 Profile/MIDP-2.0 Configuration/CLDC-1.1"</span>
+</pre>
+<p>The specific task here is to sort the 286,525 lines of this file by Response
+Code, Query, Browser, Referring Url, and lastly Date.  One solution might be to
+use the following code, which iterates over the files given on the
+command-line.</p>
+<p># sort-apache-log</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -n</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@data</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">LINE</span><span class="operator">:</span>
+    <span class="keyword">while</span> <span class="operator">(</span> <span class="operator">&lt;&gt;</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$line</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span>
+            <span class="variable">$line</span> <span class="operator">=~</span> <span class="regex">m/^(
+                ([\w\.\-]+)             # client
+                \s*-\s*-\s*\[
+                ([^]]+)                 # date
+                \]\s*"\w+\s*
+                (\S+)                   # query
+                [^"]+"\s*
+                (\d+)                   # status
+                \s+\S+\s+"[^"]*"\s+"
+                ([^"]*)                 # browser
+                "
+                .*
+            )$/x</span>
+        <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">my</span> <span class="variable">@chunks</span> <span class="operator">=</span> <span class="keyword">split</span><span class="operator">(</span><span class="regex">/ +/</span><span class="operator">,</span> <span class="variable">$line</span><span class="operator">);</span>
+            <span class="keyword">my</span> <span class="variable">$ip</span>      <span class="operator">=</span> <span class="variable">$1</span><span class="operator">;</span>
+            <span class="keyword">my</span> <span class="variable">$date</span>    <span class="operator">=</span> <span class="variable">$2</span><span class="operator">;</span>
+            <span class="keyword">my</span> <span class="variable">$query</span>   <span class="operator">=</span> <span class="variable">$3</span><span class="operator">;</span>
+            <span class="keyword">my</span> <span class="variable">$status</span>  <span class="operator">=</span> <span class="variable">$4</span><span class="operator">;</span>
+            <span class="keyword">my</span> <span class="variable">$browser</span> <span class="operator">=</span> <span class="variable">$5</span><span class="operator">;</span>
+</pre>
+<pre>
+            <span class="keyword">push</span><span class="operator">(</span><span class="variable">@data</span><span class="operator">,</span> <span class="operator">[</span><span class="variable">$ip</span><span class="operator">,</span> <span class="variable">$date</span><span class="operator">,</span> <span class="variable">$query</span><span class="operator">,</span> <span class="variable">$status</span><span class="operator">,</span> <span class="variable">$browser</span><span class="operator">,</span> <span class="variable">$line</span><span class="operator">]</span><span class="operator">);</span>
+                    <span class="operator">}</span>
+                <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@sorted</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="operator">{</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span>
+                <span class="operator">||</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span>
+                <span class="operator">||</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span>
+                <span class="operator">||</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span>
+                <span class="operator">||</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span>
+    <span class="operator">}</span> <span class="variable">@data</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$data</span> <span class="operator">(</span> <span class="variable">@sorted</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="variable">$data</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">5</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">exit</span> <span class="number">0</span><span class="operator">;</span>
+</pre>
+<p>When running this program, redirect <code>STDOUT</code> so it is possible to check the
+output is correct from following test runs and use the system <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a> utility
+to check the overall runtime.</p>
+<pre>
+    $&gt; time ./sort-apache-log logfile &gt; out-sort</pre>
+<pre>
+    real    0m17.371s
+    user    0m15.757s
+    sys     0m0.592s</pre>
+<p>The program took just over 17 wallclock seconds to run.  Note the different
+values <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a> outputs, it's important to always use the same one, and to not
+confuse what each one means.</p>
+<dl>
+<dt><strong><a name="elapsed_real_time" class="item">Elapsed Real Time</a></strong></dt>
+
+<dd>
+<p>The overall, or wallclock, time between when <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a> was called, and when it
+terminates.  The elapsed time includes both user and system times, and time
+spent waiting for other users and processes on the system.  Inevitably, this is
+the most approximate of the measurements given.</p>
+</dd>
+<dt><strong><a name="user_cpu_time" class="item">User CPU Time</a></strong></dt>
+
+<dd>
+<p>The user time is the amount of time the entire process spent on behalf of the
+user on this system executing this program.</p>
+</dd>
+<dt><strong><a name="system_cpu_time" class="item">System CPU Time</a></strong></dt>
+
+<dd>
+<p>The system time is the amount of time the kernel itself spent executing
+routines, or system calls, on behalf of this process user.</p>
+</dd>
+</dl>
+<p>Running this same process as a <code>Schwarzian Transform</code> it is possible to
+eliminate the input and output arrays for storing all the data, and work on the
+input directly as it arrives too.  Otherwise, the code looks fairly similar:</p>
+<p># sort-apache-log-schwarzian</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -n</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    print</pre>
+<pre>
+        map $_-&gt;[0] =&gt;</pre>
+<pre>
+        <span class="keyword">sort</span> <span class="operator">{</span>
+            <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span>
+                    <span class="operator">||</span>
+            <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span>
+                    <span class="operator">||</span>
+            <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span>
+                    <span class="operator">||</span>
+            <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span>
+                    <span class="operator">||</span>
+            <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">5</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">5</span><span class="operator">]</span>
+        <span class="operator">}</span>
+        <span class="keyword">map</span>  <span class="operator">[</span> <span class="variable">$_</span><span class="operator">,</span> <span class="regex">m/^(
+            ([\w\.\-]+)             # client
+            \s*-\s*-\s*\[
+            ([^]]+)                 # date
+            \]\s*"\w+\s*
+            (\S+)                   # query
+            [^"]+"\s*
+            (\d+)                   # status
+            \s+\S+\s+"[^"]*"\s+"
+            ([^"]*)                 # browser
+            "
+            .*
+        )$/xo</span> <span class="operator">]</span>
+</pre>
+<pre>
+        <span class="operator">=&gt;</span> <span class="operator">&lt;&gt;;</span>
+</pre>
+<pre>
+    <span class="keyword">exit</span> <span class="number">0</span><span class="operator">;</span>
+</pre>
+<p>Run the new code against the same logfile, as above, to check the new time.</p>
+<pre>
+    $&gt; time ./sort-apache-log-schwarzian logfile &gt; out-schwarz</pre>
+<pre>
+    real    0m9.664s
+    user    0m8.873s
+    sys     0m0.704s</pre>
+<p>The time has been cut in half, which is a respectable speed improvement by any
+standard.  Naturally, it is important to check the output is consistent with
+the first program run, this is where the Unix system <code>cksum</code> utility comes in.</p>
+<pre>
+    $&gt; cksum out-sort out-schwarz
+    3044173777 52029194 out-sort
+    3044173777 52029194 out-schwarz</pre>
+<p>BTW. Beware too of pressure from managers who see you speed a program up by 50%
+of the runtime once, only to get a request one month later to do the same again
+(true story) - you'll just have to point out your only human, even if you are a
+Perl programmer, and you'll see what you can do...</p>
+<p>
+</p>
+<hr />
+<h1><a name="logging">LOGGING</a></h1>
+<p>An essential part of any good development process is appropriate error handling
+with appropriately informative messages, however there exists a school of
+thought which suggests that log files should be <em>chatty</em>, as if the chain of
+unbroken output somehow ensures the survival of the program.  If speed is in
+any way an issue, this approach is wrong.</p>
+<p>A common sight is code which looks something like this:</p>
+<pre>
+    logger-&gt;debug( &quot;A logging message via process-id: $$ INC: &quot; . Dumper(\%INC) )</pre>
+<p>The problem is that this code will always be parsed and executed, even when the
+debug level set in the logging configuration file is zero.  Once the <code>debug()</code>
+subroutine has been entered, and the internal <code>$debug</code> variable confirmed to
+be zero, for example, the message which has been sent in will be discarded and
+the program will continue.  In the example given though, the \%INC hash will
+already have been dumped, and the message string constructed, all of which work
+could be bypassed by a debug variable at the statement level, like this:</p>
+<pre>
+    <span class="variable">logger</span><span class="operator">-&gt;</span><span class="variable">debug</span><span class="operator">(</span> <span class="string">"A logging message via process-id: $$ INC: "</span> <span class="operator">.</span> <span class="variable">Dumper</span><span class="operator">(\</span><span class="variable">%INC</span><span class="operator">)</span> <span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+</pre>
+<p>This effect can be demonstrated by setting up a test script with both forms,
+including a <code>debug()</code> subroutine to emulate typical <code>logger()</code> functionality.</p>
+<p># ifdebug</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Benchmark</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Data::Dumper</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$DEBUG</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> debug </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$msg</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$DEBUG</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">print</span> <span class="string">"DEBUG: </span><span class="variable">$msg</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+            <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="variable">timethese</span><span class="operator">(</span><span class="number">100000</span><span class="operator">,</span> <span class="operator">{</span>
+            <span class="string">'debug'</span>       <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                <span class="variable">debug</span><span class="operator">(</span> <span class="string">"A </span><span class="variable">$0</span><span class="string"> logging message via process-id: $$"</span> <span class="operator">.</span> <span class="variable">Dumper</span><span class="operator">(\</span><span class="variable">%INC</span><span class="operator">)</span> <span class="operator">)</span>
+            <span class="operator">},</span>
+            <span class="string">'ifdebug'</span>  <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                <span class="variable">debug</span><span class="operator">(</span> <span class="string">"A </span><span class="variable">$0</span><span class="string"> logging message via process-id: $$"</span> <span class="operator">.</span> <span class="variable">Dumper</span><span class="operator">(\</span><span class="variable">%INC</span><span class="operator">)</span> <span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span>
+            <span class="operator">},</span>
+    <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>Let's see what <code>Benchmark</code> makes of this:</p>
+<pre>
+    $&gt; perl ifdebug
+    Benchmark: timing 100000 iterations of constant, sub...
+       ifdebug:  0 wallclock secs ( 0.01 usr +  0.00 sys =  0.01 CPU) @ 10000000.00/s (n=100000)
+                (warning: too few iterations for a reliable count)
+         debug: 14 wallclock secs (13.18 usr +  0.04 sys = 13.22 CPU) @ 7564.30/s (n=100000)</pre>
+<p>In the one case the code, which does exactly the same thing as far as
+outputting any debugging information is concerned, in other words nothing,
+takes 14 seconds, and in the other case the code takes one hundredth of a
+second.  Looks fairly definitive.  Use a <code>$DEBUG</code> variable BEFORE you call the
+subroutine, rather than relying on the smart functionality inside it.</p>
+<p>
+</p>
+<h2><a name="logging_if_debug__constant_">Logging if DEBUG (constant)</a></h2>
+<p>It's possible to take the previous idea a little further, by using a compile
+time <code>DEBUG</code> constant.</p>
+<p># ifdebug-constant</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Benchmark</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Data::Dumper</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">constant</span>
+        <span class="string">DEBUG</span> <span class="operator">=&gt;</span> <span class="number">0</span>
+    <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> debug </span><span class="operator">{</span>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">DEBUG</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">my</span> <span class="variable">$msg</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+            <span class="keyword">print</span> <span class="string">"DEBUG: </span><span class="variable">$msg</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="variable">timethese</span><span class="operator">(</span><span class="number">100000</span><span class="operator">,</span> <span class="operator">{</span>
+            <span class="string">'debug'</span>       <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                <span class="variable">debug</span><span class="operator">(</span> <span class="string">"A </span><span class="variable">$0</span><span class="string"> logging message via process-id: $$"</span> <span class="operator">.</span> <span class="variable">Dumper</span><span class="operator">(\</span><span class="variable">%INC</span><span class="operator">)</span> <span class="operator">)</span>
+            <span class="operator">},</span>
+            <span class="string">'constant'</span>  <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                <span class="variable">debug</span><span class="operator">(</span> <span class="string">"A </span><span class="variable">$0</span><span class="string"> logging message via process-id: $$"</span> <span class="operator">.</span> <span class="variable">Dumper</span><span class="operator">(\</span><span class="variable">%INC</span><span class="operator">)</span> <span class="operator">)</span> <span class="keyword">if</span> <span class="variable">DEBUG</span>
+            <span class="operator">},</span>
+    <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>Running this program produces the following output:</p>
+<pre>
+    $&gt; perl ifdebug-constant
+    Benchmark: timing 100000 iterations of constant, sub...
+      constant:  0 wallclock secs (-0.00 usr +  0.00 sys = -0.00 CPU) @ -7205759403792793600000.00/s (n=100000)
+                (warning: too few iterations for a reliable count)
+           sub: 14 wallclock secs (13.09 usr +  0.00 sys = 13.09 CPU) @ 7639.42/s (n=100000)</pre>
+<p>The <code>DEBUG</code> constant wipes the floor with even the <code>$debug</code> variable,
+clocking in at minus zero seconds, and generates a &quot;warning: too few iterations
+for a reliable count&quot; message into the bargain.  To see what is really going
+on, and why we had too few iterations when we thought we asked for 100000, we
+can use the very useful <code>B::Deparse</code> to inspect the new code:</p>
+<pre>
+    $&gt; perl -MO=Deparse ifdebug-constant</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Benchmark</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Data::Dumper</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">constant</span> <span class="operator">(</span><span class="string">'DEBUG'</span><span class="operator">,</span> <span class="number">0</span><span class="operator">);</span>
+    <span class="keyword">sub</span><span class="variable"> debug </span><span class="operator">{</span>
+        <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">'refs'</span><span class="operator">;</span>
+        <span class="number">0</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">'refs'</span><span class="operator">;</span>
+    <span class="variable">timethese</span><span class="operator">(</span><span class="number">100000</span><span class="operator">,</span> <span class="operator">{</span><span class="string">'sub'</span><span class="operator">,</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="variable">debug</span> <span class="string">"A </span><span class="variable">$0</span><span class="string"> logging message via process-id: $$"</span> <span class="operator">.</span> <span class="variable">Dumper</span><span class="operator">(\</span><span class="variable">%INC</span><span class="operator">);</span>
+    <span class="operator">}</span>
+    <span class="operator">,</span> <span class="string">'constant'</span><span class="operator">,</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="number">0</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">ifdebug</span><span class="operator">-</span><span class="variable">constant</span> <span class="variable">syntax</span> <span class="variable">OK</span>
+</pre>
+<p>The output shows the <code>constant()</code> subroutine we're testing being replaced with
+the value of the <code>DEBUG</code> constant: zero.  The line to be tested has been
+completely optimized away, and you can't get much more efficient than that.</p>
+<p>
+</p>
+<hr />
+<h1><a name="postscript">POSTSCRIPT</a></h1>
+<p>This document has provided several way to go about identifying hot-spots, and
+checking whether any modifications have improved the runtime of the code.</p>
+<p>As a final thought, remember that it's not (at the time of writing) possible to
+produce a useful program which will run in zero or negative time and this basic
+principle can be written as: <em>useful programs are slow</em> by their very
+definition.  It is of course possible to write a nearly instantaneous program,
+but it's not going to do very much, here's a very efficient one:</p>
+<pre>
+    $&gt; perl -e 0</pre>
+<p>Optimizing that any further is a job for <code>p5p</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Further reading can be found using the modules and links below.</p>
+<p>
+</p>
+<h2><a name="perldocs">PERLDOCS</a></h2>
+<p>For example: <code>perldoc -f sort</code>.</p>
+<p><a href="../../lib/pods/perlfaq4.html">the perlfaq4 manpage</a>.</p>
+<p><a href="../../lib/pods/perlfork.html">the perlfork manpage</a>, <a href="../../lib/pods/perlfunc.html">the perlfunc manpage</a>, <a href="../../lib/pods/perlretut.html">the perlretut manpage</a>, <a href="../../lib/pods/perlthrtut.html">the perlthrtut manpage</a>.</p>
+<p><a href="../../lib/threads.html">the threads manpage</a>.</p>
+<p>
+</p>
+<h2><a name="man_pages">MAN PAGES</a></h2>
+<p><a href="../../lib/pods/perlfunc.html#time"><code>time</code></a>.</p>
+<p>
+</p>
+<h2><a name="modules">MODULES</a></h2>
+<p>It's not possible to individually showcase all the performance related code for
+Perl here, naturally, but here's a short list of modules from the CPAN which
+deserve further attention.</p>
+<pre>
+    Apache::DProf
+    Apache::SmallProf
+    Benchmark
+    DBIx::Profile
+    Devel::AutoProfiler
+    Devel::DProf
+    Devel::DProfLB
+    Devel::FastProf
+    Devel::GraphVizProf
+    Devel::NYTProf
+    Devel::NYTProf::Apache
+    Devel::Profiler
+    Devel::Profile
+    Devel::Profit
+    Devel::SmallProf
+    Devel::WxProf
+    POE::Devel::Profiler
+    Sort::Key
+    Sort::Maker</pre>
+<p>
+</p>
+<h2><a name="urls">URLS</a></h2>
+<p>Very useful online reference material:</p>
+<pre>
+    <a href="http://www.ccl4.org/~nick/P/Fast_Enough/">http://www.ccl4.org/~nick/P/Fast_Enough/</a></pre>
+<pre>
+    <a href="http://www-128.ibm.com/developerworks/library/l-optperl.html">http://www-128.ibm.com/developerworks/library/l-optperl.html</a></pre>
+<pre>
+    <a href="http://perlbuzz.com/2007/11/bind-output-variables-in-dbi-for-speed-and-safety.html">http://perlbuzz.com/2007/11/bind-output-variables-in-dbi-for-speed-and-safety.html</a></pre>
+<pre>
+    <a href="http://en.wikipedia.org/wiki/Performance_analysis">http://en.wikipedia.org/wiki/Performance_analysis</a></pre>
+<pre>
+    <a href="http://apache.perl.org/docs/1.0/guide/performance.html">http://apache.perl.org/docs/1.0/guide/performance.html</a></pre>
+<pre>
+    <a href="http://perlgolf.sourceforge.net/">http://perlgolf.sourceforge.net/</a></pre>
+<pre>
+    <a href="http://www.sysarch.com/Perl/sort_paper.html">http://www.sysarch.com/Perl/sort_paper.html</a></pre>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Richard Foley &lt;<a href="mailto:richard.foley@rfi.net">richard.foley@rfi.net</a>&gt; Copyright (c) 2008</p>
+
+</body>
+
+</html>

@@ -1,0 +1,1271 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perltie - how to hide an object class in a simple variable</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perltie - how to hide an object class in a simple variable</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#tying_scalars">Tying Scalars</a></li>
+		<li><a href="#tying_arrays">Tying Arrays</a></li>
+		<li><a href="#tying_hashes">Tying Hashes</a></li>
+		<li><a href="#tying_filehandles">Tying FileHandles</a></li>
+		<li><a href="#untie_this">UNTIE this</a></li>
+		<li><a href="#the_untie_gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perltie - how to hide an object class in a simple variable</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ tie VARIABLE, CLASSNAME, LIST</pre>
+<pre>
+ $object = tied VARIABLE</pre>
+<pre>
+ untie VARIABLE</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Prior to release 5.0 of Perl, a programmer could use <a href="../../lib/pods/perlfunc.html#dbmopen"><code>dbmopen()</code></a>
+to connect an on-disk database in the standard Unix <code>dbm(3x)</code>
+format magically to a %HASH in their program.  However, their Perl was either
+built with one particular dbm library or another, but not both, and
+you couldn't extend this mechanism to other packages or types of variables.</p>
+<p>Now you can.</p>
+<p>The <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> function binds a variable to a class (package) that will provide
+the implementation for access methods for that variable.  Once this magic
+has been performed, accessing a tied variable automatically triggers
+method calls in the proper class.  The complexity of the class is
+hidden behind magic methods calls.  The method names are in ALL CAPS,
+which is a convention that Perl uses to indicate that they're called
+implicitly rather than explicitly--just like the <code>BEGIN()</code> and <a href="../../lib/pods/perlvar.html#end"><code>END()</code></a>
+functions.</p>
+<p>In the <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> call, <code>VARIABLE</code> is the name of the variable to be
+enchanted.  <code>CLASSNAME</code> is the name of a class implementing objects of
+the correct type.  Any additional arguments in the <a href="#list"><code>LIST</code></a> are passed to
+the appropriate constructor method for that class--meaning <code>TIESCALAR()</code>,
+<code>TIEARRAY()</code>, <code>TIEHASH()</code>, or <code>TIEHANDLE()</code>.  (Typically these are arguments
+such as might be passed to the <code>dbminit()</code> function of C.) The object
+returned by the &quot;new&quot; method is also returned by the <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> function,
+which would be useful if you wanted to access other methods in
+<code>CLASSNAME</code>. (You don't actually have to return a reference to a right
+&quot;type&quot; (e.g., HASH or <code>CLASSNAME</code>) so long as it's a properly blessed
+object.)  You can also retrieve a reference to the underlying object
+using the <a href="../../lib/pods/perlfunc.html#tied"><code>tied()</code></a> function.</p>
+<p>Unlike <a href="../../lib/pods/perlfunc.html#dbmopen"><code>dbmopen()</code></a>, the <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> function will not <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> or <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> a module
+for you--you need to do that explicitly yourself.</p>
+<p>
+</p>
+<h2><a name="tying_scalars">Tying Scalars</a></h2>
+<p>A class implementing a tied scalar should define the following methods:
+TIESCALAR, FETCH, STORE, and possibly UNTIE and/or DESTROY.</p>
+<p>Let's look at each in turn, using as an example a tie class for
+scalars that allows the user to do something like:</p>
+<pre>
+    <span class="keyword">tie</span> <span class="variable">$his_speed</span><span class="operator">,</span> <span class="string">'Nice'</span><span class="operator">,</span> <span class="keyword">getppid</span><span class="operator">();</span>
+    <span class="keyword">tie</span> <span class="variable">$my_speed</span><span class="operator">,</span>  <span class="string">'Nice'</span><span class="operator">,</span> <span class="variable">$$</span><span class="operator">;</span>
+</pre>
+<p>And now whenever either of those variables is accessed, its current
+system priority is retrieved and returned.  If those variables are set,
+then the process's priority is changed!</p>
+<p>We'll use Jarkko Hietaniemi &lt;<em class="file"><a href="mailto:jhi@iki.fi">jhi@iki.fi</a></em>&gt;'s BSD::Resource class (not
+included) to access the PRIO_PROCESS, PRIO_MIN, and PRIO_MAX constants
+from your system, as well as the <a href="../../lib/pods/perlfunc.html#getpriority"><code>getpriority()</code></a> and <a href="../../lib/pods/perlfunc.html#setpriority"><code>setpriority()</code></a> system
+calls.  Here's the preamble of the class.</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Nice</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Carp</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">BSD::Resource</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="variable">$Nice::DEBUG</span> <span class="operator">=</span> <span class="number">0</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$Nice::DEBUG</span><span class="operator">;</span>
+</pre>
+<dl>
+<dt><strong><a name="tiescalar_classname_list2" class="item">TIESCALAR classname, LIST</a></strong></dt>
+
+<dd>
+<p>This is the constructor for the class.  That means it is
+expected to return a blessed reference to a new scalar
+(probably anonymous) that it's creating.  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> TIESCALAR </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$pid</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="variable">$$</span><span class="operator">;</span> <span class="comment"># 0 means me</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$pid</span> <span class="operator">!~</span> <span class="regex">/^\d+$/</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">carp</span> <span class="string">"Nice::Tie::Scalar got non-numeric pid </span><span class="variable">$pid</span><span class="string">"</span> <span class="keyword">if</span> <span class="variable">$^W</span><span class="operator">;</span>
+            <span class="keyword">return</span> <span class="keyword">undef</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">unless</span> <span class="operator">(</span><span class="keyword">kill</span> <span class="number">0</span><span class="operator">,</span> <span class="variable">$pid</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># EPERM or ERSCH, no doubt</span>
+            <span class="variable">carp</span> <span class="string">"Nice::Tie::Scalar got bad pid </span><span class="variable">$pid</span><span class="string">: $!"</span> <span class="keyword">if</span> <span class="variable">$^W</span><span class="operator">;</span>
+            <span class="keyword">return</span> <span class="keyword">undef</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">return</span> <span class="keyword">bless</span> <span class="operator">\</span><span class="variable">$pid</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<p>This tie class has chosen to return an error rather than raising an
+exception if its constructor should fail.  While this is how <a href="../../lib/pods/perlfunc.html#dbmopen"><code>dbmopen()</code></a> works,
+other classes may well not wish to be so forgiving.  It checks the global
+variable <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> to see whether to emit a bit of noise anyway.</p>
+</dd>
+<dt><strong><a name="fetch_this2" class="item">FETCH this</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time the tied variable is accessed
+(read).  It takes no arguments beyond its self reference, which is the
+object representing the scalar we're dealing with.  Because in this case
+we're using just a SCALAR ref for the tied scalar object, a simple $$self
+allows the method to get at the real value stored there.  In our example
+below, that real value is the process ID to which we've tied our variable.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FETCH </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">confess</span> <span class="string">"wrong type"</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$self</span><span class="operator">;</span>
+        <span class="variable">croak</span> <span class="string">"usage error"</span> <span class="keyword">if</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$nicety</span><span class="operator">;</span>
+        <span class="keyword">local</span><span class="operator">(</span><span class="variable">$!</span><span class="operator">)</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+        <span class="variable">$nicety</span> <span class="operator">=</span> <span class="keyword">getpriority</span><span class="operator">(</span><span class="variable">PRIO_PROCESS</span><span class="operator">,</span> <span class="variable">$$self</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$!</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">croak</span> <span class="string">"getpriority failed: $!"</span> <span class="operator">}</span>
+        <span class="keyword">return</span> <span class="variable">$nicety</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>This time we've decided to blow up (raise an exception) if the renice
+fails--there's no place for us to return an error otherwise, and it's
+probably the right thing to do.</p>
+</dd>
+<dt><strong><a name="store_this_value2" class="item">STORE this, value</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time the tied variable is set
+(assigned).  Beyond its self reference, it also expects one (and only one)
+argument: the new value the user is trying to assign. Don't worry about
+returning a value from STORE; the semantic of assignment returning the
+assigned value is implemented with FETCH.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> STORE </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">confess</span> <span class="string">"wrong type"</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$self</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$new_nicety</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">croak</span> <span class="string">"usage error"</span> <span class="keyword">if</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$new_nicety</span> <span class="operator">&lt;</span> <span class="variable">PRIO_MIN</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">carp</span> <span class="keyword">sprintf</span>
+              <span class="string">"WARNING: priority %d less than minimum system priority %d"</span><span class="operator">,</span>
+                  <span class="variable">$new_nicety</span><span class="operator">,</span> <span class="variable">PRIO_MIN</span> <span class="keyword">if</span> <span class="variable">$^W</span><span class="operator">;</span>
+            <span class="variable">$new_nicety</span> <span class="operator">=</span> <span class="variable">PRIO_MIN</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$new_nicety</span> <span class="operator">&gt;</span> <span class="variable">PRIO_MAX</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">carp</span> <span class="keyword">sprintf</span>
+              <span class="string">"WARNING: priority %d greater than maximum system priority %d"</span><span class="operator">,</span>
+                  <span class="variable">$new_nicety</span><span class="operator">,</span> <span class="variable">PRIO_MAX</span> <span class="keyword">if</span> <span class="variable">$^W</span><span class="operator">;</span>
+            <span class="variable">$new_nicety</span> <span class="operator">=</span> <span class="variable">PRIO_MAX</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">unless</span> <span class="operator">(</span><span class="keyword">defined</span> <span class="keyword">setpriority</span><span class="operator">(</span><span class="variable">PRIO_PROCESS</span><span class="operator">,</span> <span class="variable">$$self</span><span class="operator">,</span> <span class="variable">$new_nicety</span><span class="operator">))</span> <span class="operator">{</span>
+            <span class="variable">confess</span> <span class="string">"setpriority failed: $!"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+            <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="untie_this" class="item">UNTIE this</a></strong></dt>
+
+<dd>
+<p>This method will be triggered when the <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> occurs. This can be useful
+if the class needs to know when no further calls will be made. (Except DESTROY
+of course.) See <a href="#the_c_untie__gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a> below for more details.</p>
+</dd>
+<dt><strong><a name="destroy_this5" class="item">DESTROY this</a></strong></dt>
+
+<dd>
+<p>This method will be triggered when the tied variable needs to be destructed.
+As with other object classes, such a method is seldom necessary, because Perl
+deallocates its moribund object's memory for you automatically--this isn't
+C++, you know.  We'll use a DESTROY method here for debugging purposes only.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DESTROY </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">confess</span> <span class="string">"wrong type"</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$self</span><span class="operator">;</span>
+        <span class="variable">carp</span> <span class="string">"[ Nice::DESTROY pid $</span><span class="variable">$self</span><span class="string"> ]"</span> <span class="keyword">if</span> <span class="variable">$Nice::DEBUG</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+</dl>
+<p>That's about all there is to it.  Actually, it's more than all there
+is to it, because we've done a few nice things here for the sake
+of completeness, robustness, and general aesthetics.  Simpler
+TIESCALAR classes are certainly possible.</p>
+<p>
+</p>
+<h2><a name="tying_arrays">Tying Arrays</a></h2>
+<p>A class implementing a tied ordinary array should define the following
+methods: TIEARRAY, FETCH, STORE, FETCHSIZE, STORESIZE and perhaps UNTIE and/or DESTROY.</p>
+<p>FETCHSIZE and STORESIZE are used to provide <code>$#array</code> and
+equivalent <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar(@array)</code></a> access.</p>
+<p>The methods POP, PUSH, SHIFT, UNSHIFT, SPLICE, DELETE, and EXISTS are
+required if the perl operator with the corresponding (but lowercase) name
+is to operate on the tied array. The <strong>Tie::Array</strong> class can be used as a
+base class to implement the first five of these in terms of the basic
+methods above.  The default implementations of DELETE and EXISTS in
+<strong>Tie::Array</strong> simply <code>croak</code>.</p>
+<p>In addition EXTEND will be called when perl would have pre-extended
+allocation in a real array.</p>
+<p>For this discussion, we'll implement an array whose elements are a fixed
+size at creation.  If you try to create an element larger than the fixed
+size, you'll take an exception.  For example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">FixedElem_Array</span><span class="operator">;</span>
+    <span class="keyword">tie</span> <span class="variable">@array</span><span class="operator">,</span> <span class="string">'FixedElem_Array'</span><span class="operator">,</span> <span class="number">3</span><span class="operator">;</span>
+    <span class="variable">$array</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">=</span> <span class="string">'cat'</span><span class="operator">;</span>  <span class="comment"># ok.</span>
+    <span class="variable">$array</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="operator">=</span> <span class="string">'dogs'</span><span class="operator">;</span> <span class="comment"># exception, length('dogs') &gt; 3.</span>
+</pre>
+<p>The preamble code for the class is as follows:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">FixedElem_Array</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Carp</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+</pre>
+<dl>
+<dt><strong><a name="tiearray_classname_list2" class="item">TIEARRAY classname, LIST</a></strong></dt>
+
+<dd>
+<p>This is the constructor for the class.  That means it is expected to
+return a blessed reference through which the new array (probably an
+anonymous ARRAY ref) will be accessed.</p>
+<p>In our example, just to show you that you don't <em>really</em> have to return an
+ARRAY reference, we'll choose a HASH reference to represent our object.
+A HASH works out well as a generic record type: the <code>{ELEMSIZE}</code> field will
+store the maximum element size allowed, and the <code>{ARRAY}</code> field will hold the
+true ARRAY ref.  If someone outside the class tries to dereference the
+object returned (doubtless thinking it an ARRAY ref), they'll blow up.
+This just goes to show you that you should respect an object's privacy.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> TIEARRAY </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$class</span>    <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$elemsize</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">@_</span> <span class="operator">||</span> <span class="variable">$elemsize</span> <span class="operator">=~</span> <span class="regex">/\D/</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">croak</span> <span class="string">"usage: tie ARRAY, '"</span> <span class="operator">.</span> <span class="keyword">__PACKAGE__</span> <span class="operator">.</span> <span class="string">"', elem_size"</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">return</span> <span class="keyword">bless</span> <span class="operator">{</span>
+        <span class="string">ELEMSIZE</span> <span class="operator">=&gt;</span> <span class="variable">$elemsize</span><span class="operator">,</span>
+        <span class="string">ARRAY</span>    <span class="operator">=&gt;</span> <span class="operator">[]</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="fetch_this_index2" class="item">FETCH this, index</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time an individual element the tied array
+is accessed (read).  It takes one argument beyond its self reference: the
+index whose value we're trying to fetch.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FETCH </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$index</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="variable">$index</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>If a negative array index is used to read from an array, the index
+will be translated to a positive one internally by calling FETCHSIZE
+before being passed to FETCH.  You may disable this feature by
+assigning a true value to the variable <code>$NEGATIVE_INDICES</code> in the
+tied array class.</p>
+<p>As you may have noticed, the name of the FETCH method (et al.) is the same
+for all accesses, even though the constructors differ in names (TIESCALAR
+vs TIEARRAY).  While in theory you could have the same class servicing
+several tied types, in practice this becomes cumbersome, and it's easiest
+to keep them at simply one tie type per class.</p>
+</dd>
+<dt><strong><a name="store_this_index_value2" class="item">STORE this, index, value</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time an element in the tied array is set
+(written).  It takes two arguments beyond its self reference: the index at
+which we're trying to store something and the value we're trying to put
+there.</p>
+<p>In our example, <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is really <code>$self-&gt;{ELEMSIZE}</code> number of
+spaces so we have a little more work to do here:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> STORE </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span><span class="operator">(</span> <span class="variable">$index</span><span class="operator">,</span> <span class="variable">$value</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">length</span> <span class="variable">$value</span> <span class="operator">&gt;</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ELEMSIZE</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">croak</span> <span class="string">"length of </span><span class="variable">$value</span><span class="string"> is greater than </span><span class="variable">$self</span><span class="string">-&gt;{ELEMSIZE}"</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="comment"># fill in the blanks</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">EXTEND</span><span class="operator">(</span> <span class="variable">$index</span> <span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$index</span> <span class="operator">&gt;</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">();</span>
+      <span class="comment"># right justify to keep element size for smaller elements</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="variable">$index</span><span class="operator">]</span> <span class="operator">=</span> <span class="keyword">sprintf</span> <span class="string">"%</span><span class="variable">$self</span><span class="string">-&gt;{ELEMSIZE}s"</span><span class="operator">,</span> <span class="variable">$value</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Negative indexes are treated the same as with FETCH.</p>
+</dd>
+<dt><strong><a name="fetchsize_this2" class="item">FETCHSIZE this</a></strong></dt>
+
+<dd>
+<p>Returns the total number of items in the tied array associated with
+object <em>this</em>. (Equivalent to <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar(@array)</code></a>).  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FETCHSIZE </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="keyword">scalar</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="storesize_this_count2" class="item">STORESIZE this, count</a></strong></dt>
+
+<dd>
+<p>Sets the total number of items in the tied array associated with
+object <em>this</em> to be <em>count</em>. If this makes the array larger then
+class's mapping of <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> should be returned for new positions.
+If the array becomes smaller then entries beyond count should be
+deleted.</p>
+<p>In our example, 'undef' is really an element containing
+<code>$self-&gt;{ELEMSIZE}</code> number of spaces.  Observe:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> STORESIZE </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$count</span> <span class="operator">&gt;</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">()</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">foreach</span> <span class="operator">(</span> <span class="variable">$count</span> <span class="operator">-</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">()</span> <span class="operator">..</span> <span class="variable">$count</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">STORE</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="string">''</span> <span class="operator">);</span>
+        <span class="operator">}</span>
+      <span class="operator">}</span> <span class="keyword">elsif</span> <span class="operator">(</span> <span class="variable">$count</span> <span class="operator">&lt;</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">()</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">foreach</span> <span class="operator">(</span> <span class="number">0</span> <span class="operator">..</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">()</span> <span class="operator">-</span> <span class="variable">$count</span> <span class="operator">-</span> <span class="number">2</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">POP</span><span class="operator">();</span>
+        <span class="operator">}</span>
+      <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="extend_this_count2" class="item">EXTEND this, count</a></strong></dt>
+
+<dd>
+<p>Informative call that array is likely to grow to have <em>count</em> entries.
+Can be used to optimize allocation. This method need do nothing.</p>
+<p>In our example, we want to make sure there are no blank (<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>)
+entries, so <code>EXTEND</code> will make use of <code>STORESIZE</code> to fill elements
+as needed:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> EXTEND </span><span class="operator">{</span>   
+      <span class="keyword">my</span> <span class="variable">$self</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">STORESIZE</span><span class="operator">(</span> <span class="variable">$count</span> <span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="exists_this_key3" class="item">EXISTS this, key</a></strong></dt>
+
+<dd>
+<p>Verify that the element at index <em>key</em> exists in the tied array <em>this</em>.</p>
+<p>In our example, we will determine that if an element consists of
+<code>$self-&gt;{ELEMSIZE}</code> spaces only, it does not exist:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> EXISTS </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$index</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="number">0</span> <span class="keyword">if</span> <span class="operator">!</span> <span class="keyword">defined</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="variable">$index</span><span class="operator">]</span> <span class="operator">||</span>
+                  <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="variable">$index</span><span class="operator">]</span> <span class="keyword">eq</span> <span class="string">' '</span> <span class="operator">x</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ELEMSIZE</span><span class="operator">}</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="delete_this_key3" class="item">DELETE this, key</a></strong></dt>
+
+<dd>
+<p>Delete the element at index <em>key</em> from the tied array <em>this</em>.</p>
+<p>In our example, a deleted item is <code>$self-&gt;{ELEMSIZE}</code> spaces:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DELETE </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$index</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">STORE</span><span class="operator">(</span> <span class="variable">$index</span><span class="operator">,</span> <span class="string">''</span> <span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="clear_this3" class="item">CLEAR this</a></strong></dt>
+
+<dd>
+<p>Clear (remove, delete, ...) all values from the tied array associated with
+object <em>this</em>.  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> CLEAR </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">[]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="push_this_list2" class="item">PUSH this, LIST</a></strong></dt>
+
+<dd>
+<p>Append elements of <em>LIST</em> to the array.  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> PUSH </span><span class="operator">{</span>  
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$last</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">();</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">STORE</span><span class="operator">(</span> <span class="variable">$last</span> <span class="operator">+</span> <span class="variable">$_</span><span class="operator">,</span> <span class="variable">$list</span><span class="operator">[</span><span class="variable">$_</span><span class="operator">]</span> <span class="operator">)</span> <span class="keyword">foreach</span> <span class="number">0</span> <span class="operator">..</span> <span class="variable">$#list</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="pop_this2" class="item">POP this</a></strong></dt>
+
+<dd>
+<p>Remove last element of the array and return it.  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> POP </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="keyword">pop</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="shift_this2" class="item">SHIFT this</a></strong></dt>
+
+<dd>
+<p>Remove the first element of the array (shifting other elements down)
+and return it.  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> SHIFT </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="keyword">shift</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="unshift_this_list2" class="item">UNSHIFT this, LIST</a></strong></dt>
+
+<dd>
+<p>Insert LIST elements at the beginning of the array, moving existing elements
+up to make room.  For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> UNSHIFT </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$size</span> <span class="operator">=</span> <span class="keyword">scalar</span><span class="operator">(</span> <span class="variable">@list</span> <span class="operator">);</span>
+      <span class="comment"># make room for our list</span>
+      <span class="variable">@</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}[</span> <span class="variable">$size</span> <span class="operator">..</span> <span class="variable">$#</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}</span> <span class="operator">+</span> <span class="variable">$size</span> <span class="operator">]</span>
+       <span class="operator">=</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}</span><span class="operator">;</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">STORE</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="variable">$list</span><span class="operator">[</span><span class="variable">$_</span><span class="operator">]</span> <span class="operator">)</span> <span class="keyword">foreach</span> <span class="number">0</span> <span class="operator">..</span> <span class="variable">$#list</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="splice_this_offset_length_list2" class="item">SPLICE this, offset, length, LIST</a></strong></dt>
+
+<dd>
+<p>Perform the equivalent of <code>splice</code> on the array.</p>
+<p><em>offset</em> is optional and defaults to zero, negative values count back 
+from the end of the array.</p>
+<p><em>length</em> is optional and defaults to rest of the array.</p>
+<p><em>LIST</em> may be empty.</p>
+<p>Returns a list of the original <em>length</em> elements at <em>offset</em>.</p>
+<p>In our example, we'll use a little shortcut if there is a <em>LIST</em>:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> SPLICE </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span>   <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$offset</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$length</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FETCHSIZE</span><span class="operator">()</span> <span class="operator">-</span> <span class="variable">$offset</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">@list</span>   <span class="operator">=</span> <span class="operator">();</span> 
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">@_</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">tie</span> <span class="variable">@list</span><span class="operator">,</span> <span class="keyword">__PACKAGE__</span><span class="operator">,</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ELEMSIZE</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="variable">@list</span>   <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">return</span> <span class="keyword">splice</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">ARRAY</span><span class="operator">}}</span><span class="operator">,</span> <span class="variable">$offset</span><span class="operator">,</span> <span class="variable">$length</span><span class="operator">,</span> <span class="variable">@list</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="untie_this2" class="item">UNTIE this</a></strong></dt>
+
+<dd>
+<p>Will be called when <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> happens. (See <a href="#the_c_untie__gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a> below.)</p>
+</dd>
+<dt><strong><a name="destroy_this6" class="item">DESTROY this</a></strong></dt>
+
+<dd>
+<p>This method will be triggered when the tied variable needs to be destructed.
+As with the scalar tie class, this is almost never needed in a
+language that does its own garbage collection, so this time we'll
+just leave it out.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="tying_hashes">Tying Hashes</a></h2>
+<p>Hashes were the first Perl data type to be tied (see dbmopen()).  A class
+implementing a tied hash should define the following methods: TIEHASH is
+the constructor.  FETCH and STORE access the key and value pairs.  EXISTS
+reports whether a key is present in the hash, and DELETE deletes one.
+CLEAR empties the hash by deleting all the key and value pairs.  FIRSTKEY
+and NEXTKEY implement the <a href="../../lib/pods/perlfunc.html#keys"><code>keys()</code></a> and <a href="../../lib/pods/perlfunc.html#each"><code>each()</code></a> functions to iterate over all
+the keys. SCALAR is triggered when the tied hash is evaluated in scalar 
+context. UNTIE is called when <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> happens, and DESTROY is called when
+the tied variable is garbage collected.</p>
+<p>If this seems like a lot, then feel free to inherit from merely the
+standard Tie::StdHash module for most of your methods, redefining only the
+interesting ones.  See <a href="../../lib/Tie/Hash.html">the Tie::Hash manpage</a> for details.</p>
+<p>Remember that Perl distinguishes between a key not existing in the hash,
+and the key existing in the hash but having a corresponding value of
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.  The two possibilities can be tested with the <a href="../../lib/pods/perlfunc.html#exists"><code>exists()</code></a> and
+<a href="../../lib/pods/perlfunc.html#defined"><code>defined()</code></a> functions.</p>
+<p>Here's an example of a somewhat interesting tied hash class:  it gives you
+a hash representing a particular user's dot files.  You index into the hash
+with the name of the file (minus the dot) and you get back that dot file's
+contents.  For example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DotFiles</span><span class="operator">;</span>
+    <span class="keyword">tie</span> <span class="variable">%dot</span><span class="operator">,</span> <span class="string">'DotFiles'</span><span class="operator">;</span>
+    <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$dot</span><span class="operator">{</span><span class="string">profile</span><span class="operator">}</span> <span class="operator">=~</span> <span class="regex">/MANPATH/</span> <span class="operator">||</span>
+         <span class="variable">$dot</span><span class="operator">{</span><span class="string">login</span><span class="operator">}</span>   <span class="operator">=~</span> <span class="regex">/MANPATH/</span> <span class="operator">||</span>
+         <span class="variable">$dot</span><span class="operator">{</span><span class="string">cshrc</span><span class="operator">}</span>   <span class="operator">=~</span> <span class="regex">/MANPATH/</span>    <span class="operator">)</span>
+    <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"you seem to set your MANPATH\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Or here's another sample of using our tied class:</p>
+<pre>
+    <span class="keyword">tie</span> <span class="variable">%him</span><span class="operator">,</span> <span class="string">'DotFiles'</span><span class="operator">,</span> <span class="string">'daemon'</span><span class="operator">;</span>
+    <span class="keyword">foreach</span> <span class="variable">$f</span> <span class="operator">(</span> <span class="keyword">keys</span> <span class="variable">%him</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">printf</span> <span class="string">"daemon dot file %s is size %d\n"</span><span class="operator">,</span>
+            <span class="variable">$f</span><span class="operator">,</span> <span class="keyword">length</span> <span class="variable">$him</span><span class="operator">{</span><span class="variable">$f</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>In our tied hash DotFiles example, we use a regular
+hash for the object containing several important
+fields, of which only the <a href="#list"><code>{LIST}</code></a> field will be what the
+user thinks of as the real hash.</p>
+<dl>
+<dt><strong><a name="user" class="item">USER</a></strong></dt>
+
+<dd>
+<p>whose dot files this object represents</p>
+</dd>
+<dt><strong><a name="home4" class="item">HOME</a></strong></dt>
+
+<dd>
+<p>where those dot files live</p>
+</dd>
+<dt><strong><a name="clobber" class="item">CLOBBER</a></strong></dt>
+
+<dd>
+<p>whether we should try to change or remove those dot files</p>
+</dd>
+<dt><strong><a name="list2" class="item">LIST</a></strong></dt>
+
+<dd>
+<p>the hash of dot file names and content mappings</p>
+</dd>
+</dl>
+<p>Here's the start of <em class="file">Dotfiles.pm</em>:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DotFiles</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Carp</span><span class="operator">;</span>
+    <span class="keyword">sub</span><span class="variable"> whowasi </span><span class="operator">{</span> <span class="operator">(</span><span class="keyword">caller</span><span class="operator">(</span><span class="number">1</span><span class="operator">))</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span> <span class="operator">.</span> <span class="string">'()'</span> <span class="operator">}</span>
+    <span class="keyword">my</span> <span class="variable">$DEBUG</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">sub</span><span class="variable"> debug </span><span class="operator">{</span> <span class="variable">$DEBUG</span> <span class="operator">=</span> <span class="variable">@_</span> <span class="operator">?</span> <span class="keyword">shift</span> <span class="operator">:</span> <span class="number">1</span> <span class="operator">}</span>
+</pre>
+<p>For our example, we want to be able to emit debugging info to help in tracing
+during development.  We keep also one convenience function around
+internally to help print out warnings; <code>whowasi()</code> returns the function name
+that calls it.</p>
+<p>Here are the methods for the DotFiles tied hash.</p>
+<dl>
+<dt><strong><a name="tiehash_classname_list2" class="item">TIEHASH classname, LIST</a></strong></dt>
+
+<dd>
+<p>This is the constructor for the class.  That means it is expected to
+return a blessed reference through which the new object (probably but not
+necessarily an anonymous hash) will be accessed.</p>
+<p>Here's the constructor:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> TIEHASH </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$user</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="variable">$&gt;</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dotdir</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="string">''</span><span class="operator">;</span>
+        <span class="variable">croak</span> <span class="string">"usage: @{[&amp;whowasi]} [USER [DOTDIR]]"</span> <span class="keyword">if</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="variable">$user</span> <span class="operator">=</span> <span class="keyword">getpwuid</span><span class="operator">(</span><span class="variable">$user</span><span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$user</span> <span class="operator">=~</span> <span class="regex">/^\d+$/</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dir</span> <span class="operator">=</span> <span class="operator">(</span><span class="keyword">getpwnam</span><span class="operator">(</span><span class="variable">$user</span><span class="operator">))</span><span class="operator">[</span><span class="number">7</span><span class="operator">]</span>
+                <span class="operator">||</span> <span class="variable">croak</span> <span class="string">"@{[&amp;whowasi]}: no user </span><span class="variable">$user</span><span class="string">"</span><span class="operator">;</span>
+        <span class="variable">$dir</span> <span class="operator">.=</span> <span class="string">"/</span><span class="variable">$dotdir</span><span class="string">"</span> <span class="keyword">if</span> <span class="variable">$dotdir</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$node</span> <span class="operator">=</span> <span class="operator">{</span>
+            <span class="string">USER</span>    <span class="operator">=&gt;</span> <span class="variable">$user</span><span class="operator">,</span>
+            <span class="string">HOME</span>    <span class="operator">=&gt;</span> <span class="variable">$dir</span><span class="operator">,</span>
+            <span class="string">LIST</span>    <span class="operator">=&gt;</span> <span class="operator">{}</span><span class="operator">,</span>
+            <span class="string">CLOBBER</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">opendir</span><span class="operator">(</span><span class="variable">DIR</span><span class="operator">,</span> <span class="variable">$dir</span><span class="operator">)</span>
+                <span class="operator">||</span> <span class="variable">croak</span> <span class="string">"@{[&amp;whowasi]}: can't opendir </span><span class="variable">$dir</span><span class="string">: $!"</span><span class="operator">;</span>
+        <span class="keyword">foreach</span> <span class="variable">$dot</span> <span class="operator">(</span> <span class="keyword">grep</span> <span class="regex">/^\./</span> <span class="operator">&amp;&amp;</span> <span class="keyword">-f</span> <span class="string">"</span><span class="variable">$dir</span><span class="string">/</span><span class="variable">$_</span><span class="string">"</span><span class="operator">,</span> <span class="keyword">readdir</span><span class="operator">(</span><span class="variable">DIR</span><span class="operator">))</span> <span class="operator">{</span>
+            <span class="variable">$dot</span> <span class="operator">=~</span> <span class="regex">s/^\.//</span><span class="operator">;</span>
+            <span class="variable">$node</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}{</span><span class="variable">$dot</span><span class="operator">}</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">closedir</span> <span class="variable">DIR</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="keyword">bless</span> <span class="variable">$node</span><span class="operator">,</span> <span class="variable">$self</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<p>It's probably worth mentioning that if you're going to filetest the
+return values out of a readdir, you'd better prepend the directory
+in question.  Otherwise, because we didn't <a href="../../lib/pods/perlfunc.html#chdir"><code>chdir()</code></a> there, it would
+have been testing the wrong file.</p>
+</dd>
+<dt><strong><a name="fetch_this_key2" class="item">FETCH this, key</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time an element in the tied hash is
+accessed (read).  It takes one argument beyond its self reference: the key
+whose value we're trying to fetch.</p>
+<p>Here's the fetch for our DotFiles example.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FETCH </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dot</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dir</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">HOME</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">=</span> <span class="string">"</span><span class="variable">$dir</span><span class="string">/.</span><span class="variable">$dot</span><span class="string">"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">unless</span> <span class="operator">(</span><span class="keyword">exists</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$dot</span><span class="operator">}</span> <span class="operator">||</span> <span class="keyword">-f</span> <span class="variable">$file</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">carp</span> <span class="string">"@{[&amp;whowasi]}: no </span><span class="variable">$dot</span><span class="string"> file"</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+            <span class="keyword">return</span> <span class="keyword">undef</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">defined</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$dot</span><span class="operator">}</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$dot</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+            <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$dot</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">`cat </span><span class="variable">$dir</span><span class="string">/.</span><span class="variable">$dot</span><span class="string">`</span><span class="operator">;</span>
+        <span class="operator">}</span>
+            <span class="operator">}</span>
+</pre>
+<p>It was easy to write by having it call the Unix <code>cat(1)</code> command, but it
+would probably be more portable to open the file manually (and somewhat
+more efficient).  Of course, because dot files are a Unixy concept, we're
+not that concerned.</p>
+</dd>
+<dt><strong><a name="store_this_key_value2" class="item">STORE this, key, value</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time an element in the tied hash is set
+(written).  It takes two arguments beyond its self reference: the index at
+which we're trying to store something, and the value we're trying to put
+there.</p>
+<p>Here in our DotFiles example, we'll be careful not to let
+them try to overwrite the file unless they've called the <code>clobber()</code>
+method on the original object reference returned by <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a>.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> STORE </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dot</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$value</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">HOME</span><span class="operator">}</span> <span class="operator">.</span> <span class="string">"/.</span><span class="variable">$dot</span><span class="string">"</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$user</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">USER</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">croak</span> <span class="string">"@{[&amp;whowasi]}: </span><span class="variable">$file</span><span class="string"> not clobberable"</span>
+            <span class="keyword">unless</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">CLOBBER</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$f</span><span class="operator">,</span> <span class="string">'&gt;'</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">)</span> <span class="operator">||</span> <span class="variable">croak</span> <span class="string">"can't open </span><span class="variable">$file</span><span class="string">: $!"</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$f</span> <span class="variable">$value</span><span class="operator">;</span>
+        <span class="keyword">close</span><span class="operator">(</span><span class="variable">$f</span><span class="operator">);</span>
+            <span class="operator">}</span>
+</pre>
+<p>If they wanted to clobber something, they might say:</p>
+<pre>
+    <span class="variable">$ob</span> <span class="operator">=</span> <span class="keyword">tie</span> <span class="variable">%daemon_dots</span><span class="operator">,</span> <span class="string">'daemon'</span><span class="operator">;</span>
+    <span class="variable">$ob</span><span class="operator">-&gt;</span><span class="variable">clobber</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="variable">$daemon_dots</span><span class="operator">{</span><span class="string">signature</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"A true daemon\n"</span><span class="operator">;</span>
+</pre>
+<p>Another way to lay hands on a reference to the underlying object is to
+use the <a href="../../lib/pods/perlfunc.html#tied"><code>tied()</code></a> function, so they might alternately have set clobber
+using:</p>
+<pre>
+    <span class="keyword">tie</span> <span class="variable">%daemon_dots</span><span class="operator">,</span> <span class="string">'daemon'</span><span class="operator">;</span>
+    <span class="keyword">tied</span><span class="operator">(</span><span class="variable">%daemon_dots</span><span class="operator">)-&gt;</span><span class="variable">clobber</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>The clobber method is simply:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> clobber </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">CLOBBER</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">@_</span> <span class="operator">?</span> <span class="keyword">shift</span> <span class="operator">:</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="delete_this_key4" class="item">DELETE this, key</a></strong></dt>
+
+<dd>
+<p>This method is triggered when we remove an element from the hash,
+typically by using the <a href="../../lib/pods/perlfunc.html#delete"><code>delete()</code></a> function.  Again, we'll
+be careful to check whether they really want to clobber files.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DELETE   </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dot</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">HOME</span><span class="operator">}</span> <span class="operator">.</span> <span class="string">"/.</span><span class="variable">$dot</span><span class="string">"</span><span class="operator">;</span>
+        <span class="variable">croak</span> <span class="string">"@{[&amp;whowasi]}: won't remove file </span><span class="variable">$file</span><span class="string">"</span>
+            <span class="keyword">unless</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">CLOBBER</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">delete</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$dot</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$success</span> <span class="operator">=</span> <span class="keyword">unlink</span><span class="operator">(</span><span class="variable">$file</span><span class="operator">);</span>
+        <span class="variable">carp</span> <span class="string">"@{[&amp;whowasi]}: can't unlink </span><span class="variable">$file</span><span class="string">: $!"</span> <span class="keyword">unless</span> <span class="variable">$success</span><span class="operator">;</span>
+        <span class="variable">$success</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<p>The value returned by DELETE becomes the return value of the call
+to <a href="../../lib/pods/perlfunc.html#delete"><code>delete()</code></a>.  If you want to emulate the normal behavior of <a href="../../lib/pods/perlfunc.html#delete"><code>delete()</code></a>,
+you should return whatever FETCH would have returned for this key.
+In this example, we have chosen instead to return a value which tells
+the caller whether the file was successfully deleted.</p>
+</dd>
+<dt><strong><a name="clear_this4" class="item">CLEAR this</a></strong></dt>
+
+<dd>
+<p>This method is triggered when the whole hash is to be cleared, usually by
+assigning the empty list to it.</p>
+<p>In our example, that would remove all the user's dot files!  It's such a
+dangerous thing that they'll have to set CLOBBER to something higher than
+1 to make it happen.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> CLEAR    </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">croak</span> <span class="string">"@{[&amp;whowasi]}: won't remove all dot files for </span><span class="variable">$self</span><span class="string">-&gt;{USER}"</span>
+            <span class="keyword">unless</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">CLOBBER</span><span class="operator">}</span> <span class="operator">&gt;</span> <span class="number">1</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dot</span><span class="operator">;</span>
+        <span class="keyword">foreach</span> <span class="variable">$dot</span> <span class="operator">(</span> <span class="keyword">keys</span> <span class="variable">%</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}}</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">DELETE</span><span class="operator">(</span><span class="variable">$dot</span><span class="operator">);</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="exists_this_key4" class="item">EXISTS this, key</a></strong></dt>
+
+<dd>
+<p>This method is triggered when the user uses the <a href="../../lib/pods/perlfunc.html#exists"><code>exists()</code></a> function
+on a particular hash.  In our example, we'll look at the <a href="#list"><code>{LIST}</code></a>
+hash element for this:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> EXISTS   </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dot</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="keyword">exists</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$dot</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="firstkey_this2" class="item">FIRSTKEY this</a></strong></dt>
+
+<dd>
+<p>This method will be triggered when the user is going
+to iterate through the hash, such as via a <a href="../../lib/pods/perlfunc.html#keys"><code>keys()</code></a> or <a href="../../lib/pods/perlfunc.html#each"><code>each()</code></a>
+call.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FIRSTKEY </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=</span> <span class="keyword">keys</span> <span class="variable">%</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}}</span><span class="operator">;</span>          <span class="comment"># reset each() iterator</span>
+        <span class="keyword">each</span> <span class="variable">%</span><span class="operator">{</span><span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}}</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="nextkey_this_lastkey2" class="item">NEXTKEY this, lastkey</a></strong></dt>
+
+<dd>
+<p>This method gets triggered during a <a href="../../lib/pods/perlfunc.html#keys"><code>keys()</code></a> or <a href="../../lib/pods/perlfunc.html#each"><code>each()</code></a> iteration.  It has a
+second argument which is the last key that had been accessed.  This is
+useful if you're carrying about ordering or calling the iterator from more
+than one sequence, or not really storing things in a hash anywhere.</p>
+<p>For our example, we're using a real hash so we'll do just the simple
+thing, but we'll have to go through the LIST field indirectly.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> NEXTKEY  </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="keyword">each</span> <span class="variable">%</span><span class="operator">{</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="scalar_this2" class="item">SCALAR this</a></strong></dt>
+
+<dd>
+<p>This is called when the hash is evaluated in scalar context. In order
+to mimic the behaviour of untied hashes, this method should return a
+false value when the tied hash is considered empty. If this method does
+not exist, perl will make some educated guesses and return true when
+the hash is inside an iteration. If this isn't the case, FIRSTKEY is
+called, and the result will be a false value if FIRSTKEY returns the empty
+list, true otherwise.</p>
+<p>However, you should <strong>not</strong> blindly rely on perl always doing the right 
+thing. Particularly, perl will mistakenly return true when you clear the 
+hash by repeatedly calling DELETE until it is empty. You are therefore 
+advised to supply your own SCALAR method when you want to be absolutely 
+sure that your hash behaves nicely in scalar context.</p>
+<p>In our example we can just call <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar</code></a> on the underlying hash
+referenced by <code>$self-&gt;{LIST}</code>:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> SCALAR </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="keyword">scalar</span> <span class="variable">%</span><span class="operator">{</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">LIST</span><span class="operator">}</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="untie_this3" class="item">UNTIE this</a></strong></dt>
+
+<dd>
+<p>This is called when <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> occurs.  See <a href="#the_c_untie__gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a> below.</p>
+</dd>
+<dt><strong><a name="destroy_this7" class="item">DESTROY this</a></strong></dt>
+
+<dd>
+<p>This method is triggered when a tied hash is about to go out of
+scope.  You don't really need it unless you're trying to add debugging
+or have auxiliary state to clean up.  Here's a very simple function:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DESTROY  </span><span class="operator">{</span>
+        <span class="variable">carp</span> <span class="operator">&amp;</span><span class="variable">whowasi</span> <span class="keyword">if</span> <span class="variable">$DEBUG</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+</dl>
+<p>Note that functions such as <a href="../../lib/pods/perlfunc.html#keys"><code>keys()</code></a> and <a href="../../lib/pods/perlfunc.html#values"><code>values()</code></a> may return huge lists
+when used on large objects, like DBM files.  You may prefer to use the
+<a href="../../lib/pods/perlfunc.html#each"><code>each()</code></a> function to iterate over such.  Example:</p>
+<pre>
+    <span class="comment"># print out history file offsets</span>
+    <span class="keyword">use</span> <span class="variable">NDBM_File</span><span class="operator">;</span>
+    <span class="keyword">tie</span><span class="operator">(</span><span class="variable">%HIST</span><span class="operator">,</span> <span class="string">'NDBM_File'</span><span class="operator">,</span> <span class="string">'/usr/lib/news/history'</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">0</span><span class="operator">);</span>
+    <span class="keyword">while</span> <span class="operator">((</span><span class="variable">$key</span><span class="operator">,</span><span class="variable">$val</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">each</span> <span class="variable">%HIST</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="variable">$key</span><span class="operator">,</span> <span class="string">' = '</span><span class="operator">,</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'L'</span><span class="operator">,</span><span class="variable">$val</span><span class="operator">),</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">untie</span><span class="operator">(</span><span class="variable">%HIST</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="tying_filehandles">Tying FileHandles</a></h2>
+<p>This is partially implemented now.</p>
+<p>A class implementing a tied filehandle should define the following
+methods: TIEHANDLE, at least one of PRINT, PRINTF, WRITE, READLINE, GETC,
+READ, and possibly CLOSE, UNTIE and DESTROY.  The class can also provide: BINMODE,
+OPEN, EOF, FILENO, SEEK, TELL - if the corresponding perl operators are
+used on the handle.</p>
+<p>When STDERR is tied, its PRINT method will be called to issue warnings
+and error messages.  This feature is temporarily disabled during the call, 
+which means you can use <a href="../../lib/pods/perlfunc.html#warn"><code>warn()</code></a> inside PRINT without starting a recursive
+loop.  And just like <code>__WARN__</code> and <code>__DIE__</code> handlers, STDERR's PRINT
+method may be called to report parser errors, so the caveats mentioned under 
+<a href="../../lib/pods/perlvar.html#_sig">%SIG in the perlvar manpage</a> apply.</p>
+<p>All of this is especially useful when perl is embedded in some other 
+program, where output to STDOUT and STDERR may have to be redirected 
+in some special way.  See nvi and the Apache module for examples.</p>
+<p>When tying a handle, the first argument to <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> should begin with an
+asterisk. So, if you are tying STDOUT, use <code>*STDOUT</code>. If you have assigned
+it to a scalar variable, say <code>$handle</code>, use <code>*$handle</code>. <code>tie $handle</code>
+works, too, but that is considered a bug and will be fixed in Perl 5.16. It
+is supposed to tie the scalar <code>$handle</code>, not the handle inside it.
+<code>tie $handle</code> emits a deprecation warning as of Perl 5.14.</p>
+<p>In our example we're going to create a shouting handle.</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Shout</span><span class="operator">;</span>
+</pre>
+<dl>
+<dt><strong><a name="tiehandle_classname_list3" class="item">TIEHANDLE classname, LIST</a></strong></dt>
+
+<dd>
+<p>This is the constructor for the class.  That means it is expected to
+return a blessed reference of some sort. The reference can be used to
+hold some internal information.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> TIEHANDLE </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"&lt;shout&gt;\n"</span><span class="operator">;</span> <span class="keyword">my</span> <span class="variable">$i</span><span class="operator">;</span> <span class="keyword">bless</span> <span class="operator">\</span><span class="variable">$i</span><span class="operator">,</span> <span class="keyword">shift</span> <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="write_this_list" class="item">WRITE this, LIST</a></strong></dt>
+
+<dd>
+<p>This method will be called when the handle is written to via the
+<a href="../../lib/pods/perlfunc.html#syswrite"><code>syswrite</code></a> function.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> WRITE </span><span class="operator">{</span>
+        <span class="variable">$r</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span><span class="operator">(</span><span class="variable">$buf</span><span class="operator">,</span><span class="variable">$len</span><span class="operator">,</span><span class="variable">$offset</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"WRITE called, \$buf=</span><span class="variable">$buf</span><span class="string">, \$len=</span><span class="variable">$len</span><span class="string">, \$offset=</span><span class="variable">$offset</span><span class="string">"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="print_this_list3" class="item">PRINT this, LIST</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time the tied handle is printed to
+with the <a href="../../lib/pods/perlfunc.html#print"><code>print()</code></a> or <a href="../../lib/pods/perlfunc.html#say"><code>say()</code></a> functions.  Beyond its self reference
+it also expects the list that was passed to the print function.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> PRINT </span><span class="operator">{</span> <span class="variable">$r</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span> <span class="variable">$$r</span><span class="operator">++;</span> <span class="keyword">print</span> <span class="keyword">join</span><span class="operator">(</span><span class="variable">$,</span><span class="operator">,</span><span class="keyword">map</span><span class="operator">(</span><span class="keyword">uc</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">),</span><span class="variable">@_</span><span class="operator">)),</span><span class="variable">$\</span> <span class="operator">}</span>
+</pre>
+<p><a href="../../lib/pods/perlfunc.html#say"><code>say()</code></a> acts just like <a href="../../lib/pods/perlfunc.html#print"><code>print()</code></a> except $\ will be localized to <a href="../../lib/pods/perlrun.html#n"><code>\n</code></a> so
+you need do nothing special to handle <a href="../../lib/pods/perlfunc.html#say"><code>say()</code></a> in <code>PRINT()</code>.</p>
+</dd>
+<dt><strong><a name="printf_this_list2" class="item">PRINTF this, LIST</a></strong></dt>
+
+<dd>
+<p>This method will be triggered every time the tied handle is printed to
+with the <a href="../../lib/pods/perlfunc.html#printf"><code>printf()</code></a> function.
+Beyond its self reference it also expects the format and list that was
+passed to the printf function.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> PRINTF </span><span class="operator">{</span>
+        <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$fmt</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="keyword">sprintf</span><span class="operator">(</span><span class="variable">$fmt</span><span class="operator">,</span> <span class="variable">@_</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="read_this_list2" class="item">READ this, LIST</a></strong></dt>
+
+<dd>
+<p>This method will be called when the handle is read from via the <a href="../../lib/pods/perlfunc.html#read"><code>read</code></a>
+or <a href="../../lib/pods/perlfunc.html#sysread"><code>sysread</code></a> functions.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> READ </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$bufref</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+        <span class="keyword">my</span><span class="operator">(</span><span class="keyword">undef</span><span class="operator">,</span><span class="variable">$len</span><span class="operator">,</span><span class="variable">$offset</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"READ called, \$buf=</span><span class="variable">$bufref</span><span class="string">, \$len=</span><span class="variable">$len</span><span class="string">, \$offset=</span><span class="variable">$offset</span><span class="string">"</span><span class="operator">;</span>
+        <span class="comment"># add to $$bufref, set $len to number of characters read</span>
+        <span class="variable">$len</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="readline_this3" class="item">READLINE this</a></strong></dt>
+
+<dd>
+<p>This method is called when the handle is read via <code>&lt;HANDLE&gt;</code>
+or <a href="../../lib/pods/perlfunc.html#readline"><code>readline HANDLE</code></a>.</p>
+<p>As per <a href="../../lib/pods/perlfunc.html#readline"><a href="../../lib/pods/perlfunc.html#readline"><code>readline</code></a></a>, in scalar context it should return
+the next line, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> for no more data.  In list context it should
+return all remaining lines, or an empty list for no more data.  The strings
+returned should include the input record separator <a href="../../lib/pods/perlvar.html#__"><code>$/</code></a> (see <a href="../../lib/pods/perlvar.html">the perlvar manpage</a>),
+unless it is <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> (which means &quot;slurp&quot; mode).</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> READLINE </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$r</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">wantarray</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">return</span> <span class="operator">(</span><span class="string">"all remaining\n"</span><span class="operator">,</span>
+                <span class="string">"lines up\n"</span><span class="operator">,</span>
+                <span class="string">"to eof\n"</span><span class="operator">);</span>
+      <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="keyword">return</span> <span class="string">"READLINE called "</span> <span class="operator">.</span> <span class="operator">++</span><span class="variable">$$r</span> <span class="operator">.</span> <span class="string">" times\n"</span><span class="operator">;</span>
+      <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="getc_this3" class="item">GETC this</a></strong></dt>
+
+<dd>
+<p>This method will be called when the <a href="../../lib/pods/perlfunc.html#getc"><code>getc</code></a> function is called.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> GETC </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Don't GETC, Get Perl"</span><span class="operator">;</span> <span class="keyword">return</span> <span class="string">"a"</span><span class="operator">;</span> <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="eof_this2" class="item">EOF this</a></strong></dt>
+
+<dd>
+<p>This method will be called when the <a href="../../lib/pods/perlfunc.html#eof"><code>eof</code></a> function is called.</p>
+<p>Starting with Perl 5.12, an additional integer parameter will be passed.  It
+will be zero if <a href="../../lib/pods/perlfunc.html#eof"><code>eof</code></a> is called without parameter; <code>1</code> if <a href="../../lib/pods/perlfunc.html#eof"><code>eof</code></a> is given
+a filehandle as a parameter, e.g. <a href="../../lib/pods/perlfunc.html#eof"><code>eof(FH)</code></a>; and <code>2</code> in the very special
+case that the tied filehandle is <a href="../../lib/pods/perlvar.html#argv"><code>ARGV</code></a> and <a href="../../lib/pods/perlfunc.html#eof"><code>eof</code></a> is called with an empty
+parameter list, e.g. <a href="../../lib/pods/perlfunc.html#eof"><code>eof()</code></a>.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> EOF </span><span class="operator">{</span> <span class="keyword">not</span> <span class="keyword">length</span> <span class="variable">$stringbuf</span> <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="close_this2" class="item">CLOSE this</a></strong></dt>
+
+<dd>
+<p>This method will be called when the handle is closed via the <a href="../../lib/pods/perlfunc.html#close"><code>close</code></a>
+function.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> CLOSE </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"CLOSE called.\n"</span> <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="untie_this4" class="item">UNTIE this</a></strong></dt>
+
+<dd>
+<p>As with the other types of ties, this method will be called when <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> happens.
+It may be appropriate to &quot;auto CLOSE&quot; when this occurs.  See
+<a href="#the_c_untie__gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a> below.</p>
+</dd>
+<dt><strong><a name="destroy_this8" class="item">DESTROY this</a></strong></dt>
+
+<dd>
+<p>As with the other types of ties, this method will be called when the
+tied handle is about to be destroyed. This is useful for debugging and
+possibly cleaning up.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DESTROY </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"&lt;/shout&gt;\n"</span> <span class="operator">}</span>
+</pre>
+</dd>
+</dl>
+<p>Here's how to use our little example:</p>
+<pre>
+    <span class="keyword">tie</span><span class="operator">(</span><span class="variable">*FOO</span><span class="operator">,</span><span class="string">'Shout'</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">FOO</span> <span class="string">"hello\n"</span><span class="operator">;</span>
+    <span class="variable">$a</span> <span class="operator">=</span> <span class="number">4</span><span class="operator">;</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="number">6</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">FOO</span> <span class="variable">$a</span><span class="operator">,</span> <span class="string">" plus "</span><span class="operator">,</span> <span class="variable">$b</span><span class="operator">,</span> <span class="string">" equals "</span><span class="operator">,</span> <span class="variable">$a</span> <span class="operator">+</span> <span class="variable">$b</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="operator">&lt;</span><span class="variable">FOO</span><span class="operator">&gt;;</span>
+</pre>
+<p>
+</p>
+<h2><a name="untie_this">UNTIE this</a></h2>
+<p>You can define for all tie types an UNTIE method that will be called
+at <a href="../../lib/pods/perlfunc.html#untie"><code>untie()</code></a>.  See <a href="#the_c_untie__gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a> below.</p>
+<p>
+</p>
+<h2><a name="the_untie_gotcha">The <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> Gotcha</a></h2>
+<p>If you intend making use of the object returned from either <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> or
+<a href="../../lib/pods/perlfunc.html#tied"><code>tied()</code></a>, and if the tie's target class defines a destructor, there is a
+subtle gotcha you <em>must</em> guard against.</p>
+<p>As setup, consider this (admittedly rather contrived) example of a
+tie; all it does is use a file to keep a log of the values assigned to
+a scalar.</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Remember</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">IO::File</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> TIESCALAR </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$filename</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$handle</span> <span class="operator">=</span> <span class="variable">IO::File</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">"&gt; </span><span class="variable">$filename</span><span class="string">"</span> <span class="operator">)</span>
+                         <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot open </span><span class="variable">$filename</span><span class="string">: $!\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="variable">$handle</span> <span class="string">"The Start\n"</span><span class="operator">;</span>
+        <span class="keyword">bless</span> <span class="operator">{</span><span class="string">FH</span> <span class="operator">=&gt;</span> <span class="variable">$handle</span><span class="operator">,</span> <span class="string">Value</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">}</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> FETCH </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Value</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> STORE </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$value</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$handle</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">FH</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$handle</span> <span class="string">"</span><span class="variable">$value</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Value</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">$value</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> DESTROY </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$handle</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">FH</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$handle</span> <span class="string">"The End\n"</span><span class="operator">;</span>
+        <span class="keyword">close</span> <span class="variable">$handle</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>Here is an example that makes use of this tie:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Remember</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$fred</span><span class="operator">;</span>
+    <span class="keyword">tie</span> <span class="variable">$fred</span><span class="operator">,</span> <span class="string">'Remember'</span><span class="operator">,</span> <span class="string">'myfile.txt'</span><span class="operator">;</span>
+    <span class="variable">$fred</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="variable">$fred</span> <span class="operator">=</span> <span class="number">4</span><span class="operator">;</span>
+    <span class="variable">$fred</span> <span class="operator">=</span> <span class="number">5</span><span class="operator">;</span>
+    <span class="keyword">untie</span> <span class="variable">$fred</span><span class="operator">;</span>
+    <span class="keyword">system</span> <span class="string">"cat myfile.txt"</span><span class="operator">;</span>
+</pre>
+<p>This is the output when it is executed:</p>
+<pre>
+    The Start
+    1
+    4
+    5
+    The End</pre>
+<p>So far so good.  Those of you who have been paying attention will have
+spotted that the tied object hasn't been used so far.  So lets add an
+extra method to the Remember class to allow comments to be included in
+the file; say, something like this:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> comment </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$text</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$handle</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">FH</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$handle</span> <span class="variable">$text</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>And here is the previous example modified to use the <code>comment</code> method
+(which requires the tied object):</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Remember</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$fred</span><span class="operator">,</span> <span class="variable">$x</span><span class="operator">);</span>
+    <span class="variable">$x</span> <span class="operator">=</span> <span class="keyword">tie</span> <span class="variable">$fred</span><span class="operator">,</span> <span class="string">'Remember'</span><span class="operator">,</span> <span class="string">'myfile.txt'</span><span class="operator">;</span>
+    <span class="variable">$fred</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="variable">$fred</span> <span class="operator">=</span> <span class="number">4</span><span class="operator">;</span>
+    <span class="variable">comment</span> <span class="variable">$x</span> <span class="string">"changing..."</span><span class="operator">;</span>
+    <span class="variable">$fred</span> <span class="operator">=</span> <span class="number">5</span><span class="operator">;</span>
+    <span class="keyword">untie</span> <span class="variable">$fred</span><span class="operator">;</span>
+    <span class="keyword">system</span> <span class="string">"cat myfile.txt"</span><span class="operator">;</span>
+</pre>
+<p>When this code is executed there is no output.  Here's why:</p>
+<p>When a variable is tied, it is associated with the object which is the
+return value of the TIESCALAR, TIEARRAY, or TIEHASH function.  This
+object normally has only one reference, namely, the implicit reference
+from the tied variable.  When <a href="../../lib/pods/perlfunc.html#untie"><code>untie()</code></a> is called, that reference is
+destroyed.  Then, as in the first example above, the object's
+destructor (DESTROY) is called, which is normal for objects that have
+no more valid references; and thus the file is closed.</p>
+<p>In the second example, however, we have stored another reference to
+the tied object in $x.  That means that when <a href="../../lib/pods/perlfunc.html#untie"><code>untie()</code></a> gets called
+there will still be a valid reference to the object in existence, so
+the destructor is not called at that time, and thus the file is not
+closed.  The reason there is no output is because the file buffers
+have not been flushed to disk.</p>
+<p>Now that you know what the problem is, what can you do to avoid it?
+Prior to the introduction of the optional UNTIE method the only way
+was the good old <a href="../../lib/pods/perlrun.html#w"><code>-w</code></a> flag. Which will spot any instances where you call
+<a href="../../lib/pods/perlfunc.html#untie"><code>untie()</code></a> and there are still valid references to the tied object.  If
+the second script above this near the top <code>use warnings 'untie'</code>
+or was run with the <a href="../../lib/pods/perlrun.html#w"><code>-w</code></a> flag, Perl prints this
+warning message:</p>
+<pre>
+    untie attempted while 1 inner references still exist</pre>
+<p>To get the script to work properly and silence the warning make sure
+there are no valid references to the tied object <em>before</em> <a href="../../lib/pods/perlfunc.html#untie"><code>untie()</code></a> is
+called:</p>
+<pre>
+    <span class="keyword">undef</span> <span class="variable">$x</span><span class="operator">;</span>
+    <span class="keyword">untie</span> <span class="variable">$fred</span><span class="operator">;</span>
+</pre>
+<p>Now that UNTIE exists the class designer can decide which parts of the
+class functionality are really associated with <a href="../../lib/pods/perlfunc.html#untie"><code>untie</code></a> and which with
+the object being destroyed. What makes sense for a given class depends
+on whether the inner references are being kept so that non-tie-related
+methods can be called on the object. But in most cases it probably makes
+sense to move the functionality that would have been in DESTROY to the UNTIE
+method.</p>
+<p>If the UNTIE method exists then the warning above does not occur. Instead the
+UNTIE method is passed the count of &quot;extra&quot; references and can issue its own
+warning if appropriate. e.g. to replicate the no UNTIE case this method can
+be used:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> UNTIE
+    </span><span class="operator">{</span>
+     <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$obj</span><span class="operator">,</span><span class="variable">$count</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+     <span class="variable">carp</span> <span class="string">"untie attempted while </span><span class="variable">$count</span><span class="string"> inner references still exist"</span> <span class="keyword">if</span> <span class="variable">$count</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>See <em>DB_File</em> or <a href="../../lib/Config.html">the Config manpage</a> for some interesting <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> implementations.
+A good starting point for many <a href="../../lib/pods/perlfunc.html#tie"><code>tie()</code></a> implementations is with one of the
+modules <a href="../../lib/Tie/Scalar.html">the Tie::Scalar manpage</a>, <a href="../../lib/Tie/Array.html">the Tie::Array manpage</a>, <a href="../../lib/Tie/Hash.html">the Tie::Hash manpage</a>, or <a href="../../lib/Tie/Handle.html">the Tie::Handle manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>The bucket usage information provided by <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar(%hash)</code></a> is not
+available.  What this means is that using %tied_hash in boolean
+context doesn't work right (currently this always tests false,
+regardless of whether the hash is empty or hash elements).</p>
+<p>Localizing tied arrays or hashes does not work.  After exiting the
+scope the arrays or the hashes are not restored.</p>
+<p>Counting the number of entries in a hash via <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar(keys(%hash))</code></a>
+or <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar(values(%hash)</code></a>) is inefficient since it needs to iterate
+through all the entries with FIRSTKEY/NEXTKEY.</p>
+<p>Tied hash/array slices cause multiple FETCH/STORE pairs, there are no
+tie methods for slice operations.</p>
+<p>You cannot easily tie a multilevel data structure (such as a hash of
+hashes) to a dbm file.  The first problem is that all but GDBM and
+Berkeley DB have size limitations, but beyond that, you also have problems
+with how references are to be represented on disk.  One
+module that does attempt to address this need is DBM::Deep.  Check your
+nearest CPAN site as described in <a href="../../lib/pods/perlmodlib.html">the perlmodlib manpage</a> for source code.  Note
+that despite its name, DBM::Deep does not use dbm.  Another earlier attempt
+at solving the problem is MLDBM, which is also available on the CPAN, but
+which has some fairly serious limitations.</p>
+<p>Tied filehandles are still incomplete.  <a href="../../lib/pods/perlfunc.html#sysopen"><code>sysopen()</code></a>, <a href="../../lib/pods/perlfunc.html#truncate"><code>truncate()</code></a>,
+<a href="../../lib/pods/perlfunc.html#flock"><code>flock()</code></a>, <a href="../../lib/pods/perlfunc.html#fcntl"><code>fcntl()</code></a>, <a href="../../lib/pods/perlfunc.html#stat"><code>stat()</code></a> and -X can't currently be trapped.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Tom Christiansen</p>
+<p>TIEHANDLE by Sven Verdoolaege &lt;<em class="file"><a href="mailto:skimo@dns.ufsia.ac.be">skimo@dns.ufsia.ac.be</a></em>&gt; and Doug MacEachern &lt;<em class="file"><a href="mailto:dougm@osf.org">dougm@osf.org</a></em>&gt;</p>
+<p>UNTIE by Nick Ing-Simmons &lt;<em class="file"><a href="mailto:nick@ing-simmons.net">nick@ing-simmons.net</a></em>&gt;</p>
+<p>SCALAR by Tassilo von Parseval &lt;<em class="file"><a href="mailto:tassilo.von.parseval@rwth-aachen.de">tassilo.von.parseval@rwth-aachen.de</a></em>&gt;</p>
+<p>Tying Arrays by Casey West &lt;<em class="file"><a href="mailto:casey@geeknest.com">casey@geeknest.com</a></em>&gt;</p>
+
+</body>
+
+</html>

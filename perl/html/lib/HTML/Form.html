@@ -1,0 +1,523 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>HTML::Form - Class that represents an HTML form element</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>HTML::Form - Class that represents an HTML form element</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#inputs">INPUTS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>HTML::Form - Class that represents an HTML form element</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">HTML::Form</span><span class="operator">;</span>
+ <span class="variable">$form</span> <span class="operator">=</span> <span class="variable">HTML::Form</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="variable">$html</span><span class="operator">,</span> <span class="variable">$base_uri</span><span class="operator">);</span>
+ <span class="variable">$form</span><span class="operator">-&gt;</span><span class="variable">value</span><span class="operator">(</span><span class="string">query</span> <span class="operator">=&gt;</span> <span class="string">"Perl"</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+ <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+ <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$form</span><span class="operator">-&gt;</span><span class="variable">click</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Objects of the <code>HTML::Form</code> class represents a single HTML
+<code>&lt;form&gt; ... &lt;/form&gt;</code> instance.  A form consists of a
+sequence of inputs that usually have names, and which can take on
+various values.  The state of a form can be tweaked and it can then be
+asked to provide <code>HTTP::Request</code> objects that can be passed to the
+<code>request()</code> method of <code>LWP::UserAgent</code>.</p>
+<p>The following methods are available:</p>
+<dl>
+<dt><strong><a name="parse" class="item">@forms = HTML::Form-&gt;parse( $html_document, $base_uri )</a></strong></dt>
+
+<dt><strong>@forms = HTML::Form-&gt;parse( $html_document, base =&gt; $base_uri, %opt )</strong></dt>
+
+<dt><strong>@forms = HTML::Form-&gt;parse( $response, %opt )</strong></dt>
+
+<dd>
+<p>The <a href="#parse"><code>parse()</code></a> class method will parse an HTML document and build up
+<code>HTML::Form</code> objects for each &lt;form&gt; element found.  If called in scalar
+context only returns the first &lt;form&gt;.  Returns an empty list if there
+are no forms to be found.</p>
+<p>The required arguments is the HTML document to parse ($html_document) and the
+URI used to retrieve the document ($base_uri).  The base URI is needed to resolve
+relative action URIs.  The provided HTML document should be a Unicode string
+(or US-ASCII).</p>
+<p>By default HTML::Form assumes that the original document was UTF-8 encoded and
+thus encode forms that don't specify an explict <em>accept-charset</em> as UTF-8.
+The charset assumed can be overridden by providing the <code>charset</code> option to
+<a href="#parse"><code>parse()</code></a>.  It's a good idea to be explict about this parameter as well, thus
+the recommended simplest invocation becomes:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@forms</span> <span class="operator">=</span> <span class="variable">HTML::Form</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span>
+        <span class="variable">Encode::decode</span><span class="operator">(</span><span class="variable">$encoding</span><span class="operator">,</span> <span class="variable">$html_document_bytes</span><span class="operator">),</span>
+        <span class="string">base</span> <span class="operator">=&gt;</span> <span class="variable">$base_uri</span><span class="operator">,</span>
+        <span class="string">charset</span> <span class="operator">=&gt;</span> <span class="variable">$encoding</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>If the document was retrieved with LWP then the response object provide methods
+to obtain a proper value for <code>base</code> and <code>charset</code>:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">"http://www.example.com/form.html"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@forms</span> <span class="operator">=</span> <span class="variable">HTML::Form</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="variable">$response</span><span class="operator">-&gt;</span><span class="variable">decoded_content</span><span class="operator">,</span>
+        <span class="string">base</span> <span class="operator">=&gt;</span> <span class="variable">$response</span><span class="operator">-&gt;</span><span class="variable">base</span><span class="operator">,</span>
+        <span class="string">charset</span> <span class="operator">=&gt;</span> <span class="variable">$response</span><span class="operator">-&gt;</span><span class="variable">content_charset</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>In fact, the <a href="#parse"><code>parse()</code></a> method can parse from an <code>HTTP::Response</code> object
+directly, so the example above can be more conveniently written as:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">"http://www.example.com/form.html"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@forms</span> <span class="operator">=</span> <span class="variable">HTML::Form</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="variable">$response</span><span class="operator">);</span>
+</pre>
+<p>Note that any object that implements a <code>decoded_content()</code>, <code>base()</code> and
+<code>content_charset()</code> method with similar behaviour as <code>HTTP::Response</code> will do.</p>
+<p>Additional options might be passed in to control how the parse method
+behaves.  The following are all the options currently recognized:</p>
+<dl>
+<dt><strong><a name="base_uri" class="item"><code>base =&gt; $uri</code></a></strong></dt>
+
+<dd>
+<p>This is the URI used to retrive the original document.  This option is not optional ;-)</p>
+</dd>
+<dt><strong><a name="charset_str" class="item"><code>charset =&gt; $str</code></a></strong></dt>
+
+<dd>
+<p>Specify what charset the original document was encoded in.  This is used as
+the default for accept_charset.  If not provided this defaults to &quot;UTF-8&quot;.</p>
+</dd>
+<dt><strong><a name="verbose_bool5" class="item"><a href="#verbose_bool"><code>verbose =&gt; $bool</code></a></a></strong></dt>
+
+<dd>
+<p>Warn (print messages to STDERR) about any bad HTML form constructs found.
+You can trap these with $SIG{__WARN__}.</p>
+</dd>
+<dt><strong><a name="strict_bool" class="item"><code>strict =&gt; $bool</code></a></strong></dt>
+
+<dd>
+<p>Initialize any form objects with the given strict attribute.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="method" class="item">$method = $form-&gt;method</a></strong></dt>
+
+<dt><strong>$form-&gt;method( $new_method )</strong></dt>
+
+<dd>
+<p>This method is gets/sets the <em>method</em> name used for the
+<code>HTTP::Request</code> generated.  It is a string like &quot;GET&quot; or &quot;POST&quot;.</p>
+</dd>
+<dt><strong><a name="action" class="item">$action = $form-&gt;action</a></strong></dt>
+
+<dt><strong>$form-&gt;action( $new_action )</strong></dt>
+
+<dd>
+<p>This method gets/sets the URI which we want to apply the request
+<em>method</em> to.</p>
+</dd>
+<dt><strong><a name="enctype" class="item">$enctype = $form-&gt;enctype</a></strong></dt>
+
+<dt><strong>$form-&gt;enctype( $new_enctype )</strong></dt>
+
+<dd>
+<p>This method gets/sets the encoding type for the form data.  It is a
+string like &quot;application/x-www-form-urlencoded&quot; or &quot;multipart/form-data&quot;.</p>
+</dd>
+<dt><strong><a name="accept_charset" class="item">$accept = $form-&gt;accept_charset</a></strong></dt>
+
+<dt><strong>$form-&gt;accept_charset( $new_accept )</strong></dt>
+
+<dd>
+<p>This method gets/sets the list of charset encodings that the server processing
+the form accepts. Current implementation supports only one-element lists.
+Default value is &quot;UNKNOWN&quot; which we interpret as a request to use document
+charset as specified by the 'charset' parameter of the <a href="#parse"><code>parse()</code></a> method.</p>
+</dd>
+<dt><strong><a name="attr" class="item">$value = $form-&gt;attr( $name )</a></strong></dt>
+
+<dt><strong>$form-&gt;attr( $name, $new_value )</strong></dt>
+
+<dd>
+<p>This method give access to the original HTML attributes of the &lt;form&gt; tag.
+The $name should always be passed in lower case.</p>
+<p>Example:</p>
+<pre>
+   <span class="variable">@f</span> <span class="operator">=</span> <span class="variable">HTML::Form</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span> <span class="variable">$html</span><span class="operator">,</span> <span class="variable">$foo</span> <span class="operator">);</span>
+   <span class="variable">@f</span> <span class="operator">=</span> <span class="keyword">grep</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">"id"</span><span class="operator">)</span> <span class="keyword">eq</span> <span class="string">"foo"</span><span class="operator">,</span> <span class="variable">@f</span><span class="operator">;</span>
+   <span class="keyword">die</span> <span class="string">"No form named 'foo' found"</span> <span class="keyword">unless</span> <span class="variable">@f</span><span class="operator">;</span>
+   <span class="variable">$foo</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="variable">@f</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="strict" class="item">$bool = $form-&gt;strict</a></strong></dt>
+
+<dt><strong>$form-&gt;strict( $bool )</strong></dt>
+
+<dd>
+<p>Gets/sets the strict attribute of a form.  If the strict is turned on
+the methods that change values of the form will croak if you try to
+set illegal values or modify readonly fields.  The default is not to be strict.</p>
+</dd>
+<dt><strong><a name="inputs" class="item">@inputs = $form-&gt;inputs</a></strong></dt>
+
+<dd>
+<p>This method returns the list of inputs in the form.  If called in
+scalar context it returns the number of inputs contained in the form.
+See <a href="#inputs">INPUTS</a> for what methods are available for the input objects
+returned.</p>
+</dd>
+<dt><strong><a name="find_input" class="item">$input = $form-&gt;find_input( $selector )</a></strong></dt>
+
+<dt><strong>$input = $form-&gt;find_input( $selector, $type )</strong></dt>
+
+<dt><strong>$input = $form-&gt;find_input( $selector, $type, $index )</strong></dt>
+
+<dd>
+<p>This method is used to locate specific inputs within the form.  All
+inputs that match the arguments given are returned.  In scalar context
+only the first is returned, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if none match.</p>
+<p>If $selector is specified, then the input's name, id, class attribute must
+match.  A selector prefixed with '#' must match the id attribute of the input.
+A selector prefixed with '.' matches the class attribute.  A selector prefixed
+with '^' or with no prefix matches the name attribute.</p>
+<p>If $type is specified, then the input must have the specified type.
+The following type names are used: &quot;text&quot;, &quot;password&quot;, &quot;hidden&quot;,
+&quot;textarea&quot;, &quot;file&quot;, &quot;image&quot;, &quot;submit&quot;, &quot;radio&quot;, &quot;checkbox&quot; and &quot;option&quot;.</p>
+<p>The $index is the sequence number of the input matched where 1 is the
+first.  If combined with $name and/or $type then it select the <em>n</em>th
+input with the given name and/or type.</p>
+</dd>
+<dt><strong><a name="value" class="item">$value = $form-&gt;value( $selector )</a></strong></dt>
+
+<dt><strong>$form-&gt;value( $selector, $new_value )</strong></dt>
+
+<dd>
+<p>The <a href="#value"><code>value()</code></a> method can be used to get/set the value of some input.  If
+strict is enabled and no input has the indicated name, then this method will croak.</p>
+<p>If multiple inputs have the same name, only the first one will be
+affected.</p>
+<p>The call:</p>
+<pre>
+    $form-&gt;value('foo')</pre>
+<p>is basically a short-hand for:</p>
+<pre>
+    <span class="variable">$form</span><span class="operator">-&gt;</span><span class="variable">find_input</span><span class="operator">(</span><span class="string">'foo'</span><span class="operator">)-&gt;</span><span class="variable">value</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="param" class="item">@names = $form-&gt;param</a></strong></dt>
+
+<dt><strong>@values = $form-&gt;param( $name )</strong></dt>
+
+<dt><strong>$form-&gt;param( $name, $value, ... )</strong></dt>
+
+<dt><strong>$form-&gt;param( $name, \@values )</strong></dt>
+
+<dd>
+<p>Alternative interface to examining and setting the values of the form.</p>
+<p>If called without arguments then it returns the names of all the
+inputs in the form.  The names will not repeat even if multiple inputs
+have the same name.  In scalar context the number of different names
+is returned.</p>
+<p>If called with a single argument then it returns the value or values
+of inputs with the given name.  If called in scalar context only the
+first value is returned.  If no input exists with the given name, then
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<p>If called with 2 or more arguments then it will set values of the
+named inputs.  This form will croak if no inputs have the given name
+or if any of the values provided does not fit.  Values can also be
+provided as a reference to an array.  This form will allow unsetting
+all values with the given name as well.</p>
+<p>This interface resembles that of the <a href="#param"><code>param()</code></a> function of the CGI
+module.</p>
+</dd>
+<dt><strong><a name="try_others" class="item">$form-&gt;try_others( \&amp;callback )</a></strong></dt>
+
+<dd>
+<p>This method will iterate over all permutations of unvisited enumerated
+values (&lt;select&gt;, &lt;radio&gt;, &lt;checkbox&gt;) and invoke the callback for
+each.  The callback is passed the $form as argument.  The return value
+from the callback is ignored and the <a href="#try_others"><code>try_others()</code></a> method itself does
+not return anything.</p>
+</dd>
+<dt><strong><a name="make_request" class="item">$request = $form-&gt;make_request</a></strong></dt>
+
+<dd>
+<p>Will return an <code>HTTP::Request</code> object that reflects the current setting
+of the form.  You might want to use the <a href="#click"><code>click()</code></a> method instead.</p>
+</dd>
+<dt><strong><a name="click" class="item">$request = $form-&gt;click</a></strong></dt>
+
+<dt><strong>$request = $form-&gt;click( $selector )</strong></dt>
+
+<dt><strong>$request = $form-&gt;click( $x, $y )</strong></dt>
+
+<dt><strong>$request = $form-&gt;click( $selector, $x, $y )</strong></dt>
+
+<dd>
+<p>Will &quot;click&quot; on the first clickable input (which will be of type
+<code>submit</code> or <code>image</code>).  The result of clicking is an <code>HTTP::Request</code>
+object that can then be passed to <code>LWP::UserAgent</code> if you want to
+obtain the server response.</p>
+<p>If a $selector is specified, we will click on the first clickable input
+matching the selector, and the method will croak if no matching clickable
+input is found.  If $selector is <em>not</em> specified, then it
+is ok if the form contains no clickable inputs.  In this case the
+<a href="#click"><code>click()</code></a> method returns the same request as the <a href="#make_request"><code>make_request()</code></a> method
+would do.  See description of the <a href="#find_input"><code>find_input()</code></a> method above for how
+the $selector is specified.</p>
+<p>If there are multiple clickable inputs with the same name, then there
+is no way to get the <a href="#click"><code>click()</code></a> method of the <code>HTML::Form</code> to click on
+any but the first.  If you need this you would have to locate the
+input with <a href="#find_input"><code>find_input()</code></a> and invoke the <a href="#click"><code>click()</code></a> method on the given
+input yourself.</p>
+<p>A click coordinate pair can also be provided, but this only makes a
+difference if you clicked on an image.  The default coordinate is
+(1,1).  The upper-left corner of the image is (0,0), but some badly
+coded CGI scripts are known to not recognize this.  Therefore (1,1) was
+selected as a safer default.</p>
+</dd>
+<dt><strong><a name="form" class="item">@kw = $form-&gt;form</a></strong></dt>
+
+<dd>
+<p>Returns the current setting as a sequence of key/value pairs.  Note
+that keys might be repeated, which means that some values might be
+lost if the return values are assigned to a hash.</p>
+<p>In scalar context this method returns the number of key/value pairs
+generated.</p>
+</dd>
+<dt><strong><a name="dump" class="item">$form-&gt;dump</a></strong></dt>
+
+<dd>
+<p>Returns a textual representation of current state of the form.  Mainly
+useful for debugging.  If called in void context, then the dump is
+printed on STDERR.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="inputs">INPUTS</a></h1>
+<p>An <code>HTML::Form</code> objects contains a sequence of <em>inputs</em>.  References to
+the inputs can be obtained with the $form-&gt;inputs or $form-&gt;find_input
+methods.</p>
+<p>Note that there is <em>not</em> a one-to-one correspondence between input
+<em>objects</em> and &lt;input&gt; <em>elements</em> in the HTML document.  An
+input object basically represents a name/value pair, so when multiple
+HTML elements contribute to the same name/value pair in the submitted
+form they are combined.</p>
+<p>The input elements that are mapped one-to-one are &quot;text&quot;, &quot;textarea&quot;,
+&quot;password&quot;, &quot;hidden&quot;, &quot;file&quot;, &quot;image&quot;, &quot;submit&quot; and &quot;checkbox&quot;.  For
+the &quot;radio&quot; and &quot;option&quot; inputs the story is not as simple: All
+&lt;input type=&quot;radio&quot;&gt; elements with the same name will
+contribute to the same input radio object.  The number of radio input
+objects will be the same as the number of distinct names used for the
+&lt;input type=&quot;radio&quot;&gt; elements.  For a &lt;select&gt; element
+without the <code>multiple</code> attribute there will be one input object of
+type of &quot;option&quot;.  For a &lt;select multiple&gt; element there will
+be one input object for each contained &lt;option&gt; element.  Each
+one of these option objects will have the same name.</p>
+<p>The following methods are available for the <em>input</em> objects:</p>
+<dl>
+<dt><strong><a name="type" class="item">$input-&gt;type</a></strong></dt>
+
+<dd>
+<p>Returns the type of this input.  The type is one of the following
+strings: &quot;text&quot;, &quot;password&quot;, &quot;hidden&quot;, &quot;textarea&quot;, &quot;file&quot;, &quot;image&quot;, &quot;submit&quot;,
+&quot;radio&quot;, &quot;checkbox&quot; or &quot;option&quot;.</p>
+</dd>
+<dt><strong><a name="name" class="item">$name = $input-&gt;name</a></strong></dt>
+
+<dt><strong>$input-&gt;name( $new_name )</strong></dt>
+
+<dd>
+<p>This method can be used to get/set the current name of the input.</p>
+</dd>
+<dt><strong><a name="id" class="item">$input-&gt;id</a></strong></dt>
+
+<dt><strong><a name="class" class="item">$input-&gt;class</a></strong></dt>
+
+<dd>
+<p>These methods can be used to get/set the current id or class attribute for the input.</p>
+</dd>
+<dt><strong><a name="selected" class="item">$input-&gt;selected( $selector )</a></strong></dt>
+
+<dd>
+<p>Returns TRUE if the given selector matched the input.  See the description of
+the <a href="#find_input"><code>find_input()</code></a> method above for a description of the selector syntax.</p>
+</dd>
+<dt><strong>$value = $input-&gt;value</strong></dt>
+
+<dt><strong>$input-&gt;value( $new_value )</strong></dt>
+
+<dd>
+<p>This method can be used to get/set the current value of an
+input.</p>
+<p>If strict is enabled and the input only can take an enumerated list of values,
+then it is an error to try to set it to something else and the method will
+croak if you try.</p>
+<p>You will also be able to set the value of read-only inputs, but a
+warning will be generated if running under <code>perl -w</code>.</p>
+</dd>
+<dt><strong><a name="possible_values" class="item">$input-&gt;possible_values</a></strong></dt>
+
+<dd>
+<p>Returns a list of all values that an input can take.  For inputs that
+do not have discrete values, this returns an empty list.</p>
+</dd>
+<dt><strong><a name="other_possible_values" class="item">$input-&gt;other_possible_values</a></strong></dt>
+
+<dd>
+<p>Returns a list of all values not tried yet.</p>
+</dd>
+<dt><strong><a name="value_names" class="item">$input-&gt;value_names</a></strong></dt>
+
+<dd>
+<p>For some inputs the values can have names that are different from the
+values themselves.  The number of names returned by this method will
+match the number of values reported by $input-&gt;possible_values.</p>
+<p>When setting values using the <a href="#value"><code>value()</code></a> method it is also possible to
+use the value names in place of the value itself.</p>
+</dd>
+<dt><strong><a name="readonly" class="item">$bool = $input-&gt;readonly</a></strong></dt>
+
+<dt><strong>$input-&gt;readonly( $bool )</strong></dt>
+
+<dd>
+<p>This method is used to get/set the value of the readonly attribute.
+You are allowed to modify the value of readonly inputs, but setting
+the value will generate some noise when warnings are enabled.  Hidden
+fields always start out readonly.</p>
+</dd>
+<dt><strong><a name="disabled" class="item">$bool = $input-&gt;disabled</a></strong></dt>
+
+<dt><strong>$input-&gt;disabled( $bool )</strong></dt>
+
+<dd>
+<p>This method is used to get/set the value of the disabled attribute.
+Disabled inputs do not contribute any key/value pairs for the form
+value.</p>
+</dd>
+<dt><strong><a name="form_name_value" class="item">$input-&gt;form_name_value</a></strong></dt>
+
+<dd>
+<p>Returns a (possible empty) list of key/value pairs that should be
+incorporated in the form value from this input.</p>
+</dd>
+<dt><strong><a name="check" class="item">$input-&gt;check</a></strong></dt>
+
+<dd>
+<p>Some input types represent toggles that can be turned on/off.  This
+includes &quot;checkbox&quot; and &quot;option&quot; inputs.  Calling this method turns
+this input on without having to know the value name.  If the input is
+already on, then nothing happens.</p>
+<p>This has the same effect as:</p>
+<pre>
+    <span class="variable">$input</span><span class="operator">-&gt;</span><span class="variable">value</span><span class="operator">(</span><span class="variable">$input</span><span class="operator">-&gt;</span><span class="variable">possible_values</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<p>The input can be turned off with:</p>
+<pre>
+    <span class="variable">$input</span><span class="operator">-&gt;</span><span class="variable">value</span><span class="operator">(</span><span class="keyword">undef</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong>$input-&gt;click($form, $x, $y)</strong></dt>
+
+<dd>
+<p>Some input types (currently &quot;submit&quot; buttons and &quot;images&quot;) can be
+clicked to submit the form.  The <a href="#click"><code>click()</code></a> method returns the
+corresponding <code>HTTP::Request</code> object.</p>
+</dd>
+</dl>
+<p>If the input is of type <a href="#file"><code>file</code></a>, then it has these additional methods:</p>
+<dl>
+<dt><strong><a name="file" class="item">$input-&gt;file</a></strong></dt>
+
+<dd>
+<p>This is just an alias for the <a href="#value"><code>value()</code></a> method.  It sets the filename to
+read data from.</p>
+<p>For security reasons this field will never be initialized from the parsing
+of a form.  This prevents the server from triggering stealth uploads of
+arbitrary files from the client machine.</p>
+</dd>
+<dt><strong><a name="filename" class="item">$filename = $input-&gt;filename</a></strong></dt>
+
+<dt><strong>$input-&gt;filename( $new_filename )</strong></dt>
+
+<dd>
+<p>This get/sets the filename reported to the server during file upload.
+This attribute defaults to the value reported by the <a href="#file"><code>file()</code></a> method.</p>
+</dd>
+<dt><strong><a name="content" class="item">$content = $input-&gt;content</a></strong></dt>
+
+<dt><strong>$input-&gt;content( $new_content )</strong></dt>
+
+<dd>
+<p>This get/sets the file content provided to the server during file
+upload.  This method can be used if you do not want the content to be
+read from an actual file.</p>
+</dd>
+<dt><strong><a name="headers" class="item">@headers = $input-&gt;headers</a></strong></dt>
+
+<dt><strong>input-&gt;headers($key =&gt; $value, .... )</strong></dt>
+
+<dd>
+<p>This get/set additional header fields describing the file uploaded.
+This can for instance be used to set the <code>Content-Type</code> reported for
+the file.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/LWP.html">the LWP manpage</a>, <a href="../../lib/CPAN/LWP/UserAgent.html">the LWP::UserAgent manpage</a>, <a href="../../lib/HTML/Parser.html">the HTML::Parser manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1998-2008 Gisle Aas.</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

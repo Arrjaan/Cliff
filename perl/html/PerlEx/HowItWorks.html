@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<title>ActivePerl Components</title>
+<link rel="STYLESHEET" href="../Active.css" type="text/css" media="screen">
+<title>How It Works</title>
+</head>
+
+<body>
+
+<script>writelinks('__top__',1);</script>
+<h1>How PerlEx Works</h1>
+
+<h2>The PerlEx Precompiler</h2>
+
+<p>When your web server receives its first request to execute a Perl script,
+PerlEx is loaded. PerlEx then runs its precompiler on the Perl script, which
+executes any operations within <code>BEGIN</code> blocks or <code>use</code>
+statements, compiles the main body of the Perl script, and retains the
+compiled state of the script in memory.  The compiled state of the script
+is then executed by PerlEx.</p>
+
+<p>The second time that the same Perl script is requested, PerlEx simply
+executes the compiled state of the script which is memory-resident - it is not
+necessary to go through the compilation phase again. This accounts for much of
+the performance increase PerlEx has over standard CGI Perl scripts.</p>
+
+<p>Note that the first execution of any PerlEx script will not be as fast as
+those that follow, as the script will be compiled by the PerlEx precompiler
+the first time it is requested.</p>
+
+<p>When the total number of times an individual Perl interpreter has been
+used to execute scripts reaches the number defined by the
+<a class="doc" href="RegistryEntries.html#Reload">Reload</a>
+registry entry, all of the END blocks will be run for each precompiled script,
+the compiled state of the script will be released from memory, and the Perl
+interpreter will be reinitialized.  Reloading interpreters ensures that
+arbitrary Perl scripts that might accumulate small amounts of memory for
+each request do not eventually make the system run out of memory.  If you
+are sure your scripts do not have such memory leaks, you could increase
+this value, though the benefit of doing so will usually be negligible.</p>
+
+<h2>Threading Behavior</h2>
+
+<p>Normally, PerlEx runs scripts in the same thread of execution that called
+into it.  Such threads are created and managed by the web server, and their
+numbers are determined by the web server based on available resources and
+current load on the server.  However, if the
+<a class="doc" href="RegistryEntries.html#MinThreads">MinThreads</a>
+registry option is set to a particular number greater than 0,
+PerlEx will create its own pool of threads to process incoming requests.
+Under this scenario, the incoming web server thread can return immediately
+while PerlEx is processing the request.  PerlEx will subsequently notify the
+web server when it has finished processing the request, and is ready to
+hand the response back to the web server.  Making PerlEx use its own pool
+of threads in this fashion can be advantageous in many situations, most notably
+those involving COM objects that are capable of executing in the
+Multi-Threaded Apartment (MTA) thread model.</p>
+
+<p>PerlEx can dynamically alter the number of threads automatically based
+on prevailing demand and load conditions; if the number of requests exceeds
+the MinThreads setting and the CPUs have spare capacity, PerlEx will create
+additional threads to service these requests.  The total number of such
+threads is only limited by the total number of
+<a class="doc" href="RegistryEntries.html#Interpreters">Interpreters</a>
+configured.
+Any additional requests over and above the available number of threads will
+be queued up and processed in the order they were received, as threads
+become available.
+</p>
+
+
+<h2>Interpreter Classes</h2>
+
+<p>The run time characteristics of PerlEx can be controlled by specifying
+parameters that apply to a group of interpreters that must be used to serve
+one or more scripts.  A set of such parameters is referred to in this
+document as an <a class="doc" href="IntrpClass.html">Interpreter Class</a>.
+The <a class="doc" href="RegistryEntries.html#Interpreters">Interpreters</a>
+option in an Interpreter Class specifies how many Perl interpreters are
+exclusively devoted to serving scripts in that Interpreter Class.  When there
+are more requests for script execution than there are interpreters in a
+particular Interpreter Class, PerlEx will make the additional requests wait
+until interpreters become available.
+</p>
+<p>An Interpreter Class with the
+<a class="doc" href="RegistryEntries.html#Interpreters">Interpreters</a>
+option set to 0 will not precompile any scripts found matching its
+<a class="doc" href="RegistryEntries.html#ScriptLocation">ScriptLocation</a>
+setting. This is similar to the functionality of the Noload registry entry in
+older versions of PerlEx, and closely matches the behavior of regular CGI
+scripts, and scripts run under <a href="../Components/Windows/PerlISAPI.html">
+Perl for ISAPI</a>. Enabling this option disables many of the performance
+benefits of PerlEx over CGI, but it can be useful for Perl scripts that cannot
+run properly with PerlEx, due to various <a class="doc" href="PerlExCoding.html">
+coding issues</a> that must be considered in the PerlEx environment.</p>
+
+<p><i>For more information, please see:</p></i>
+
+<p><a class="doc" href="IntrpClass.html">PerlEx Interpreter Classes</a></p>
+<p><a class="doc" href="WebServerConfig.html">WebServer Configuration</a></p>
+<p><a class="doc" href="BEGIN-ENDBlocks.html">BEGIN and END blocks</a></p>
+<p><a class="doc" href="Embedded.html">Embedding Perl in HTML files</a></p>
+<p><a class="doc" href="Precompiler.html">PerlEx Precompiler</a></p>
+<p><a class="doc" href="RegistryEntries.html">Registry Entries</a></p>
+<p><a class="doc" href="Reload.html">Reload &amp; ReloadAll functions</a></p>
+
+
+</body>
+</html>

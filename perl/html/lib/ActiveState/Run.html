@@ -1,0 +1,272 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>ActiveState::Run - Collection of small utility functions</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>ActiveState::Run - Collection of small utility functions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#environment">ENVIRONMENT</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>ActiveState::Run - Collection of small utility functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">ActiveState::Run</span> <span class="string">qw(run)</span><span class="operator">;</span>
+ <span class="variable">run</span><span class="operator">(</span><span class="string">"ls -l"</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides a collection of small utility functions for
+running external programs.</p>
+<p>The following functions are provided:</p>
+<dl>
+<dt><strong><a name="decode_status" class="item">decode_status( )</a></strong></dt>
+
+<dt><strong>decode_status( $rc )</strong></dt>
+
+<dd>
+<p>Will decode the given return code (defaults to $?) and return the 
+exit value, the signal it was killed with, and if it dumped core.</p>
+<p>In scalar context, it will return a string explaining what happened, or 
+an empty string if no error occured.</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="string">`ls`</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$err</span> <span class="operator">=</span> <span class="variable">decode_status</span><span class="operator">;</span>
+  <span class="keyword">die</span> <span class="string">"ls failed: </span><span class="variable">$err</span><span class="string">"</span> <span class="keyword">if</span> <span class="variable">$err</span><span class="operator">;</span>
+</pre>
+<p>In array context, it will return a list of key/value pairs containing:</p>
+<dl>
+<dt><strong><a name="wifexited" class="item">WIFEXITED</a></strong></dt>
+
+<dd>
+<p>True when the status code indicates normal termination.</p>
+</dd>
+<dt><strong><a name="wexitstatus" class="item">WEXITSTATUS</a></strong></dt>
+
+<dd>
+<p>If WIFEXITED, this will contain the low-order 8 bits of the status
+value the child passed to exit or returned from main.</p>
+</dd>
+<dt><strong><a name="wifsignaled" class="item">WIFSIGNALED</a></strong></dt>
+
+<dd>
+<p>Non-zero if process was terminated by a signal.</p>
+</dd>
+<dt><strong><a name="wtermsig" class="item">WTERMSIG</a></strong></dt>
+
+<dd>
+<p>If WIFSIGNALED, the terminating signal.</p>
+</dd>
+<dt><strong><a name="wifstopped" class="item">WIFSTOPPED</a></strong></dt>
+
+<dd>
+<p>Non-zero if the process was stopped.</p>
+</dd>
+<dt><strong><a name="wstopsig" class="item">WSTOPSIG</a></strong></dt>
+
+<dd>
+<p>If WIFSTOPPED, the signal that stopped the process.</p>
+</dd>
+<dt><strong><a name="wcoredump" class="item">WCOREDUMP</a></strong></dt>
+
+<dd>
+<p>Nonzero if the process dumped core.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="string">`ls`</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">%err</span> <span class="operator">=</span> <span class="variable">decode_status</span><span class="operator">;</span>
+  <span class="keyword">die</span> <span class="string">"ls dumped core"</span> <span class="keyword">if</span> <span class="variable">$err</span><span class="operator">{</span><span class="string">WCOREDUMP</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="run" class="item">run( $cmd, @args )</a></strong></dt>
+
+<dd>
+<p>Works like the builtin <a href="../../lib/pods/perlfunc.html#system"><code>system()</code></a> but will by default print commands to
+stdout before it execute them and raise an exception (die) if the
+command fails (returns non-zero status).  Like for the command
+specifications for <code>make(1)</code>, you can prefix the command with &quot;@&quot; to
+suppress the echo and with &quot;-&quot; to suppress the status check.</p>
+<p>The environment variables AS_RUN_SILENT and AS_RUN_PREFIX influence
+printing as well, see <a href="#environment">ENVIRONMENT</a>.</p>
+</dd>
+<dt><strong><a name="run_ex" class="item">run_ex( %opt )</a></strong></dt>
+
+<dd>
+<p>The extended version of the run function with many additional ways to
+control the how the command runs, but otherwise it acts as <a href="#run"><code>run()</code></a>.</p>
+<p>The following options are recognized:</p>
+<dl>
+<dt><strong><a name="cmd_cmd" class="item">cmd =&gt; $cmd</a></strong></dt>
+
+<dt><strong><a name="cmd_cmd_args" class="item">cmd =&gt; [$cmd, @args]</a></strong></dt>
+
+<dd>
+<p>Specify the command line to run.  It does not support the '@' and '-'
+prefixes that the <a href="#run"><code>run()</code></a> command allow.  This option is not optional :)</p>
+</dd>
+<dt><strong><a name="exe_path" class="item">exe =&gt; $path</a></strong></dt>
+
+<dd>
+<p>Only use this if you want to override what executable actually runs.
+Can be used to lie about what program actually runs, as this allow
+argv[0] to be different than the actual command.</p>
+</dd>
+<dt><strong><a name="cwd_path" class="item">cwd =&gt; $path</a></strong></dt>
+
+<dd>
+<p>Make this the current directory of the process.  By default, the
+process shares the parent's current directory.</p>
+</dd>
+<dt><strong><a name="env_hash" class="item">env =&gt; \%hash</a></strong></dt>
+
+<dd>
+<p>Override the environment for the process.</p>
+</dd>
+<dt><strong><a name="env_hide_keys" class="item">env_hide =&gt; \@keys</a></strong></dt>
+
+<dd>
+<p>List of environment variables that will not be passed to the kid.  You
+might pass this as <code>[keys %ENV]</code> if you want the process to start
+out with an environment that only consist of what you passed in with the
+<code>env</code> option.</p>
+</dd>
+<dt><strong><a name="stdin_filehandle" class="item">stdin =&gt; $filehandle</a></strong></dt>
+
+<dd>
+<p>Make the new process run with stdin from the given filehandle.  If not
+given the process will be started with <em class="file">/dev/null</em> as its input.  If
+you want the process to inherit the input of the parent you need to
+pass <code>*STDIN</code> explictly.</p>
+</dd>
+<dt><strong><a name="output_path" class="item">output =&gt; $path</a></strong></dt>
+
+<dd>
+<p>Redirect the combined STDOUT and STDERR to the given file.  The
+command will croak if the file can't be opened.  If not specified,
+then the STDOUT and STDERR of the process is simply inherited from the
+parent.</p>
+</dd>
+<dt><strong><a name="silent_bool" class="item">silent =&gt; $bool</a></strong></dt>
+
+<dd>
+<p>If TRUE don't echo commands as they are executed.</p>
+</dd>
+<dt><strong><a name="ignore_err_bool" class="item">ignore_err =&gt; $bool</a></strong></dt>
+
+<dd>
+<p>If TRUE don't croak if the command exits with a non-zero status.</p>
+</dd>
+<dt><strong><a name="nice_bool" class="item">nice =&gt; $bool</a></strong></dt>
+
+<dd>
+<p>Be nice!</p>
+</dd>
+<dt><strong><a name="tee_bool" class="item">tee =&gt; $bool</a></strong></dt>
+
+<dd>
+<p>If TRUE send the output captured in the <code>output</code> file to the current STDOUT
+as well.  No effect unless <code>output</code> is specified.</p>
+</dd>
+<dt><strong><a name="new_group_bool" class="item">new_group =&gt; $bool</a></strong></dt>
+
+<dd>
+<p>If TRUE start a new process group for the process.</p>
+</dd>
+<dt><strong><a name="limit_time_seconds" class="item">limit_time =&gt; $seconds</a></strong></dt>
+
+<dd>
+<p>Kill the process (or the process group if <code>new_group</code> was specified)
+if it runs for longer than the specified number of seconds.</p>
+</dd>
+<dt><strong><a name="limit_output_megabytes" class="item">limit_output =&gt; $megabytes</a></strong></dt>
+
+<dd>
+<p>Kill the process (or the process group if <code>new_group</code> was specified)
+if it output file grows bigger than the specified number of mega
+bytes.  No effect unless <code>output</code> was specified.</p>
+</dd>
+<dt><strong><a name="limit_cpu_seconds" class="item">limit_cpu =&gt; $seconds</a></strong></dt>
+
+<dt><strong><a name="limit_xxx_megabytes" class="item">limit_XXX =&gt; $megabytes</a></strong></dt>
+
+<dd>
+<p>Other limits might also be passed which will set how much resources the process
+is allowed to use.  The unit for all size limits are megabytes.  See
+<code>BSD::Resource</code> for allowed values.  Also consult the <code>ulimit</code> command in you
+shell.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="shell_quote" class="item">shell_quote( @args )</a></strong></dt>
+
+<dd>
+<p>Will quote the arguments provided so that they can be passed to the
+command shell without interpretation by the shell.  This is useful
+with <a href="#run"><code>run()</code></a> when you can't provide separate @args, e.g.:</p>
+<pre>
+   <span class="variable">run</span><span class="operator">(</span><span class="variable">shell_quote</span><span class="operator">(</span><span class="string">"rm"</span><span class="operator">,</span> <span class="string">"-f"</span><span class="operator">,</span> <span class="variable">@files</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">" &gt;dev/null"</span><span class="operator">);</span>
+</pre>
+<p>In list context it returns the same number of values as arguments
+passed in.  Only those arg values that need quoting will be quoted.</p>
+<p>In scalar context it will return a single string with all the quoted
+@args separated by space.</p>
+<p>In void context it will attempt inline modification of the @args
+passed.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="environment">ENVIRONMENT</a></h1>
+<p>If the AS_RUN_SILENT environment variable is TRUE, then printing of
+the command about to run for <a href="#run"><code>run()</code></a> is suppressed.</p>
+<p>If the AS_RUN_PREFIX environment variable is set, then the printed
+command is prefixed with the given string.  If AS_RUN_SILENT is TRUE,
+then this value is ignored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>none.</p>
+
+</body>
+
+</html>

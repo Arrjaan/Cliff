@@ -1,0 +1,136 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>filetest - Perl pragma to control the filetest permission operators</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>filetest - Perl pragma to control the filetest permission operators</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#consider_this_carefully">Consider this carefully</a></li>
+		<li><a href="#the_access_sub_pragma">The &quot;access&quot; sub-pragma</a></li>
+		<li><a href="#limitation_with_regard_to__">Limitation with regard to <code>_</code></a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>filetest - Perl pragma to control the filetest permission operators</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="variable">$can_perhaps_read</span> <span class="operator">=</span> <span class="keyword">-r</span> <span class="string">"file"</span><span class="operator">;</span>      <span class="comment"># use the mode bits</span>
+    <span class="operator">{</span>
+        <span class="keyword">use</span> <span class="variable">filetest</span> <span class="string">'access'</span><span class="operator">;</span>          <span class="comment"># intuit harder</span>
+        <span class="variable">$can_really_read</span> <span class="operator">=</span> <span class="keyword">-r</span> <span class="string">"file"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="variable">$can_perhaps_read</span> <span class="operator">=</span> <span class="keyword">-r</span> <span class="string">"file"</span><span class="operator">;</span>      <span class="comment"># use the mode bits again</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This pragma tells the compiler to change the behaviour of the filetest
+permission operators, <a href="../lib/pods/perlguts.html#r"><code>-r</code></a> <a href="../lib/pods/perlrun.html#w"><code>-w</code></a> <a href="../lib/pods/perlrun.html#x"><code>-x</code></a> <code>-R</code> <a href="../lib/pods/perlrun.html#w"><code>-W</code></a> <a href="../lib/pods/perlrun.html#x"><code>-X</code></a>
+(see <a href="../lib/pods/perlfunc.html">the perlfunc manpage</a>).</p>
+<p>The default behaviour of file test operators is to use the simple
+mode bits as returned by the <a href="../lib/pods/perlfunc.html#stat"><code>stat()</code></a> family of system calls.  However,
+many operating systems have additional features to define more complex
+access rights, for example ACLs (Access Control Lists).
+For such environments, <code>use filetest</code> may help the permission
+operators to return results more consistent with other tools.</p>
+<p>The <code>use filetest</code> or <code>no filetest</code> statements affect file tests defined in
+their block, up to the end of the closest enclosing block (they are lexically
+block-scoped).</p>
+<p>Currently, only the <code>access</code> sub-pragma is implemented.  It enables (or
+disables) the use of <code>access()</code> when available, that is, on most UNIX systems and
+other POSIX environments.  See details below.</p>
+<p>
+</p>
+<h2><a name="consider_this_carefully">Consider this carefully</a></h2>
+<p>The <a href="../lib/pods/perlfunc.html#stat"><code>stat()</code></a> mode bits are probably right for most of the files and
+directories found on your system, because few people want to use the
+additional features offered by <code>access()</code>. But you may encounter surprises
+if your program runs on a system that uses ACLs, since the <a href="../lib/pods/perlfunc.html#stat"><code>stat()</code></a>
+information won't reflect the actual permissions.</p>
+<p>There may be a slight performance decrease in the filetest operations
+when the filetest pragma is in effect, because checking bits is very
+cheap.</p>
+<p>Also, note that using the file tests for security purposes is a lost cause
+from the start: there is a window open for race conditions (who is to
+say that the permissions will not change between the test and the real
+operation?).  Therefore if you are serious about security, just try
+the real operation and test for its success - think in terms of atomic
+operations.  Filetests are more useful for filesystem administrative
+tasks, when you have no need for the content of the elements on disk.</p>
+<p>
+</p>
+<h2><a name="the_access_sub_pragma">The &quot;access&quot; sub-pragma</a></h2>
+<p>UNIX and POSIX systems provide an abstract <code>access()</code> operating system call,
+which should be used to query the read, write, and execute rights. This
+function hides various distinct approaches in additional operating system
+specific security features, like Access Control Lists (ACLs)</p>
+<p>The extended filetest functionality is used by Perl only when the argument
+of the operators is a filename, not when it is a filehandle.</p>
+<p>
+</p>
+<h2><a name="limitation_with_regard_to__">Limitation with regard to <code>_</code></a></h2>
+<p>Because <code>access()</code> does not invoke <a href="../lib/pods/perlfunc.html#stat"><code>stat()</code></a> (at least not in a way visible
+to Perl), <strong>the stat result cache &quot;_&quot; is not set</strong>.  This means that the
+outcome of the following two tests is different.  The first has the stat
+bits of <code>/etc/passwd</code> in <code>_</code>, and in the second case this still
+contains the bits of <code>/etc</code>.</p>
+<pre>
+ <span class="operator">{</span> <span class="keyword">-d</span> <span class="string">'/etc'</span><span class="operator">;</span>
+   <span class="keyword">-w</span> <span class="string">'/etc/passwd'</span><span class="operator">;</span>
+   <span class="keyword">print</span> <span class="keyword">-f</span> <span class="variable">_</span> <span class="operator">?</span> <span class="string">'Yes'</span> <span class="operator">:</span> <span class="string">'No'</span><span class="operator">;</span>   <span class="comment"># Yes</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="operator">{</span> <span class="keyword">use</span> <span class="variable">filetest</span> <span class="string">'access'</span><span class="operator">;</span>
+   <span class="keyword">-d</span> <span class="string">'/etc'</span><span class="operator">;</span>
+   <span class="keyword">-w</span> <span class="string">'/etc/passwd'</span><span class="operator">;</span>
+   <span class="keyword">print</span> <span class="keyword">-f</span> <span class="variable">_</span> <span class="operator">?</span> <span class="string">'Yes'</span> <span class="operator">:</span> <span class="string">'No'</span><span class="operator">;</span>   <span class="comment"># No</span>
+ <span class="operator">}</span>
+</pre>
+<p>Of course, unless your OS does not implement <code>access()</code>, in which case the
+pragma is simply ignored.  Best not to use <code>_</code> at all in a file where
+the filetest pragma is active!</p>
+<p>As a side effect, as <code>_</code> doesn't work, stacked filetest operators
+(<code>-f -w $file</code>) won't work either.</p>
+<p>This limitation might be removed in a future version of perl.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,288 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Win32::Clipboard - Interaction with the Windows clipboard</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Win32::Clipboard - Interaction with the Windows clipboard</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#reference">REFERENCE</a></li>
+		<li><a href="#constants">CONSTANTS</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Win32::Clipboard - Interaction with the Windows clipboard</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::Clipboard</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$CLIP</span> <span class="operator">=</span> <span class="variable">Win32::Clipboard</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Clipboard contains: "</span><span class="operator">,</span> <span class="variable">$CLIP</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(),</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$CLIP</span><span class="operator">-&gt;</span><span class="variable">Set</span><span class="operator">(</span><span class="string">"some text to copy into the clipboard"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$CLIP</span><span class="operator">-&gt;</span><span class="variable">Empty</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="variable">$CLIP</span><span class="operator">-&gt;</span><span class="variable">WaitForChange</span><span class="operator">();</span>
+    <span class="keyword">print</span> <span class="string">"Clipboard has changed!\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module lets you interact with the Windows clipboard: you can get
+its content, set it, empty it, or let your script sleep until it
+changes.  This version supports 3 formats for clipboard data:</p>
+<ul>
+<li><strong><a name="text" class="item">text (<code>CF_TEXT</code>)</a></strong>
+
+<p>The clipboard contains some text; this is the <strong>only</strong> format you can
+use to set clipboard data; you get it as a single string.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$text</span> <span class="operator">=</span> <span class="variable">Win32::Clipboard::GetText</span><span class="operator">();</span>
+    <span class="keyword">print</span> <span class="variable">$text</span><span class="operator">;</span>
+</pre>
+</li>
+<li><strong><a name="bitmap" class="item">bitmap (<code>CF_DIB</code>)</a></strong>
+
+<p>The clipboard contains an image, either a bitmap or a picture copied
+in the clipboard from a graphic application. The data you get is a
+binary buffer ready to be written to a bitmap (BMP format) file.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$image</span> <span class="operator">=</span> <span class="variable">Win32::Clipboard::GetBitmap</span><span class="operator">();</span>
+    <span class="keyword">open</span>    <span class="variable">BITMAP</span><span class="operator">,</span> <span class="string">"&gt;some.bmp"</span><span class="operator">;</span>
+    <span class="keyword">binmode</span> <span class="variable">BITMAP</span><span class="operator">;</span>
+    <span class="keyword">print</span>   <span class="variable">BITMAP</span> <span class="variable">$image</span><span class="operator">;</span>
+    <span class="keyword">close</span>   <span class="variable">BITMAP</span><span class="operator">;</span>
+</pre>
+</li>
+<li><strong><a name="files" class="item">list of files (<code>CF_HDROP</code>)</a></strong>
+
+<p>The clipboard contains files copied or cutted from an Explorer-like
+application; you get a list of filenames.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">@files</span> <span class="operator">=</span> <span class="variable">Win32::Clipboard::GetFiles</span><span class="operator">();</span>
+    <span class="keyword">print</span> <span class="keyword">join</span><span class="operator">(</span><span class="string">"\n"</span><span class="operator">,</span> <span class="variable">@files</span><span class="operator">);</span>
+</pre>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="reference">REFERENCE</a></h2>
+<p>All the functions can be used either with their full name
+(eg. <strong>Win32::Clipboard::Get</strong>) or as methods of a <code>Win32::Clipboard</code>
+object.  For the syntax, refer to <a href="#synopsis">SYNOPSIS</a> above. Note also that
+you can create a clipboard object and set its content at the same time
+with:</p>
+<pre>
+    <span class="variable">$CLIP</span> <span class="operator">=</span> <span class="variable">Win32::Clipboard</span><span class="operator">(</span><span class="string">"blah blah blah"</span><span class="operator">);</span>
+</pre>
+<p>or with the more common form:</p>
+<pre>
+    <span class="variable">$CLIP</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Clipboard</span><span class="operator">(</span><span class="string">"blah blah blah"</span><span class="operator">);</span>
+</pre>
+<p>If you prefer, you can even tie the Clipboard to a variable like this:</p>
+<pre>
+    <span class="keyword">tie</span> <span class="variable">$CLIP</span><span class="operator">,</span> <span class="string">'Win32::Clipboard'</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Clipboard content: </span><span class="variable">$CLIP</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$CLIP</span> <span class="operator">=</span> <span class="string">"some text to copy to the clipboard..."</span><span class="operator">;</span>
+</pre>
+<p>In this case, you can still access other methods using the <a href="../../lib/pods/perlfunc.html#tied"><code>tied()</code></a>
+function:</p>
+<pre>
+    <span class="keyword">tied</span><span class="operator">(</span><span class="variable">$CLIP</span><span class="operator">)-&gt;</span><span class="variable">Empty</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="string">"got the picture"</span> <span class="keyword">if</span> <span class="keyword">tied</span><span class="operator">(</span><span class="variable">$CLIP</span><span class="operator">)-&gt;</span><span class="variable">IsBitmap</span><span class="operator">;</span>
+</pre>
+<dl>
+<dt><strong><a name="empty" class="item"><code>Empty()</code></a></strong></dt>
+
+<dd>
+<p>Empty the clipboard.</p>
+</dd>
+<dt><strong><a name="enumformats" class="item"><code>EnumFormats()</code></a></strong></dt>
+
+<dd>
+<p>Returns an array of identifiers describing the format for the data
+currently in the clipboard. Formats can be standard ones (described in
+the <a href="#constants">CONSTANTS</a> section) or application-defined custom ones. See
+also <a href="#isformatavailable"><code>IsFormatAvailable()</code></a>.</p>
+</dd>
+<dt><strong><a name="get" class="item"><code>Get()</code></a></strong></dt>
+
+<dd>
+<p>Returns the clipboard content; note that the result depends on the
+nature of clipboard data; to ensure that you get only the desired
+format, you should use <a href="#gettext"><code>GetText()</code></a>, <a href="#getbitmap"><code>GetBitmap()</code></a> or <a href="#getfiles"><code>GetFiles()</code></a>
+instead. <a href="#get"><code>Get()</code></a> is in fact implemented as:</p>
+<pre>
+    <span class="keyword">if</span><span class="operator">(</span>    <span class="variable">IsBitmap</span><span class="operator">()</span> <span class="operator">)</span> <span class="operator">{</span> <span class="keyword">return</span> <span class="variable">GetBitmap</span><span class="operator">();</span> <span class="operator">}</span>
+    <span class="keyword">elsif</span><span class="operator">(</span> <span class="variable">IsFiles</span><span class="operator">()</span>  <span class="operator">)</span> <span class="operator">{</span> <span class="keyword">return</span> <span class="variable">GetFiles</span><span class="operator">();</span>  <span class="operator">}</span>
+    <span class="keyword">else</span>                <span class="operator">{</span> <span class="keyword">return</span> <span class="variable">GetText</span><span class="operator">();</span>   <span class="operator">}</span>
+</pre>
+<p>See also <a href="#isbitmap"><code>IsBitmap()</code></a>, <a href="#isfiles"><code>IsFiles()</code></a>, <a href="#istext"><code>IsText()</code></a>, <a href="#enumformats"><code>EnumFormats()</code></a> and
+<a href="#isformatavailable"><code>IsFormatAvailable()</code></a> to check the clipboard format before getting data.</p>
+</dd>
+<dt><strong><a name="getas" class="item">GetAs(FORMAT)</a></strong></dt>
+
+<dd>
+<p>Returns the clipboard content in the desired FORMAT (can be one of the
+constants defined in the <a href="#constants">CONSTANTS</a> section or a custom
+format). Note that the only meaningful identifiers are CF_TEXT,
+CF_UNICODETEXT, CF_DIB and CF_HDROP; any other format is treated as a
+string.</p>
+<p>If CF_UNICODETEXT is used, then binary Unicode data is returned. A
+perl unicode string can be generated as follows:</p>
+<pre>
+    <span class="variable">$text</span> <span class="operator">=</span> <span class="variable">$clip</span><span class="operator">-&gt;</span><span class="variable">GetAs</span><span class="operator">(</span><span class="variable">CF_UNICODETEXT</span><span class="operator">);</span>
+    <span class="variable">$text</span> <span class="operator">=</span> <span class="variable">Encode::decode</span><span class="operator">(</span><span class="string">"UTF16-LE"</span><span class="operator">,</span> <span class="variable">$text</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="getbitmap" class="item"><code>GetBitmap()</code></a></strong></dt>
+
+<dd>
+<p>Returns the clipboard content as an image, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.</p>
+</dd>
+<dt><strong><a name="getfiles" class="item"><code>GetFiles()</code></a></strong></dt>
+
+<dd>
+<p>Returns the clipboard content as a list of filenames, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on
+errors.</p>
+</dd>
+<dt><strong><a name="getformatname" class="item">GetFormatName(FORMAT)</a></strong></dt>
+
+<dd>
+<p>Returns the name of the specified custom clipboard format, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>
+on errors; note that you cannot get the name of the standard formats
+(described in the <a href="#constants">CONSTANTS</a> section).</p>
+</dd>
+<dt><strong><a name="gettext" class="item"><code>GetText()</code></a></strong></dt>
+
+<dd>
+<p>Returns the clipboard content as a string, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.</p>
+</dd>
+<dt><strong><a name="isbitmap" class="item"><code>IsBitmap()</code></a></strong></dt>
+
+<dd>
+<p>Returns a boolean value indicating if the clipboard contains an image.
+See also <a href="#getbitmap"><code>GetBitmap()</code></a>.</p>
+</dd>
+<dt><strong><a name="isfiles" class="item"><code>IsFiles()</code></a></strong></dt>
+
+<dd>
+<p>Returns a boolean value indicating if the clipboard contains a list of
+files. See also <a href="#getfiles"><code>GetFiles()</code></a>.</p>
+</dd>
+<dt><strong><a name="isformatavailable" class="item">IsFormatAvailable(FORMAT)</a></strong></dt>
+
+<dd>
+<p>Checks if the clipboard data matches the specified FORMAT (one of the
+constants described in the <a href="#constants">CONSTANTS</a> section); returns zero if the
+data does not match, a nonzero value if it matches.</p>
+</dd>
+<dt><strong><a name="istext" class="item"><code>IsText()</code></a></strong></dt>
+
+<dd>
+<p>Returns a boolean value indicating if the clipboard contains text.
+See also <a href="#gettext"><code>GetText()</code></a>.</p>
+</dd>
+<dt><strong><a name="set" class="item">Set(VALUE)</a></strong></dt>
+
+<dd>
+<p>Set the clipboard content to the specified string.</p>
+</dd>
+<dt><strong><a name="waitforchange" class="item">WaitForChange([TIMEOUT])</a></strong></dt>
+
+<dd>
+<p>This function halts the script until the clipboard content changes. If
+you specify a <code>TIMEOUT</code> value (in milliseconds), the function will
+return when this timeout expires, even if the clipboard hasn't
+changed. If no value is given, it will wait indefinitely. Returns 1 if
+the clipboard has changed, <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="constants">CONSTANTS</a></h2>
+<p>These constants are the standard clipboard formats recognized by
+Win32::Clipboard:</p>
+<pre>
+    CF_TEXT             1
+    CF_DIB              8
+    CF_HDROP            15</pre>
+<p>The following formats are <strong>not recognized</strong> by Win32::Clipboard; they
+are, however, exported constants and can eventually be used with the
+<a href="#enumformats"><code>EnumFormats()</code></a>, <a href="#isformatavailable"><code>IsFormatAvailable()</code></a> and <a href="#getas"><code>GetAs()</code></a> functions:</p>
+<pre>
+    CF_BITMAP           2
+    CF_METAFILEPICT     3
+    CF_SYLK             4
+    CF_DIF              5
+    CF_TIFF             6
+    CF_OEMTEXT          7
+    CF_PALETTE          9
+    CF_PENDATA          10
+    CF_RIFF             11
+    CF_WAVE             12
+    CF_UNICODETEXT      13
+    CF_ENHMETAFILE      14
+    CF_LOCALE           16</pre>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Version 0.52 was released by Hideyo Imazu &lt;<em class="file"><a href="mailto:himazu@gmail.com">himazu@gmail.com</a></em>&gt;.</p>
+<p>Aldo Calpini &lt;<em class="file"><a href="mailto:dada@perl.it">dada@perl.it</a></em>&gt; was the former maintainer.</p>
+<p>Original XS porting by Gurusamy Sarathy &lt;<em class="file"><a href="mailto:gsar@cpan.org">gsar@cpan.org</a></em>&gt;.</p>
+
+</body>
+
+</html>

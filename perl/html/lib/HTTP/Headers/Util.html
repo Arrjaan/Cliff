@@ -1,0 +1,140 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>HTTP::Headers::Util - Header value parsing utility functions</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>HTTP::Headers::Util - Header value parsing utility functions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>HTTP::Headers::Util - Header value parsing utility functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">HTTP::Headers::Util</span> <span class="string">qw(split_header_words)</span><span class="operator">;</span>
+  <span class="variable">@values</span> <span class="operator">=</span> <span class="variable">split_header_words</span><span class="operator">(</span><span class="variable">$h</span><span class="operator">-&gt;</span><span class="variable">header</span><span class="operator">(</span><span class="string">"Content-Type"</span><span class="operator">));</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides a few functions that helps parsing and
+construction of valid HTTP header values.  None of the functions are
+exported by default.</p>
+<p>The following functions are available:</p>
+<dl>
+<dt><strong><a name="split_header_words" class="item">split_header_words( @header_values )</a></strong></dt>
+
+<dd>
+<p>This function will parse the header values given as argument into a
+list of anonymous arrays containing key/value pairs.  The function
+knows how to deal with &quot;,&quot;, &quot;;&quot; and &quot;=&quot; as well as quoted values after
+&quot;=&quot;.  A list of space separated tokens are parsed as if they were
+separated by &quot;;&quot;.</p>
+<p>If the @header_values passed as argument contains multiple values,
+then they are treated as if they were a single value separated by
+comma &quot;,&quot;.</p>
+<p>This means that this function is useful for parsing header fields that
+follow this syntax (BNF as from the HTTP/1.1 specification, but we relax
+the requirement for tokens).</p>
+<pre>
+  <span class="variable">headers</span>           <span class="operator">=</span> <span class="comment">#header</span>
+  <span class="variable">header</span>            <span class="operator">=</span> <span class="operator">(</span><span class="variable">token</span> <span class="operator">|</span> <span class="variable">parameter</span><span class="operator">)</span> <span class="operator">*(</span> <span class="operator">[</span><span class="string">";"</span><span class="operator">]</span> <span class="operator">(</span><span class="variable">token</span> <span class="operator">|</span> <span class="variable">parameter</span><span class="operator">))</span>
+</pre>
+<pre>
+  <span class="variable">token</span>             <span class="operator">=</span> <span class="number">1</span><span class="operator">*&lt;</span><span class="variable">any</span> <span class="variable">CHAR</span> <span class="variable">except</span> <span class="variable">CTLs</span> <span class="keyword">or</span> <span class="variable">separators</span><span class="operator">&gt;</span>
+  <span class="variable">separators</span>        <span class="operator">=</span> <span class="string">"("</span> <span class="operator">|</span> <span class="string">")"</span> <span class="operator">|</span> <span class="string">"&lt;"</span> <span class="operator">|</span> <span class="string">"&gt;"</span> <span class="operator">|</span> <span class="string">"@"</span>
+                    <span class="operator">|</span> <span class="string">","</span> <span class="operator">|</span> <span class="string">";"</span> <span class="operator">|</span> <span class="string">":"</span> <span class="operator">|</span> <span class="string">"\" | &lt;"</span><span class="operator">&gt;</span>
+                    <span class="operator">|</span> <span class="string">"/"</span> <span class="operator">|</span> <span class="string">"["</span> <span class="operator">|</span> <span class="string">"]"</span> <span class="operator">|</span> <span class="string">"?"</span> <span class="operator">|</span> <span class="string">"="</span>
+                    <span class="operator">|</span> <span class="string">"{"</span> <span class="operator">|</span> <span class="string">"}"</span> <span class="operator">|</span> <span class="variable">SP</span> <span class="operator">|</span> <span class="variable">HT</span>
+</pre>
+<pre>
+  quoted-string     = ( &lt;&quot;&gt; *(qdtext | quoted-pair ) &lt;&quot;&gt; )
+  qdtext            = &lt;any TEXT except &lt;&quot;&gt;&gt;
+  quoted-pair       = &quot;\&quot; CHAR</pre>
+<pre>
+  parameter         = attribute &quot;=&quot; value
+  attribute         = token
+  value             = token | quoted-string</pre>
+<p>Each <em>header</em> is represented by an anonymous array of key/value
+pairs.  The keys will be all be forced to lower case.
+The value for a simple token (not part of a parameter) is <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.
+Syntactically incorrect headers will not necessary be parsed as you
+would want.</p>
+<p>This is easier to describe with some examples:</p>
+<pre>
+   <span class="variable">split_header_words</span><span class="operator">(</span><span class="string">'foo="bar"; port="80,81"; DISCARD, BAR=baz'</span><span class="operator">);</span>
+   <span class="variable">split_header_words</span><span class="operator">(</span><span class="string">'text/html; charset="iso-8859-1"'</span><span class="operator">);</span>
+   <span class="variable">split_header_words</span><span class="operator">(</span><span class="string">'Basic realm="\\"foo\\\\bar\\""'</span><span class="operator">);</span>
+</pre>
+<p>will return</p>
+<pre>
+   [foo=&gt;'bar', port=&gt;'80,81', discard=&gt; undef], [bar=&gt;'baz' ]
+   ['text/html' =&gt; undef, charset =&gt; 'iso-8859-1']
+   [basic =&gt; undef, realm =&gt; &quot;\&quot;foo\\bar\&quot;&quot;]</pre>
+<p>If you don't want the function to convert tokens and attribute keys to
+lower case you can call it as <code>_split_header_words</code> instead (with a
+leading underscore).</p>
+</dd>
+<dt><strong><a name="join_header_words" class="item">join_header_words( @arrays )</a></strong></dt>
+
+<dd>
+<p>This will do the opposite of the conversion done by <a href="#split_header_words"><code>split_header_words()</code></a>.
+It takes a list of anonymous arrays as arguments (or a list of
+key/value pairs) and produces a single header value.  Attribute values
+are quoted if needed.</p>
+<p>Example:</p>
+<pre>
+   <span class="variable">join_header_words</span><span class="operator">(</span><span class="operator">[</span><span class="string">"text/plain"</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="string">charset</span> <span class="operator">=&gt;</span> <span class="string">"iso-8859/1"</span><span class="operator">]</span><span class="operator">);</span>
+   <span class="variable">join_header_words</span><span class="operator">(</span><span class="string">"text/plain"</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="string">charset</span> <span class="operator">=&gt;</span> <span class="string">"iso-8859/1"</span><span class="operator">);</span>
+</pre>
+<p>will both return the string:</p>
+<pre>
+   <span class="variable">text</span><span class="operator">/</span><span class="variable">plain</span><span class="operator">;</span> <span class="variable">charset</span><span class="operator">=</span><span class="string">"iso-8859/1"</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1997-1998, Gisle Aas</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

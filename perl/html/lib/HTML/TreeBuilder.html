@@ -1,0 +1,563 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>HTML::TreeBuilder - Parser that builds a HTML syntax tree</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>HTML::TreeBuilder - Parser that builds a HTML syntax tree</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods_and_attributes">METHODS AND ATTRIBUTES</a></li>
+	<li><a href="#html_and_its_discontents">HTML AND ITS DISCONTENTS</a></li>
+	<li><a href="#translations">TRANSLATIONS?</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#bug_reports">BUG REPORTS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>HTML::TreeBuilder - Parser that builds a HTML syntax tree</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$file_name</span> <span class="operator">(</span><span class="variable">@ARGV</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$tree</span> <span class="operator">=</span> <span class="variable">HTML::TreeBuilder</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span> <span class="comment"># empty tree</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">parse_file</span><span class="operator">(</span><span class="variable">$file_name</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"Hey, here's a dump of the parse tree of </span><span class="variable">$file_name</span><span class="string">:\n"</span><span class="operator">;</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">dump</span><span class="operator">;</span> <span class="comment"># a method we inherit from HTML::Element</span>
+    <span class="keyword">print</span> <span class="string">"And here it is, bizarrely rerendered as HTML:\n"</span><span class="operator">,</span>
+      <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">as_HTML</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    
+    <span class="comment"># Now that we're done with it, we must destroy it.</span>
+    <span class="variable">$tree</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">delete</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>(This class is part of the <a href="../../lib/HTML/Tree.html">HTML::Tree</a> dist.)</p>
+<p>This class is for HTML syntax trees that get built out of HTML
+source.  The way to use it is to:</p>
+<p>1. start a new (empty) HTML::TreeBuilder object,</p>
+<p>2. then use one of the methods from HTML::Parser (presumably with
+$tree-&gt;<a href="#parse_file"><code>parse_file($filename)</code></a> for files, or with
+$tree-&gt;<a href="#parse"><code>parse($document_content)</code></a> and $tree-&gt;eof if you've got
+the content in a string) to parse the HTML
+document into the tree $tree.</p>
+<p>(You can combine steps 1 and 2 with the &quot;new_from_file&quot; or
+&quot;new_from_content&quot; methods.)</p>
+<p>2b. call $root-&gt;<a href="#elementify"><code>elementify()</code></a> if you want.</p>
+<p>3. do whatever you need to do with the syntax tree, presumably
+involving traversing it looking for some bit of information in it,</p>
+<p>4. and finally, when you're done with the tree, call $tree-&gt;<a href="#delete"><code>delete()</code></a> to
+erase the contents of the tree from memory.  This kind of thing
+usually isn't necessary with most Perl objects, but it's necessary for
+TreeBuilder objects.  See <a href="../../lib/HTML/Element.html">HTML::Element</a> for a more verbose
+explanation of why this is the case.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods_and_attributes">METHODS AND ATTRIBUTES</a></h1>
+<p>Objects of this class inherit the methods of both HTML::Parser and
+HTML::Element.  The methods inherited from HTML::Parser are used for
+building the HTML tree, and the methods inherited from HTML::Element
+are what you use to scrutinize the tree.  Besides this
+(HTML::TreeBuilder) documentation, you must also carefully read the
+HTML::Element documentation, and also skim the HTML::Parser
+documentation -- probably only its parse and parse_file methods are of
+interest.</p>
+<p>Most of the following methods native to HTML::TreeBuilder control how
+parsing takes place; they should be set <em>before</em> you try parsing into
+the given object.  You can set the attributes by passing a TRUE or
+FALSE value as argument.  E.g., $root-&gt;implicit_tags returns the current
+setting for the implicit_tags option, $root-&gt;<a href="#implicit_tags"><code>implicit_tags(1)</code></a> turns that
+option on, and $root-&gt;<a href="#implicit_tags"><code>implicit_tags(0)</code></a> turns it off.</p>
+<dl>
+<dt><strong><a name="new_from_file" class="item">$root = HTML::TreeBuilder-&gt;new_from_file(...)</a></strong></dt>
+
+<dd>
+<p>This &quot;shortcut&quot; constructor merely combines constructing a new object
+(with the &quot;new&quot; method, below), and calling $new-&gt;parse_file(...) on
+it.  Returns the new object.  Note that this provides no way of
+setting any parse options like store_comments (for that, call new, and
+then set options, before calling parse_file).  See the notes (below)
+on parameters to parse_file.</p>
+</dd>
+<dt><strong><a name="new_from_content" class="item">$root = HTML::TreeBuilder-&gt;new_from_content(...)</a></strong></dt>
+
+<dd>
+<p>This &quot;shortcut&quot; constructor merely combines constructing a new object
+(with the &quot;new&quot; method, below), and calling for(...){$new-&gt;parse($_)}
+and $new-&gt;eof on it.  Returns the new object.  Note that this provides
+no way of setting any parse options like store_comments (for that,
+call new, and then set options, before calling parse_file).  Example
+usages: HTML::TreeBuilder-&gt;<a href="#new_from_content"><code>new_from_content(@lines)</code></a>, or
+HTML::TreeBuilder-&gt;<a href="#new_from_content"><code>new_from_content($content)</code></a></p>
+</dd>
+<dt><strong><a name="new" class="item">$root = HTML::TreeBuilder-&gt;<code>new()</code></a></strong></dt>
+
+<dd>
+<p>This creates a new HTML::TreeBuilder object.  This method takes no
+attributes.</p>
+</dd>
+<dt><strong><a name="parse_file" class="item">$root-&gt;parse_file(...)</a></strong></dt>
+
+<dd>
+<p>[An important method inherited from <a href="../../lib/HTML/Parser.html">HTML::Parser</a>, which
+see.  Current versions of HTML::Parser can take a filespec, or a
+filehandle object, like *FOO, or some object from class IO::Handle,
+IO::File, IO::Socket) or the like.
+I think you should check that a given file exists <em>before</em> calling 
+$root-&gt;parse_file($filespec).]</p>
+</dd>
+<dt><strong><a name="parse" class="item">$root-&gt;parse(...)</a></strong></dt>
+
+<dd>
+<p>[A important method inherited from <a href="../../lib/HTML/Parser.html">HTML::Parser</a>, which
+see.  See the note below for $root-&gt;eof().]</p>
+</dd>
+<dt><strong><a name="eof" class="item">$root-&gt;<code>eof()</code></a></strong></dt>
+
+<dd>
+<p>This signals that you're finished parsing content into this tree; this
+runs various kinds of crucial cleanup on the tree.  This is called
+<em>for you</em> when you call $root-&gt;parse_file(...), but not when
+you call $root-&gt;parse(...).  So if you call
+$root-&gt;parse(...), then you <em>must</em> call $root-&gt;<a href="#eof"><code>eof()</code></a>
+once you've finished feeding all the chunks to parse(...), and
+before you actually start doing anything else with the tree in <code>$root</code>.</p>
+</dd>
+<dt><strong><a name="parse_content" class="item"><code>$root-&gt;parse_content(...)</code></a></strong></dt>
+
+<dd>
+<p>Basically a happly alias for <a href="#parse"><code>$root-&gt;parse(...); $root-&gt;eof</code></a>.
+Takes the exact same arguments as <a href="#parse"><code>$root-&gt;parse()</code></a>.</p>
+</dd>
+<dt><strong><a name="delete" class="item">$root-&gt;<code>delete()</code></a></strong></dt>
+
+<dd>
+<p>[An important method inherited from <a href="../../lib/HTML/Element.html">HTML::Element</a>, which
+see.]</p>
+</dd>
+<dt><strong><a name="elementify" class="item">$root-&gt;<code>elementify()</code></a></strong></dt>
+
+<dd>
+<p>This changes the class of the object in $root from
+HTML::TreeBuilder to the class used for all the rest of the elements
+in that tree (generally HTML::Element).  Returns $root.</p>
+<p>For most purposes, this is unnecessary, but if you call this after
+(after!!)
+you've finished building a tree, then it keeps you from accidentally
+trying to call anything but HTML::Element methods on it.  (I.e., if
+you accidentally call <a href="#parse_file"><code>$root-&gt;parse_file(...)</code></a> on the
+already-complete and elementified tree, then instead of charging ahead
+and <em>wreaking havoc</em>, it'll throw a fatal error -- since <code>$root</code> is
+now an object just of class HTML::Element which has no <a href="#parse_file"><code>parse_file</code></a>
+method.</p>
+<p>Note that elementify currently deletes all the private attributes of
+$root except for &quot;_tag&quot;, &quot;_parent&quot;, &quot;_content&quot;, &quot;_pos&quot;, and
+&quot;_implicit&quot;.  If anyone requests that I change this to leave in yet
+more private attributes, I might do so, in future versions.</p>
+</dd>
+<dt><strong><a name="guts" class="item">@nodes = $root-&gt;<code>guts()</code></a></strong></dt>
+
+<dt><strong>$parent_for_nodes = $root-&gt;<code>guts()</code></strong></dt>
+
+<dd>
+<p>In list context (as in the first case), this method returns the topmost
+non-implicit nodes in a tree.  This is useful when you're parsing HTML
+code that you know doesn't expect an HTML document, but instead just
+a fragment of an HTML document.  For example, if you wanted the parse
+tree for a file consisting of just this:</p>
+<pre>
+  &lt;li&gt;I like pie!</pre>
+<p>Then you would get that with <a href="#guts"><code>@nodes = $root-&gt;guts();</code></a>.
+It so happens that in this case, <code>@nodes</code> will contain just one
+element object, representing the &quot;li&quot; node (with &quot;I like pie!&quot; being
+its text child node).  However, consider if you were parsing this:</p>
+<pre>
+  &lt;hr&gt;Hooboy!&lt;hr&gt;</pre>
+<p>In that case, <a href="#guts"><code>$root-&gt;guts()</code></a> would return three items:
+an element object for the first &quot;hr&quot;, a text string &quot;Hooboy!&quot;, and
+another &quot;hr&quot; element object.</p>
+<p>For cases where you want definitely one element (so you can treat it as
+a &quot;document fragment&quot;, roughly speaking), call <a href="#guts"><code>guts()</code></a> in scalar
+context, as in <a href="#guts"><code>$parent_for_nodes = $root-&gt;guts()</code></a>. That works like
+<a href="#guts"><code>guts()</code></a> in list context; in fact, <a href="#guts"><code>guts()</code></a> in list context would
+have returned exactly one value, and if it would have been an object (as
+opposed to a text string), then that's what <a href="#guts"><code>guts</code></a> in scalar context
+will return.  Otherwise, if <a href="#guts"><code>guts()</code></a> in list context would have returned
+no values at all, then <a href="#guts"><code>guts()</code></a> in scalar context returns undef.  In
+all other cases, <a href="#guts"><code>guts()</code></a> in scalar context returns an implicit 'div'
+element node, with children consisting of whatever nodes <a href="#guts"><code>guts()</code></a>
+in list context would have returned.  Note that that may detach those
+nodes from <code>$root</code>'s tree.</p>
+</dd>
+<dt><strong><a name="disembowel" class="item">@nodes = $root-&gt;<code>disembowel()</code></a></strong></dt>
+
+<dt><strong>$parent_for_nodes = $root-&gt;<code>disembowel()</code></strong></dt>
+
+<dd>
+<p>The <a href="#disembowel"><code>disembowel()</code></a> method works just like the <a href="#guts"><code>guts()</code></a> method, except
+that disembowel definitively destroys the tree above the nodes that
+are returned.  Usually when you want the guts from a tree, you're just
+going to toss out the rest of the tree anyway, so this saves you the
+bother.  (Remember, &quot;disembowel&quot; means &quot;remove the guts from&quot;.)</p>
+</dd>
+<dt><strong><a name="implicit_tags" class="item">$root-&gt;implicit_tags(value)</a></strong></dt>
+
+<dd>
+<p>Setting this attribute to true will instruct the parser to try to
+deduce implicit elements and implicit end tags.  If it is false you
+get a parse tree that just reflects the text as it stands, which is
+unlikely to be useful for anything but quick and dirty parsing.
+(In fact, I'd be curious to hear from anyone who finds it useful to
+have implicit_tags set to false.)
+Default is true.</p>
+<p>Implicit elements have the <code>implicit()</code> attribute set.</p>
+</dd>
+<dt><strong><a name="implicit_body_p_tag" class="item">$root-&gt;implicit_body_p_tag(value)</a></strong></dt>
+
+<dd>
+<p>This controls an aspect of implicit element behavior, if implicit_tags
+is on:  If a text element (PCDATA) or a phrasal element (such as
+&quot;&lt;em&gt;&quot;) is to be inserted under &quot;&lt;body&gt;&quot;, two things
+can happen: if implicit_body_p_tag is true, it's placed under a new,
+implicit &quot;&lt;p&gt;&quot; tag.  (Past DTDs suggested this was the only
+correct behavior, and this is how past versions of this module
+behaved.)  But if implicit_body_p_tag is false, nothing is implicated
+-- the PCDATA or phrasal element is simply placed under
+&quot;&lt;body&gt;&quot;.  Default is false.</p>
+</dd>
+<dt><strong><a name="no_expand_entities" class="item">$root-&gt;no_expand_entities(value)</a></strong></dt>
+
+<dd>
+<p>This attribute controls whether entities are decoded during the initial
+parse of the source. Enable this if you don't want entities decoded to
+their character value. e.g. '&amp;amp;' is decoded to '&amp;' by default, but
+will be unchanged if this is enabled.
+Default is false (entities will be decoded.)</p>
+</dd>
+<dt><strong><a name="ignore_unknown" class="item">$root-&gt;ignore_unknown(value)</a></strong></dt>
+
+<dd>
+<p>This attribute controls whether unknown tags should be represented as
+elements in the parse tree, or whether they should be ignored. 
+Default is true (to ignore unknown tags.)</p>
+</dd>
+<dt><strong><a name="ignore_text" class="item">$root-&gt;ignore_text(value)</a></strong></dt>
+
+<dd>
+<p>Do not represent the text content of elements.  This saves space if
+all you want is to examine the structure of the document.  Default is
+false.</p>
+</dd>
+<dt><strong><a name="ignore_ignorable_whitespace" class="item">$root-&gt;ignore_ignorable_whitespace(value)</a></strong></dt>
+
+<dd>
+<p>If set to true, TreeBuilder will try to avoid
+creating ignorable whitespace text nodes in the tree.  Default is
+true.  (In fact, I'd be interested in hearing if there's ever a case
+where you need this off, or where leaving it on leads to incorrect
+behavior.)</p>
+</dd>
+<dt><strong><a name="no_space_compacting" class="item">$root-&gt;no_space_compacting(value)</a></strong></dt>
+
+<dd>
+<p>This determines whether TreeBuilder compacts all whitespace strings
+in the document (well, outside of PRE or TEXTAREA elements), or
+leaves them alone.  Normally (default, value of 0), each string of
+contiguous whitespace in the document is turned into a single space.
+But that's not done if no_space_compacting is set to 1.</p>
+<p>Setting no_space_compacting to 1 might be useful if you want
+to read in a tree just to make some minor changes to it before
+writing it back out.</p>
+<p>This method is experimental.  If you use it, be sure to report
+any problems you might have with it.</p>
+</dd>
+<dt><strong><a name="p_strict" class="item">$root-&gt;p_strict(value)</a></strong></dt>
+
+<dd>
+<p>If set to true (and it defaults to false), TreeBuilder will take a
+narrower than normal view of what can be under a &quot;p&quot; element; if it sees
+a non-phrasal element about to be inserted under a &quot;p&quot;, it will close that
+&quot;p&quot;.  Otherwise it will close p elements only for other &quot;p&quot;'s, headings,
+and &quot;form&quot; (although the latter may be removed in future versions).</p>
+<p>For example, when going thru this snippet of code,</p>
+<pre>
+  &lt;p&gt;stuff
+  &lt;ul&gt;</pre>
+<p>TreeBuilder will normally (with <a href="#p_strict"><code>p_strict</code></a> false) put the &quot;ul&quot; element
+under the &quot;p&quot; element.  However, with <a href="#p_strict"><code>p_strict</code></a> set to true, it will
+close the &quot;p&quot; first.</p>
+<p>In theory, there should be strictness options like this for other/all
+elements besides just &quot;p&quot;; but I treat this as a special case simply
+because of the fact that &quot;p&quot; occurs so frequently and its end-tag is
+omitted so often; and also because application of strictness rules
+at parse-time across all elements often makes tiny errors in HTML
+coding produce drastically bad parse-trees, in my experience.</p>
+<p>If you find that you wish you had an option like this to enforce
+content-models on all elements, then I suggest that what you want is
+content-model checking as a stage after TreeBuilder has finished
+parsing.</p>
+</dd>
+<dt><strong><a name="store_comments" class="item">$root-&gt;store_comments(value)</a></strong></dt>
+
+<dd>
+<p>This determines whether TreeBuilder will normally store comments found
+while parsing content into <code>$root</code>.  Currently, this is off by default.</p>
+</dd>
+<dt><strong><a name="store_declarations" class="item">$root-&gt;store_declarations(value)</a></strong></dt>
+
+<dd>
+<p>This determines whether TreeBuilder will normally store markup
+declarations found while parsing content into <code>$root</code>.  This is on
+by default.</p>
+</dd>
+<dt><strong><a name="store_pis" class="item">$root-&gt;store_pis(value)</a></strong></dt>
+
+<dd>
+<p>This determines whether TreeBuilder will normally store processing
+instructions found while parsing content into <code>$root</code> -- assuming a
+recent version of HTML::Parser (old versions won't parse PIs
+correctly).  Currently, this is off (false) by default.</p>
+<p>It is somewhat of a known bug (to be fixed one of these days, if
+anyone needs it?) that PIs in the preamble (before the &quot;html&quot;
+start-tag) end up actually <em>under</em> the &quot;html&quot; element.</p>
+</dd>
+<dt><strong><a name="warn" class="item">$root-&gt;warn(value)</a></strong></dt>
+
+<dd>
+<p>This determines whether syntax errors during parsing should generate
+warnings, emitted via Perl's <a href="#warn"><code>warn</code></a> function.</p>
+<p>This is off (false) by default.</p>
+</dd>
+<dt><strong><a name="element_class" class="item">$h-&gt;element_class</a></strong></dt>
+
+<dd>
+<p>This method returns the class which will be used for new elements.  It
+defaults to HTML::Element, but can be overridden by subclassing or esoteric
+means best left to those will will read the source and then not complain when
+those esoteric means change.  (Just subclass.)</p>
+</dd>
+<dt><strong><a name="debug" class="item">DEBUG</a></strong></dt>
+
+<dd>
+<p>Are we in Debug mode?</p>
+</dd>
+<dt><strong><a name="comment" class="item">comment</a></strong></dt>
+
+<dd>
+<p>Accept a &quot;here's a comment&quot; signal from HTML::Parser.</p>
+</dd>
+<dt><strong><a name="declaration" class="item">declaration</a></strong></dt>
+
+<dd>
+<p>Accept a &quot;here's a markup declaration&quot; signal from HTML::Parser.</p>
+</dd>
+<dt><strong><a name="done" class="item">done</a></strong></dt>
+
+<dd>
+<p>TODO: document</p>
+</dd>
+<dt><strong><a name="end" class="item">end</a></strong></dt>
+
+<dd>
+<p>Either: Acccept an end-tag signal from HTML::Parser
+Or: Method for closing currently open elements in some fairly complex
+way, as used by other methods in this class.</p>
+<p>TODO: Why is this hidden?</p>
+</dd>
+<dt><strong><a name="process" class="item">process</a></strong></dt>
+
+<dd>
+<p>Accept a &quot;here's a PI&quot; signal from HTML::Parser.</p>
+</dd>
+<dt><strong><a name="start" class="item">start</a></strong></dt>
+
+<dd>
+<p>Accept a signal from HTML::Parser for start-tags.</p>
+<p>TODO: Why is this hidden?</p>
+</dd>
+<dt><strong><a name="stunt" class="item">stunt</a></strong></dt>
+
+<dd>
+<p>TODO: document</p>
+</dd>
+<dt><strong><a name="stunted" class="item">stunted</a></strong></dt>
+
+<dd>
+<p>TODO: document</p>
+</dd>
+<dt><strong><a name="text" class="item">text</a></strong></dt>
+
+<dd>
+<p>Accept a &quot;here's a text token&quot; signal from HTML::Parser.</p>
+<p>TODO: Why is this hidden?</p>
+</dd>
+<dt><strong><a name="tighten_up" class="item">tighten_up</a></strong></dt>
+
+<dd>
+<p>Legacy</p>
+<p>Redirects to HTML::Element:: delete_ignorable_whitespace</p>
+</dd>
+<dt><strong><a name="warning" class="item">warning</a></strong></dt>
+
+<dd>
+<p>Wrapper for CORE::warn</p>
+<p>TODO: why not just use carp?</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="html_and_its_discontents">HTML AND ITS DISCONTENTS</a></h1>
+<p>HTML is rather harder to parse than people who write it generally
+suspect.</p>
+<p>Here's the problem: HTML is a kind of SGML that permits &quot;minimization&quot;
+and &quot;implication&quot;.  In short, this means that you don't have to close
+every tag you open (because the opening of a subsequent tag may
+implicitly close it), and if you use a tag that can't occur in the
+context you seem to using it in, under certain conditions the parser
+will be able to realize you mean to leave the current context and
+enter the new one, that being the only one that your code could
+correctly be interpreted in.</p>
+<p>Now, this would all work flawlessly and unproblematically if: 1) all
+the rules that both prescribe and describe HTML were (and had been)
+clearly set out, and 2) everyone was aware of these rules and wrote
+their code in compliance to them.</p>
+<p>However, it didn't happen that way, and so most HTML pages are
+difficult if not impossible to correctly parse with nearly any set of
+straightforward SGML rules.  That's why the internals of
+HTML::TreeBuilder consist of lots and lots of special cases -- instead
+of being just a generic SGML parser with HTML DTD rules plugged in.</p>
+<p>
+</p>
+<hr />
+<h1><a name="translations">TRANSLATIONS?</a></h1>
+<p>The techniques that HTML::TreeBuilder uses to perform what I consider
+very robust parses on everyday code are not things that can work only
+in Perl.  To date, the algorithms at the center of HTML::TreeBuilder
+have been implemented only in Perl, as far as I know; and I don't
+foresee getting around to implementing them in any other language any
+time soon.</p>
+<p>If, however, anyone is looking for a semester project for an applied
+programming class (or if they merely enjoy <em>extra-curricular</em>
+masochism), they might do well to see about choosing as a topic the
+implementation/adaptation of these routines to any other interesting
+programming language that you feel currently suffers from a lack of
+robust HTML-parsing.  I welcome correspondence on this subject, and
+point out that one can learn a great deal about languages by trying to
+translate between them, and then comparing the result.</p>
+<p>The HTML::TreeBuilder source may seem long and complex, but it is
+rather well commented, and symbol names are generally
+self-explanatory.  (You are encouraged to read the Mozilla HTML parser
+source for comparison.)  Some of the complexity comes from little-used
+features, and some of it comes from having the HTML tokenizer
+(HTML::Parser) being a separate module, requiring somewhat of a
+different interface than you'd find in a combined tokenizer and
+tree-builder.  But most of the length of the source comes from the fact
+that it's essentially a long list of special cases, with lots and lots
+of sanity-checking, and sanity-recovery -- because, as Roseanne
+Rosannadanna once said, &quot;it's always <em>something</em>&quot;.</p>
+<p>Users looking to compare several HTML parsers should look at the
+source for Raggett's Tidy
+(<code>&lt;http://www.w3.org/People/Raggett/tidy/&gt;</code>),
+Mozilla
+(<code>&lt;http://www.mozilla.org/&gt;</code>),
+and possibly root around the browsers section of Yahoo
+to find the various open-source ones
+(<code>&lt;http://dir.yahoo.com/Computers_and_Internet/Software/Internet/World_Wide_Web/Browsers/&gt;</code>).</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>* Framesets seem to work correctly now.  Email me if you get a strange
+parse from a document with framesets.</p>
+<p>* Really bad HTML code will, often as not, make for a somewhat
+objectionable parse tree.  Regrettable, but unavoidably true.</p>
+<p>* If you're running with implicit_tags off (God help you!), consider
+that $tree-&gt;content_list probably contains the tree or grove from the
+parse, and not $tree itself (which will, oddly enough, be an implicit
+'html' element).  This seems counter-intuitive and problematic; but
+seeing as how almost no HTML ever parses correctly with implicit_tags
+off, this interface oddity seems the least of your problems.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bug_reports">BUG REPORTS</a></h1>
+<p>When a document parses in a way different from how you think it
+should, I ask that you report this to me as a bug.  The first thing
+you should do is copy the document, trim out as much of it as you can
+while still producing the bug in question, and <em>then</em> email me that
+mini-document <em>and</em> the code you're using to parse it, to the HTML::Tree
+bug queue at <code>bug-html-tree at rt.cpan.org</code>.</p>
+<p>Include a note as to how it 
+parses (presumably including its $tree-&gt;dump output), and then a
+<em>careful and clear</em> explanation of where you think the parser is
+going astray, and how you would prefer that it work instead.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/HTML/Tree.html">the HTML::Tree manpage</a>; <a href="../../lib/HTML/Parser.html">the HTML::Parser manpage</a>, <a href="../../lib/HTML/Element.html">the HTML::Element manpage</a>, <a href="../../lib/HTML/Tagset.html">the HTML::Tagset manpage</a></p>
+<p><a href="../../HTML/DOMbo.html">the HTML::DOMbo manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1995-1998 Gisle Aas, 1999-2004 Sean M. Burke, 2005 Andy Lester,
+2006 Pete Krawczyk, 2010 Jeff Fearn.</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+<p>This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p><table cellspacing="0" cellpadding="0"><tr><td>Current Author:
+<tr><td><td>Jeff Fearn <code>&lt;jfearn@cpan.org&gt;</code>.</table></p>
+<p><table cellspacing="0" cellpadding="0"><tr><td>Original HTML-Tree author:
+<tr><td><td>Gisle Aas.</table></p>
+<p><table cellspacing="0" cellpadding="0"><tr><td>Former Authors:
+<tr><td><td>Sean M. Burke.
+<tr><td><td>Andy Lester.
+<tr><td><td>Pete Krawczyk <code>&lt;petek@cpan.org&gt;</code>.</table></p>
+
+</body>
+
+</html>

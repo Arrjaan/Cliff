@@ -1,0 +1,695 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>HTML::Tree::Scanning -- article: &quot;Scanning HTML&quot;</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>HTML::Tree::Scanning -- article: &quot;Scanning HTML&quot;</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#scanning_html">Scanning HTML</a></li>
+	<ul>
+
+		<li><a href="#html__parser__html__treebuilder__and_html__element">HTML::Parser, HTML::TreeBuilder, and HTML::Element</a></li>
+		<li><a href="#scanning_html_trees">Scanning HTML trees</a></li>
+		<li><a href="#complex_criteria_in_tree_scanning">Complex Criteria in Tree Scanning</a></li>
+		<li><a href="#a_case_study__scanning_yahoo_news_s_html">A Case Study: Scanning Yahoo News's HTML</a></li>
+		<li><a href="#regardez__duvet_"><em>Regardez, duvet!</em></a></li>
+		<li><a href="#_author_credit_">[Author Credit]</a></li>
+	</ul>
+
+	<li><a href="#back">BACK</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>HTML::Tree::Scanning -- article: &quot;Scanning HTML&quot;</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="comment"># This an article, not a module.</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The following article by Sean M. Burke first appeared in <em>The Perl
+Journal</em> #19 and is copyright 2000 The Perl Journal. It appears
+courtesy of Jon Orwant and The Perl Journal.  This document may be
+distributed under the same terms as Perl itself.</p>
+<p>(Note that this is discussed in chapters 6 through 10 of the
+book <em>Perl and LWP</em> <a href="http://lwp.interglacial.com/">http://lwp.interglacial.com/</a> which
+was written after the following documentation, and which is
+available free online.)</p>
+<p>
+</p>
+<hr />
+<h1><a name="scanning_html">Scanning HTML</a></h1>
+<p>-- Sean M. Burke</p>
+<p>In <em>The Perl Journal</em> issue 17, Ken MacFarlane's article &quot;Parsing
+HTML with HTML::Parser&quot; describes how the HTML::Parser module scans
+HTML source as a stream of start-tags, end-tags, text, comments, etc.
+In TPJ #18, my &quot;Trees&quot; article kicked around the idea of tree-shaped
+data structures.  Now I'll try to tie it together, in a discussion of
+HTML trees.</p>
+<p>The CPAN module HTML::TreeBuilder takes the
+tags that HTML::Parser picks out, and builds a parse tree -- a
+tree-shaped network of objects...</p>
+<p>Footnote:
+And if you need a quick explanation of objects, see my TPJ17 article &quot;A
+User's View of Object-Oriented Modules&quot;; or go whole hog and get Damian
+Conway's excellent book <em>Object-Oriented Perl</em>, from Manning
+Publications.</p>
+<p>...representing the structured content of the HTML document.  And once
+the document is parsed as a tree, you'll find the common tasks
+of extracting data from that HTML document/tree to be quite
+straightforward.</p>
+<p>
+</p>
+<h2><a name="html__parser__html__treebuilder__and_html__element">HTML::Parser, HTML::TreeBuilder, and HTML::Element</a></h2>
+<p>You use HTML::TreeBuilder to make a parse tree out of an HTML source
+file, by simply saying:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">HTML::TreeBuilder</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$tree</span> <span class="operator">=</span> <span class="variable">HTML::TreeBuilder</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+  <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">parse_file</span><span class="operator">(</span><span class="string">'foo.html'</span><span class="operator">);</span>
+</pre>
+<p>and then <code>$tree</code> contains a parse tree built from the HTML source from
+the file &quot;foo.html&quot;.  The way this parse tree is represented is with a
+network of objects -- <code>$tree</code> is the root, an element with tag-name
+&quot;html&quot;, and its children typically include a &quot;head&quot; and &quot;body&quot; element,
+and so on.  Elements in the tree are objects of the class
+HTML::Element.</p>
+<p>So, if you take this source:</p>
+<pre>
+  &lt;html&gt;&lt;head&gt;&lt;title&gt;Doc 1&lt;/title&gt;&lt;/head&gt;
+  &lt;body&gt;
+  Stuff &lt;hr&gt; 2000-08-17
+  &lt;/body&gt;&lt;/html&gt;
+ 
+and feed it to HTML::TreeBuilder, it'll return a tree of objects that
+looks like this:</pre>
+<pre>
+               html
+             /      \
+         head        body
+        /          /   |  \
+     title    &quot;Stuff&quot;  hr  &quot;2000-08-17&quot;
+       |
+    &quot;Doc 1&quot;</pre>
+<p>This is a pretty simple document, but if it were any more complex,
+it'd be a bit hard to draw in that style, since it's sprawl left and
+right.  The same tree can be represented a bit more easily sideways,
+with indenting:</p>
+<pre>
+  . html
+     . head
+        . title
+           . &quot;Doc 1&quot;
+     . body
+        . &quot;Stuff&quot;
+        . hr
+        . &quot;2000-08-17&quot;</pre>
+<p>Either way expresses the same structure.  In that structure, the root
+node is an object of the class HTML::Element</p>
+<p>Footnote:
+Well actually, the root is of the class HTML::TreeBuilder, but that's
+just a subclass of HTML::Element, plus the few extra methods like
+<code>parse_file</code> that elaborate the tree</p>
+<p>, with the tag name &quot;html&quot;, and with two children: an HTML::Element
+object whose tag names are &quot;head&quot; and &quot;body&quot;.  And each of those
+elements have children, and so on down.  Not all elements (as we'll
+call the objects of class HTML::Element) have children -- the &quot;hr&quot;
+element doesn't.  And note all nodes in the tree are elements -- the
+text nodes (&quot;Doc 1&quot;, &quot;Stuff&quot;, and &quot;2000-08-17&quot;) are just strings.</p>
+<p>Objects of the class HTML::Element each have three noteworthy attributes:</p>
+<dl>
+<dt><strong><a name="lowercased" class="item"><code>_tag</code> -- (best accessed as <code>$e-&gt;tag</code>)
+this element's tag-name, lowercased (e.g., &quot;em&quot; for an &quot;em&quot; element).</a></strong></dt>
+
+<dd>
+<p>Footnote: Yes, this is misnamed.  In proper SGML terminology, this is
+instead called a &quot;GI&quot;, short for &quot;generic identifier&quot;; and the term
+&quot;tag&quot; is used for a token of SGML source that represents either
+the start of an element (a start-tag like &quot;&lt;em lang='fr'&gt;&quot;) or the end
+of an element (an end-tag like &quot;&lt;/em&gt;&quot;.  However, since more people
+claim to have been abducted by aliens than to have ever seen the
+SGML standard, and since both encounters typically involve a feeling of
+&quot;missing time&quot;, it's not surprising that the terminology of the SGML
+standard is not closely followed.</p>
+</dd>
+<dt><strong><a name="parent" class="item"><code>_parent</code> -- (best accessed as <code>$e-&gt;parent</code>)
+the element that is <code>$obj</code>'s parent, or undef if this element is the
+root of its tree.</a></strong></dt>
+
+<dt><strong><a name="nodes" class="item"><code>_content</code> -- (best accessed as <code>$e-&gt;content_list</code>)
+the list of nodes (i.e., elements or text segments) that are <code>$e</code>'s
+children.</a></strong></dt>
+
+</dl>
+<p>Moreover, if an element object has any attributes in the SGML sense of
+the word, then those are readable as <code>$e-&gt;attr('name')</code> -- for
+example, with the object built from having parsed &quot;&lt;a
+<strong>id='foo'</strong>&gt;bar&lt;/a&gt;&quot;, <code>$e-&gt;attr('id')</code> will return
+the string &quot;foo&quot;.  Moreover, <code>$e-&gt;tag</code> on that object returns the
+string &quot;a&quot;, <code>$e-&gt;content_list</code> returns a list consisting of just
+the single scalar &quot;bar&quot;, and <a href="#parent"><code>$e-&gt;parent</code></a> returns the object
+that's this node's parent -- which may be, for example, a &quot;p&quot; element.</p>
+<p>And that's all that there is to it -- you throw HTML
+source at TreeBuilder, and it returns a tree built of HTML::Element
+objects and some text strings.</p>
+<p>However, what do you <em>do</em> with a tree of objects?  People code
+information into HTML trees not for the fun of arranging elements, but
+to represent the structure of specific text and images -- some text is
+in this &quot;li&quot; element, some other text is in that heading, some
+images are in that other table cell that has those attributes, and so on.</p>
+<p>Now, it may happen that you're rendering that whole HTML tree into some
+layout format.  Or you could be trying to make some systematic change to
+the HTML tree before dumping it out as HTML source again.  But, in my
+experience, by far the most common programming task that Perl
+programmers face with HTML is in trying to extract some piece
+of information from a larger document.  Since that's so common (and
+also since it involves concepts that are basic to more complex tasks),
+that is what the rest of this article will be about.</p>
+<p>
+</p>
+<h2><a name="scanning_html_trees">Scanning HTML trees</a></h2>
+<p>Suppose you have a thousand HTML documents, each of them a press
+release.  They all start out:</p>
+<pre>
+  [...lots of leading images and junk...]
+  &lt;h1&gt;ConGlomCo to Open New Corporate Office in Ougadougou&lt;/h1&gt;
+  BAKERSFIELD, CA, 2000-04-24 -- ConGlomCo's vice president in charge
+  of world conquest, Rock Feldspar, announced today the opening of a
+  new office in Ougadougou, the capital city of Burkino Faso, gateway
+  to the bustling &quot;Silicon Sahara&quot; of Africa...
+  [...etc...]</pre>
+<p>...and what you've got to do is, for each document, copy whatever text
+is in the &quot;h1&quot; element, so that you can, for example, make a table of
+contents of it.  Now, there are three ways to do this:</p>
+<ul>
+<li><strong><a name="you_can_just_use_a_regexp_to_scan_the_file_for_a_text_pattern" class="item">You can just use a regexp to scan the file for a text pattern.</a></strong>
+
+<p>For many very simple tasks, this will do fine.  Many HTML documents are,
+in practice, very consistently formatted as far as placement of
+linebreaks and whitespace, so you could just get away with scanning the
+file like so:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> get_heading </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$filename</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">local</span> <span class="variable">*HTML</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">HTML</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">)</span>
+      <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Couldn't open </span><span class="variable">$filename</span><span class="string">);
+    my </span><span class="variable">$heading</span><span class="string">;
+   Line:
+    while(&lt;HTML&gt;) {
+      if( m{&lt;h1&gt;(.*?)&lt;/h1&gt;}i ) {  # match it!
+        </span><span class="variable">$heading</span><span class="string"> = </span><span class="variable">$1</span><span class="string">;
+        last Line;
+      }
+    }
+    close(HTML);
+    warn "</span><span class="variable">No</span> <span class="variable">heading</span> <span class="variable">in</span> <span class="variable">$filename</span><span class="operator">?</span><span class="string">"
+     unless defined </span><span class="variable">$heading</span><span class="string">;
+    return </span><span class="variable">$heading</span><span class="string">;
+  }
+  </span>
+</pre>
+<p>This is quick and fast, but awfully fragile -- if there's a newline in
+the middle of a heading's text, it won't match the above regexp, and
+you'll get an error.  The regexp will also fail if the &quot;h1&quot; element's
+start-tag has any attributes.  If you have to adapt your code to fit
+more kinds of start-tags, you'll end up basically reinventing part of
+HTML::Parser, at which point you should probably just stop, and use
+HTML::Parser itself:</p>
+</li>
+<li><strong><a name="you_can_use_html_parser_to_scan_the_file_for_an_h1_start_tag_token_then_capture_all_the_text_tokens_until_the_h1_close_tag_this_approach_is_extensively_covered_in_the_ken_macfarlane_s_tpj17_article_parsing_html_with_html_parser_a_variant_of_this_approach_is_to_use_html_tokeparser_which_presents_a_different_and_rather_handier_interface_to_the_tokens_that_html_parser_picks_out" class="item">You can use HTML::Parser to scan the file for an &quot;h1&quot; start-tag
+token, then capture all the text tokens until the &quot;h1&quot; close-tag.  This
+approach is extensively covered in the Ken MacFarlane's TPJ17 article
+&quot;Parsing HTML with HTML::Parser&quot;.  (A variant of this approach is to use
+HTML::TokeParser, which presents a different and rather handier
+interface to the tokens that HTML::Parser picks out.)</a></strong>
+
+<p>Using HTML::Parser is less fragile than our first approach, since it's
+not sensitive to the exact internal formatting of the start-tag (much
+less whether it's split across two lines).  However, when you need more
+information about the context of the &quot;h1&quot; element, or if you're having
+to deal with any of the tricky bits of HTML, such as parsing of tables,
+you'll find out the flat list of tokens that HTML::Parser returns
+isn't immediately useful.  To get something useful out of those tokens,
+you'll need to write code that knows some things about what elements
+take no content (as with &quot;hr&quot; elements), and that a &quot;&lt;/p&gt;&quot; end-tags
+are omissible, so a &quot;&lt;p&gt;&quot; will end any currently
+open paragraph -- and you're well on your way to pointlessly
+reinventing much of the code in HTML::TreeBuilder</p>
+<p>Footnote:
+And, as the person who last rewrote that module, I can attest that it
+wasn't terribly easy to get right!  Never underestimate the perversity
+of people coding HTML.</p>
+<p>, at which point you should probably just stop, and use
+HTML::TreeBuilder itself:</p>
+</li>
+<li><strong><a name="you_can_use_html_treebuilder_and_scan_the_tree_of_element_objects_that_you_get_back" class="item">You can use HTML::Treebuilder, and scan the tree of element
+objects that you get back.</a></strong>
+
+</li>
+</ul>
+<p>The last approach, using HTML::TreeBuilder, is the diametric opposite of
+first approach:  The first approach involves just elementary Perl and one
+regexp, whereas the TreeBuilder approach involves being at home with
+the concept of tree-shaped data structures and modules with
+object-oriented interfaces, as well as with the particular interfaces
+that HTML::TreeBuilder and HTML::Element provide.</p>
+<p>However, what the TreeBuilder approach has going for it is that it's
+the most robust, because it involves dealing with HTML in its &quot;native&quot;
+format -- it deals with the tree structure that HTML code represents,
+without any consideration of how the source is coded and with what
+tags omitted.</p>
+<p>So, to extract the text from the &quot;h1&quot; elements of an HTML document:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> get_heading </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$tree</span> <span class="operator">=</span> <span class="variable">HTML::TreeBuilder</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">parse_file</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">);</span>   <span class="comment"># !</span>
+    <span class="keyword">my</span> <span class="variable">$heading</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">);</span>  <span class="comment"># !</span>
+    <span class="keyword">if</span><span class="operator">(</span><span class="variable">$h1</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="variable">$heading</span> <span class="operator">=</span> <span class="variable">$h1</span><span class="operator">-&gt;</span><span class="variable">as_text</span><span class="operator">;</span>   <span class="comment"># !</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+      <span class="keyword">warn</span> <span class="string">"No heading in </span><span class="variable">$_</span><span class="string">[0]?"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">delete</span><span class="operator">;</span> <span class="comment"># clear memory!</span>
+    <span class="keyword">return</span> <span class="variable">$heading</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>This uses some unfamiliar methods that need explaining.  The
+<code>parse_file</code> method that we've seen before, builds a tree based on
+source from the file given.  The <a href="../../../lib/pods/perlfunc.html#delete"><code>delete</code></a> method is for marking a
+tree's contents as available for garbage collection, when you're done
+with the tree.  The <code>as_text</code> method returns a string that contains
+all the text bits that are children (or otherwise descendants) of the
+given node -- to get the text content of the <code>$h1</code> object, we could
+just say:</p>
+<pre>
+  <span class="variable">$heading</span> <span class="operator">=</span> <span class="keyword">join</span> <span class="string">''</span><span class="operator">,</span> <span class="variable">$h1</span><span class="operator">-&gt;</span><span class="variable">content_list</span><span class="operator">;</span>
+</pre>
+<p>but that will work only if we're sure that the &quot;h1&quot; element's children
+will be only text bits -- if the document contained:</p>
+<pre>
+  &lt;h1&gt;Local Man Sees &lt;cite&gt;Blade&lt;/cite&gt; Again&lt;/h1&gt;</pre>
+<p>then the sub-tree would be:</p>
+<pre>
+  . h1
+    . &quot;Local Man Sees &quot;
+    . cite
+      . &quot;Blade&quot;
+    . &quot; Again'</pre>
+<p>so <code>join '', $h1-&gt;content_list</code> will be something like:</p>
+<pre>
+  Local Man Sees HTML::Element=HASH(0x15424040) Again</pre>
+<p>whereas <code>$h1-&gt;as_text</code> would yield:</p>
+<pre>
+  Local Man Sees Blade Again</pre>
+<p>and depending on what you're doing with the heading text, you might
+want the <code>as_HTML</code> method instead.  It returns the (sub)tree
+represented as HTML source.  <code>$h1-&gt;as_HTML</code> would yield:</p>
+<pre>
+  &lt;h1&gt;Local Man Sees &lt;cite&gt;Blade&lt;/cite&gt; Again&lt;/h1&gt;</pre>
+<p>However, if you wanted the contents of <code>$h1</code> as HTML, but not the
+<code>$h1</code> itself, you could say:</p>
+<pre>
+  join '',
+    map(
+      ref($_) ? $_-&gt;as_HTML : $_,
+      $h1-&gt;content_list
+    )</pre>
+<p>This <a href="../../../lib/pods/perlfunc.html#map"><code>map</code></a> iterates over the nodes in <code>$h1</code>'s list of children; and
+for each node that's just a text bit (as &quot;Local Man Sees &quot; is), it just
+passes through that string value, and for each node that's an actual
+object (causing <a href="../../../lib/pods/perlfunc.html#ref"><code>ref</code></a> to be true), <code>as_HTML</code> will used instead of the
+string value of the object itself (which would be something quite
+useless, as most object values are).  So that <code>as_HTML</code> for the &quot;cite&quot;
+element will be the string &quot;&lt;cite&gt;Blade&lt;/cite&gt;&quot;.  And then,
+finally, <a href="../../../lib/pods/perlfunc.html#join"><code>join</code></a> just puts into one string all the strings that the
+<a href="../../../lib/pods/perlfunc.html#map"><code>map</code></a> returns.</p>
+<p>Last but not least, the most important method in our <code>get_heading</code> sub
+is the <code>look_down</code> method.  This method looks down at the subtree
+starting at the given object (<code>$h1</code>), looking for elements that meet
+criteria you provide.</p>
+<p>The criteria are specified in the method's argument list.  Each
+criterion can consist of two scalars, a key and a value, which express
+that you want elements that have that attribute (like &quot;_tag&quot;, or
+&quot;src&quot;) with the given value (&quot;h1&quot;); or the criterion can be a
+reference to a subroutine that, when called on the given element,
+returns true if that is a node you're looking for.  If you specify
+several criteria, then that's taken to mean that you want all the
+elements that each satisfy <em>all</em> the criteria.  (In other words,
+there's an &quot;implicit AND&quot;.)</p>
+<p>And finally, there's a bit of an optimization -- if you call the
+<code>look_down</code> method in a scalar context, you get just the <em>first</em> node
+(or undef if none) -- and, in fact, once <code>look_down</code> finds that first
+matching element, it doesn't bother looking any further.</p>
+<p>So the example:</p>
+<pre>
+  <span class="variable">$h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">);</span>
+</pre>
+<p>returns the first element at-or-under <code>$tree</code> whose <code>&quot;_tag&quot;</code>
+attribute has the value <code>&quot;h1&quot;</code>.</p>
+<p>
+</p>
+<h2><a name="complex_criteria_in_tree_scanning">Complex Criteria in Tree Scanning</a></h2>
+<p>Now, the above <code>look_down</code> code looks like a lot of bother, with
+barely more benefit than just grepping the file!  But consider if your
+criteria were more complicated -- suppose you found that some of the
+press releases that you were scanning had several &quot;h1&quot; elements,
+possibly before or after the one you actually want.  For example:</p>
+<pre>
+  &lt;h1&gt;&lt;center&gt;Visit Our Corporate Partner
+   &lt;br&gt;&lt;a href=&quot;/dyna/clickthru&quot;
+     &gt;&lt;img src=&quot;/dyna/vend_ad&quot;&gt;&lt;/a&gt;
+  &lt;/center&gt;&lt;/h1&gt;
+  &lt;h1&gt;&lt;center&gt;ConGlomCo President Schreck to Visit Regional HQ
+   &lt;br&gt;&lt;a href=&quot;/photos/Schreck_visit_large.jpg&quot;
+     &gt;&lt;img src=&quot;/photos/Schreck_visit.jpg&quot;&gt;&lt;/a&gt;
+  &lt;/center&gt;&lt;/h1&gt;</pre>
+<p>Here, you want to ignore the first &quot;h1&quot; element because it contains an
+ad, and you want the text from the second &quot;h1&quot;.  The problem is in
+formalizing the way you know that it's an ad.  Since ad banners are
+always entreating you to &quot;visit&quot; the sponsoring site, you could exclude
+&quot;h1&quot; elements that contain the word &quot;visit&quot; under them:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$real_h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">,</span>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">as_text</span> <span class="operator">!~</span> <span class="regex">m/\bvisit/i</span>
+    <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>The first criterion looks for &quot;h1&quot; elements, and the second criterion
+limits those to only the ones whose text content doesn't match
+<a href="../../../lib/pods/perlfunc.html#m_"><code>m/\bvisit/</code></a>.  But unfortunately, that won't work for our example,
+since the second &quot;h1&quot; mentions &quot;ConGlomCo President Schreck to
+<em>Visit</em> Regional HQ&quot;.</p>
+<p>Instead you could try looking for the first &quot;h1&quot; element that
+doesn't contain an image:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$real_h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">,</span>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">not</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'img'</span><span class="operator">)</span>
+    <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>This criterion sub might seem a bit odd, since it calls <code>look_down</code>
+as part of a larger <code>look_down</code> operation, but that's fine.  Note that
+when considered as a boolean value, a <code>look_down</code> in a scalar context
+value returns false (specifically, undef) if there's no matching element
+at or under the given element; and it returns the first matching
+element (which, being a reference and object, is always a true value),
+if any matches.  So, here,</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+    <span class="keyword">not</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'img'</span><span class="operator">)</span>
+  <span class="operator">}</span>
+</pre>
+<p>means &quot;return true only if this element has no 'img' element as
+descendants (and isn't an 'img' element itself).&quot;</p>
+<p>This correctly filters out the first &quot;h1&quot; that contains the ad, but it
+also incorrectly filters out the second &quot;h1&quot; that contains a
+non-advertisement photo besides the headline text you want.</p>
+<p>There clearly are detectable differences between the first and second
+&quot;h1&quot; elements -- the only second one contains the string &quot;Schreck&quot;, and
+we could just test for that:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$real_h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">,</span>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">as_text</span> <span class="operator">=~</span> <span class="regex">m{Schreck}</span>
+    <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>And that works fine for this one example, but unless all thousand of
+your press releases have &quot;Schreck&quot; in the headline, that's just not a
+general solution.  However, if all the ads-in-&quot;h1&quot;s that you want to
+exclude involve a link whose URL involves &quot;/dyna/&quot;, then you can use
+that:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$real_h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">,</span>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$link</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span><span class="string">'a'</span><span class="operator">);</span>
+      <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">unless</span> <span class="variable">$link</span><span class="operator">;</span>
+        <span class="comment"># no link means it's fine</span>
+      <span class="keyword">return</span> <span class="number">0</span> <span class="keyword">if</span> <span class="variable">$link</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'href'</span><span class="operator">)</span> <span class="operator">=~</span> <span class="regex">m{/dyna/}</span><span class="operator">;</span>
+        <span class="comment"># a link to there is bad</span>
+      <span class="keyword">return</span> <span class="number">1</span><span class="operator">;</span> <span class="comment"># otherwise okay</span>
+    <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>Or you can look at it another way and say that you want the first &quot;h1&quot;
+element that either contains no images, or else whose image has a &quot;src&quot;
+attribute whose value contains &quot;/photos/&quot;:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$real_h1</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">,</span>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$img</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span><span class="string">'img'</span><span class="operator">);</span>
+      <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">unless</span> <span class="variable">$img</span><span class="operator">;</span>
+        <span class="comment"># no image means it's fine</span>
+      <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">if</span> <span class="variable">$img</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'src'</span><span class="operator">)</span> <span class="operator">=~</span> <span class="regex">m{/photos/}</span><span class="operator">;</span>
+        <span class="comment"># good if a photo</span>
+      <span class="keyword">return</span> <span class="number">0</span><span class="operator">;</span> <span class="comment"># otherwise bad</span>
+    <span class="operator">}</span>
+  <span class="operator">);</span>
+</pre>
+<p>Recall that this use of <code>look_down</code> in a scalar context means to return
+the first element at or under <code>$tree</code> that matches all the criteria.
+But if you notice that you can formulate criteria that'll match several
+possible &quot;h1&quot; elements, some of which may be bogus but the <em>last</em> one
+of which is always the one you want, then you can use <code>look_down</code> in a
+list context, and just use the last element of that list:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">@h1s</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'h1'</span><span class="operator">,</span>
+    <span class="operator">...</span><span class="variable">maybe</span> <span class="variable">more</span> <span class="variable">criteria</span><span class="operator">...</span>
+  <span class="operator">);</span>
+  <span class="keyword">die</span> <span class="string">"What, no h1s here?"</span> <span class="keyword">unless</span> <span class="variable">@h1s</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$real_h1</span> <span class="operator">=</span> <span class="variable">$h1s</span><span class="operator">[</span><span class="operator">-</span><span class="number">1</span><span class="operator">]</span><span class="operator">;</span> <span class="comment"># last or only</span>
+</pre>
+<p>
+</p>
+<h2><a name="a_case_study__scanning_yahoo_news_s_html">A Case Study: Scanning Yahoo News's HTML</a></h2>
+<p>The above (somewhat contrived) case involves extracting data from a
+bunch of pre-existing HTML files.  In that sort of situation, if your
+code works for all the files, then you know that the code <em>works</em> --
+since the data it's meant to handle won't go changing or growing; and,
+typically, once you've used the program, you'll never need to use it
+again.</p>
+<p>The other kind of situation faced in many data extraction tasks is
+where the program is used recurringly to handle new data -- such as
+from ever-changing Web pages.  As a real-world example of this,
+consider a program that you could use (suppose it's crontabbed) to
+extract headline-links from subsections of Yahoo News
+(<code>http://dailynews.yahoo.com/</code>).</p>
+<p>Yahoo News has several subsections:</p>
+<dl>
+<dt><strong><a name="http_dailynews_yahoo_com_h_tc_for_technology_news" class="item"><a href="http://dailynews.yahoo.com/h/tc/">http://dailynews.yahoo.com/h/tc/</a> for technology news</a></strong></dt>
+
+<dt><strong><a name="http_dailynews_yahoo_com_h_sc_for_science_news" class="item"><a href="http://dailynews.yahoo.com/h/sc/">http://dailynews.yahoo.com/h/sc/</a> for science news</a></strong></dt>
+
+<dt><strong><a name="http_dailynews_yahoo_com_h_hl_for_health_news" class="item"><a href="http://dailynews.yahoo.com/h/hl/">http://dailynews.yahoo.com/h/hl/</a> for health news</a></strong></dt>
+
+<dt><strong><a name="http_dailynews_yahoo_com_h_wl_for_world_news" class="item"><a href="http://dailynews.yahoo.com/h/wl/">http://dailynews.yahoo.com/h/wl/</a> for world news</a></strong></dt>
+
+<dt><strong><a name="http_dailynews_yahoo_com_h_en_for_entertainment_news" class="item"><a href="http://dailynews.yahoo.com/h/en/">http://dailynews.yahoo.com/h/en/</a> for entertainment news</a></strong></dt>
+
+</dl>
+<p>and others.  All of them are built on the same basic HTML template --
+and a scarily complicated template it is, especially when you look at
+it with an eye toward making up rules that will select where the real
+headline-links are, while screening out all the links to other parts of
+Yahoo, other news services, etc.  You will need to puzzle
+over the HTML source, and scrutinize the output of
+<a href="../../../lib/pods/perlfunc.html#dump"><code>$tree-&gt;dump</code></a> on the parse tree of that HTML.</p>
+<p>Sometimes the only way to pin down what you're after is by position in
+the tree. For example, headlines of interest may be in the third
+column of the second row of the second table element in a page:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$table</span> <span class="operator">=</span> <span class="operator">(</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span><span class="string">'table'</span><span class="operator">)</span> <span class="operator">)</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$row2</span>  <span class="operator">=</span> <span class="operator">(</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'tr'</span> <span class="operator">)</span> <span class="operator">)</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$col3</span>  <span class="operator">=</span> <span class="operator">(</span> <span class="variable">$row2</span><span class="operator">-&gt;</span><span class="variable">look</span><span class="operator">-</span><span class="variable">down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'td'</span><span class="operator">)</span>   <span class="operator">)</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span><span class="operator">;</span>
+  <span class="operator">...</span><span class="variable">then</span> <span class="keyword">do</span> <span class="variable">things</span> <span class="variable">with</span> <span class="variable">$col3</span><span class="operator">...</span>
+</pre>
+<p>Or they may be all the links in a &quot;p&quot; element that has at least three
+&quot;br&quot; elements as children:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$p</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>
+    <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'p'</span><span class="operator">,</span>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="number">2</span> <span class="operator">&lt;</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="keyword">ref</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="keyword">and</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">tag</span> <span class="keyword">eq</span> <span class="string">'br'</span> <span class="operator">}</span>
+               <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">content_list</span>
+    <span class="operator">}</span>
+  <span class="operator">);</span>
+  <span class="variable">@links</span> <span class="operator">=</span> <span class="variable">$p</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'a'</span><span class="operator">);</span>
+</pre>
+<p>But almost always, you can get away with looking for properties of the
+of the thing itself, rather than just looking for contexts.  Now, if
+you're lucky, the document you're looking through has clear semantic
+tagging, such is as useful in CSS -- note the
+class=&quot;headlinelink&quot; bit here:</p>
+<pre>
+  &lt;a href=&quot;...long_news_url...&quot; class=&quot;headlinelink&quot;&gt;Elvis
+  seen in tortilla&lt;/a&gt;</pre>
+<p>If you find anything like that, you could leap right in and select
+links with:</p>
+<pre>
+  <span class="variable">@links</span> <span class="operator">=</span> <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span><span class="string">'class'</span><span class="operator">,</span><span class="string">'headlinelink'</span><span class="operator">);</span>
+</pre>
+<p>Regrettably, your chances of seeing any sort of semantic markup
+principles really being followed with actual HTML are pretty thin.</p>
+<p>Footnote:
+In fact, your chances of finding a page that is simply free of HTML
+errors are even thinner.  And surprisingly, sites like Amazon or Yahoo
+are typically worse as far as quality of code than personal sites
+whose entire production cycle involves simply being saved and uploaded
+from Netscape Composer.</p>
+<p>The code may be sort of &quot;accidentally semantic&quot;, however -- for example,
+in a set of pages I was scanning recently, I found that looking for
+&quot;td&quot; elements with a &quot;width&quot; attribute value of &quot;375&quot; got me exactly
+what I wanted.  No-one designing that page ever conceived of
+&quot;width=375&quot; as <em>meaning</em> &quot;this is a headline&quot;, but if you impute it
+to mean that, it works.</p>
+<p>An approach like this happens to work for the Yahoo News code, because
+the headline-links are distinguished by the fact that they (and they
+alone) contain a &quot;b&quot; element:</p>
+<pre>
+  &lt;a href=&quot;...long_news_url...&quot;&gt;&lt;b&gt;Elvis seen in tortilla&lt;/b&gt;&lt;/a&gt;</pre>
+<p>or, diagrammed as a part of the parse tree:</p>
+<pre>
+  . a  [href=&quot;...long_news_url...&quot;]
+    . b
+      . &quot;Elvis seen in tortilla&quot;</pre>
+<p>A rule that matches these can be formalized as &quot;look for any 'a'
+element that has only one daugher node, which must be a 'b' element&quot;.
+And this is what it looks like when cooked up as a <code>look_down</code>
+expression and prefaced with a bit of code that retrieves the text of
+the given Yahoo News page and feeds it to TreeBuilder:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">HTML::TreeBuilder</span> <span class="number">2.97</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> get_headlines </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$url</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"What URL?"</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span>
+      <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">GET</span> <span class="operator">=&gt;</span> <span class="variable">$url</span> <span class="operator">)</span>
+    <span class="operator">);</span>
+    <span class="keyword">unless</span><span class="operator">(</span><span class="variable">$response</span><span class="operator">-&gt;</span><span class="variable">is_success</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">warn</span> <span class="string">"Couldn't get </span><span class="variable">$url</span><span class="string">: "</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">-&gt;</span><span class="variable">status_line</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+      <span class="keyword">return</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="keyword">my</span> <span class="variable">$tree</span> <span class="operator">=</span> <span class="variable">HTML::TreeBuilder</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="variable">$response</span><span class="operator">-&gt;</span><span class="variable">content</span><span class="operator">);</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">eof</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">@out</span><span class="operator">;</span>
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$link</span> <span class="operator">(</span>
+      <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">look_down</span><span class="operator">(</span>   <span class="comment"># !</span>
+        <span class="string">'_tag'</span><span class="operator">,</span> <span class="string">'a'</span><span class="operator">,</span>
+        <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+          <span class="keyword">return</span> <span class="keyword">unless</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'href'</span><span class="operator">);</span>
+          <span class="keyword">my</span> <span class="variable">@c</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">content_list</span><span class="operator">;</span>
+          <span class="variable">@c</span> <span class="operator">==</span> <span class="number">1</span> <span class="keyword">and</span> <span class="keyword">ref</span> <span class="variable">$c</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="keyword">and</span> <span class="variable">$c</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">tag</span> <span class="keyword">eq</span> <span class="string">'b'</span><span class="operator">;</span>
+        <span class="operator">}</span>
+      <span class="operator">)</span>
+    <span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">push</span> <span class="variable">@out</span><span class="operator">,</span> <span class="operator">[</span> <span class="variable">$link</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'href'</span><span class="operator">),</span> <span class="variable">$link</span><span class="operator">-&gt;</span><span class="variable">as_text</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    
+    <span class="keyword">warn</span> <span class="string">"Odd, fewer than 6 stories in </span><span class="variable">$url</span><span class="string">!"</span> <span class="keyword">if</span> <span class="variable">@out</span> <span class="operator">&lt;</span> <span class="number">6</span><span class="operator">;</span>
+    <span class="variable">$tree</span><span class="operator">-&gt;</span><span class="variable">delete</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="variable">@out</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>...and add a bit of code to actually call that routine and display the
+results...</p>
+<pre>
+  <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$section</span> <span class="operator">(</span><span class="string">qw[tc sc hl wl en]</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">@links</span> <span class="operator">=</span> <span class="variable">get_headlines</span><span class="operator">(</span>
+      <span class="string">"http://dailynews.yahoo.com/h/</span><span class="variable">$section</span><span class="string">/"</span>
+    <span class="operator">);</span>
+    <span class="keyword">print</span>
+      <span class="variable">$section</span><span class="operator">,</span> <span class="string">": "</span><span class="operator">,</span> <span class="keyword">scalar</span><span class="operator">(</span><span class="variable">@links</span><span class="operator">),</span> <span class="string">" stories\n"</span><span class="operator">,</span>
+      <span class="keyword">map</span><span class="operator">((</span><span class="string">"  "</span><span class="operator">,</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">,</span> <span class="string">" : "</span><span class="operator">,</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">),</span> <span class="variable">@links</span><span class="operator">),</span>
+      <span class="string">"\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>And we've got our own headline-extractor service!  This in and of
+itself isn't no amazingly useful (since if you want to see the
+headlines, you <em>can</em> just look at the Yahoo News pages), but it could
+easily be the basis for quite useful features like filtering the
+headlines for matching certain keywords of interest to you.</p>
+<p>Now, one of these days, Yahoo News will decide to change its HTML
+template.  When this happens, this will appear to the above program as
+there being no links that meet the given criteria; or, less likely,
+dozens of erroneous links will meet the criteria.  In either case, the
+criteria will have to be changed for the new template; they may just
+need adjustment, or you may need to scrap them and start over.</p>
+<p>
+</p>
+<h2><a name="regardez__duvet_"><em>Regardez, duvet!</em></a></h2>
+<p>It's often quite a challenge to write criteria to match the desired
+parts of an HTML parse tree.  Very often you <em>can</em> pull it off with a
+simple <code>$tree-&gt;look_down('_tag', 'h1')</code>, but sometimes you do
+have to keep adding and refining criteria, until you might end up with
+complex filters like what I've shown in this article.  The
+benefit to learning how to deal with HTML parse trees is that one main
+search tool, the <code>look_down</code> method, can do most of the work, making
+simple things easy, while still making hard things possible.</p>
+<p><strong>[end body of article]</strong></p>
+<p>
+</p>
+<h2><a name="_author_credit_">[Author Credit]</a></h2>
+<p>Sean M. Burke (<code>sburke@cpan.org</code>) is the current maintainer of
+<code>HTML::TreeBuilder</code> and <code>HTML::Element</code>, both originally by
+Gisle Aas.</p>
+<p>Sean adds: &quot;I'd like to thank the folks who listened to me ramble
+incessantly about HTML::TreeBuilder and HTML::Element at this year's Yet
+Another Perl Conference and O'Reilly Open Source Software Convention.&quot;</p>
+<p>
+</p>
+<hr />
+<h1><a name="back">BACK</a></h1>
+<p>Return to the <a href="../../../lib/HTML/Tree.html">HTML::Tree</a> docs.</p>
+
+</body>
+
+</html>

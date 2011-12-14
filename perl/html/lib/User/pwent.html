@@ -1,0 +1,172 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>User::pwent - by-name interface to Perl's built-in getpw* functions</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>User::pwent - by-name interface to Perl's built-in getpw* functions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#system_specifics">System Specifics</a></li>
+	</ul>
+
+	<li><a href="#note">NOTE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#history">HISTORY</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>User::pwent - by-name interface to Perl's built-in getpw*() functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">User::pwent</span><span class="operator">;</span>
+ <span class="variable">$pw</span> <span class="operator">=</span> <span class="keyword">getpwnam</span><span class="operator">(</span><span class="string">'daemon'</span><span class="operator">)</span>       <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"No daemon user"</span><span class="operator">;</span>
+ <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$pw</span><span class="operator">-&gt;</span><span class="variable">uid</span> <span class="operator">==</span> <span class="number">1</span> <span class="operator">&amp;&amp;</span> <span class="variable">$pw</span><span class="operator">-&gt;</span><span class="variable">dir</span> <span class="operator">=~</span> <span class="regex">m#^/(bin|tmp)?\z#s</span> <span class="operator">)</span> <span class="operator">{</span>
+     <span class="keyword">print</span> <span class="string">"gid 1 on root dir"</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="variable">$real_shell</span> <span class="operator">=</span> <span class="variable">$pw</span><span class="operator">-&gt;</span><span class="variable">shell</span> <span class="operator">||</span> <span class="string">'/bin/sh'</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="keyword">for</span> <span class="operator">((</span><span class="variable">$fullname</span><span class="operator">,</span> <span class="variable">$office</span><span class="operator">,</span> <span class="variable">$workphone</span><span class="operator">,</span> <span class="variable">$homephone</span><span class="operator">)</span> <span class="operator">=</span>
+        <span class="keyword">split</span> <span class="regex">/\s*,\s*/</span><span class="operator">,</span> <span class="variable">$pw</span><span class="operator">-&gt;</span><span class="variable">gecos</span><span class="operator">)</span>
+ <span class="operator">{</span>
+    <span class="regex">s/&amp;/ucfirst(lc($pw-&gt;name))/ge</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="keyword">use</span> <span class="variable">User::pwent</span> <span class="string">qw(:FIELDS)</span><span class="operator">;</span>
+ <span class="keyword">getpwnam</span><span class="operator">(</span><span class="string">'daemon'</span><span class="operator">)</span>             <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"No daemon user"</span><span class="operator">;</span>
+ <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$pw_uid</span> <span class="operator">==</span> <span class="number">1</span> <span class="operator">&amp;&amp;</span> <span class="variable">$pw_dir</span> <span class="operator">=~</span> <span class="regex">m#^/(bin|tmp)?\z#s</span> <span class="operator">)</span> <span class="operator">{</span>
+     <span class="keyword">print</span> <span class="string">"gid 1 on root dir"</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="variable">$pw</span> <span class="operator">=</span> <span class="variable">getpw</span><span class="operator">(</span><span class="variable">$whoever</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="keyword">use</span> <span class="variable">User::pwent</span> <span class="string">qw/:DEFAULT pw_has/</span><span class="operator">;</span>
+ <span class="keyword">if</span> <span class="operator">(</span><span class="variable">pw_has</span><span class="operator">(</span><span class="string">qw[gecos expire quota]</span><span class="operator">))</span> <span class="operator">{</span> <span class="operator">....</span> <span class="operator">}</span>
+ <span class="keyword">if</span> <span class="operator">(</span><span class="variable">pw_has</span><span class="operator">(</span><span class="string">"name uid gid passwd"</span><span class="operator">))</span>  <span class="operator">{</span> <span class="operator">....</span> <span class="operator">}</span>
+ <span class="keyword">print</span> <span class="string">"Your struct pwd has: "</span><span class="operator">,</span> <span class="keyword">scalar</span> <span class="variable">pw_has</span><span class="operator">(),</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module's default exports override the core <a href="../../lib/pods/perlfunc.html#getpwent"><code>getpwent()</code></a>, <a href="../../lib/pods/perlfunc.html#getpwuid"><code>getpwuid()</code></a>,
+and <a href="../../lib/pods/perlfunc.html#getpwnam"><code>getpwnam()</code></a> functions, replacing them with versions that return
+<code>User::pwent</code> objects.  This object has methods that return the
+similarly named structure field name from the C's passwd structure
+from <em class="file">pwd.h</em>, stripped of their leading &quot;pw_&quot; parts, namely <code>name</code>,
+<code>passwd</code>, <code>uid</code>, <code>gid</code>, <code>change</code>, <code>age</code>, <code>quota</code>, <code>comment</code>,
+<code>class</code>, <code>gecos</code>, <code>dir</code>, <code>shell</code>, and <code>expire</code>.  The <code>passwd</code>,
+<code>gecos</code>, and <code>shell</code> fields are tainted when running in taint mode.</p>
+<p>You may also import all the structure fields directly into your
+namespace as regular variables using the :FIELDS import tag.  (Note
+that this still overrides your core functions.)  Access these fields
+as variables named with a preceding <code>pw_</code> in front their method
+names.  Thus, <code>$passwd_obj-&gt;shell</code> corresponds to $pw_shell
+if you import the fields.</p>
+<p>The <code>getpw()</code> function is a simple front-end that forwards
+a numeric argument to <a href="../../lib/pods/perlfunc.html#getpwuid"><code>getpwuid()</code></a> and the rest to <a href="../../lib/pods/perlfunc.html#getpwnam"><code>getpwnam()</code></a>.</p>
+<p>To access this functionality without the core overrides, pass the
+<a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> an empty import list, and then access function functions
+with their full qualified names.  The built-ins are always still
+available via the <code>CORE::</code> pseudo-package.</p>
+<p>
+</p>
+<h2><a name="system_specifics">System Specifics</a></h2>
+<p>Perl believes that no machine ever has more than one of <code>change</code>,
+<code>age</code>, or <code>quota</code> implemented, nor more than one of either
+<code>comment</code> or <code>class</code>.  Some machines do not support <code>expire</code>,
+<code>gecos</code>, or allegedly, <code>passwd</code>.  You may call these methods
+no matter what machine you're on, but they return <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if
+unimplemented.</p>
+<p>You may ask whether one of these was implemented on the system Perl
+was built on by asking the importable <code>pw_has</code> function about them.
+This function returns true if all parameters are supported fields
+on the build platform, false if one or more were not, and raises
+an exception if you asked about a field that Perl never knows how
+to provide.  Parameters may be in a space-separated string, or as
+separate arguments.  If you pass no parameters, the function returns
+the list of <code>struct pwd</code> fields supported by your build platform's
+C library, as a list in list context, or a space-separated string
+in scalar context.  Note that just because your C library had
+a field doesn't necessarily mean that it's fully implemented on
+that system.</p>
+<p>Interpretation of the <code>gecos</code> field varies between systems, but
+traditionally holds 4 comma-separated fields containing the user's
+full name, office location, work phone number, and home phone number.
+An <code>&amp;</code> in the gecos field should be replaced by the user's properly
+capitalized login <code>name</code>.  The <code>shell</code> field, if blank, must be
+assumed to be <em class="file">/bin/sh</em>.  Perl does not do this for you.  The
+<code>passwd</code> is one-way hashed garble, not clear text, and may not be
+unhashed save by brute-force guessing.  Secure systems use more a
+more secure hashing than DES.  On systems supporting shadow password
+systems, Perl automatically returns the shadow password entry when
+called by a suitably empowered user, even if your underlying
+vendor-provided C library was too short-sighted to realize it should
+do this.</p>
+<p>See <code>passwd(5)</code> and <a href="../../lib/pods/perlfunc.html#getpwent"><code>getpwent(3)</code></a> for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="note">NOTE</a></h1>
+<p>While this class is currently implemented using the Class::Struct
+module to build a struct-like class, you shouldn't rely upon this.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Tom Christiansen</p>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<dl>
+<dt><strong><a name="march_18th_2000" class="item">March 18th, 2000</a></strong></dt>
+
+<dd>
+<p>Reworked internals to support better interface to dodgey fields
+than normal Perl function provides.  Added <code>pw_has()</code> field.  Improved
+documentation.</p>
+</dd>
+</dl>
+
+</body>
+
+</html>

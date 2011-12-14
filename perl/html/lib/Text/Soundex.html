@@ -1,0 +1,186 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Text::Soundex - Implementation of the soundex algorithm.</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Text::Soundex - Implementation of the soundex algorithm.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#maintainer">MAINTAINER</a></li>
+	<li><a href="#history">HISTORY</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Text::Soundex - Implementation of the soundex algorithm.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Text::Soundex</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment"># Original algorithm.</span>
+  <span class="variable">$code</span> <span class="operator">=</span> <span class="variable">soundex</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">);</span>    <span class="comment"># Get the soundex code for a name.</span>
+  <span class="variable">@codes</span> <span class="operator">=</span> <span class="variable">soundex</span><span class="operator">(</span><span class="variable">@names</span><span class="operator">);</span>  <span class="comment"># Get the list of codes for a list of names.</span>
+</pre>
+<pre>
+  <span class="comment"># American Soundex variant (NARA) - Used for US census data.</span>
+  <span class="variable">$code</span> <span class="operator">=</span> <span class="variable">soundex_nara</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">);</span>    <span class="comment"># Get the soundex code for a name.</span>
+  <span class="variable">@codes</span> <span class="operator">=</span> <span class="variable">soundex_nara</span><span class="operator">(</span><span class="variable">@names</span><span class="operator">);</span>  <span class="comment"># Get the list of codes for a list of names.</span>
+</pre>
+<pre>
+  <span class="comment"># Redefine the value that soundex() will return if the input string</span>
+  <span class="comment"># contains no identifiable sounds within it.</span>
+  <span class="variable">$Text::Soundex::nocode</span> <span class="operator">=</span> <span class="string">'Z000'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Soundex is a phonetic algorithm for indexing names by sound, as
+pronounced in English. The goal is for names with the same
+pronunciation to be encoded to the same representation so that they
+can be matched despite minor differences in spelling. Soundex is the
+most widely known of all phonetic algorithms and is often used
+(incorrectly) as a synonym for &quot;phonetic algorithm&quot;. Improvements to
+Soundex are the basis for many modern phonetic algorithms. (Wikipedia,
+2007)</p>
+<p>This module implements the original soundex algorithm developed by
+Robert Russell and Margaret Odell, patented in 1918 and 1922, as well
+as a variation called &quot;American Soundex&quot; used for US census data, and
+current maintained by the National Archives and Records Administration
+(NARA).</p>
+<p>The soundex algorithm may be recognized from Donald Knuth's
+<strong>The Art of Computer Programming</strong>. The algorithm described by
+Knuth is the NARA algorithm.</p>
+<p>The value returned for strings which have no soundex encoding is
+defined using <code>$Text::Soundex::nocode</code>. The default value is <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>,
+however values such as <code>'Z000'</code> are commonly used alternatives.</p>
+<p>For backward compatibility with older versions of this module the
+<code>$Text::Soundex::nocode</code> is exported into the caller's namespace as
+<code>$soundex_nocode</code>.</p>
+<p>In scalar context, <code>soundex()</code> returns the soundex code of its first
+argument. In list context, a list is returned in which each element is the
+soundex code for the corresponding argument passed to <code>soundex()</code>. For
+example, the following code assigns @codes the value <code>('M200', 'S320')</code>:</p>
+<pre>
+   <span class="variable">@codes</span> <span class="operator">=</span> <span class="variable">soundex</span> <span class="string">qw(Mike Stok)</span><span class="operator">;</span>
+</pre>
+<p>To use <code>Text::Soundex</code> to generate codes that can be used to search one
+of the publically available US Censuses, a variant of the soundex
+algorithm must be used:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Text::Soundex</span><span class="operator">;</span>
+    <span class="variable">$code</span> <span class="operator">=</span> <span class="variable">soundex_nara</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>An example of where these algorithm differ follows:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Text::Soundex</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">soundex</span><span class="operator">(</span><span class="string">"Ashcraft"</span><span class="operator">),</span> <span class="string">"\n"</span><span class="operator">;</span>       <span class="comment"># prints: A226</span>
+    <span class="keyword">print</span> <span class="variable">soundex_nara</span><span class="operator">(</span><span class="string">"Ashcraft"</span><span class="operator">),</span> <span class="string">"\n"</span><span class="operator">;</span>  <span class="comment"># prints: A261</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>Donald Knuth's examples of names and the soundex codes they map to
+are listed below:</p>
+<pre>
+  Euler, Ellery -&gt; E460
+  Gauss, Ghosh -&gt; G200
+  Hilbert, Heilbronn -&gt; H416
+  Knuth, Kant -&gt; K530
+  Lloyd, Ladd -&gt; L300
+  Lukasiewicz, Lissajous -&gt; L222</pre>
+<p>so:</p>
+<pre>
+  <span class="variable">$code</span> <span class="operator">=</span> <span class="variable">soundex</span> <span class="string">'Knuth'</span><span class="operator">;</span>         <span class="comment"># $code contains 'K530'</span>
+  <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">soundex</span> <span class="string">qw(Lloyd Gauss)</span><span class="operator">;</span> <span class="comment"># @list contains 'L300', 'G200'</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>As the soundex algorithm was originally used a <strong>long</strong> time ago in the US
+it considers only the English alphabet and pronunciation. In particular,
+non-ASCII characters will be ignored. The recommended method of dealing
+with characters that have accents, or other unicode characters, is to use
+the Text::Unidecode module available from CPAN. Either use the module
+explicitly:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Text::Soundex</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Text::Unidecode</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="variable">soundex</span><span class="operator">(</span><span class="variable">unidecode</span><span class="operator">(</span><span class="string">"Fran\xE7ais"</span><span class="operator">)),</span> <span class="string">"\n"</span><span class="operator">;</span> <span class="comment"># Prints "F652\n"</span>
+</pre>
+<p>Or use the convenient wrapper routine:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Text::Soundex</span> <span class="string">'soundex_unicode'</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="variable">soundex_unicode</span><span class="operator">(</span><span class="string">"Fran\xE7ais"</span><span class="operator">),</span> <span class="string">"\n"</span><span class="operator">;</span>    <span class="comment"># Prints "F652\n"</span>
+</pre>
+<p>Since the soundex algorithm maps a large space (strings of arbitrary
+length) onto a small space (single letter plus 3 digits) no inference
+can be made about the similarity of two strings which end up with the
+same soundex code.  For example, both <code>Hilbert</code> and <code>Heilbronn</code> end
+up with a soundex code of <code>H416</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="maintainer">MAINTAINER</a></h1>
+<p>This module is currently maintain by Mark Mielke (<code>mark@mielke.cc</code>).</p>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p>Version 3 is a significant update to provide support for versions of
+Perl later than Perl 5.004. Specifically, the XS version of the
+<code>soundex()</code> subroutine understands strings that are encoded using UTF-8
+(unicode strings).</p>
+<p>Version 2 of this module was a re-write by Mark Mielke (<code>mark@mielke.cc</code>)
+to improve the speed of the subroutines. The XS version of the <code>soundex()</code>
+subroutine was introduced in 2.00.</p>
+<p>Version 1 of this module was written by Mike Stok (<code>mike@stok.co.uk</code>)
+and was included into the Perl core library set.</p>
+<p>Dave Carlsen (<code>dcarlsen@csranet.com</code>) made the request for the NARA
+algorithm to be included. The NARA soundex page can be viewed at:
+<code>http://www.nara.gov/genealogy/soundex/soundex.html</code></p>
+<p>Ian Phillips (<code>ian@pipex.net</code>) and Rich Pinder (<code>rpinder@hsc.usc.edu</code>)
+supplied ideas and spotted mistakes for v1.x.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,745 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perldebtut - Perl debugging tutorial</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perldebtut - Perl debugging tutorial</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#use_strict">use strict</a></li>
+	<li><a href="#looking_at_data_and__w_and_v">Looking at data and -w and v</a></li>
+	<li><a href="#help">help</a></li>
+	<li><a href="#stepping_through_code">Stepping through code</a></li>
+	<li><a href="#placeholder_for_a__w__t__t">Placeholder for a, w, t, T</a></li>
+	<li><a href="#regular_expressions">REGULAR EXPRESSIONS</a></li>
+	<li><a href="#output_tips">OUTPUT TIPS</a></li>
+	<li><a href="#cgi">CGI</a></li>
+	<li><a href="#guis">GUIs</a></li>
+	<li><a href="#summary">SUMMARY</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#contributors">CONTRIBUTORS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perldebtut - Perl debugging tutorial</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A (very) lightweight introduction in the use of the perl debugger, and a
+pointer to existing, deeper sources of information on the subject of debugging
+perl programs.</p>
+<p>There's an extraordinary number of people out there who don't appear to know
+anything about using the perl debugger, though they use the language every
+day.  
+This is for them.</p>
+<p>
+</p>
+<hr />
+<h1><a name="use_strict">use strict</a></h1>
+<p>First of all, there's a few things you can do to make your life a lot more
+straightforward when it comes to debugging perl programs, without using the
+debugger at all.  To demonstrate, here's a simple script, named &quot;hello&quot;, with
+a problem:</p>
+<pre>
+        <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+        <span class="variable">$var1</span> <span class="operator">=</span> <span class="string">'Hello World'</span><span class="operator">;</span> <span class="comment"># always wanted to do that :-)</span>
+        <span class="variable">$var2</span> <span class="operator">=</span> <span class="string">"</span><span class="variable">$varl</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="variable">$var2</span><span class="operator">;</span> 
+        <span class="keyword">exit</span><span class="operator">;</span>
+</pre>
+<p>While this compiles and runs happily, it probably won't do what's expected,
+namely it doesn't print &quot;Hello World\n&quot; at all;  It will on the other hand do
+exactly what it was told to do, computers being a bit that way inclined.  That
+is, it will print out a newline character, and you'll get what looks like a
+blank line.  It looks like there's 2 variables when (because of the typo)
+there's really 3:</p>
+<pre>
+        <span class="variable">$var1</span> <span class="operator">=</span> <span class="string">'Hello World'</span><span class="operator">;</span>
+        <span class="variable">$varl</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+        <span class="variable">$var2</span> <span class="operator">=</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>To catch this kind of problem, we can force each variable to be declared
+before use by pulling in the strict module, by putting 'use strict;' after the
+first line of the script.</p>
+<p>Now when you run it, perl complains about the 3 undeclared variables and we
+get four error messages because one variable is referenced twice:</p>
+<pre>
+ Global symbol &quot;$var1&quot; requires explicit package name at ./t1 line 4.
+ Global symbol &quot;$var2&quot; requires explicit package name at ./t1 line 5.
+ Global symbol &quot;$varl&quot; requires explicit package name at ./t1 line 5.
+ Global symbol &quot;$var2&quot; requires explicit package name at ./t1 line 7.
+ Execution of ./hello aborted due to compilation errors.</pre>
+<p>Luvverly! and to fix this we declare all variables explicitly and now our
+script looks like this:</p>
+<pre>
+        <span class="comment">#!/usr/bin/perl</span>
+        <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$var1</span> <span class="operator">=</span> <span class="string">'Hello World'</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$varl</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$var2</span> <span class="operator">=</span> <span class="string">"</span><span class="variable">$varl</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="variable">$var2</span><span class="operator">;</span> 
+        <span class="keyword">exit</span><span class="operator">;</span>
+</pre>
+<p>We then do (always a good idea) a syntax check before we try to run it again:</p>
+<pre>
+        &gt; perl -c hello
+        hello syntax OK</pre>
+<p>And now when we run it, we get &quot;\n&quot; still, but at least we know why.  Just
+getting this script to compile has exposed the '$varl' (with the letter 'l')
+variable, and simply changing $varl to $var1 solves the problem.</p>
+<p>
+</p>
+<hr />
+<h1><a name="looking_at_data_and__w_and_v">Looking at data and -w and v</a></h1>
+<p>Ok, but how about when you want to really see your data, what's in that
+dynamic variable, just before using it?</p>
+<pre>
+        <span class="comment">#!/usr/bin/perl </span>
+        <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$key</span> <span class="operator">=</span> <span class="string">'welcome'</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">%data</span> <span class="operator">=</span> <span class="operator">(</span>
+                <span class="string">'this'</span> <span class="operator">=&gt;</span> <span class="string">qw(that)</span><span class="operator">,</span> 
+                <span class="string">'tom'</span> <span class="operator">=&gt;</span> <span class="string">qw(and jerry)</span><span class="operator">,</span>
+                <span class="string">'welcome'</span> <span class="operator">=&gt;</span> <span class="string">q(Hello World)</span><span class="operator">,</span>
+                <span class="string">'zip'</span> <span class="operator">=&gt;</span> <span class="string">q(welcome)</span><span class="operator">,</span>
+        <span class="operator">);</span>
+        <span class="keyword">my</span> <span class="variable">@data</span> <span class="operator">=</span> <span class="keyword">keys</span> <span class="variable">%data</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$data</span><span class="string">{</span><span class="variable">$key</span><span class="string">}\n"</span><span class="operator">;</span>
+        <span class="keyword">exit</span><span class="operator">;</span>
+</pre>
+<p>Looks OK, after it's been through the syntax check (perl -c scriptname), we
+run it and all we get is a blank line again!  Hmmmm.</p>
+<p>One common debugging approach here, would be to liberally sprinkle a few print
+statements, to add a check just before we print out our data, and another just
+after:</p>
+<pre>
+        <span class="keyword">print</span> <span class="string">"All OK\n"</span> <span class="keyword">if</span> <span class="keyword">grep</span><span class="operator">(</span><span class="variable">$key</span><span class="operator">,</span> <span class="keyword">keys</span> <span class="variable">%data</span><span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$data</span><span class="string">{</span><span class="variable">$key</span><span class="string">}\n"</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"done: '</span><span class="variable">$data</span><span class="string">{</span><span class="variable">$key</span><span class="string">}'\n"</span><span class="operator">;</span>
+</pre>
+<p>And try again:</p>
+<pre>
+        &gt; perl data
+        All OK</pre>
+<pre>
+        done: ''</pre>
+<p>After much staring at the same piece of code and not seeing the wood for the
+trees for some time, we get a cup of coffee and try another approach.  That
+is, we bring in the cavalry by giving perl the '<strong>-d</strong>' switch on the command
+line:</p>
+<pre>
+        &gt; perl -d data 
+        Default die handler restored.</pre>
+<pre>
+        Loading DB routines from perl5db.pl version 1.07
+        Editor support available.</pre>
+<pre>
+        Enter h or `h h' for help, or `man <a href="../../lib/pods/perldebug.html">perldebug</a>' for more help.</pre>
+<pre>
+        <span class="variable">main:</span>:(<span class="operator">.</span><span class="regex">/data:4):     my </span><span class="variable">$key</span><span class="regex"> = 'welcome';
+        </span>
+</pre>
+<p>Now, what we've done here is to launch the built-in perl debugger on our
+script.  It's stopped at the first line of executable code and is waiting for
+input.</p>
+<p>Before we go any further, you'll want to know how to quit the debugger: use
+just the letter '<strong>q</strong>', not the words 'quit' or 'exit':</p>
+<pre>
+        DB&lt;1&gt; q
+        &gt;</pre>
+<p>That's it, you're back on home turf again.</p>
+<p>
+</p>
+<hr />
+<h1><a name="help">help</a></h1>
+<p>Fire the debugger up again on your script and we'll look at the help menu. 
+There's a couple of ways of calling help: a simple '<strong>h</strong>' will get the summary 
+help list, '<strong>|h</strong>' (pipe-h) will pipe the help through your pager (which is 
+(probably 'more' or 'less'), and finally, '<strong>h h</strong>' (h-space-h) will give you 
+the entire help screen.  Here is the summary page:</p>
+<p>D<strong>1</strong>h</p>
+<pre>
+ <span class="variable">List</span><span class="operator">/</span><span class="variable">search</span> <span class="variable">source</span> <span class="variable">lines</span><span class="operator">:</span>               <span class="variable">Control</span> <span class="variable">script</span> <span class="variable">execution</span><span class="operator">:</span>
+  <span class="variable">l</span> <span class="operator">[</span><span class="variable">ln</span><span class="operator">|</span><span class="variable">sub</span><span class="operator">]</span>  <span class="variable">List</span> <span class="variable">source</span> <span class="variable">code</span>            <span class="variable">T</span>           <span class="variable">Stack</span> <span class="variable">trace</span>
+  <span class="operator">-</span> <span class="keyword">or</span> <span class="operator">.</span>      <span class="variable">List</span> <span class="variable">previous</span><span class="operator">/</span><span class="variable">current</span> <span class="variable">line</span>  <span class="regex">s [expr]    S</span><span class="variable">ingle</span> <span class="variable">step</span> <span class="operator">[</span><span class="variable">in</span> <span class="variable">expr</span><span class="operator">]</span>
+  <span class="variable">v</span> <span class="operator">[</span><span class="variable">line</span><span class="operator">]</span>    <span class="variable">View</span> <span class="variable">around</span> <span class="variable">line</span>            <span class="variable">n</span> <span class="operator">[</span><span class="variable">expr</span><span class="operator">]</span>    <span class="variable">Next</span><span class="operator">,</span> <span class="variable">steps</span> <span class="variable">over</span> <span class="variable">subs</span>
+  <span class="variable">f</span> <span class="variable">filename</span>  <span class="variable">View</span> <span class="variable">source</span> <span class="variable">in</span> <span class="variable">file</span>         <span class="operator">&lt;</span><span class="variable">CR</span><span class="operator">/</span><span class="variable">Enter</span><span class="operator">&gt;</span>  <span class="variable">Repeat</span> <span class="keyword">last</span> <span class="variable">n</span> <span class="keyword">or</span> <span class="keyword">s</span>
+  <span class="operator">/</span><span class="variable">pattern</span><span class="operator">/</span> <span class="regex">?patt?</span>   <span class="variable">Search</span> <span class="variable">forw</span><span class="operator">/</span><span class="variable">backw</span>    <span class="variable">r</span>           <span class="variable">Return</span> <span class="variable">from</span> <span class="variable">subroutine</span>
+  <span class="variable">M</span>           <span class="variable">Show</span> <span class="variable">module</span> <span class="variable">versions</span>        <span class="variable">c</span> <span class="operator">[</span><span class="variable">ln</span><span class="operator">|</span><span class="variable">sub</span><span class="operator">]</span>  <span class="variable">Continue</span> <span class="keyword">until</span> <span class="variable">position</span>
+ <span class="variable">Debugger</span> <span class="variable">controls</span><span class="operator">:</span>                       <span class="variable">L</span>           <span class="variable">List</span> <span class="keyword">break</span><span class="operator">/</span><span class="variable">watch</span><span class="operator">/</span><span class="variable">actions</span>
+  <span class="variable">o</span> <span class="operator">[</span><span class="operator">...</span><span class="operator">]</span>     <span class="variable">Set</span> <span class="variable">debugger</span> <span class="variable">options</span>        <span class="variable">t</span> <span class="operator">[</span><span class="variable">expr</span><span class="operator">]</span>    <span class="variable">Toggle</span> <span class="variable">trace</span> <span class="operator">[</span><span class="variable">trace</span> <span class="variable">expr</span><span class="operator">]</span>
+  <span class="operator">&lt;</span><span class="operator">[</span><span class="operator">&lt;</span><span class="operator">]</span><span class="operator">|{</span><span class="operator">[{]</span><span class="operator">|&gt;</span><span class="operator">[</span><span class="operator">&gt;</span><span class="operator">]</span> <span class="operator">[</span><span class="variable">cmd</span><span class="operator">]</span> <span class="variable">Do</span> <span class="variable">pre</span><span class="operator">/</span><span class="variable">post</span><span class="operator">-</span><span class="variable">prompt</span> <span class="variable">b</span> <span class="operator">[</span><span class="variable">ln</span><span class="operator">|</span><span class="variable">event</span><span class="operator">|</span><span class="variable">sub</span><span class="operator">]</span> <span class="operator">[</span><span class="variable">cnd</span><span class="operator">]</span> <span class="variable">Set</span> <span class="variable">breakpoint</span>
+  <span class="operator">!</span> <span class="operator">[</span><span class="variable">N</span><span class="operator">|</span><span class="variable">pat</span><span class="operator">]</span>   <span class="variable">Redo</span> <span class="variable">a</span> <span class="variable">previous</span> <span class="variable">command</span>     <span class="variable">B</span> <span class="variable">ln</span><span class="operator">|*</span>      <span class="variable">Delete</span> <span class="variable">a</span><span class="operator">/</span><span class="variable">all</span> <span class="variable">breakpoints</span>
+  <span class="variable">H</span> <span class="operator">[</span><span class="operator">-</span><span class="variable">num</span><span class="operator">]</span>    <span class="variable">Display</span> <span class="keyword">last</span> <span class="variable">num</span> <span class="variable">commands</span>   <span class="variable">a</span> <span class="operator">[</span><span class="variable">ln</span><span class="operator">]</span> <span class="variable">cmd</span>  <span class="variable">Do</span> <span class="variable">cmd</span> <span class="variable">before</span> <span class="variable">line</span>
+  <span class="operator">=</span> <span class="operator">[</span><span class="variable">a</span> <span class="variable">val</span><span class="operator">]</span>   <span class="variable">Define</span><span class="operator">/</span><span class="variable">list</span> <span class="variable">an</span> <span class="variable">alias</span>        <span class="variable">A</span> <span class="variable">ln</span><span class="operator">|*</span>      <span class="variable">Delete</span> <span class="variable">a</span><span class="operator">/</span><span class="variable">all</span> <span class="variable">actions</span>
+  <span class="variable">h</span> <span class="operator">[</span><span class="variable">db_cmd</span><span class="operator">]</span>  <span class="variable">Get</span> <span class="variable">help</span> <span class="variable">on</span> <span class="variable">command</span>         <span class="variable">w</span> <span class="variable">expr</span>      <span class="variable">Add</span> <span class="variable">a</span> <span class="variable">watch</span> <span class="variable">expression</span>
+  <span class="variable">h</span> <span class="variable">h</span>         <span class="variable">Complete</span> <span class="variable">help</span> <span class="variable">page</span>          <span class="variable">W</span> <span class="variable">expr</span><span class="operator">|*</span>    <span class="variable">Delete</span> <span class="variable">a</span><span class="operator">/</span><span class="variable">all</span> <span class="variable">watch</span> <span class="variable">exprs</span>
+  <span class="operator">|</span><span class="operator">[</span><span class="operator">|</span><span class="operator">]</span><span class="variable">db_cmd</span>  <span class="variable">Send</span> <span class="variable">output</span> <span class="variable">to</span> <span class="variable">pager</span>        <span class="operator">!</span><span class="operator">[</span><span class="operator">!</span><span class="operator">]</span> <span class="variable">syscmd</span> <span class="variable">Run</span> <span class="variable">cmd</span> <span class="variable">in</span> <span class="variable">a</span> <span class="variable">subprocess</span>
+  <span class="string">q or ^D     Quit                        R           Attempt a restart
+ Data Examinatio</span><span class="variable">n</span><span class="operator">:</span>     <span class="variable">expr</span>     <span class="variable">Execute</span> <span class="variable">perl</span> <span class="variable">code</span><span class="operator">,</span> <span class="variable">also</span> <span class="variable">see</span><span class="operator">:</span> <span class="regex">s,n,t expr
+  x|m expr       Evals expr in list context,</span> <span class="variable">dumps</span> <span class="variable">the</span> <span class="variable">result</span> <span class="keyword">or</span> <span class="variable">lists</span> <span class="variable">methods</span><span class="operator">.</span>
+  <span class="variable">p</span> <span class="variable">expr</span>         <span class="variable">Print</span> <span class="variable">expression</span> <span class="operator">(</span><span class="variable">uses</span> <span class="variable">script's</span> <span class="variable">current</span> <span class="keyword">package</span><span class="operator">).</span>
+  <span class="variable">S</span> <span class="operator">[[</span><span class="operator">!</span><span class="operator">]</span><span class="variable">pat</span><span class="operator">]</span>     <span class="variable">List</span> <span class="variable">subroutine</span> <span class="variable">names</span> <span class="operator">[</span><span class="keyword">not</span><span class="operator">]</span> <span class="variable">matching</span> <span class="variable">pattern</span>
+  <span class="variable">V</span> <span class="operator">[</span><span class="variable">Pk</span> <span class="operator">[</span><span class="variable">Vars</span><span class="operator">]]</span>  <span class="variable">List</span> <span class="variable">Variables</span> <span class="variable">in</span> <span class="variable">Package</span><span class="operator">.</span>  <span class="variable">Vars</span> <span class="variable">can</span> <span class="variable">be</span> <span class="operator">~</span><span class="variable">pattern</span> <span class="keyword">or</span> <span class="operator">!</span><span class="variable">pattern</span><span class="operator">.</span>
+  <span class="variable">X</span> <span class="operator">[</span><span class="variable">Vars</span><span class="operator">]</span>       <span class="variable">Same</span> <span class="variable">as</span> <span class="string">"V current_package [Vars]"</span><span class="operator">.</span>
+  <span class="regex">y [n [Vars]]   L</span><span class="variable">ist</span> <span class="variable">lexicals</span> <span class="variable">in</span> <span class="variable">higher</span> <span class="variable">scope</span> <span class="operator">&lt;</span><span class="variable">n</span><span class="operator">&gt;.</span>  <span class="variable">Vars</span> <span class="variable">same</span> <span class="variable">as</span> <span class="variable">V</span><span class="operator">.</span>
+ <span class="variable">For</span> <span class="variable">more</span> <span class="variable">help</span><span class="operator">,</span> <span class="variable">type</span> <span class="variable">h</span> <span class="variable">cmd_letter</span><span class="operator">,</span> <span class="keyword">or</span> <span class="variable">run</span> <span class="variable">man</span> <span class="variable">perldebug</span> <span class="keyword">for</span> <span class="variable">all</span> <span class="variable">docs</span><span class="operator">.</span>
+</pre>
+<p>More confusing options than you can shake a big stick at!  It's not as bad as
+it looks and it's very useful to know more about all of it, and fun too!</p>
+<p>There's a couple of useful ones to know about straight away.  You wouldn't
+think we're using any libraries at all at the moment, but '<strong>M</strong>' will show
+which modules are currently loaded, and their version number, while '<strong>m</strong>' 
+will show the methods, and '<strong>S</strong>' shows all subroutines (by pattern) as 
+shown below.  '<strong>V</strong>' and '<strong>X</strong>' show variables in the program by package 
+scope and can be constrained by pattern.</p>
+<pre>
+        DB&lt;2&gt;S str 
+        dumpvar::stringify
+        strict::bits
+        strict::import
+        strict::unimport</pre>
+<p>Using 'X' and cousins requires you not to use the type identifiers ($@%), just
+the 'name':</p>
+<pre>
+        DM&lt;3&gt;X ~err
+        FileHandle(stderr) =&gt; fileno(2)</pre>
+<p>Remember we're in our tiny program with a problem, we should have a look at
+where we are, and what our data looks like. First of all let's view some code 
+at our present position (the first line of code in this case), via '<strong>v</strong>':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">4</span><span class="operator">&gt;</span> <span class="variable">v</span>
+        <span class="number">1</span>       <span class="comment">#!/usr/bin/perl</span>
+        <span class="number">2</span><span class="operator">:</span>      <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+        <span class="number">3</span>
+        <span class="number">4</span><span class="operator">==&gt;</span>    <span class="keyword">my</span> <span class="variable">$key</span> <span class="operator">=</span> <span class="string">'welcome'</span><span class="operator">;</span>
+        <span class="number">5</span><span class="operator">:</span>      <span class="keyword">my</span> <span class="variable">%data</span> <span class="operator">=</span> <span class="operator">(</span>
+        <span class="number">6</span>               <span class="string">'this'</span> <span class="operator">=&gt;</span> <span class="string">qw(that)</span><span class="operator">,</span>
+        <span class="number">7</span>               <span class="string">'tom'</span> <span class="operator">=&gt;</span> <span class="string">qw(and jerry)</span><span class="operator">,</span>
+        <span class="number">8</span>               <span class="string">'welcome'</span> <span class="operator">=&gt;</span> <span class="string">q(Hello World)</span><span class="operator">,</span>
+        <span class="number">9</span>               <span class="string">'zip'</span> <span class="operator">=&gt;</span> <span class="string">q(welcome)</span><span class="operator">,</span>
+        <span class="number">10</span>      <span class="operator">);</span>
+</pre>
+<p>At line number 4 is a helpful pointer, that tells you where you are now.  To
+see more code, type 'v' again:</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">4</span><span class="operator">&gt;</span> <span class="variable">v</span>
+        <span class="number">8</span>               <span class="string">'welcome'</span> <span class="operator">=&gt;</span> <span class="string">q(Hello World)</span><span class="operator">,</span>
+        <span class="number">9</span>               <span class="string">'zip'</span> <span class="operator">=&gt;</span> <span class="string">q(welcome)</span><span class="operator">,</span>
+        <span class="number">10</span>      <span class="operator">);</span>
+        <span class="number">11</span><span class="operator">:</span>     <span class="keyword">my</span> <span class="variable">@data</span> <span class="operator">=</span> <span class="keyword">keys</span> <span class="variable">%data</span><span class="operator">;</span>
+        <span class="number">12</span><span class="operator">:</span>     <span class="keyword">print</span> <span class="string">"All OK\n"</span> <span class="keyword">if</span> <span class="keyword">grep</span><span class="operator">(</span><span class="variable">$key</span><span class="operator">,</span> <span class="keyword">keys</span> <span class="variable">%data</span><span class="operator">);</span>
+        <span class="number">13</span><span class="operator">:</span>     <span class="keyword">print</span> <span class="string">"</span><span class="variable">$data</span><span class="string">{</span><span class="variable">$key</span><span class="string">}\n"</span><span class="operator">;</span>
+        <span class="number">14</span><span class="operator">:</span>     <span class="keyword">print</span> <span class="string">"done: '</span><span class="variable">$data</span><span class="string">{</span><span class="variable">$key</span><span class="string">}'\n"</span><span class="operator">;</span>
+        <span class="number">15</span><span class="operator">:</span>     <span class="keyword">exit</span><span class="operator">;</span>
+</pre>
+<p>And if you wanted to list line 5 again, type 'l 5', (note the space):</p>
+<pre>
+        DB&lt;4&gt; l 5
+        5:      my %data = (</pre>
+<p>In this case, there's not much to see, but of course normally there's pages of
+stuff to wade through, and 'l' can be very useful.  To reset your view to the
+line we're about to execute, type a lone period '.':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">5</span><span class="operator">&gt;</span> <span class="operator">.</span>
+        <span class="variable">main:</span>:(<span class="operator">.</span><span class="regex">/data_a:4):     my </span><span class="variable">$key</span><span class="regex"> = 'welcome';
+        </span>
+</pre>
+<p>The line shown is the one that is about to be executed <strong>next</strong>, it hasn't
+happened yet.  So while we can print a variable with the letter '<strong>p</strong>', at
+this point all we'd get is an empty (undefined) value back.  What we need to
+do is to step through the next executable statement with an '<strong>s</strong>':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">6</span><span class="operator">&gt;</span> <span class="keyword">s</span>
+        <span class="variable">main:</span>:(<span class="operator">.</span><span class="regex">/data_a:5):     my %data = (
+        main::(./data</span><span class="variable">_a</span><span class="operator">:</span><span class="number">6</span><span class="operator">):</span>             <span class="string">'this'</span> <span class="operator">=&gt;</span> <span class="string">qw(that)</span><span class="operator">,</span>
+        <span class="variable">main:</span>:(<span class="operator">.</span><span class="regex">/data_a:7):             'tom' =&gt; qw(and jerry),
+        main::(./data</span><span class="variable">_a</span><span class="operator">:</span><span class="number">8</span><span class="operator">):</span>             <span class="string">'welcome'</span> <span class="operator">=&gt;</span> <span class="string">q(Hello World)</span><span class="operator">,</span>
+        <span class="variable">main:</span>:(<span class="operator">.</span><span class="regex">/data_a:9):             'zip' =&gt; q(welcome),
+        main::(./data</span><span class="variable">_a</span><span class="operator">:</span><span class="number">10</span><span class="operator">):</span>    <span class="operator">);</span>
+</pre>
+<p>Now we can have a look at that first ($key) variable:</p>
+<pre>
+        DB&lt;7&gt; p $key 
+        welcome</pre>
+<p>line 13 is where the action is, so let's continue down to there via the letter
+'<strong>c</strong>', which by the way, inserts a 'one-time-only' breakpoint at the given
+line or sub routine:</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">8</span><span class="operator">&gt;</span> <span class="variable">c</span> <span class="number">13</span>
+        <span class="variable">All</span> <span class="variable">OK</span>
+        <span class="variable">main:</span>:(<span class="operator">.</span><span class="regex">/data_a:13):    print "</span><span class="variable">$data</span><span class="regex">{</span><span class="variable">$key</span><span class="regex">}\n";
+        </span>
+</pre>
+<p>We've gone past our check (where 'All OK' was printed) and have stopped just
+before the meat of our task.  We could try to print out a couple of variables
+to see what is happening:</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">9</span><span class="operator">&gt;</span> <span class="variable">p</span> <span class="variable">$data</span><span class="operator">{</span><span class="variable">$key</span><span class="operator">}</span>
+</pre>
+<p>Not much in there, lets have a look at our hash:</p>
+<pre>
+        DB&lt;10&gt; p %data
+        Hello Worldziptomandwelcomejerrywelcomethisthat</pre>
+<pre>
+        DB&lt;11&gt; p keys %data
+        Hello Worldtomwelcomejerrythis</pre>
+<p>Well, this isn't very easy to read, and using the helpful manual (<strong>h h</strong>), the
+'<strong>x</strong>' command looks promising:</p>
+<pre>
+        DB&lt;12&gt; x %data
+        0  'Hello World'
+        1  'zip'
+        2  'tom'
+        3  'and'
+        4  'welcome'
+        5  undef
+        6  'jerry'
+        7  'welcome'
+        8  'this'
+        9  'that'</pre>
+<p>That's not much help, a couple of welcomes in there, but no indication of
+which are keys, and which are values, it's just a listed array dump and, in
+this case, not particularly helpful.  The trick here, is to use a <strong>reference</strong>
+to the data structure:</p>
+<pre>
+        DB&lt;13&gt; x \%data
+        0  HASH(0x8194bc4)
+           'Hello World' =&gt; 'zip'
+           'jerry' =&gt; 'welcome'
+           'this' =&gt; 'that'
+           'tom' =&gt; 'and'
+           'welcome' =&gt; undef</pre>
+<p>The reference is truly dumped and we can finally see what we're dealing with. 
+Our quoting was perfectly valid but wrong for our purposes, with 'and jerry'
+being treated as 2 separate words rather than a phrase, thus throwing the
+evenly paired hash structure out of alignment.</p>
+<p>The '<strong>-w</strong>' switch would have told us about this, had we used it at the start,
+and saved us a lot of trouble:</p>
+<pre>
+        &gt; perl -w data
+        Odd number of elements in hash assignment at ./data line 5.</pre>
+<p>We fix our quoting: 'tom' =&gt; q(and jerry), and run it again, this time we get
+our expected output:</p>
+<pre>
+        &gt; perl -w data
+        Hello World</pre>
+<p>While we're here, take a closer look at the '<strong>x</strong>' command, it's really useful
+and will merrily dump out nested references, complete objects, partial objects
+- just about whatever you throw at it:</p>
+<p>Let's make a quick object and x-plode it, first we'll start the debugger:
+it wants some form of input from STDIN, so we give it something non-committal,
+a zero:</p>
+<pre>
+        &gt; perl -de 0
+        Default die handler restored.</pre>
+<pre>
+        Loading DB routines from perl5db.pl version 1.07
+        Editor support available.</pre>
+<pre>
+        Enter h or `h h' for help, or `man <a href="../../lib/pods/perldebug.html">perldebug</a>' for more help.</pre>
+<pre>
+        main::(-e:1):   0</pre>
+<p>Now build an on-the-fly object over a couple of lines (note the backslash):</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">1</span><span class="operator">&gt;</span> <span class="variable">$obj</span> <span class="operator">=</span> <span class="keyword">bless</span><span class="operator">(</span><span class="operator">{</span><span class="string">'unique_id'</span><span class="operator">=&gt;</span><span class="string">'123'</span><span class="operator">,</span> <span class="string">'attr'</span><span class="operator">=&gt;</span> <span class="operator">\</span>
+        <span class="variable">cont</span><span class="operator">:</span>   <span class="operator">{</span><span class="string">'col'</span> <span class="operator">=&gt;</span> <span class="string">'black'</span><span class="operator">,</span> <span class="string">'things'</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw(this that etc)</span><span class="operator">]</span><span class="operator">}</span><span class="operator">}</span><span class="operator">,</span> <span class="string">'MY_class'</span><span class="operator">)</span>
+</pre>
+<p>And let's have a look at it:</p>
+<pre>
+        DB&lt;2&gt; x $obj
+        0  MY_class=HASH(0x828ad98)
+                'attr' =&gt; HASH(0x828ad68)
+        'col' =&gt; 'black'
+        'things' =&gt; ARRAY(0x828abb8)
+                0  'this'
+                1  'that'
+                2  'etc'
+                'unique_id' =&gt; 123       
+        DB&lt;3&gt;</pre>
+<p>Useful, huh?  You can eval nearly anything in there, and experiment with bits
+of code or regexes until the cows come home:</p>
+<pre>
+        DB&lt;3&gt; @data = qw(this that the other atheism leather theory scythe)</pre>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">4</span><span class="operator">&gt;</span> <span class="variable">p</span> <span class="string">'saw -&gt; '</span><span class="operator">.(</span><span class="variable">$cnt</span> <span class="operator">+=</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"\t:\t</span><span class="variable">$_</span><span class="string">\n"</span> <span class="operator">}</span> <span class="keyword">grep</span><span class="operator">(</span><span class="regex">/the/</span><span class="operator">,</span> <span class="keyword">sort</span> <span class="variable">@data</span><span class="operator">))</span>
+        <span class="variable">atheism</span>
+        <span class="variable">leather</span>
+        <span class="variable">other</span>
+        <span class="variable">scythe</span>
+        <span class="variable">the</span>
+        <span class="variable">theory</span>  
+        <span class="variable">saw</span> <span class="operator">-&gt;</span> 6
+</pre>
+<p>If you want to see the command History, type an '<strong>H</strong>':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">5</span><span class="operator">&gt;</span> <span class="variable">H</span>
+        <span class="number">4</span><span class="operator">:</span> <span class="variable">p</span> <span class="string">'saw -&gt; '</span><span class="operator">.(</span><span class="variable">$cnt</span> <span class="operator">+=</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"\t:\t</span><span class="variable">$_</span><span class="string">\n"</span> <span class="operator">}</span> <span class="keyword">grep</span><span class="operator">(</span><span class="regex">/the/</span><span class="operator">,</span> <span class="keyword">sort</span> <span class="variable">@data</span><span class="operator">))</span>
+        <span class="number">3</span><span class="operator">:</span> <span class="variable">@data</span> <span class="operator">=</span> <span class="string">qw(this that the other atheism leather theory scythe)</span>
+        <span class="number">2</span><span class="operator">:</span> <span class="operator">x</span> <span class="variable">$obj</span>
+        <span class="number">1</span><span class="operator">:</span> <span class="variable">$obj</span> <span class="operator">=</span> <span class="keyword">bless</span><span class="operator">(</span><span class="operator">{</span><span class="string">'unique_id'</span><span class="operator">=&gt;</span><span class="string">'123'</span><span class="operator">,</span> <span class="string">'attr'</span><span class="operator">=&gt;</span>
+        <span class="operator">{</span><span class="string">'col'</span> <span class="operator">=&gt;</span> <span class="string">'black'</span><span class="operator">,</span> <span class="string">'things'</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw(this that etc)</span><span class="operator">]}}</span><span class="operator">,</span> <span class="string">'MY_class'</span><span class="operator">)</span>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">5</span><span class="operator">&gt;</span>
+</pre>
+<p>And if you want to repeat any previous command, use the exclamation: '<strong>!</strong>':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">5</span><span class="operator">&gt;</span> <span class="operator">!</span><span class="number">4</span>
+        <span class="variable">p</span> <span class="string">'saw -&gt; '</span><span class="operator">.(</span><span class="variable">$cnt</span> <span class="operator">+=</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"</span><span class="variable">$_</span><span class="string">\n"</span> <span class="operator">}</span> <span class="keyword">grep</span><span class="operator">(</span><span class="regex">/the/</span><span class="operator">,</span> <span class="keyword">sort</span> <span class="variable">@data</span><span class="operator">))</span>
+        <span class="variable">atheism</span>
+        <span class="variable">leather</span>
+        <span class="variable">other</span>
+        <span class="variable">scythe</span>
+        <span class="variable">the</span>
+        <span class="variable">theory</span>  
+        <span class="variable">saw</span> <span class="operator">-&gt;</span> <span class="variable">12</span>
+</pre>
+<p>For more on references see <a href="../../lib/pods/perlref.html">the perlref manpage</a> and <a href="../../lib/pods/perlreftut.html">the perlreftut manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="stepping_through_code">Stepping through code</a></h1>
+<p>Here's a simple program which converts between Celsius and Fahrenheit, it too
+has a problem:</p>
+<pre>
+        <span class="comment">#!/usr/bin/perl -w</span>
+        <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$arg</span> <span class="operator">=</span> <span class="variable">$ARGV</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">||</span> <span class="string">'-c20'</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$arg</span> <span class="operator">=~</span> <span class="regex">/^\-(c|f)((\-|\+)*\d+(\.\d+)*)$/</span><span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$deg</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$1</span><span class="operator">,</span> <span class="variable">$2</span><span class="operator">);</span>
+                <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$in</span><span class="operator">,</span> <span class="variable">$out</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$num</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">);</span>
+                <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$deg</span> <span class="keyword">eq</span> <span class="string">'c'</span><span class="operator">)</span> <span class="operator">{</span>
+                        <span class="variable">$deg</span> <span class="operator">=</span> <span class="string">'f'</span><span class="operator">;</span>
+                        <span class="variable">$out</span> <span class="operator">=</span> <span class="operator">&amp;</span><span class="variable">c2f</span><span class="operator">(</span><span class="variable">$num</span><span class="operator">);</span>
+                <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+                        <span class="variable">$deg</span> <span class="operator">=</span> <span class="string">'c'</span><span class="operator">;</span>
+                        <span class="variable">$out</span> <span class="operator">=</span> <span class="operator">&amp;</span><span class="variable">f2c</span><span class="operator">(</span><span class="variable">$num</span><span class="operator">);</span>
+                <span class="operator">}</span>
+                <span class="variable">$out</span> <span class="operator">=</span> <span class="keyword">sprintf</span><span class="operator">(</span><span class="string">'%0.2f'</span><span class="operator">,</span> <span class="variable">$out</span><span class="operator">);</span>
+                <span class="variable">$out</span> <span class="operator">=~</span> <span class="regex">s/^((\-|\+)*\d+)\.0+$/$1/</span><span class="operator">;</span>
+                <span class="keyword">print</span> <span class="string">"</span><span class="variable">$out</span><span class="string"> </span><span class="variable">$deg</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"Usage: </span><span class="variable">$0</span><span class="string"> -[c|f] num\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">exit</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> f2c </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$f</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="number">5</span> <span class="operator">*</span> <span class="variable">$f</span> <span class="operator">-</span> <span class="number">32</span> <span class="operator">/</span> <span class="number">9</span><span class="operator">;</span>
+                <span class="keyword">return</span> <span class="variable">$c</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> c2f </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$f</span> <span class="operator">=</span> <span class="number">9</span> <span class="operator">*</span> <span class="variable">$c</span> <span class="operator">/</span> <span class="number">5</span> <span class="operator">+</span> <span class="number">32</span><span class="operator">;</span>
+                <span class="keyword">return</span> <span class="variable">$f</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>For some reason, the Fahrenheit to Celsius conversion fails to return the
+expected output.  This is what it does:</p>
+<pre>
+        &gt; temp -c0.72
+        33.30 f</pre>
+<pre>
+        &gt; temp -f33.3
+        162.94 c</pre>
+<p>Not very consistent!  We'll set a breakpoint in the code manually and run it
+under the debugger to see what's going on.  A breakpoint is a flag, to which
+the debugger will run without interruption, when it reaches the breakpoint, it
+will stop execution and offer a prompt for further interaction.  In normal
+use, these debugger commands are completely ignored, and they are safe - if a
+little messy, to leave in production code.</p>
+<pre>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$in</span><span class="operator">,</span> <span class="variable">$out</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$num</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">);</span>
+        <span class="variable">$DB::single</span><span class="operator">=</span><span class="number">2</span><span class="operator">;</span> <span class="comment"># insert at line 9!</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$deg</span> <span class="keyword">eq</span> <span class="string">'c'</span><span class="operator">)</span> 
+                <span class="operator">...</span>
+</pre>
+<pre>
+        &gt; perl -d temp -f33.3
+        Default die handler restored.</pre>
+<pre>
+        Loading DB routines from perl5db.pl version 1.07
+        Editor support available.</pre>
+<pre>
+        Enter h or `h h' for help, or `man <a href="../../lib/pods/perldebug.html">perldebug</a>' for more help.</pre>
+<pre>
+        <span class="variable">main:</span>:(<span class="variable">temp</span><span class="operator">:</span><span class="number">4</span><span class="operator">):</span> <span class="keyword">my</span> <span class="variable">$arg</span> <span class="operator">=</span> <span class="variable">$ARGV</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">||</span> <span class="string">'-c100'</span><span class="operator">;</span>
+</pre>
+<p>We'll simply continue down to our pre-set breakpoint with a '<strong>c</strong>':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">1</span><span class="operator">&gt;</span> <span class="variable">c</span>
+        <span class="variable">main:</span>:(<span class="variable">temp</span><span class="operator">:</span><span class="number">10</span><span class="operator">):</span>                <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$deg</span> <span class="keyword">eq</span> <span class="string">'c'</span><span class="operator">)</span> <span class="operator">{</span>
+</pre>
+<p>Followed by a view command to see where we are:</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">1</span><span class="operator">&gt;</span> <span class="variable">v</span>
+        <span class="number">7</span><span class="operator">:</span>              <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$deg</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$1</span><span class="operator">,</span> <span class="variable">$2</span><span class="operator">);</span>
+        <span class="number">8</span><span class="operator">:</span>              <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$in</span><span class="operator">,</span> <span class="variable">$out</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$num</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">);</span>
+        <span class="number">9</span><span class="operator">:</span>              <span class="variable">$DB::single</span><span class="operator">=</span><span class="number">2</span><span class="operator">;</span>
+        <span class="number">10</span><span class="operator">==&gt;</span>           <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$deg</span> <span class="keyword">eq</span> <span class="string">'c'</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="number">11</span><span class="operator">:</span>                     <span class="variable">$deg</span> <span class="operator">=</span> <span class="string">'f'</span><span class="operator">;</span>
+        <span class="number">12</span><span class="operator">:</span>                     <span class="variable">$out</span> <span class="operator">=</span> <span class="operator">&amp;</span><span class="variable">c2f</span><span class="operator">(</span><span class="variable">$num</span><span class="operator">);</span>
+        <span class="number">13</span>              <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="number">14</span><span class="operator">:</span>                     <span class="variable">$deg</span> <span class="operator">=</span> <span class="string">'c'</span><span class="operator">;</span>
+        <span class="number">15</span><span class="operator">:</span>                     <span class="variable">$out</span> <span class="operator">=</span> <span class="operator">&amp;</span><span class="variable">f2c</span><span class="operator">(</span><span class="variable">$num</span><span class="operator">);</span>
+        <span class="number">16</span>              <span class="operator">}</span>
+</pre>
+<p>And a print to show what values we're currently using:</p>
+<pre>
+        DB&lt;1&gt; p $deg, $num
+        f33.3</pre>
+<p>We can put another break point on any line beginning with a colon, we'll use
+line 17 as that's just as we come out of the subroutine, and we'd like to
+pause there later on:</p>
+<pre>
+        DB&lt;2&gt; b 17</pre>
+<p>There's no feedback from this, but you can see what breakpoints are set by
+using the list 'L' command:</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">3</span><span class="operator">&gt;</span> <span class="variable">L</span>
+        <span class="variable">temp</span><span class="operator">:</span>
+                <span class="number">17</span><span class="operator">:</span>            <span class="keyword">print</span> <span class="string">"</span><span class="variable">$out</span><span class="string"> </span><span class="variable">$deg</span><span class="string">\n"</span><span class="operator">;</span>
+                <span class="keyword">break</span> <span class="keyword">if</span> <span class="operator">(</span><span class="number">1</span><span class="operator">)</span>
+</pre>
+<p>Note that to delete a breakpoint you use 'B'.</p>
+<p>Now we'll continue down into our subroutine, this time rather than by line
+number, we'll use the subroutine name, followed by the now familiar 'v':</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">3</span><span class="operator">&gt;</span> <span class="variable">c</span> <span class="variable">f2c</span>
+        <span class="variable">main::f2c</span><span class="operator">(</span><span class="variable">temp</span><span class="operator">:</span><span class="number">30</span><span class="operator">):</span>             <span class="keyword">my</span> <span class="variable">$f</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">4</span><span class="operator">&gt;</span> <span class="variable">v</span>
+        <span class="number">24</span><span class="operator">:</span>     <span class="keyword">exit</span><span class="operator">;</span>
+        <span class="number">25</span>
+        <span class="number">26</span>      <span class="keyword">sub</span><span class="variable"> f2c </span><span class="operator">{</span>
+        <span class="number">27</span><span class="operator">==&gt;</span>           <span class="keyword">my</span> <span class="variable">$f</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="number">28</span><span class="operator">:</span>             <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="number">5</span> <span class="operator">*</span> <span class="variable">$f</span> <span class="operator">-</span> <span class="number">32</span> <span class="operator">/</span> <span class="number">9</span><span class="operator">;</span> 
+        <span class="number">29</span><span class="operator">:</span>             <span class="keyword">return</span> <span class="variable">$c</span><span class="operator">;</span>
+        <span class="number">30</span>      <span class="operator">}</span>
+        <span class="number">31</span>
+        <span class="number">32</span>      <span class="keyword">sub</span><span class="variable"> c2f </span><span class="operator">{</span>
+        <span class="number">33</span><span class="operator">:</span>             <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<p>Note that if there was a subroutine call between us and line 29, and we wanted
+to <strong>single-step</strong> through it, we could use the '<strong>s</strong>' command, and to step
+over it we would use '<strong>n</strong>' which would execute the sub, but not descend into
+it for inspection.  In this case though, we simply continue down to line 29:</p>
+<pre>
+        <span class="variable">DB</span><span class="operator">&lt;</span><span class="number">4</span><span class="operator">&gt;</span> <span class="variable">c</span> <span class="number">29</span>  
+        <span class="variable">main::f2c</span><span class="operator">(</span><span class="variable">temp</span><span class="operator">:</span><span class="number">29</span><span class="operator">):</span>             <span class="keyword">return</span> <span class="variable">$c</span><span class="operator">;</span>
+</pre>
+<p>And have a look at the return value:</p>
+<pre>
+        DB&lt;5&gt; p $c
+        162.944444444444</pre>
+<p>This is not the right answer at all, but the sum looks correct.  I wonder if
+it's anything to do with operator precedence?  We'll try a couple of other
+possibilities with our sum:</p>
+<pre>
+        DB&lt;6&gt; p (5 * $f - 32 / 9)
+        162.944444444444</pre>
+<pre>
+        DB&lt;7&gt; p 5 * $f - (32 / 9) 
+        162.944444444444</pre>
+<pre>
+        DB&lt;8&gt; p (5 * $f) - 32 / 9
+        162.944444444444</pre>
+<pre>
+        DB&lt;9&gt; p 5 * ($f - 32) / 9
+        0.722222222222221</pre>
+<p>:-) that's more like it!  Ok, now we can set our return variable and we'll
+return out of the sub with an 'r':</p>
+<pre>
+        DB&lt;10&gt; $c = 5 * ($f - 32) / 9</pre>
+<pre>
+        DB&lt;11&gt; r
+        scalar context return from main::f2c: 0.722222222222221</pre>
+<p>Looks good, let's just continue off the end of the script:</p>
+<pre>
+        DB&lt;12&gt; c
+        0.72 c 
+        Debugged program terminated.  Use q to quit or R to restart,
+        use O inhibit_exit to avoid stopping after program termination,
+        h q, h R or h O to get additional info.</pre>
+<p>A quick fix to the offending line (insert the missing parentheses) in the
+actual program and we're finished.</p>
+<p>
+</p>
+<hr />
+<h1><a name="placeholder_for_a__w__t__t">Placeholder for a, w, t, T</a></h1>
+<p>Actions, watch variables, stack traces etc.: on the TODO list.</p>
+<pre>
+        a</pre>
+<pre>
+        w</pre>
+<pre>
+        t</pre>
+<pre>
+        T</pre>
+<p>
+</p>
+<hr />
+<h1><a name="regular_expressions">REGULAR EXPRESSIONS</a></h1>
+<p>Ever wanted to know what a regex looked like?  You'll need perl compiled with
+the DEBUGGING flag for this one:</p>
+<pre>
+        <span class="operator">&gt;</span> <span class="variable">perl</span> <span class="operator">-</span><span class="variable">Dr</span> <span class="keyword">-e</span> <span class="string">'/^pe(a)*rl$/i'</span>
+        <span class="variable">Compiling</span> <span class="variable">REx</span> <span class="string">`^pe(a)*rl$'
+        size 17 first at 2
+        rarest char
+         at 0
+           1: BOL(2)
+           2: EXACTF &lt;pe&gt;(4)
+           4: CURLYN[1] {0,32767}(14)
+           6:   NOTHING(8)
+           8:   EXACTF &lt;a&gt;(0)
+          12:   WHILEM(0)
+          13: NOTHING(14)
+          14: EXACTF &lt;rl&gt;(16)
+          16: EOL(17)
+          17: END(0)
+        floating `</span><span class="string">'$ at 4..2147483647 (checking floating) stclass `EXACTF &lt;pe&gt;'</span>
+        <span class="variable">anchored</span><span class="operator">(</span><span class="variable">BOL</span><span class="operator">)</span> <span class="variable">minlen</span> <span class="number">4</span>
+        <span class="variable">Omitting</span> <span class="variable">$`</span> <span class="variable">$&amp;</span> <span class="variable">$'</span> <span class="variable">support</span><span class="operator">.</span>
+</pre>
+<pre>
+        EXECUTING...</pre>
+<pre>
+        Freeing REx: `^pe(a)*rl$'</pre>
+<p>Did you really want to know? :-)
+For more gory details on getting regular expressions to work, have a look at
+<a href="../../lib/pods/perlre.html">the perlre manpage</a>, <a href="../../lib/pods/perlretut.html">the perlretut manpage</a>, and to decode the mysterious labels (BOL and CURLYN,
+etc. above), see <a href="../../lib/pods/perldebguts.html">the perldebguts manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_tips">OUTPUT TIPS</a></h1>
+<p>To get all the output from your error log, and not miss any messages via
+helpful operating system buffering, insert a line like this, at the start of
+your script:</p>
+<pre>
+        <span class="variable">$|</span><span class="operator">=</span><span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>To watch the tail of a dynamically growing logfile, (from the command line):</p>
+<pre>
+        tail -f $error_log</pre>
+<p>Wrapping all die calls in a handler routine can be useful to see how, and from
+where, they're being called, <a href="../../lib/pods/perlvar.html">the perlvar manpage</a> has more information:</p>
+<pre>
+        <span class="keyword">BEGIN</span> <span class="operator">{</span> <span class="variable">$SIG</span><span class="operator">{</span><span class="string">__DIE__</span><span class="operator">}</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">require</span> <span class="variable">Carp</span><span class="operator">;</span> <span class="variable">Carp::confess</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">)</span> <span class="operator">}</span> <span class="operator">}</span>
+</pre>
+<p>Various useful techniques for the redirection of STDOUT and STDERR filehandles
+are explained in <a href="../../lib/pods/perlopentut.html">the perlopentut manpage</a> and <a href="../../lib/pods/perlfaq8.html">the perlfaq8 manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="cgi">CGI</a></h1>
+<p>Just a quick hint here for all those CGI programmers who can't figure out how
+on earth to get past that 'waiting for input' prompt, when running their CGI
+script from the command-line, try something like this:</p>
+<pre>
+        &gt; perl -d my_cgi.pl -nodebug</pre>
+<p>Of course <a href="../../lib/CGI.html">the CGI manpage</a> and <a href="../../lib/pods/perlfaq9.html">the perlfaq9 manpage</a> will tell you more.</p>
+<p>
+</p>
+<hr />
+<h1><a name="guis">GUIs</a></h1>
+<p>The command line interface is tightly integrated with an <strong>emacs</strong> extension
+and there's a <strong>vi</strong> interface too.</p>
+<p>You don't have to do this all on the command line, though, there are a few GUI
+options out there.  The nice thing about these is you can wave a mouse over a
+variable and a dump of its data will appear in an appropriate window, or in a
+popup balloon, no more tiresome typing of 'x $varname' :-)</p>
+<p>In particular have a hunt around for the following:</p>
+<p><strong>ptkdb</strong> perlTK based wrapper for the built-in debugger</p>
+<p><strong>ddd</strong> data display debugger</p>
+<p><strong>PerlDevKit</strong> and <strong>PerlBuilder</strong> are NT specific</p>
+<p>NB. (more info on these and others would be appreciated).</p>
+<p>
+</p>
+<hr />
+<h1><a name="summary">SUMMARY</a></h1>
+<p>We've seen how to encourage good coding practices with <strong>use strict</strong> and
+<strong>-w</strong>.  We can run the perl debugger <strong>perl -d scriptname</strong> to inspect your
+data from within the perl debugger with the <strong>p</strong> and <strong>x</strong> commands.  You can
+walk through your code, set breakpoints with <strong>b</strong> and step through that code
+with <strong>s</strong> or <strong>n</strong>, continue with <strong>c</strong> and return from a sub with <strong>r</strong>.  Fairly
+intuitive stuff when you get down to it.</p>
+<p>There is of course lots more to find out about, this has just scratched the
+surface.  The best way to learn more is to use perldoc to find out more about
+the language, to read the on-line help (<a href="../../lib/pods/perldebug.html">the perldebug manpage</a> is probably the next
+place to go), and of course, experiment.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/pods/perldebug.html">the perldebug manpage</a>, 
+<a href="../../lib/pods/perldebguts.html">the perldebguts manpage</a>, 
+<a href="../../lib/pods/perldiag.html">the perldiag manpage</a>,
+<a href="../../bin/dprofpp.html">the dprofpp manpage</a>,
+<a href="../../lib/pods/perlrun.html">the perlrun manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Richard Foley &lt;<a href="mailto:richard.foley@rfi.net">richard.foley@rfi.net</a>&gt; Copyright (c) 2000</p>
+<p>
+</p>
+<hr />
+<h1><a name="contributors">CONTRIBUTORS</a></h1>
+<p>Various people have made helpful suggestions and contributions, in particular:</p>
+<p>Ronald J Kimball &lt;<a href="mailto:rjk@linguist.dartmouth.edu">rjk@linguist.dartmouth.edu</a>&gt;</p>
+<p>Hugo van der Sanden &lt;<a href="mailto:hv@crypt0.demon.co.uk">hv@crypt0.demon.co.uk</a>&gt;</p>
+<p>Peter Scott &lt;<a href="mailto:Peter@PSDT.com">Peter@PSDT.com</a>&gt;</p>
+
+</body>
+
+</html>

@@ -1,0 +1,146 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>strict - Perl pragma to restrict unsafe constructs</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>strict - Perl pragma to restrict unsafe constructs</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#history">HISTORY</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>strict - Perl pragma to restrict unsafe constructs</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">"vars"</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">"refs"</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">"subs"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">strict</span> <span class="string">"vars"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>If no import list is supplied, all possible restrictions are assumed.
+(This is the safest mode to operate in, but is sometimes too strict for
+casual programming.)  Currently, there are three possible things to be
+strict about:  &quot;subs&quot;, &quot;vars&quot;, and &quot;refs&quot;.</p>
+<dl>
+<dt><strong><a name="strict_refs" class="item"><code>strict refs</code></a></strong></dt>
+
+<dd>
+<p>This generates a runtime error if you 
+use symbolic references (see <a href="../lib/pods/perlref.html">the perlref manpage</a>).</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">'refs'</span><span class="operator">;</span>
+    <span class="variable">$ref</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">$foo</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$$ref</span><span class="operator">;</span>        <span class="comment"># ok</span>
+    <span class="variable">$ref</span> <span class="operator">=</span> <span class="string">"foo"</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$$ref</span><span class="operator">;</span>        <span class="comment"># runtime error; normally ok</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="string">"STDOUT"</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$file</span> <span class="string">"Hi!"</span><span class="operator">;</span>  <span class="comment"># error; note: no comma after $file</span>
+</pre>
+<p>There is one exception to this rule:</p>
+<pre>
+    <span class="variable">$bar</span> <span class="operator">=</span> <span class="operator">\&amp;{</span><span class="string">'foo'</span><span class="operator">};</span>
+    <span class="operator">&amp;</span><span class="variable">$bar</span><span class="operator">;</span>
+</pre>
+<p>is allowed so that <code>goto &amp;$AUTOLOAD</code> would not break under stricture.</p>
+</dd>
+<dt><strong><a name="strict_vars" class="item"><code>strict vars</code></a></strong></dt>
+
+<dd>
+<p>This generates a compile-time error if you access a variable that wasn't
+declared via <a href="../lib/pods/perlfunc.html#our"><code>our</code></a> or <code>use vars</code>,
+localized via <a href="../lib/pods/perlfunc.html#my"><code>my()</code></a>, or wasn't fully qualified.  Because this is to avoid
+variable suicide problems and subtle dynamic scoping issues, a merely
+<a href="../lib/pods/perlfunc.html#local"><code>local()</code></a> variable isn't good enough.  See <a href="../lib/pods/perlfunc.html#my">my in the perlfunc manpage</a> and
+<a href="../lib/pods/perlfunc.html#local">local in the perlfunc manpage</a>.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">'vars'</span><span class="operator">;</span>
+    <span class="variable">$X::foo</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>         <span class="comment"># ok, fully qualified</span>
+    <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="number">10</span><span class="operator">;</span>        <span class="comment"># ok, my() var</span>
+    <span class="keyword">local</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span>      <span class="comment"># blows up</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Cinna</span><span class="operator">;</span>
+    <span class="keyword">our</span> <span class="variable">$bar</span><span class="operator">;</span>                   <span class="comment"># Declares $bar in current package</span>
+    <span class="variable">$bar</span> <span class="operator">=</span> <span class="string">'HgS'</span><span class="operator">;</span>               <span class="comment"># ok, global declared via pragma</span>
+</pre>
+<p>The <a href="../lib/pods/perlfunc.html#local"><code>local()</code></a> generated a compile-time error because you just touched a global
+name without fully qualifying it.</p>
+<p>Because of their special use by <a href="../lib/pods/perlfunc.html#sort"><code>sort()</code></a>, the variables $a and $b are
+exempted from this check.</p>
+</dd>
+<dt><strong><a name="strict_subs" class="item"><code>strict subs</code></a></strong></dt>
+
+<dd>
+<p>This disables the poetry optimization, generating a compile-time error if
+you try to use a bareword identifier that's not a subroutine, unless it
+is a simple identifier (no colons) and that it appears in curly braces or
+on the left hand side of the <code>=&gt;</code> symbol.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span> <span class="string">'subs'</span><span class="operator">;</span>
+    <span class="variable">$SIG</span><span class="operator">{</span><span class="string">PIPE</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">Plumber</span><span class="operator">;</span>       <span class="comment"># blows up</span>
+    <span class="variable">$SIG</span><span class="operator">{</span><span class="string">PIPE</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"Plumber"</span><span class="operator">;</span>     <span class="comment"># just fine: quoted string is always ok</span>
+    <span class="variable">$SIG</span><span class="operator">{</span><span class="string">PIPE</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">\&amp;</span><span class="variable">Plumber</span><span class="operator">;</span>     <span class="comment"># preferred form</span>
+</pre>
+</dd>
+</dl>
+<p>See <a href="../lib/pods/perlmodlib.html#pragmatic_modules">Pragmatic Modules in the perlmodlib manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p><a href="#strict_subs"><code>strict 'subs'</code></a>, with Perl 5.6.1, erroneously permitted to use an unquoted
+compound identifier (e.g. <code>Foo::Bar</code>) as a hash key (before <code>=&gt;</code> or
+inside curlies), but without forcing it always to a literal string.</p>
+<p>Starting with Perl 5.8.1 strict is strict about its restrictions:
+if unknown restrictions are used, the strict pragma will abort with</p>
+<pre>
+    Unknown 'strict' tag(s) '...'</pre>
+<p>As of version 1.04 (Perl 5.10), strict verifies that it is used as
+&quot;strict&quot; to avoid the dreaded Strict trap on case insensitive file
+systems.</p>
+
+</body>
+
+</html>

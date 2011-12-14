@@ -1,0 +1,132 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::ValuesAndExpressions::ProhibitCommaSeparatedStatements - Don't use the comma operator as a statement separator.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::ValuesAndExpressions::ProhibitCommaSeparatedStatements - Don't use the comma operator as a statement separator.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::ValuesAndExpressions::ProhibitCommaSeparatedStatements - Don't use the comma operator as a statement separator.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Perl's comma statement separator has really low precedence, which
+leads to code that looks like it's using the comma list element
+separator not actually doing so.  Conway suggests that the statement
+separator not be used in order to prevent this situation.</p>
+<p>The confusion that the statement separator causes is primarily due to
+the assignment operators having higher precedence.</p>
+<p>For example, trying to combine two arrays into another like this won't
+work:</p>
+<pre>
+    <span class="variable">@x</span> <span class="operator">=</span> <span class="variable">@y</span><span class="operator">,</span> <span class="variable">@z</span><span class="operator">;</span>
+</pre>
+<p>because it is equivalent to</p>
+<pre>
+    <span class="variable">@x</span> <span class="operator">=</span> <span class="variable">@y</span><span class="operator">;</span>
+    <span class="variable">@z</span><span class="operator">;</span>
+</pre>
+<p>Conversely, there are the built-in functions, like <a href="../../../../../lib/pods/perlfunc.html#print"><code>print</code></a>, that
+normally force the rest of the statement into list context, but don't
+when called like a subroutine.</p>
+<p>This is not likely to produce what is intended:</p>
+<pre>
+    <span class="keyword">print</span> <span class="keyword">join</span> <span class="string">q{, }</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">5</span><span class="operator">,</span> <span class="number">7</span><span class="operator">,</span> <span class="string">": the single-digit primes.\n"</span><span class="operator">;</span>
+</pre>
+<p>The obvious fix is to add parentheses.  Placing them like</p>
+<pre>
+    <span class="keyword">print</span> <span class="keyword">join</span><span class="operator">(</span> <span class="string">q{, }</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">5</span><span class="operator">,</span> <span class="number">7</span> <span class="operator">),</span> <span class="string">": the single-digit primes.\n"</span><span class="operator">;</span>
+</pre>
+<p>will work, but</p>
+<pre>
+    <span class="keyword">print</span> <span class="operator">(</span> <span class="keyword">join</span> <span class="string">q{, }</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">5</span><span class="operator">,</span> <span class="number">7</span> <span class="operator">),</span> <span class="string">": the single-digit primes.\n"</span><span class="operator">;</span>
+</pre>
+<p>will not, because it is equivalent to</p>
+<pre>
+    <span class="keyword">print</span><span class="operator">(</span> <span class="keyword">join</span> <span class="string">q{, }</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">5</span><span class="operator">,</span> <span class="number">7</span> <span class="operator">);</span>
+    <span class="string">": the single-digit primes.\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This policy can be configured to allow the last statement in a <a href="../../../../../lib/pods/perlfunc.html#map"><code>map</code></a>
+or <a href="../../../../../lib/pods/perlfunc.html#grep"><code>grep</code></a> block to be comma separated.  This is done via the
+<code>allow_last_statement_to_be_comma_separated_in_map_and_grep</code> option
+like so:</p>
+<pre>
+    [ValuesAndExpressions::ProhibitCommaSeparatedStatements]
+    allow_last_statement_to_be_comma_separated_in_map_and_grep = 1</pre>
+<p>With this option off (the default), the following code violates this
+policy.</p>
+<pre>
+    <span class="variable">%hash</span> <span class="operator">=</span> <span class="keyword">map</span> <span class="operator">{</span><span class="variable">$_</span><span class="operator">,</span> <span class="number">1</span><span class="operator">}</span> <span class="variable">@list</span><span class="operator">;</span>
+</pre>
+<p>With this option on, this statement is allowed.  Even if this option
+is off, using a fat comma <code>=&gt;</code> works, but that forces
+stringification on the first value, which may not be what you want.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Needs to check for <a href="../../../../../lib/pods/perlfunc.html#scalar"><code>scalar( something, something )</code></a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Elliot Shank <code>&lt;perl@galumph.com&gt;</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2007-2011 Elliot Shank.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,225 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Data::Dump::Filtered - Pretty printing with filtering</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Data::Dump::Filtered - Pretty printing with filtering</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#filter_callback">Filter callback</a></li>
+		<li><a href="#filter_context">Filter context</a></li>
+		<li><a href="#filter_return_hash">Filter return hash</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Data::Dump::Filtered - Pretty printing with filtering</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The following functions are provided:</p>
+<dl>
+<dt><strong><a name="add_dump_filter" class="item">add_dump_filter( \&amp;filter )</a></strong></dt>
+
+<dd>
+<p>This registers a filter function to be used by the regular Data::Dump::dump()
+function.  By default no filters are active.</p>
+<p>Since registering filters has a global effect is might be more appropriate
+to use the <a href="#dump_filtered"><code>dump_filtered()</code></a> function instead.</p>
+</dd>
+<dt><strong><a name="remove_dump_filter" class="item">remove_dump_filter( \&amp;filter )</a></strong></dt>
+
+<dd>
+<p>Unregister the given callback function as filter callback.
+This undoes the effect of <em>add_filter</em>.</p>
+</dd>
+<dt><strong><a name="dump_filtered" class="item">dump_filtered(..., \&amp;filter )</a></strong></dt>
+
+<dd>
+<p>Works like Data::Dump::dump(), but the last argument should
+be a filter callback function.  As objects are visited the
+filter callback is invoked at it might influence how objects are dumped.</p>
+<p>Any filters registered with <em>add_filter()</em> are ignored when
+this interface is invoked.  Actually, passing <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> as \&amp;filter
+is allowed and <a href="#dump_filtered"><code>dump_filtered(..., undef)</code></a> is the official way to
+force unfiltered dumps.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="filter_callback">Filter callback</a></h2>
+<p>A filter callback is a function that will be invoked with 2 arguments;
+a context object and reference to the object currently visited.  The return
+value should either be a hash reference or <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> filter_callback </span><span class="operator">{</span>
+        <span class="keyword">my</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="variable">$object_ref</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="operator">...</span>
+        <span class="keyword">return</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>If the filter callback returns <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> (or nothing) then normal
+processing and formatting of the visited object happens.
+If the filter callback returns a hash it might replace
+or annotate the representation of the current object.</p>
+<p>
+</p>
+<h2><a name="filter_context">Filter context</a></h2>
+<p>The context object provide methods that can be used to determine what kind of
+object is currently visited and where it's located.  The context object has the
+following interface:</p>
+<dl>
+<dt><strong><a name="object_ref" class="item">$ctx-&gt;object_ref</a></strong></dt>
+
+<dd>
+<p>Alternative way to obtain a reference to the current object</p>
+</dd>
+<dt><strong><a name="class" class="item">$ctx-&gt;class</a></strong></dt>
+
+<dd>
+<p>If the object is blessed this return the class.  Returns &quot;&quot;
+for objects not blessed.</p>
+</dd>
+<dt><strong><a name="reftype" class="item">$ctx-&gt;reftype</a></strong></dt>
+
+<dd>
+<p>Returns what kind of object this is.  It's a string like &quot;SCALAR&quot;,
+&quot;ARRAY&quot;, &quot;HASH&quot;, &quot;CODE&quot;,...</p>
+</dd>
+<dt><strong><a name="is_ref" class="item">$ctx-&gt;is_ref</a></strong></dt>
+
+<dd>
+<p>Returns true if a reference was provided.</p>
+</dd>
+<dt><strong><a name="is_blessed" class="item">$ctx-&gt;is_blessed</a></strong></dt>
+
+<dd>
+<p>Returns true if the object is blessed.  Actually, this is just an alias
+for <a href="#class"><code>$ctx-&gt;class</code></a>.</p>
+</dd>
+<dt><strong><a name="is_array" class="item">$ctx-&gt;is_array</a></strong></dt>
+
+<dd>
+<p>Returns true if the object is an array</p>
+</dd>
+<dt><strong><a name="is_hash" class="item">$ctx-&gt;is_hash</a></strong></dt>
+
+<dd>
+<p>Returns true if the object is a hash</p>
+</dd>
+<dt><strong><a name="is_scalar" class="item">$ctx-&gt;is_scalar</a></strong></dt>
+
+<dd>
+<p>Returns true if the object is a scalar (a string or a number)</p>
+</dd>
+<dt><strong><a name="is_code" class="item">$ctx-&gt;is_code</a></strong></dt>
+
+<dd>
+<p>Returns true if the object is a function (aka subroutine)</p>
+</dd>
+<dt><strong><a name="container_class" class="item">$ctx-&gt;container_class</a></strong></dt>
+
+<dd>
+<p>Returns the class of the innermost container that contains this object.
+Returns &quot;&quot; if there is no blessed container.</p>
+</dd>
+<dt><strong><a name="container_self" class="item">$ctx-&gt;container_self</a></strong></dt>
+
+<dd>
+<p>Returns an textual expression relative to the container object that names this
+object.  The variable <code>$self</code> in this expression is the container itself.</p>
+</dd>
+<dt><strong><a name="object_isa" class="item">$ctx-&gt;object_isa( $class )</a></strong></dt>
+
+<dd>
+<p>Returns TRUE if the current object is of the given class or is of a subclass.</p>
+</dd>
+<dt><strong><a name="container_isa" class="item">$ctx-&gt;container_isa( $class )</a></strong></dt>
+
+<dd>
+<p>Returns TRUE if the innermost container is of the given class or is of a
+subclass.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="filter_return_hash">Filter return hash</a></h2>
+<p>The following elements has significance in the returned hash:</p>
+<dl>
+<dt><strong><a name="dump_string" class="item">dump =&gt; $string</a></strong></dt>
+
+<dd>
+<p>incorporate the given string as the representation for the
+current value</p>
+</dd>
+<dt><strong><a name="object_value" class="item">object =&gt; $value</a></strong></dt>
+
+<dd>
+<p>dump the given value instead of the one visited and passed in as $object.
+Basically the same as specifying <a href="../../../lib/pods/perlfunc.html#dump"><code>dump =&gt; Data::Dump::dump($value)</code></a>.</p>
+</dd>
+<dt><strong><a name="comment_comment" class="item">comment =&gt; $comment</a></strong></dt>
+
+<dd>
+<p>prefix the value with the given comment string</p>
+</dd>
+<dt><strong><a name="bless_class" class="item">bless =&gt; $class</a></strong></dt>
+
+<dd>
+<p>make it look as if the current object is of the given $class
+instead of the class it really has (if any).  The internals of the object
+is dumped in the regular way.  The $class can be the empty string
+to make Data::Dump pretend the object wasn't blessed at all.</p>
+</dd>
+<dt><strong><a name="hide_keys_key1_key2" class="item">hide_keys =&gt; ['key1', 'key2',...]</a></strong></dt>
+
+<dt><strong><a name="hide_keys_code" class="item">hide_keys =&gt; \&amp;code</a></strong></dt>
+
+<dd>
+<p>If the $object is a hash dump is as normal but pretend that the
+listed keys did not exist.  If the argument is a function then
+the function is called to determine if the given key should be
+hidden.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../lib/Data/Dump.html">the Data::Dump manpage</a></p>
+
+</body>
+
+</html>

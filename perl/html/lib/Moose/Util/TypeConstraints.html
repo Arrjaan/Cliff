@@ -1,0 +1,749 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Util::TypeConstraints - Type constraint system for Moose</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Util::TypeConstraints - Type constraint system for Moose</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#important_caveat">Important Caveat</a></li>
+		<li><a href="#slightly_less_important_caveat">Slightly Less Important Caveat</a></li>
+		<li><a href="#default_type_constraints">Default Type Constraints</a></li>
+		<li><a href="#type_constraint_naming">Type Constraint Naming</a></li>
+		<li><a href="#use_with_other_constraint_modules">Use with Other Constraint Modules</a></li>
+		<li><a href="#error_messages">Error messages</a></li>
+	</ul>
+
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#type_constraint_constructors">Type Constraint Constructors</a></li>
+		<li><a href="#type_constraint_utilities">Type Constraint Utilities</a></li>
+		<li><a href="#type_coercion_constructors">Type Coercion Constructors</a></li>
+		<li><a href="#creating_and_finding_type_constraints">Creating and Finding Type Constraints</a></li>
+	</ul>
+
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Util::TypeConstraints - Type constraint system for Moose</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'Natural'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'Int'</span><span class="operator">,</span>
+      <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&gt;</span> <span class="number">0</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'NaturalLessThanTen'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'Natural'</span><span class="operator">,</span>
+      <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&lt;</span> <span class="number">10</span> <span class="operator">},</span>
+      <span class="variable">message</span> <span class="operator">{</span> <span class="string">"This number (</span><span class="variable">$_</span><span class="string">) is not less than ten!"</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'Num'</span><span class="operator">,</span>
+      <span class="variable">from</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="variable">via</span> <span class="operator">{</span> <span class="number">0</span><span class="operator">+</span><span class="variable">$_</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">class_type</span> <span class="string">'DateTimeClass'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">class</span> <span class="operator">=&gt;</span> <span class="string">'DateTime'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">role_type</span> <span class="string">'Barks'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">role</span> <span class="operator">=&gt;</span> <span class="string">'Some::Library::Role::Barks'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">enum</span> <span class="string">'RGBColors'</span><span class="operator">,</span> <span class="operator">[</span><span class="string">qw(red green blue)</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">union</span> <span class="string">'StringOrArray'</span><span class="operator">,</span> <span class="operator">[</span><span class="string">qw( String Array )</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">no</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides Moose with the ability to create custom type
+constraints to be used in attribute definition.</p>
+<p>
+</p>
+<h2><a name="important_caveat">Important Caveat</a></h2>
+<p>This is <strong>NOT</strong> a type system for Perl 5. These are type constraints,
+and they are not used by Moose unless you tell it to. No type
+inference is performed, expressions are not typed, etc. etc. etc.</p>
+<p>A type constraint is at heart a small &quot;check if a value is valid&quot;
+function. A constraint can be associated with an attribute. This
+simplifies parameter validation, and makes your code clearer to read,
+because you can refer to constraints by name.</p>
+<p>
+</p>
+<h2><a name="slightly_less_important_caveat">Slightly Less Important Caveat</a></h2>
+<p>It is <strong>always</strong> a good idea to quote your type names.</p>
+<p>This prevents Perl from trying to execute the call as an indirect
+object call. This can be an issue when you have a subtype with the
+same name as a valid class.</p>
+<p>For instance:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">DateTime</span> <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">Object</span> <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'DateTime'</span><span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>will <em>just work</em>, while this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">DateTime</span><span class="operator">;</span>
+  <span class="variable">subtype</span> <span class="string">DateTime</span> <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">Object</span> <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'DateTime'</span><span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>will fail silently and cause many headaches. The simple way to solve
+this, as well as future proof your subtypes from classes which have
+yet to have been created, is to quote the type name:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">DateTime</span><span class="operator">;</span>
+  <span class="variable">subtype</span> <span class="string">'DateTime'</span><span class="operator">,</span> <span class="variable">as</span> <span class="string">'Object'</span><span class="operator">,</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'DateTime'</span><span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<h2><a name="default_type_constraints">Default Type Constraints</a></h2>
+<p>This module also provides a simple hierarchy for Perl 5 types, here is
+that hierarchy represented visually.</p>
+<pre>
+  Any
+  Item
+      Bool
+      Maybe[`a]
+      Undef
+      Defined
+          Value
+              Str
+                  Num
+                      Int
+                  ClassName
+                  RoleName
+          Ref
+              ScalarRef[`a]
+              ArrayRef[`a]
+              HashRef[`a]
+              CodeRef
+              RegexpRef
+              GlobRef
+              FileHandle
+              Object</pre>
+<p><strong>NOTE:</strong> Any type followed by a type parameter <a href="../../../lib/pods/perlrun.html#a"><code>[`a]</code></a> can be
+parameterized, this means you can say:</p>
+<pre>
+  ArrayRef[Int]    # an array of integers
+  HashRef[CodeRef] # a hash of str to CODE ref mappings
+  ScalarRef[Int]   # a reference to an integer
+  Maybe[Str]       # value may be a string, may be undefined</pre>
+<p>If Moose finds a name in brackets that it does not recognize as an
+existing type, it assumes that this is a class name, for example
+<code>ArrayRef[DateTime]</code>.</p>
+<p><strong>NOTE:</strong> Unless you parameterize a type, then it is invalid to include
+the square brackets. I.e. <code>ArrayRef[]</code> will be treated as a new type
+name, <em>not</em> as a parameterization of <code>ArrayRef</code>.</p>
+<p><strong>NOTE:</strong> The <code>Undef</code> type constraint for the most part works
+correctly now, but edge cases may still exist, please use it
+sparingly.</p>
+<p><strong>NOTE:</strong> The <code>ClassName</code> type constraint does a complex package
+existence check. This means that your class <strong>must</strong> be loaded for this
+type constraint to pass.</p>
+<p><strong>NOTE:</strong> The <code>RoleName</code> constraint checks a string is a <em>package
+name</em> which is a role, like <code>'MyApp::Role::Comparable'</code>.</p>
+<p>
+</p>
+<h2><a name="type_constraint_naming">Type Constraint Naming</a></h2>
+<p>Type name declared via this module can only contain alphanumeric
+characters, colons (:), and periods (.).</p>
+<p>Since the types created by this module are global, it is suggested
+that you namespace your types just as you would namespace your
+modules. So instead of creating a <em>Color</em> type for your
+<strong>My::Graphics</strong> module, you would call the type
+<em>My::Graphics::Types::Color</em> instead.</p>
+<p>
+</p>
+<h2><a name="use_with_other_constraint_modules">Use with Other Constraint Modules</a></h2>
+<p>This module can play nicely with other constraint modules with some
+slight tweaking. The <a href="#where"><code>where</code></a> clause in types is expected to be a
+<code>CODE</code> reference which checks its first argument and returns a
+boolean. Since most constraint modules work in a similar way, it
+should be simple to adapt them to work with Moose.</p>
+<p>For instance, this is how you could use it with
+<a href="../../../Declare/Constraints/Simple.html">the Declare::Constraints::Simple manpage</a> to declare a completely new type.</p>
+<pre>
+  <span class="variable">type</span> <span class="string">'HashOfArrayOfObjects'</span><span class="operator">,</span>
+      <span class="variable">where</span> <span class="operator">{</span>
+          <span class="variable">IsHashRef</span><span class="operator">(</span>
+              <span class="string">-keys</span>   <span class="operator">=&gt;</span> <span class="variable">HasLength</span><span class="operator">,</span>
+              <span class="string">-values</span> <span class="operator">=&gt;</span> <span class="variable">IsArrayRef</span><span class="operator">(</span><span class="variable">IsObject</span><span class="operator">)</span>
+          <span class="operator">)-&gt;(</span><span class="variable">@_</span><span class="operator">);</span>
+      <span class="operator">};</span>
+</pre>
+<p>For more examples see the <em class="file">t/examples/example_w_DCS.t</em> test
+file.</p>
+<p>Here is an example of using <a href="../../../Test/Deep.html">the Test::Deep manpage</a> and its non-test
+related <code>eq_deeply</code> function.</p>
+<pre>
+  <span class="variable">type</span> <span class="string">'ArrayOfHashOfBarsAndRandomNumbers'</span><span class="operator">,</span>
+      <span class="variable">where</span> <span class="operator">{</span>
+          <span class="variable">eq_deeply</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">,</span>
+              <span class="variable">array_each</span><span class="operator">(</span><span class="variable">subhashof</span><span class="operator">(</span><span class="operator">{</span>
+                  <span class="string">bar</span>           <span class="operator">=&gt;</span> <span class="variable">isa</span><span class="operator">(</span><span class="string">'Bar'</span><span class="operator">),</span>
+                  <span class="string">random_number</span> <span class="operator">=&gt;</span> <span class="variable">ignore</span><span class="operator">()</span>
+              <span class="operator">}</span><span class="operator">)))</span>
+        <span class="operator">};</span>
+</pre>
+<p>For a complete example see the
+<em class="file">t/examples/example_w_TestDeep.t</em> test file.</p>
+<p>
+</p>
+<h2><a name="error_messages">Error messages</a></h2>
+<p>Type constraints can also specify custom error messages, for when they fail to
+validate. This is provided as just another coderef, which receives the invalid
+value in <a href="../../../lib/pods/perlvar.html#__"><code>$_</code></a>, as in:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'PositiveInt'</span><span class="operator">,</span>
+       <span class="variable">as</span> <span class="string">'Int'</span><span class="operator">,</span>
+       <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&gt;</span> <span class="number">0</span> <span class="operator">},</span>
+       <span class="variable">message</span> <span class="operator">{</span> <span class="string">"</span><span class="variable">$_</span><span class="string"> is not a positive integer!"</span> <span class="operator">};</span>
+</pre>
+<p>If no message is specified, a default message will be used, which indicates
+which type constraint was being used and what value failed. If
+<a href="../../../Devel/PartialDump.html">the Devel::PartialDump manpage</a> (version 0.14 or higher) is installed, it will be used to
+display the invalid value, otherwise it will just be printed as is.</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<p>
+</p>
+<h2><a name="type_constraint_constructors">Type Constraint Constructors</a></h2>
+<p>The following functions are used to create type constraints.  They
+will also register the type constraints your create in a global
+registry that is used to look types up by name.</p>
+<p>See the <a href="#synopsis">SYNOPSIS</a> for an example of how to use these.</p>
+<dl>
+<dt><strong><a name="subtype_name_as_parent_where" class="item"><strong>subtype 'Name', as 'Parent', where { } ... </strong>&gt;</a></strong></dt>
+
+<dd>
+<p>This creates a named subtype.</p>
+<p>If you provide a parent that Moose does not recognize, it will
+automatically create a new class type constraint for this name.</p>
+<p>When creating a named type, the <code>subtype</code> function should either be
+called with the sugar helpers (<a href="#where"><code>where</code></a>, <a href="#message"><code>message</code></a>, etc), or with a
+name and a hashref of parameters:</p>
+<pre>
+ <span class="variable">subtype</span><span class="operator">(</span> <span class="string">'Foo'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">where</span> <span class="operator">=&gt;</span> <span class="operator">...,</span> <span class="string">message</span> <span class="operator">=&gt;</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>The valid hashref keys are <code>as</code> (the parent), <a href="#where"><code>where</code></a>, <a href="#message"><code>message</code></a>,
+and <a href="#optimize_as"><code>optimize_as</code></a>.</p>
+</dd>
+<dt><strong><a name="subtype_as_parent_where" class="item"><strong>subtype as 'Parent', where { } ... </strong>&gt;</a></strong></dt>
+
+<dd>
+<p>This creates an unnamed subtype and will return the type
+constraint meta-object, which will be an instance of
+<a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a>.</p>
+<p>When creating an anonymous type, the <code>subtype</code> function should either
+be called with the sugar helpers (<a href="#where"><code>where</code></a>, <a href="#message"><code>message</code></a>, etc), or with
+just a hashref of parameters:</p>
+<pre>
+ <span class="variable">subtype</span><span class="operator">(</span> <span class="operator">{</span> <span class="string">where</span> <span class="operator">=&gt;</span> <span class="operator">...,</span> <span class="string">message</span> <span class="operator">=&gt;</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="class_type" class="item"><strong>class_type ($class, ?$options)</strong></a></strong></dt>
+
+<dd>
+<p>Creates a new subtype of <code>Object</code> with the name <code>$class</code> and the
+metaclass <a href="../../../lib/Moose/Meta/TypeConstraint/Class.html">the Moose::Meta::TypeConstraint::Class manpage</a>.</p>
+<pre>
+  <span class="comment"># Create a type called 'Box' which tests for objects which -&gt;isa('Box')</span>
+  <span class="variable">class_type</span> <span class="string">'Box'</span><span class="operator">;</span>
+</pre>
+<p>By default, the name of the type and the name of the class are the same, but
+you can specify both separately.</p>
+<pre>
+  <span class="comment"># Create a type called 'Box' which tests for objects which -&gt;isa('ObjectLibrary::Box');</span>
+  <span class="variable">class_type</span> <span class="string">'Box'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">class</span> <span class="operator">=&gt;</span> <span class="string">'ObjectLibrary::Box'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="role_type" class="item"><strong>role_type ($role, ?$options)</strong></a></strong></dt>
+
+<dd>
+<p>Creates a <code>Role</code> type constraint with the name <code>$role</code> and the
+metaclass <a href="../../../lib/Moose/Meta/TypeConstraint/Role.html">the Moose::Meta::TypeConstraint::Role manpage</a>.</p>
+<pre>
+  <span class="comment"># Create a type called 'Walks' which tests for objects which -&gt;does('Walks')</span>
+  <span class="variable">role_type</span> <span class="string">'Walks'</span><span class="operator">;</span>
+</pre>
+<p>By default, the name of the type and the name of the role are the same, but
+you can specify both separately.</p>
+<pre>
+  <span class="comment"># Create a type called 'Walks' which tests for objects which -&gt;does('MooseX::Role::Walks');</span>
+  <span class="variable">role_type</span> <span class="string">'Walks'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">role</span> <span class="operator">=&gt;</span> <span class="string">'MooseX::Role::Walks'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="maybe_type" class="item"><strong>maybe_type ($type)</strong></a></strong></dt>
+
+<dd>
+<p>Creates a type constraint for either <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or something of the
+given type.</p>
+</dd>
+<dt><strong><a name="duck_type" class="item"><strong>duck_type ($name, \@methods)</strong></a></strong></dt>
+
+<dd>
+<p>This will create a subtype of Object and test to make sure the value
+<code>can()</code> do the methods in <code>\@methods</code>.</p>
+<p>This is intended as an easy way to accept non-Moose objects that
+provide a certain interface. If you're using Moose classes, we
+recommend that you use a <code>requires</code>-only Role instead.</p>
+</dd>
+<dt><strong><strong>duck_type (\@methods)</strong></strong></dt>
+
+<dd>
+<p>If passed an ARRAY reference as the only parameter instead of the
+<code>$name</code>, <code>\@methods</code> pair, this will create an unnamed duck type.
+This can be used in an attribute definition like so:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'cache'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">duck_type</span><span class="operator">(</span> <span class="operator">[</span><span class="string">qw( get_set )</span><span class="operator">]</span> <span class="operator">),</span>
+  <span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="enum" class="item"><strong>enum ($name, \@values)</strong></a></strong></dt>
+
+<dd>
+<p>This will create a basic subtype for a given set of strings.
+The resulting constraint will be a subtype of <code>Str</code> and
+will match any of the items in <a href="../../../lib/pods/perlfunc.html#values"><code>\@values</code></a>. It is case sensitive.
+See the <a href="#synopsis">SYNOPSIS</a> for a simple example.</p>
+<p><strong>NOTE:</strong> This is not a true proper enum type, it is simply
+a convenient constraint builder.</p>
+</dd>
+<dt><strong><strong>enum (\@values)</strong></strong></dt>
+
+<dd>
+<p>If passed an ARRAY reference as the only parameter instead of the
+<code>$name</code>, <a href="../../../lib/pods/perlfunc.html#values"><code>\@values</code></a> pair, this will create an unnamed enum. This
+can then be used in an attribute definition like so:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'sort_order'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">enum</span><span class="operator">(</span><span class="operator">[</span><span class="string">qw[ ascending descending ]</span><span class="operator">]</span><span class="operator">),</span>
+  <span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="union" class="item"><strong>union ($name, \@constraints)</strong></a></strong></dt>
+
+<dd>
+<p>This will create a basic subtype where any of the provided constraints
+may match in order to satisfy this constraint.</p>
+</dd>
+<dt><strong><strong>union (\@constraints)</strong></strong></dt>
+
+<dd>
+<p>If passed an ARRAY reference as the only parameter instead of the
+<code>$name</code>, <code>\@constraints</code> pair, this will create an unnamed union.
+This can then be used in an attribute definition like so:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'items'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">union</span><span class="operator">(</span><span class="operator">[</span><span class="string">qw[ Str ArrayRef ]</span><span class="operator">]</span><span class="operator">),</span>
+  <span class="operator">);</span>
+</pre>
+<p>This is similar to the existing string union:</p>
+<pre>
+  isa =&gt; 'Str|ArrayRef'</pre>
+<p>except that it supports anonymous elements as child constraints:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'color'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+    <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+    <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">union</span><span class="operator">(</span><span class="operator">[</span> <span class="string">'Int'</span><span class="operator">,</span>  <span class="variable">enum</span><span class="operator">(</span><span class="operator">[</span><span class="string">qw[ red green blue ]</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">]</span><span class="operator">),</span>
+  <span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="as_parent" class="item"><strong>as 'Parent'</strong></a></strong></dt>
+
+<dd>
+<p>This is just sugar for the type constraint construction syntax.</p>
+<p>It takes a single argument, which is the name of a parent type.</p>
+</dd>
+<dt><strong><a name="where" class="item"><strong>where { ... }</strong></a></strong></dt>
+
+<dd>
+<p>This is just sugar for the type constraint construction syntax.</p>
+<p>It takes a subroutine reference as an argument. When the type
+constraint is tested, the reference is run with the value to be tested
+in <a href="../../../lib/pods/perlvar.html#__"><code>$_</code></a>. This reference should return true or false to indicate
+whether or not the constraint check passed.</p>
+</dd>
+<dt><strong><a name="message" class="item"><strong>message { ... }</strong></a></strong></dt>
+
+<dd>
+<p>This is just sugar for the type constraint construction syntax.</p>
+<p>It takes a subroutine reference as an argument. When the type
+constraint fails, then the code block is run with the value provided
+in <a href="../../../lib/pods/perlvar.html#__"><code>$_</code></a>. This reference should return a string, which will be used in
+the text of the exception thrown.</p>
+</dd>
+<dt><strong><a name="inline_as" class="item"><strong>inline_as { ... }</strong></a></strong></dt>
+
+<dd>
+<p>This can be used to define a &quot;hand optimized&quot; inlinable version of your type
+constraint.</p>
+<p>You provide a subroutine which will be called <em>as a method</em> on a
+<a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a> object. It will receive a single parameter, the
+name of the variable to check, typically something like <code>&quot;$_&quot;</code> or <code>&quot;$_[0]&quot;</code>.</p>
+<p>The subroutine should return a code string suitable for inlining. You can
+assume that the check will be wrapped in parentheses when it is inlined.</p>
+<p>The inlined code should include any checks that your type's parent types
+do. For example, the <code>Value</code> type's inlining sub looks like this:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="string">'defined('</span> <span class="operator">.</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="operator">.</span> <span class="string">')'</span>
+        <span class="operator">.</span> <span class="string">' &amp;&amp; !ref('</span> <span class="operator">.</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="operator">.</span> <span class="string">')'</span>
+    <span class="operator">}</span>
+</pre>
+<p>Note that it checks if the variable is defined, since it is a subtype of
+the <code>Defined</code> type.  However, to avoid repeating code, this can be optimized as:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">parent</span><span class="operator">()-&gt;</span><span class="variable">_inline_check</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">)</span>
+        <span class="operator">.</span> <span class="string">' &amp;&amp; !ref('</span> <span class="operator">.</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="operator">.</span> <span class="string">')'</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="optimize_as" class="item"><strong>optimize_as { ... }</strong></a></strong></dt>
+
+<dd>
+<p><strong>This feature is deprecated, use <a href="#inline_as"><code>inline_as</code></a> instead.</strong></p>
+<p>This can be used to define a &quot;hand optimized&quot; version of your
+type constraint which can be used to avoid traversing a subtype
+constraint hierarchy.</p>
+<p><strong>NOTE:</strong> You should only use this if you know what you are doing.
+All the built in types use this, so your subtypes (assuming they
+are shallow) will not likely need to use this.</p>
+</dd>
+<dt><strong><a name="type_name_where" class="item"><strong>type 'Name', where { } ... </strong>&gt;</a></strong></dt>
+
+<dd>
+<p>This creates a base type, which has no parent.</p>
+<p>The <code>type</code> function should either be called with the sugar helpers
+(<a href="#where"><code>where</code></a>, <a href="#message"><code>message</code></a>, etc), or with a name and a hashref of
+parameters:</p>
+<pre>
+  <span class="variable">type</span><span class="operator">(</span> <span class="string">'Foo'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">where</span> <span class="operator">=&gt;</span> <span class="operator">...,</span> <span class="string">message</span> <span class="operator">=&gt;</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>The valid hashref keys are <a href="#where"><code>where</code></a>, <a href="#message"><code>message</code></a>, and <code>inlined_as</code>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="type_constraint_utilities">Type Constraint Utilities</a></h2>
+<dl>
+<dt><strong><a name="match_on_type_value_type_action_default" class="item"><strong>match_on_type $value =</strong> ( $type =&gt; \&amp;action, ... ?\&amp;default ) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This is a utility function for doing simple type based dispatching similar to
+match/case in OCaml and case/of in Haskell. It is not as featureful as those
+languages, nor does not it support any kind of automatic destructuring
+bind. Here is a simple Perl pretty printer dispatching over the core Moose
+types.</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> ppprint </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">match_on_type</span> <span class="variable">$x</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+          <span class="string">HashRef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+              <span class="keyword">my</span> <span class="variable">$hash</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+              <span class="string">'{ '</span>
+                  <span class="operator">.</span> <span class="operator">(</span>
+                  <span class="keyword">join</span> <span class="string">", "</span> <span class="operator">=&gt;</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">.</span> <span class="string">' =&gt; '</span> <span class="operator">.</span> <span class="variable">ppprint</span><span class="operator">(</span> <span class="variable">$hash</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">}</span>
+                      <span class="keyword">sort</span> <span class="keyword">keys</span> <span class="variable">%$hash</span>
+                  <span class="operator">)</span> <span class="operator">.</span> <span class="string">' }'</span><span class="operator">;</span>
+          <span class="operator">},</span>
+          <span class="string">ArrayRef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+              <span class="keyword">my</span> <span class="variable">$array</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+              <span class="string">'[ '</span> <span class="operator">.</span> <span class="operator">(</span> <span class="keyword">join</span> <span class="string">", "</span> <span class="operator">=&gt;</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">ppprint</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="variable">@$array</span> <span class="operator">)</span> <span class="operator">.</span> <span class="string">' ]'</span><span class="operator">;</span>
+          <span class="operator">},</span>
+          <span class="string">CodeRef</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="string">'sub { ... }'</span><span class="operator">},</span>
+          <span class="string">RegexpRef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">'qr/'</span> <span class="operator">.</span> <span class="variable">$_</span> <span class="operator">.</span> <span class="string">'/'</span> <span class="operator">},</span>
+          <span class="string">GlobRef</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">'*'</span> <span class="operator">.</span> <span class="variable">B::svref_2object</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)-&gt;</span><span class="variable">NAME</span> <span class="operator">},</span>
+          <span class="string">Object</span>    <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">can</span><span class="operator">(</span><span class="string">'to_string'</span><span class="operator">)</span> <span class="operator">?</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">to_string</span> <span class="operator">:</span> <span class="variable">$_</span> <span class="operator">},</span>
+          <span class="string">ScalarRef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">'\\'</span> <span class="operator">.</span> <span class="variable">ppprint</span><span class="operator">(</span> <span class="variable">$</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">},</span>
+          <span class="string">Num</span>       <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="variable">$_</span><span class="operator">},</span>
+          <span class="string">Str</span>       <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">'"'</span> <span class="operator">.</span> <span class="variable">$_</span> <span class="operator">.</span> <span class="string">'"'</span> <span class="operator">},</span>
+          <span class="string">Undef</span>     <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="string">'undef'</span><span class="operator">},</span>
+          <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">die</span> <span class="string">"I don't know what </span><span class="variable">$_</span><span class="string"> is"</span> <span class="operator">}</span>
+      <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>Or a simple JSON serializer:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> to_json </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">match_on_type</span> <span class="variable">$x</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+          <span class="string">HashRef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+              <span class="keyword">my</span> <span class="variable">$hash</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+              <span class="string">'{ '</span>
+                  <span class="operator">.</span> <span class="operator">(</span>
+                  <span class="keyword">join</span> <span class="string">", "</span> <span class="operator">=&gt;</span>
+                      <span class="keyword">map</span> <span class="operator">{</span> <span class="string">'"'</span> <span class="operator">.</span> <span class="variable">$_</span> <span class="operator">.</span> <span class="string">'" : '</span> <span class="operator">.</span> <span class="variable">to_json</span><span class="operator">(</span> <span class="variable">$hash</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">}</span>
+                      <span class="keyword">sort</span> <span class="keyword">keys</span> <span class="variable">%$hash</span>
+                  <span class="operator">)</span> <span class="operator">.</span> <span class="string">' }'</span><span class="operator">;</span>
+          <span class="operator">},</span>
+          <span class="string">ArrayRef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+              <span class="keyword">my</span> <span class="variable">$array</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+              <span class="string">'[ '</span> <span class="operator">.</span> <span class="operator">(</span> <span class="keyword">join</span> <span class="string">", "</span> <span class="operator">=&gt;</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">to_json</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="variable">@$array</span> <span class="operator">)</span> <span class="operator">.</span> <span class="string">' ]'</span><span class="operator">;</span>
+          <span class="operator">},</span>
+          <span class="string">Num</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="variable">$_</span><span class="operator">},</span>
+          <span class="string">Str</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">'"'</span> <span class="operator">.</span> <span class="variable">$_</span> <span class="operator">.</span> <span class="string">'"'</span> <span class="operator">},</span>
+          <span class="string">Undef</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="string">'null'</span><span class="operator">},</span>
+          <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">die</span> <span class="string">"</span><span class="variable">$_</span><span class="string"> is not acceptable json type"</span> <span class="operator">}</span>
+      <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>The matcher is done by mapping a <code>$type</code> to an <code>\&amp;action</code>. The <code>$type</code> can
+be either a string type or a <a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a> object, and
+<code>\&amp;action</code> is a subroutine reference. This function will dispatch on the
+first match for <code>$value</code>. It is possible to have a catch-all by providing an
+additional subroutine reference as the final argument to <code>match_on_type</code>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="type_coercion_constructors">Type Coercion Constructors</a></h2>
+<p>You can define coercions for type constraints, which allow you to
+automatically transform values to something valid for the type
+constraint. If you ask your accessor to coerce, then Moose will run
+the type-coercion code first, followed by the type constraint
+check. This feature should be used carefully as it is very powerful
+and could easily take off a limb if you are not careful.</p>
+<p>See the <a href="#synopsis">SYNOPSIS</a> for an example of how to use these.</p>
+<dl>
+<dt><strong><a name="coerce_name_from_othername_via" class="item"><strong>coerce 'Name', from 'OtherName', via { ... }  </strong>&gt;</a></strong></dt>
+
+<dd>
+<p>This defines a coercion from one type to another. The <code>Name</code> argument
+is the type you are coercing <em>to</em>.</p>
+<p>To define multiple coercions, supply more sets of from/via pairs:</p>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'Name'</span><span class="operator">,</span>
+    <span class="variable">from</span> <span class="string">'OtherName'</span><span class="operator">,</span> <span class="variable">via</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">},</span>
+    <span class="variable">from</span> <span class="string">'ThirdName'</span><span class="operator">,</span> <span class="variable">via</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+</pre>
+</dd>
+<dt><strong><a name="from_othername" class="item"><strong>from 'OtherName'</strong></a></strong></dt>
+
+<dd>
+<p>This is just sugar for the type coercion construction syntax.</p>
+<p>It takes a single type name (or type object), which is the type being
+coerced <em>from</em>.</p>
+</dd>
+<dt><strong><a name="via" class="item"><strong>via { ... }</strong></a></strong></dt>
+
+<dd>
+<p>This is just sugar for the type coercion construction syntax.</p>
+<p>It takes a subroutine reference. This reference will be called with
+the value to be coerced in <a href="../../../lib/pods/perlvar.html#__"><code>$_</code></a>. It is expected to return a new value
+of the proper type for the coercion.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="creating_and_finding_type_constraints">Creating and Finding Type Constraints</a></h2>
+<p>These are additional functions for creating and finding type
+constraints. Most of these functions are not available for
+importing. The ones that are importable as specified.</p>
+<dl>
+<dt><strong><a name="find_type_constraint" class="item"><strong>find_type_constraint($type_name)</strong></a></strong></dt>
+
+<dd>
+<p>This function can be used to locate the <a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a>
+object for a named type.</p>
+<p>This function is importable.</p>
+</dd>
+<dt><strong><a name="register_type_constraint" class="item"><strong>register_type_constraint($type_object)</strong></a></strong></dt>
+
+<dd>
+<p>This function will register a <a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a> with the
+global type registry.</p>
+<p>This function is importable.</p>
+</dd>
+<dt><strong><a name="normalize_type_constraint_name" class="item"><strong>normalize_type_constraint_name($type_constraint_name)</strong></a></strong></dt>
+
+<dd>
+<p>This method takes a type constraint name and returns the normalized
+form. This removes any whitespace in the string.</p>
+</dd>
+<dt><strong><a name="create_type_constraint_union" class="item"><strong>create_type_constraint_union($pipe_separated_types | @type_constraint_names)</strong></a></strong></dt>
+
+<dt><strong><a name="create_named_type_constraint_union" class="item"><strong>create_named_type_constraint_union($name, $pipe_separated_types | @type_constraint_names)</strong></a></strong></dt>
+
+<dd>
+<p>This can take a union type specification like <code>'Int|ArrayRef[Int]'</code>,
+or a list of names. It returns a new
+<a href="../../../lib/Moose/Meta/TypeConstraint/Union.html">the Moose::Meta::TypeConstraint::Union manpage</a> object.</p>
+</dd>
+<dt><strong><a name="create_parameterized_type_constraint" class="item"><strong>create_parameterized_type_constraint($type_name)</strong></a></strong></dt>
+
+<dd>
+<p>Given a <code>$type_name</code> in the form of <code>'BaseType[ContainerType]'</code>,
+this will create a new <a href="../../../lib/Moose/Meta/TypeConstraint/Parameterized.html">the Moose::Meta::TypeConstraint::Parameterized manpage</a>
+object. The <code>BaseType</code> must exist already exist as a parameterizable
+type.</p>
+</dd>
+<dt><strong><a name="create_class_type_constraint" class="item"><strong>create_class_type_constraint($class, $options)</strong></a></strong></dt>
+
+<dd>
+<p>Given a class name this function will create a new
+<a href="../../../lib/Moose/Meta/TypeConstraint/Class.html">the Moose::Meta::TypeConstraint::Class manpage</a> object for that class name.</p>
+<p>The <code>$options</code> is a hash reference that will be passed to the
+<a href="../../../lib/Moose/Meta/TypeConstraint/Class.html">the Moose::Meta::TypeConstraint::Class manpage</a> constructor (as a hash).</p>
+</dd>
+<dt><strong><a name="create_role_type_constraint" class="item"><strong>create_role_type_constraint($role, $options)</strong></a></strong></dt>
+
+<dd>
+<p>Given a role name this function will create a new
+<a href="../../../lib/Moose/Meta/TypeConstraint/Role.html">the Moose::Meta::TypeConstraint::Role manpage</a> object for that role name.</p>
+<p>The <code>$options</code> is a hash reference that will be passed to the
+<a href="../../../lib/Moose/Meta/TypeConstraint/Role.html">the Moose::Meta::TypeConstraint::Role manpage</a> constructor (as a hash).</p>
+</dd>
+<dt><strong><a name="create_enum_type_constraint" class="item"><strong>create_enum_type_constraint($name, $values)</strong></a></strong></dt>
+
+<dd>
+<p>Given a enum name this function will create a new
+<a href="../../../lib/Moose/Meta/TypeConstraint/Enum.html">the Moose::Meta::TypeConstraint::Enum manpage</a> object for that enum name.</p>
+</dd>
+<dt><strong><a name="create_duck_type_constraint" class="item"><strong>create_duck_type_constraint($name, $methods)</strong></a></strong></dt>
+
+<dd>
+<p>Given a duck type name this function will create a new
+<a href="../../../lib/Moose/Meta/TypeConstraint/DuckType.html">the Moose::Meta::TypeConstraint::DuckType manpage</a> object for that enum name.</p>
+</dd>
+<dt><strong><a name="find_or_parse_type_constraint" class="item"><strong>find_or_parse_type_constraint($type_name)</strong></a></strong></dt>
+
+<dd>
+<p>Given a type name, this first attempts to find a matching constraint
+in the global registry.</p>
+<p>If the type name is a union or parameterized type, it will create a
+new object of the appropriate, but if given a &quot;regular&quot; type that does
+not yet exist, it simply returns false.</p>
+<p>When given a union or parameterized type, the member or base type must
+already exist.</p>
+<p>If it creates a new union or parameterized type, it will add it to the
+global registry.</p>
+</dd>
+<dt><strong><a name="find_or_create_isa_type_constraint" class="item"><strong>find_or_create_isa_type_constraint($type_name)</strong></a></strong></dt>
+
+<dt><strong><a name="find_or_create_does_type_constraint" class="item"><strong>find_or_create_does_type_constraint($type_name)</strong></a></strong></dt>
+
+<dd>
+<p>These functions will first call <a href="#find_or_parse_type_constraint"><code>find_or_parse_type_constraint</code></a>. If
+that function does not return a type, a new type object will
+be created.</p>
+<p>The <code>isa</code> variant will use <a href="#create_class_type_constraint"><code>create_class_type_constraint</code></a> and the
+<code>does</code> variant will use <a href="#create_role_type_constraint"><code>create_role_type_constraint</code></a>.</p>
+</dd>
+<dt><strong><a name="get_type_constraint_registry" class="item"><strong>get_type_constraint_registry</strong></a></strong></dt>
+
+<dd>
+<p>Returns the <a href="../../../lib/Moose/Meta/TypeConstraint/Registry.html">the Moose::Meta::TypeConstraint::Registry manpage</a> object which
+keeps track of all type constraints.</p>
+</dd>
+<dt><strong><a name="list_all_type_constraints" class="item"><strong>list_all_type_constraints</strong></a></strong></dt>
+
+<dd>
+<p>This will return a list of type constraint names in the global
+registry. You can then fetch the actual type object using
+<a href="#find_type_constraint"><code>find_type_constraint($type_name)</code></a>.</p>
+</dd>
+<dt><strong><a name="list_all_builtin_type_constraints" class="item"><strong>list_all_builtin_type_constraints</strong></a></strong></dt>
+
+<dd>
+<p>This will return a list of builtin type constraints, meaning those
+which are defined in this module. See the <a href="#default_type_constraints">Default Type Constraints</a>
+section for a complete list.</p>
+</dd>
+<dt><strong><a name="export_type_constraints_as_functions" class="item"><strong>export_type_constraints_as_functions</strong></a></strong></dt>
+
+<dd>
+<p>This will export all the current type constraints as functions into
+the caller's namespace (<code>Int()</code>, <code>Str()</code>, etc). Right now, this is
+mostly used for testing, but it might prove useful to others.</p>
+</dd>
+<dt><strong><a name="get_all_parameterizable_types" class="item"><strong>get_all_parameterizable_types</strong></a></strong></dt>
+
+<dd>
+<p>This returns all the parameterizable types that have been registered,
+as a list of type objects.</p>
+</dd>
+<dt><strong><a name="add_parameterizable_type" class="item"><strong>add_parameterizable_type($type)</strong></a></strong></dt>
+
+<dd>
+<p>Adds <code>$type</code> to the list of parameterizable types</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>See <a href="../../../lib/Moose/bugs.html">BUGS in the Moose manpage</a> for details on reporting bugs.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

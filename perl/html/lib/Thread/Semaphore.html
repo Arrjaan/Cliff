@@ -1,0 +1,192 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Thread::Semaphore - Thread-safe semaphores</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Thread::Semaphore - Thread-safe semaphores</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#maintainer">MAINTAINER</a></li>
+	<li><a href="#license">LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Thread::Semaphore - Thread-safe semaphores</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>This document describes Thread::Semaphore version 2.12</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Thread::Semaphore</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$s</span> <span class="operator">=</span> <span class="variable">Thread::Semaphore</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">down</span><span class="operator">();</span>   <span class="comment"># Also known as the semaphore P operation.</span>
+    <span class="comment"># The guarded section is here</span>
+    <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">up</span><span class="operator">();</span>     <span class="comment"># Also known as the semaphore V operation.</span>
+</pre>
+<pre>
+    <span class="comment"># Decrement the semaphore only if it would immediately succeed.</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">down_nb</span><span class="operator">())</span> <span class="operator">{</span>
+        <span class="comment"># The guarded section is here</span>
+        <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">up</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># Forcefully decrement the semaphore even if its count goes below 0.</span>
+    <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">down_force</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># The default value for semaphore operations is 1</span>
+    <span class="keyword">my</span> <span class="variable">$s</span> <span class="operator">=</span> <span class="variable">Thread::Semaphore</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$initial_value</span><span class="operator">);</span>
+    <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">down</span><span class="operator">(</span><span class="variable">$down_value</span><span class="operator">);</span>
+    <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">up</span><span class="operator">(</span><span class="variable">$up_value</span><span class="operator">);</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">down_nb</span><span class="operator">(</span><span class="variable">$down_value</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+        <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">up</span><span class="operator">(</span><span class="variable">$up_value</span><span class="operator">);</span>
+    <span class="operator">}</span>
+    <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">down_force</span><span class="operator">(</span><span class="variable">$down_value</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Semaphores provide a mechanism to regulate access to resources.  Unlike
+locks, semaphores aren't tied to particular scalars, and so may be used to
+control access to anything you care to use them for.</p>
+<p>Semaphores don't limit their values to zero and one, so they can be used to
+control access to some resource that there may be more than one of (e.g.,
+filehandles).  Increment and decrement amounts aren't fixed at one either,
+so threads can reserve or return multiple resources at once.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<dl>
+<dt><strong><a name="new" class="item">-&gt;<code>new()</code></a></strong></dt>
+
+<dt><strong>-&gt;new(NUMBER)</strong></dt>
+
+<dd>
+<p><a href="#new"><code>new</code></a> creates a new semaphore, and initializes its count to the specified
+number (which must be an integer).  If no number is specified, the
+semaphore's count defaults to 1.</p>
+</dd>
+<dt><strong><a name="down" class="item">-&gt;<code>down()</code></a></strong></dt>
+
+<dt><strong>-&gt;down(NUMBER)</strong></dt>
+
+<dd>
+<p>The <a href="#down"><code>down</code></a> method decreases the semaphore's count by the specified number
+(which must be an integer &gt;= 1), or by one if no number is specified.</p>
+<p>If the semaphore's count would drop below zero, this method will block
+until such time as the semaphore's count is greater than or equal to the
+amount you're <a href="#down"><code>down</code></a>ing the semaphore's count by.</p>
+<p>This is the semaphore &quot;P operation&quot; (the name derives from the Dutch
+word &quot;pak&quot;, which means &quot;capture&quot; -- the semaphore operations were
+named by the late Dijkstra, who was Dutch).</p>
+</dd>
+<dt><strong><a name="down_nb" class="item">-&gt;<code>down_nb()</code></a></strong></dt>
+
+<dt><strong>-&gt;down_nb(NUMBER)</strong></dt>
+
+<dd>
+<p>The <a href="#down_nb"><code>down_nb</code></a> method attempts to decrease the semaphore's count by the
+specified number (which must be an integer &gt;= 1), or by one if no number
+is specified.</p>
+<p>If the semaphore's count would drop below zero, this method will return
+<em>false</em>, and the semaphore's count remains unchanged.  Otherwise, the
+semaphore's count is decremented and this method returns <em>true</em>.</p>
+</dd>
+<dt><strong><a name="down_force" class="item">-&gt;<code>down_force()</code></a></strong></dt>
+
+<dt><strong>-&gt;down_force(NUMBER)</strong></dt>
+
+<dd>
+<p>The <a href="#down_force"><code>down_force</code></a> method decreases the semaphore's count by the specified
+number (which must be an integer &gt;= 1), or by one if no number is specified.
+This method does not block, and may cause the semaphore's count to drop
+below zero.</p>
+</dd>
+<dt><strong><a name="up" class="item">-&gt;<code>up()</code></a></strong></dt>
+
+<dt><strong>-&gt;up(NUMBER)</strong></dt>
+
+<dd>
+<p>The <a href="#up"><code>up</code></a> method increases the semaphore's count by the number specified
+(which must be an integer &gt;= 1), or by one if no number is specified.</p>
+<p>This will unblock any thread that is blocked trying to <a href="#down"><code>down</code></a> the
+semaphore if the <a href="#up"><code>up</code></a> raises the semaphore's count above the amount that
+the <a href="#down"><code>down</code></a> is trying to decrement it by.  For example, if three threads
+are blocked trying to <a href="#down"><code>down</code></a> a semaphore by one, and another thread <a href="#up"><code>up</code></a>s
+the semaphore by two, then two of the blocked threads (which two is
+indeterminate) will become unblocked.</p>
+<p>This is the semaphore &quot;V operation&quot; (the name derives from the Dutch
+word &quot;vrij&quot;, which means &quot;release&quot;).</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>Semaphores created by <a href="../../lib/Thread/Semaphore.html">the Thread::Semaphore manpage</a> can be used in both threaded and
+non-threaded applications.  This allows you to write modules and packages
+that potentially make use of semaphores, and that will function in either
+environment.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Thread::Semaphore Discussion Forum on CPAN:
+<a href="http://www.cpanforum.com/dist/Thread-Semaphore">http://www.cpanforum.com/dist/Thread-Semaphore</a></p>
+<p><a href="../../lib/threads.html">the threads manpage</a>, <a href="../../lib/threads/shared.html">the threads::shared manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="maintainer">MAINTAINER</a></h1>
+<p>Jerry D. Hedden, &lt;jdhedden&nbsp;AT&nbsp;cpan&nbsp;DOT&nbsp;org&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.</p>
+
+</body>
+
+</html>

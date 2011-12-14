@@ -1,0 +1,360 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlce - Perl for WinCE</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlce - Perl for WinCE</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#building_perl_for_wince">Building Perl for WinCE</a></li>
+	<ul>
+
+		<li><a href="#description">DESCRIPTION</a></li>
+		<li><a href="#general_explanations_on_cross_compiling_wince">General explanations on cross-compiling WinCE</a></li>
+		<li><a href="#build">BUILD</a></li>
+		<ul>
+
+			<li><a href="#tools___sdk">Tools &amp; SDK</a></li>
+			<li><a href="#make">Make</a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#using_perl_on_wince">Using Perl on WinCE</a></li>
+	<ul>
+
+		<li><a href="#description">DESCRIPTION</a></li>
+		<li><a href="#limitations">LIMITATIONS</a></li>
+		<li><a href="#environment">ENVIRONMENT</a></li>
+		<li><a href="#registry">REGISTRY</a></li>
+		<li><a href="#xs">XS</a></li>
+		<li><a href="#bugs">BUGS</a></li>
+		<li><a href="#installation">INSTALLATION</a></li>
+	</ul>
+
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#history_of_wince_port">History of WinCE port</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlce - Perl for WinCE</p>
+<p>
+</p>
+<hr />
+<h1><a name="building_perl_for_wince">Building Perl for WinCE</a></h1>
+<p>
+</p>
+<h2><a name="description">DESCRIPTION</a></h2>
+<p>This file gives the instructions for building Perl5.8 and above for
+WinCE.  Please read and understand the terms under which this
+software is distributed.</p>
+<p>
+</p>
+<h2><a name="general_explanations_on_cross_compiling_wince">General explanations on cross-compiling WinCE</a></h2>
+<ul>
+<li>
+<p><code>miniperl</code> is built. This is a single executable (without DLL), intended
+to run on Win32, and it will facilitate remaining build process; all binaries
+built after it are foreign and should not run locally.</p>
+<p><code>miniperl</code> is built using <code>./win32/Makefile</code>; this is part of normal
+build process invoked as dependency from wince/Makefile.ce</p>
+</li>
+<li>
+<p>After <code>miniperl</code> is built, <code>configpm</code> is invoked to create right <code>Config.pm</code>
+in right place and its corresponding Cross.pm.</p>
+<p>Unlike Win32 build, miniperl will not have <code>Config.pm</code> of host within reach;
+it rather will use <code>Config.pm</code> from within cross-compilation directories.</p>
+<p>File <code>Cross.pm</code> is dead simple: for given cross-architecture places in @INC
+a path where perl modules are, and right <code>Config.pm</code> in that place.</p>
+<p>That said, <code>miniperl -Ilib -MConfig -we 1</code> should report an error, because
+it can not find <code>Config.pm</code>. If it does not give an error -- wrong <code>Config.pm</code>
+is substituted, and resulting binaries will be a mess.</p>
+<p><code>miniperl -MCross -MConfig -we 1</code> should run okay, and it will provide right
+<code>Config.pm</code> for further compilations.</p>
+</li>
+<li>
+<p>During extensions build phase, a script <code>./win32/buldext.pl</code> is invoked,
+which in turn steps in <code>./ext</code> subdirectories and performs a build of
+each extension in turn.</p>
+<p>All invokes of <code>Makefile.PL</code> are provided with <code>-MCross</code> so to enable cross-
+compile.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="build">BUILD</a></h2>
+<p>This section describes the steps to be performed to build PerlCE.
+You may find additional information about building perl for WinCE
+at <a href="http://perlce.sourceforge.net">http://perlce.sourceforge.net</a> and some pre-built binaries.</p>
+<p>
+</p>
+<h3><a name="tools___sdk">Tools &amp; SDK</a></h3>
+<p>For compiling, you need following:</p>
+<ul>
+<li><strong><a name="microsoft_embedded_visual_tools" class="item">Microsoft Embedded Visual Tools</a></strong>
+
+</li>
+<li><strong><a name="microsoft_visual_c" class="item">Microsoft Visual C++</a></strong>
+
+</li>
+<li><strong><a name="rainer_keuchel_s_celib_sources" class="item">Rainer Keuchel's celib-sources</a></strong>
+
+</li>
+<li><strong><a name="rainer_keuchel_s_console_sources" class="item">Rainer Keuchel's console-sources</a></strong>
+
+</li>
+</ul>
+<p>Needed source files can be downloaded at
+<a href="http://www.rainer-keuchel.de/wince/dirlist.html">http://www.rainer-keuchel.de/wince/dirlist.html</a></p>
+<p>
+</p>
+<h3><a name="make">Make</a></h3>
+<p>Normally you only need to edit <code>./win32/ce-helpers/compile.bat</code>
+to reflect your system and run it.</p>
+<p>File <code>./win32/ce-helpers/compile.bat</code> is actually a wrapper to call
+<code>nmake -f makefile.ce</code> with appropriate parameters and it accepts extra
+parameters and forwards them to <code>nmake</code> command as additional
+arguments. You should pass target this way.</p>
+<p>To prepare distribution you need to do following:</p>
+<ul>
+<li><strong><a name="go_to_win32_subdirectory" class="item">go to <a href="../../lib/pods/perlrun.html#win32"><code>./win32</code></a> subdirectory</a></strong>
+
+</li>
+<li><strong><a name="edit_file_win32_ce_helpers_compile_bat" class="item">edit file <code>./win32/ce-helpers/compile.bat</code></a></strong>
+
+</li>
+<li><strong><a name="run_compile_bat" class="item">run 
+  compile.bat</a></strong>
+
+</li>
+<li><strong><a name="run_compile_bat_dist" class="item">run 
+  compile.bat dist</a></strong>
+
+</li>
+</ul>
+<p><code>Makefile.ce</code> has <code>CROSS_NAME</code> macro, and it is used further to refer to
+your cross-compilation scheme. You could assign a name to it, but this
+is not necessary, because by default it is assigned after your machine
+configuration name, such as &quot;wince-sh3-hpc-wce211&quot;, and this is enough
+to distinguish different builds at the same time. This option could be
+handy for several different builds on same platform to perform, say,
+threaded build. In a following example we assume that all required
+environment variables are set properly for C cross-compiler (a special
+*.bat file could fit perfectly to this purpose) and your <code>compile.bat</code>
+has proper &quot;MACHINE&quot; parameter set, to, say, <code>wince-mips-pocket-wce300</code>.</p>
+<pre>
+  compile.bat
+  compile.bat dist
+  compile.bat CROSS_NAME=mips-wce300-thr &quot;USE_ITHREADS=define&quot; &quot;USE_IMP_SYS=define&quot; &quot;USE_MULTI=define&quot;
+  compile.bat CROSS_NAME=mips-wce300-thr &quot;USE_ITHREADS=define&quot; &quot;USE_IMP_SYS=define&quot; &quot;USE_MULTI=define&quot; dist</pre>
+<p>If all goes okay and no errors during a build, you'll get two independent
+distributions: <code>wince-mips-pocket-wce300</code> and <code>mips-wce300-thr</code>.</p>
+<p>Target <code>dist</code> prepares distribution file set. Target <code>zipdist</code> performs
+same as <code>dist</code> but additionally compresses distribution files into zip
+archive.</p>
+<p>NOTE: during a build there could be created a number (or one) of <code>Config.pm</code>
+for cross-compilation (&quot;foreign&quot; <code>Config.pm</code>) and those are hidden inside
+<code>../xlib/$(CROSS_NAME)</code> with other auxiliary files, but, and this is important to
+note, there should be <strong>no</strong> <code>Config.pm</code> for host miniperl.
+If you'll get an error that perl could not find Config.pm somewhere in building
+process this means something went wrong. Most probably you forgot to
+specify a cross-compilation when invoking miniperl.exe to Makefile.PL
+When building an extension for cross-compilation your command line should
+look like</p>
+<pre>
+  ..\miniperl.exe -I..\lib -MCross=mips-wce300-thr Makefile.PL</pre>
+<p>or just</p>
+<pre>
+  ..\miniperl.exe -I..\lib -MCross Makefile.PL</pre>
+<p>to refer a cross-compilation that was created last time.</p>
+<p>All questions related to building for WinCE devices could be asked in
+<em class="file"><a href="mailto:perlce-user@lists.sourceforge.net">perlce-user@lists.sourceforge.net</a></em> mailing list.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_perl_on_wince">Using Perl on WinCE</a></h1>
+<p>
+</p>
+<h2><a name="description">DESCRIPTION</a></h2>
+<p>PerlCE is currently linked with a simple console window, so it also
+works on non-hpc devices.</p>
+<p>The simple stdio implementation creates the files <code>stdin.txt</code>,
+<code>stdout.txt</code> and <code>stderr.txt</code>, so you might examine them if your
+console has only a limited number of cols.</p>
+<p>When exitcode is non-zero, a message box appears, otherwise the
+console closes, so you might have to catch an exit with
+status 0 in your program to see any output.</p>
+<p>stdout/stderr now go into the files <code>/perl-stdout.txt</code> and
+<code>/perl-stderr.txt.</code></p>
+<p>PerlIDE is handy to deal with perlce.</p>
+<p>
+</p>
+<h2><a name="limitations">LIMITATIONS</a></h2>
+<p>No <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>, <a href="../../lib/pods/perlfunc.html#pipe"><code>pipe()</code></a>, <code>popen()</code> etc.</p>
+<p>
+</p>
+<h2><a name="environment">ENVIRONMENT</a></h2>
+<p>All environment vars must be stored in HKLM\Environment as
+strings. They are read at process startup.</p>
+<dl>
+<dt><strong><a name="perl5lib" class="item">PERL5LIB</a></strong></dt>
+
+<dd>
+<p>Usual perl lib path (semi-list).</p>
+</dd>
+<dt><strong><a name="path" class="item">PATH</a></strong></dt>
+
+<dd>
+<p>Semi-list for executables.</p>
+</dd>
+<dt><strong><a name="tmp" class="item">TMP</a></strong></dt>
+
+<dd>
+<p>- Tempdir.</p>
+</dd>
+<dt><strong><a name="unixrootpath" class="item">UNIXROOTPATH</a></strong></dt>
+
+<dd>
+<p>- Root for accessing some special files, i.e. <code>/dev/null</code>, <code>/etc/services</code>.</p>
+</dd>
+<dt><strong><a name="rows_cols" class="item">ROWS/COLS</a></strong></dt>
+
+<dd>
+<p>- Rows/cols for console.</p>
+</dd>
+<dt><strong><a name="home2" class="item">HOME</a></strong></dt>
+
+<dd>
+<p>- Home directory.</p>
+</dd>
+<dt><strong><a name="consolefontsize" class="item">CONSOLEFONTSIZE</a></strong></dt>
+
+<dd>
+<p>- Size for console font.</p>
+</dd>
+</dl>
+<p>You can set these with cereg.exe, a (remote) registry editor
+or via the PerlIDE.</p>
+<p>
+</p>
+<h2><a name="registry">REGISTRY</a></h2>
+<p>To start perl by clicking on a perl source file, you have
+to make the according entries in HKCR (see <code>ce-helpers/wince-reg.bat</code>).
+cereg.exe (which must be executed on a desktop pc with
+ActiveSync) is reported not to work on some devices.
+You have to create the registry entries by hand using a 
+registry editor.</p>
+<p>
+</p>
+<h2><a name="xs">XS</a></h2>
+<p>The following Win32-Methods are built-in:</p>
+<pre>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::GetCwd"</span><span class="operator">,</span> <span class="variable">w32_GetCwd</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::SetCwd"</span><span class="operator">,</span> <span class="variable">w32_SetCwd</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::GetTickCount"</span><span class="operator">,</span> <span class="variable">w32_GetTickCount</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::GetOSVersion"</span><span class="operator">,</span> <span class="variable">w32_GetOSVersion</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::IsWinNT"</span><span class="operator">,</span> <span class="variable">w32_IsWinNT</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::IsWin95"</span><span class="operator">,</span> <span class="variable">w32_IsWin95</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::IsWinCE"</span><span class="operator">,</span> <span class="variable">w32_IsWinCE</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::CopyFile"</span><span class="operator">,</span> <span class="variable">w32_CopyFile</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::Sleep"</span><span class="operator">,</span> <span class="variable">w32_Sleep</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::MessageBox"</span><span class="operator">,</span> <span class="variable">w32_MessageBox</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::GetPowerStatus"</span><span class="operator">,</span> <span class="variable">w32_GetPowerStatus</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::GetOemInfo"</span><span class="operator">,</span> <span class="variable">w32_GetOemInfo</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+        <span class="variable">newXS</span><span class="operator">(</span><span class="string">"Win32::ShellEx"</span><span class="operator">,</span> <span class="variable">w32_ShellEx</span><span class="operator">,</span> <span class="variable">file</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="bugs">BUGS</a></h2>
+<p>Opening files for read-write is currently not supported if
+they use stdio (normal perl file handles).</p>
+<p>If you find bugs or if it does not work at all on your
+device, send mail to the address below. Please report
+the details of your device (processor, ceversion, 
+devicetype (hpc/palm/pocket)) and the date of the downloaded
+files.</p>
+<p>
+</p>
+<h2><a name="installation">INSTALLATION</a></h2>
+<p>Currently installation instructions are at <a href="http://perlce.sourceforge.net/">http://perlce.sourceforge.net/</a>.</p>
+<p>After installation &amp; testing processes will stabilize, information will
+be more precise.</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>The port for Win32 was used as a reference.</p>
+<p>
+</p>
+<hr />
+<h1><a name="history_of_wince_port">History of WinCE port</a></h1>
+<ol>
+<li><strong><a name="6_0" class="item">6.0</a></strong>
+
+<p>Initial port of perl to WinCE. It was performed in separate directory
+named <code>wince</code>. This port was based on contents of <a href="../../lib/pods/perlrun.html#win32"><code>./win32</code></a> directory.
+<code>miniperl</code> was not built, user must have HOST perl and properly edit 
+<code>makefile.ce</code> to reflect this.</p>
+</li>
+<li><strong><a name="8_0" class="item">8.0</a></strong>
+
+<p>wince port was kept in the same <code>./wince</code> directory, and <code>wince/Makefile.ce</code>
+was used to invoke native compiler to create HOST miniperl, which then
+facilitates cross-compiling process.
+Extension building support was added.</p>
+</li>
+<li><strong><a name="9_4" class="item">9.4</a></strong>
+
+<p>Two directories <a href="../../lib/pods/perlrun.html#win32"><code>./win32</code></a> and <code>./wince</code> were merged, so perlce build
+process comes in <a href="../../lib/pods/perlrun.html#win32"><code>./win32</code></a> directory.</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="rainer_keuchel_coyxc_rainer_keuchel_de" class="item">Rainer Keuchel &lt;<a href="mailto:coyxc@rainer-keuchel.de">coyxc@rainer-keuchel.de</a>&gt;</a></strong></dt>
+
+<dd>
+<p>provided initial port of Perl, which appears to be most essential work, as
+it was a breakthrough on having Perl ported at all.
+Many thanks and obligations to Rainer!</p>
+</dd>
+<dt><strong><a name="vadim_konovalov" class="item">Vadim Konovalov</a></strong></dt>
+
+<dd>
+<p>made further support of WinCE port.</p>
+</dd>
+</dl>
+
+</body>
+
+</html>

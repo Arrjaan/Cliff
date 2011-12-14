@@ -1,0 +1,203 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Encode::Encoder -- Object Oriented Encoder</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Encode::Encoder -- Object Oriented Encoder</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#abstract">ABSTRACT</a></li>
+	<li><a href="#description">Description</a></li>
+	<ul>
+
+		<li><a href="#predefined_methods">Predefined Methods</a></li>
+		<li><a href="#example__base64_transcoder">Example: base64 transcoder</a></li>
+		<li><a href="#operator_overloading">Operator Overloading</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Encode::Encoder -- Object Oriented Encoder</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Encode::Encoder</span><span class="operator">;</span>
+  <span class="comment"># Encode::encode("ISO-8859-1", $data); </span>
+  <span class="variable">Encode::Encoder</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">)-&gt;</span><span class="variable">iso_8859_1</span><span class="operator">;</span> <span class="comment"># OOP way</span>
+  <span class="comment"># shortcut</span>
+  <span class="keyword">use</span> <span class="variable">Encode::Encoder</span> <span class="string">qw(encoder)</span><span class="operator">;</span>
+  <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">)-&gt;</span><span class="variable">iso_8859_1</span><span class="operator">;</span>
+  <span class="comment"># you can stack them!</span>
+  <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">)-&gt;</span><span class="variable">iso_8859_1</span><span class="operator">-&gt;</span><span class="variable">base64</span><span class="operator">;</span>  <span class="comment"># provided base64() is defined</span>
+  <span class="comment"># you can use it as a decoder as well</span>
+  <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$base64</span><span class="operator">)-&gt;</span><span class="variable">bytes</span><span class="operator">(</span><span class="string">'base64'</span><span class="operator">)-&gt;</span><span class="variable">latin1</span><span class="operator">;</span>
+  <span class="comment"># stringified</span>
+  <span class="keyword">print</span> <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">)-&gt;</span><span class="variable">utf8</span><span class="operator">-&gt;</span><span class="variable">latin1</span><span class="operator">;</span>  <span class="comment"># prints the string in latin1</span>
+  <span class="comment"># numified</span>
+  <span class="variable">encoder</span><span class="operator">(</span><span class="string">"\x{abcd}\x{ef}g"</span><span class="operator">)-&gt;</span><span class="variable">utf8</span> <span class="operator">==</span> <span class="number">6</span><span class="operator">;</span> <span class="comment"># true. bytes::length($data)</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="abstract">ABSTRACT</a></h1>
+<p><strong>Encode::Encoder</strong> allows you to use Encode in an object-oriented
+style.  This is not only more intuitive than a functional approach,
+but also handier when you want to stack encodings.  Suppose you want
+your UTF-8 string converted to Latin1 then Base64: you can simply say</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$base64</span> <span class="operator">=</span> <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$utf8</span><span class="operator">)-&gt;</span><span class="variable">latin1</span><span class="operator">-&gt;</span><span class="variable">base64</span><span class="operator">;</span>
+</pre>
+<p>instead of</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$latin1</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">"latin1"</span><span class="operator">,</span> <span class="variable">$utf8</span><span class="operator">);</span>
+  <span class="keyword">my</span> <span class="variable">$base64</span> <span class="operator">=</span> <span class="variable">encode_base64</span><span class="operator">(</span><span class="variable">$utf8</span><span class="operator">);</span>
+</pre>
+<p>or the lazier and more convoluted</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$base64</span> <span class="operator">=</span> <span class="variable">encode_base64</span><span class="operator">(</span><span class="variable">encode</span><span class="operator">(</span><span class="string">"latin1"</span><span class="operator">,</span> <span class="variable">$utf8</span><span class="operator">));</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">Description</a></h1>
+<p>Here is how to use this module.</p>
+<ul>
+<li>
+<p>There are at least two instance variables stored in a hash reference,
+{data} and {encoding}.</p>
+</li>
+<li>
+<p>When there is no method, it takes the method name as the name of the
+encoding and encodes the instance <em>data</em> with <em>encoding</em>.  If successful,
+the instance <em>encoding</em> is set accordingly.</p>
+</li>
+<li>
+<p>You can retrieve the result via -&gt;data but usually you don't have to 
+because the stringify operator (&quot;&quot;) is overridden to do exactly that.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="predefined_methods">Predefined Methods</a></h2>
+<p>This module predefines the methods below:</p>
+<dl>
+<dt><strong><a name="new" class="item">$e = Encode::Encoder-&gt;new([$data, $encoding]);</a></strong></dt>
+
+<dd>
+<p>returns an encoder object.  Its data is initialized with $data if
+present, and its encoding is set to $encoding if present.</p>
+<p>When $encoding is omitted, it defaults to utf8 if $data is already in
+utf8 or &quot;&quot; (empty string) otherwise.</p>
+</dd>
+<dt><strong><a name="encoder" class="item"><code>encoder()</code></a></strong></dt>
+
+<dd>
+<p>is an alias of Encode::Encoder-&gt;<a href="#new"><code>new()</code></a>.  This one is exported on demand.</p>
+</dd>
+<dt><strong><a name="data" class="item">$e-&gt;<code>data([$data])</code></a></strong></dt>
+
+<dd>
+<p>When $data is present, sets the instance data to $data and returns the
+object itself.  Otherwise, the current instance data is returned.</p>
+</dd>
+<dt><strong><a name="encoding" class="item">$e-&gt;<code>encoding([$encoding])</code></a></strong></dt>
+
+<dd>
+<p>When $encoding is present, sets the instance encoding to $encoding and
+returns the object itself.  Otherwise, the current instance encoding is
+returned.</p>
+</dd>
+<dt><strong><a name="bytes" class="item">$e-&gt;<code>bytes([$encoding])</code></a></strong></dt>
+
+<dd>
+<p>decodes instance data from $encoding, or the instance encoding if
+omitted.  If the conversion is successful, the instance encoding
+will be set to &quot;&quot;.</p>
+<p>The name <em>bytes</em> was deliberately picked to avoid namespace tainting
+-- this module may be used as a base class so method names that appear
+in Encode::Encoding are avoided.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="example__base64_transcoder">Example: base64 transcoder</a></h2>
+<p>This module is designed to work with <a href="../../lib/Encode/Encoding.html">the Encode::Encoding manpage</a>.
+To make the Base64 transcoder example above really work, you could
+write a module like this:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Encode::Base64</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">base</span> <span class="string">'Encode::Encoding'</span><span class="operator">;</span>
+  <span class="keyword">__PACKAGE__</span><span class="operator">-&gt;</span><span class="variable">Define</span><span class="operator">(</span><span class="string">'base64'</span><span class="operator">);</span>
+  <span class="keyword">use</span> <span class="variable">MIME::Base64</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> encode</span><span class="operator">{</span> 
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$obj</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span> 
+      <span class="keyword">return</span> <span class="variable">encode_base64</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">);</span>
+  <span class="operator">}</span>
+  <span class="keyword">sub</span><span class="variable"> decode</span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$obj</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span> 
+      <span class="keyword">return</span> <span class="variable">decode_base64</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">);</span>
+  <span class="operator">}</span>
+  <span class="number">1</span><span class="operator">;</span>
+  <span class="comment">__END__
+  </span>
+</pre>
+<p>And your caller module would be something like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Encode::Encoder</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Encode::Base64</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment"># now you can really do the following</span>
+</pre>
+<pre>
+  <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">)-&gt;</span><span class="variable">iso_8859_1</span><span class="operator">-&gt;</span><span class="variable">base64</span><span class="operator">;</span>
+  <span class="variable">encoder</span><span class="operator">(</span><span class="variable">$base64</span><span class="operator">)-&gt;</span><span class="variable">bytes</span><span class="operator">(</span><span class="string">'base64'</span><span class="operator">)-&gt;</span><span class="variable">latin1</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="operator_overloading">Operator Overloading</a></h2>
+<p>This module overloads two operators, stringify (&quot;&quot;) and numify (0+).</p>
+<p>Stringify dumps the data inside the object.</p>
+<p>Numify returns the number of bytes in the instance data.</p>
+<p>They come in handy when you want to print or find the size of data.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/Encode.html">the Encode manpage</a>,
+<a href="../../lib/Encode/Encoding.html">the Encode::Encoding manpage</a></p>
+
+</body>
+
+</html>

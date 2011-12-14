@@ -1,0 +1,147 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::Subroutines::RequireArgUnpacking - Always unpack C&lt;@_&gt; first.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::Subroutines::RequireArgUnpacking - Always unpack C&lt;@_&gt; first.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::Subroutines::RequireArgUnpacking - Always unpack <a href="../../../../../lib/pods/perlvar.html#__"><code>@_</code></a> first.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Subroutines that use <a href="../../../../../lib/pods/perlvar.html#__"><code>@_</code></a> directly instead of unpacking the arguments
+to local variables first have two major problems.  First, they are
+very hard to read.  If you're going to refer to your variables by
+number instead of by name, you may as well be writing assembler code!
+Second, <a href="../../../../../lib/pods/perlvar.html#__"><code>@_</code></a> contains aliases to the original variables!  If you
+modify the contents of a <a href="../../../../../lib/pods/perlvar.html#__"><code>@_</code></a> entry, then you are modifying the
+variable outside of your subroutine.  For example:</p>
+<pre>
+   <span class="keyword">sub</span><span class="variable"> print_local_var_plus_one </span><span class="operator">{</span>
+       <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$var</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+       <span class="keyword">print</span> <span class="operator">++</span><span class="variable">$var</span><span class="operator">;</span>
+   <span class="operator">}</span>
+   <span class="keyword">sub</span><span class="variable"> print_var_plus_one </span><span class="operator">{</span>
+       <span class="keyword">print</span> <span class="operator">++</span><span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+   <span class="operator">}</span>
+</pre>
+<pre>
+   <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="number">2</span><span class="operator">;</span>
+   <span class="variable">print_local_var_plus_one</span><span class="operator">(</span><span class="variable">$x</span><span class="operator">);</span> <span class="comment"># prints "3", $x is still 2</span>
+   <span class="variable">print_var_plus_one</span><span class="operator">(</span><span class="variable">$x</span><span class="operator">);</span>       <span class="comment"># prints "3", $x is now 3 !</span>
+   <span class="keyword">print</span> <span class="variable">$x</span><span class="operator">;</span>                     <span class="comment"># prints "3"</span>
+</pre>
+<p>This is spooky action-at-a-distance and is very hard to debug if it's
+not intentional and well-documented (like <a href="../../../../../lib/pods/perlfunc.html#chop"><code>chop</code></a> or <a href="../../../../../lib/pods/perlfunc.html#chomp"><code>chomp</code></a>).</p>
+<p>An exception is made for the usual delegation idiom <code>&lt;
+$object-</code>SUPER::something( @_ ) &gt;&gt;. Only <code>SUPER::</code> and <code>NEXT::</code> are
+recognized (though this is configurable) and the argument list for the
+delegate must consist only of <code>( @_ )</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This policy is lenient for subroutines which have <code>N</code> or fewer
+top-level statements, where <code>N</code> defaults to ZERO.  You can override
+this to set it to a higher number with the
+<code>short_subroutine_statements</code> setting.  This is very much not
+recommended but perhaps you REALLY need high performance.  To do this,
+put entries in a <em class="file">.perlcriticrc</em> file like this:</p>
+<pre>
+  [Subroutines::RequireArgUnpacking]
+  short_subroutine_statements = 2</pre>
+<p>By default this policy does not allow you to specify array subscripts
+when you unpack arguments (i.e. by an array slice or by referencing
+individual elements).  Should you wish to permit this, you can do so
+using the <code>allow_subscripts</code> setting. This defaults to false.  You can
+set it true like this:</p>
+<pre>
+  [Subroutines::RequireArgUnpacking]
+  allow_subscripts = 1</pre>
+<p>The delegation logic can be configured to allow delegation other than to
+<code>SUPER::</code> or <code>NEXT::</code>. The configuration item is
+<code>allow_delegation_to</code>, and it takes a space-delimited list of allowed
+delegates. If a given delegate ends in a double colon, anything in the
+given namespace is allowed. If it does not, only that subroutine is
+allowed. For example, to allow <code>next::method</code> from <code>Class::C3</code> and
+_delegate from the current namespace in addition to SUPER and NEXT, the
+following configuration could be used:</p>
+<pre>
+  [Subroutines::RequireArgUnpacking]
+  allow_delegation_to = next::method _delegate</pre>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>PPI doesn't currently detect anonymous subroutines, so we don't check
+those.  This should just work when PPI gains that feature.</p>
+<p>We don't check for <a href="../../../../../lib/pods/perlvar.html#_arg"><code>@ARG</code></a>, the alias for <a href="../../../../../lib/pods/perlvar.html#__"><code>@_</code></a> from English.pm.  That's
+deprecated anyway.</p>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Initial development of this policy was supported by a grant from the
+Perl Foundation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2007-2011 Chris Dolan.  Many rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module</p>
+
+</body>
+
+</html>

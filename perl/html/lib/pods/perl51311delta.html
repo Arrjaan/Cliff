@@ -1,0 +1,522 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perl51311delta - what is new for perl v5.13.11</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perl51311delta - what is new for perl v5.13.11</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#security">Security</a></li>
+	<ul>
+
+		<li><a href="#user_defined_regular_expression_properties">User-defined regular expression properties</a></li>
+	</ul>
+
+	<li><a href="#incompatible_changes">Incompatible Changes</a></li>
+	<ul>
+
+		<li><a href="#local_____will_strip_all_magic_from___"><a href="../../lib/pods/perlfunc.html#local"><code>local($_)</code></a> will strip all magic from $_</a></li>
+		<li><a href="#passing_references_to_warn__">Passing references to <a href="../../lib/pods/perlfunc.html#warn"><code>warn()</code></a></a></li>
+		<li><a href="#fork___emulation_will_not_wait_for_signalled_children"><a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation will not wait for signalled children</a></li>
+		<li><a href="#perl_source_code_is_read_in_text_mode_on_windows">Perl source code is read in text mode on Windows</a></li>
+	</ul>
+
+	<li><a href="#performance_enhancements">Performance Enhancements</a></li>
+	<li><a href="#modules_and_pragmata">Modules and Pragmata</a></li>
+	<ul>
+
+		<li><a href="#updated_modules_and_pragmata">Updated Modules and Pragmata</a></li>
+	</ul>
+
+	<li><a href="#documentation">Documentation</a></li>
+	<ul>
+
+		<li><a href="#changes_to_existing_documentation">Changes to Existing Documentation</a></li>
+		<ul>
+
+			<li><a href="#perlfunc"><a href="../../lib/pods/perlfunc.html">the perlfunc manpage</a></a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#diagnostics">Diagnostics</a></li>
+	<ul>
+
+		<li><a href="#new_diagnostics">New Diagnostics</a></li>
+	</ul>
+
+	<li><a href="#testing">Testing</a></li>
+	<li><a href="#selected_bug_fixes">Selected Bug Fixes</a></li>
+	<li><a href="#acknowledgements">Acknowledgements</a></li>
+	<li><a href="#reporting_bugs">Reporting Bugs</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perl51311delta - what is new for perl v5.13.11</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes differences between the 5.13.10 release and
+the 5.13.11 release.</p>
+<p>If you are upgrading from an earlier release such as 5.13.9, first read
+<a href="../../lib/pods/perl5139delta.html">the perl5139delta manpage</a>, which describes differences between 5.13.9 and
+5.13.10.</p>
+<p>
+</p>
+<hr />
+<h1><a name="security">Security</a></h1>
+<p>
+</p>
+<h2><a name="user_defined_regular_expression_properties">User-defined regular expression properties</a></h2>
+<p>Perl no longer allows a tainted regular expression to invoke a user-defined
+property via <a href="../../lib/pods/perlrun.html#p"><code>\p{...}</code></a> syntax. It simply dies instead [perl #82616].</p>
+<p>
+</p>
+<hr />
+<h1><a name="incompatible_changes">Incompatible Changes</a></h1>
+<p>
+</p>
+<h2><a name="local_____will_strip_all_magic_from___"><a href="../../lib/pods/perlfunc.html#local"><code>local($_)</code></a> will strip all magic from $_</a></h2>
+<p><a href="../../lib/pods/perlfunc.html#local"><code>local()</code></a> on scalar variables will give them a new value, but keep all
+their magic intact.  This has proven to be problematic for the default
+scalar variable $_, where <a href="../../lib/pods/perlsub.html">the perlsub manpage</a> recommends that any subroutine
+that assigns to $_ should localize it first.  This would throw an
+exception if $_ is aliased to a read-only variable, and could have
+various unintentional side-effects in general.</p>
+<p>Therefore, as an exception to the general rule, <a href="../../lib/pods/perlfunc.html#local"><code>local($_)</code></a> will not
+only assign a new value to $_, but also remove all existing magic from
+it as well.</p>
+<p>
+</p>
+<h2><a name="passing_references_to_warn__">Passing references to <a href="../../lib/pods/perlfunc.html#warn"><code>warn()</code></a></a></h2>
+<p>An earlier Perl 5.13.x release changed <a href="../../lib/pods/perlfunc.html#warn"><code>warn($ref)</code></a> to leave the reference
+unchanged, allowing <code>$SIG{__WARN__}</code> handlers to access the original
+reference. But this stopped warnings that were references from having the
+file and line number appended even when there was no <code>$SIG{__WARN__}</code>
+handler in place.</p>
+<p>Now <a href="../../lib/pods/perlfunc.html#warn"><code>warn</code></a> checks for the presence of such a handler and, if there is
+none, proceeds to stringify the reference and append the file and line
+number. This allows simple uses of <a href="../../lib/pods/perlfunc.html#warn"><code>warn</code></a> for debugging to continue to
+work as they did before.</p>
+<p>
+</p>
+<h2><a name="fork___emulation_will_not_wait_for_signalled_children"><a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation will not wait for signalled children</a></h2>
+<p>On Windows parent processes would not terminate until all forked
+childred had terminated first.  However, <a href="../../lib/pods/perlfunc.html#kill"><code>kill('KILL', ...)</code></a> is
+inherently unstable on pseudo-processes, and <a href="../../lib/pods/perlfunc.html#kill"><code>kill('TERM', ...)</code></a>
+might not get delivered if the child if blocked in a system call.</p>
+<p>To avoid the deadlock and still provide a safe mechanism to terminate
+the hosting process, Perl will now no longer wait for children that
+have been sent a SIGTERM signal.  It is up to the parent process to
+<a href="../../lib/pods/perlfunc.html#waitpid"><code>waitpid()</code></a> for these children if child clean-up processing must be
+allowed to finish. However, it is also the responsibility of the
+parent then to avoid the deadlock by making sure the child process
+can't be blocked on I/O either.</p>
+<p>See <a href="../../lib/pods/perlfork.html">the perlfork manpage</a> for more information about the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation on
+Windows.</p>
+<p>
+</p>
+<h2><a name="perl_source_code_is_read_in_text_mode_on_windows">Perl source code is read in text mode on Windows</a></h2>
+<p>Perl scripts used to be read in binary mode on Windows for the benefit
+of the ByteLoader module (which is no longer part of core Perl).  This
+had the side effect of breaking various operations on the DATA filehandle,
+including seek()/tell(), and even simply reading from DATA after file handles
+have been flushed by a call to <a href="../../lib/pods/perlfunc.html#system"><code>system()</code></a>, backticks, <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> etc.</p>
+<p>The default build options for Windows have been changed to read Perl source
+code on Windows in text mode now.  Hopefully ByteLoader will be updated on
+CPAN to automatically handle this situation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="performance_enhancements">Performance Enhancements</a></h1>
+<ul>
+<li>
+<p>An earlier optimisation to speed up <code>my @array = ...</code> and
+<code>my %hash = ...</code> assignments caused a bug and was disabled in Perl 5.12.0.</p>
+<p>Now we have found another way to speed up these assignments [perl #82110].</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="modules_and_pragmata">Modules and Pragmata</a></h1>
+<p>
+</p>
+<h2><a name="updated_modules_and_pragmata">Updated Modules and Pragmata</a></h2>
+<ul>
+<li>
+<p><code>attributes</code> has been upgraded from version 0.13 to 0.14.</p>
+</li>
+<li>
+<p><code>base</code> has been upgraded from version 2.15 to 2.16.</p>
+</li>
+<li>
+<p><code>CPAN</code> has been upgraded from version 1.94_65 to 1.9600.</p>
+</li>
+<li>
+<p><code>CPANPLUS</code> has been upgraded from version 0.9101 to 0.9103</p>
+</li>
+<li>
+<p><code>CPANPLUS::Dist::Build</code> has been upgraded from version 0.52 to 0.54</p>
+</li>
+<li>
+<p><code>Cwd</code> has been downgraded from version 3.37 to 3.36.</p>
+<p>An optimisation that recent core changes have rendered unnecessary has been
+reverted.</p>
+</li>
+<li>
+<p><code>Devel::DProf</code> has been upgraded from version 20110225.01 to 20110228.00.</p>
+</li>
+<li>
+<p><code>Digest::SHA</code> has been upgraded from version 5.50 to 5.61</p>
+<p>New SHA-512/224 and SHA-512/256 transforms ref. NIST Draft FIPS 180-4 (February 2011)</p>
+</li>
+<li>
+<p><code>ExtUtils::Command</code> has been upgraded from version 1.16 to 1.17.</p>
+</li>
+<li>
+<p><code>File::Copy</code> has been downgraded from version 2.22 to 2.21.</p>
+<p>An optimisation that recent core changes have rendered unnecessary has been
+reverted.</p>
+</li>
+<li>
+<p><code>File::Glob</code> has been upgraded from version 1.11 to 1.12.</p>
+</li>
+<li>
+<p><code>GDBM_File</code> has been upgraded from version 1.13 to 1.14.</p>
+</li>
+<li>
+<p><code>Hash::Util</code> has been upgraded from version 0.10 to 0.11.</p>
+</li>
+<li>
+<p><code>Hash::Util::FieldHash</code> has been upgraded from version 1.08 to 1.09.</p>
+</li>
+<li>
+<p><code>HTTP::Tiny</code> has been upgraded from version 0.010 to 0.011.</p>
+</li>
+<li>
+<p><code>I18N::Langinfo</code> has been upgraded from version 0.07 to 0.08.</p>
+</li>
+<li>
+<p><code>IO</code> has been upgraded from version 1.25_03 to 1.25_04.</p>
+</li>
+<li>
+<p><code>JSON::PP</code> has been upgraded from version 2.27103 to 2.27105</p>
+</li>
+<li>
+<p><code>Locale::Codes</code> has been upgraded from version 3.15 to 3.16</p>
+</li>
+<li>
+<p><code>Math::BigInt</code> has been upgraded from version 1.992 to 1.994</p>
+</li>
+<li>
+<p><code>Math::BigInt::FastCalc</code> has been upgraded from version 0.24_02 to 0.28</p>
+</li>
+<li>
+<p><code>Module::Build</code> has been upgraded from version 0.37_05 to 0.3800</p>
+</li>
+<li>
+<p><code>Module::CoreList</code> has been upgraded from version 2.45 to 2.46.</p>
+</li>
+<li>
+<p><code>mro</code> has been upgraded from version 1.06 to 1.07.</p>
+</li>
+<li>
+<p><code>NDBM_File</code> has been upgraded from version 1.11 to 1.12.</p>
+</li>
+<li>
+<p><code>parent</code> has been upgraded from version 0.224 to 0.225</p>
+</li>
+<li>
+<p><code>Pod::Simple</code> has been upgraded from version 3.15 to 3.16</p>
+</li>
+<li>
+<p><code>Storable</code> has been upgraded from version 2.26 to 2.27.</p>
+</li>
+<li>
+<p><code>Sys::Hostname</code> has been upgraded from version 1.15 to 1.16.</p>
+</li>
+<li>
+<p><code>Test::Harness</code> has been upgraded from version 3.22 to 3.23</p>
+</li>
+<li>
+<p><code>Test::Simple</code> has been upgraded from version 0.97_01 to 0.98</p>
+</li>
+<li>
+<p><code>Tie::Hash::NamedCapture</code> has been upgraded from version 0.07 to 0.08.</p>
+<p>Some of the Perl code has been converted to XS for efficency's sake.</p>
+</li>
+<li>
+<p><code>Tie::RefHash</code> has been upgraded from version 1.38 to 1.39.</p>
+</li>
+<li>
+<p><code>Unicode::Collate</code> has been upgraded from version 0.72 to 0.73</p>
+<p>DUCET has been updated for Unicode 6.0.0 as Collate/allkeys.txt and
+the default UCA_Version is 22.</p>
+</li>
+<li>
+<p><code>Unicode::UCD</code> has been upgraded from version 0.31 to 0.32.
+This includes a number of bug fixes:</p>
+<dl>
+<dt><strong><a name="charinfo" class="item"><code>charinfo()</code></a></strong></dt>
+
+<dd>
+<ul>
+<li>
+<p>It is now updated to Unicode Version 6 with Corrigendum #8, except,
+as with Perl 5.14, the code point at U+1F514 has no name.</p>
+</li>
+<li>
+<p>The Hangul syllable code points have the correct names, and their
+decompositions are always output without requiring <a href="../../Lingua/KO/Hangul/Util.html">the Lingua::KO::Hangul::Util manpage</a>
+to be installed.</p>
+</li>
+<li>
+<p>The CJK (Chinese-Japanese-Korean) code points U+2A700 - U+2B734
+and U+2B740 - 2B81D are now properly handled.</p>
+</li>
+<li>
+<p>The numeric values are now output for those CJK code points that have them.</p>
+</li>
+<li>
+<p>The names that are output for code points with multiple aliases are now the
+corrected ones.</p>
+</li>
+</ul>
+</dd>
+<dt><strong><a name="charscript" class="item"><code>charscript()</code></a></strong></dt>
+
+<dd>
+<p>This now correctly returns &quot;Unknown&quot; instead of <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> for the script
+of a code point that hasn't been assigned another one.</p>
+</dd>
+<dt><strong><a name="charblock" class="item"><code>charblock()</code></a></strong></dt>
+
+<dd>
+<p>This now correctly returns &quot;No_Block&quot; instead of <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> for the block
+of a code point that hasn't been assigned to another one.</p>
+</dd>
+</dl>
+</li>
+<li>
+<p><code>XS::Typemap</code> has been upgraded from version 0.04 to 0.05.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="documentation">Documentation</a></h1>
+<p>
+</p>
+<h2><a name="changes_to_existing_documentation">Changes to Existing Documentation</a></h2>
+<p>
+</p>
+<h3><a name="perlfunc"><a href="../../lib/pods/perlfunc.html">the perlfunc manpage</a></a></h3>
+<ul>
+<li>
+<p>Clarified the order in which to check <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> and <a href="../../lib/pods/perlvar.html#__"><code>$!</code></a> after <a href="../../lib/pods/perlfunc.html#do"><code>do FILE</code></a>.
+(RT #80626)</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">Diagnostics</a></h1>
+<p>The following additions or changes have been made to diagnostic output,
+including warnings and fatal error messages.  For the complete list of
+diagnostic messages, see <a href="../../lib/pods/perldiag.html">the perldiag manpage</a>.</p>
+<p>
+</p>
+<h2><a name="new_diagnostics">New Diagnostics</a></h2>
+<ul>
+<li>
+<p>Regexp modifier &quot;/%c&quot; may not appear twice</p>
+<p>(F syntax) The regular expression pattern had one of the mutually exclusive
+modifiers repeated.  Remove all but one of the occurrences.</p>
+</li>
+<li>
+<p>Regexp modifiers &quot;/%c&quot; and &quot;/%c&quot; are mutually exclusive</p>
+<p>(F syntax) The regular expression pattern had more than one of the mutually
+exclusive modifiers.  Retain only the modifier that is supposed to be there.</p>
+</li>
+<li>
+<p>Insecure user-defined property %s</p>
+<p>(F) Perl detected tainted data when trying to compile a regular
+expression that contains a call to a user-defined character property
+function, i.e. <code>\p{IsFoo}</code> or <code>\p{InFoo}</code>.
+See <a href="../../lib/pods/perlunicode.html#user_defined_character_properties">User-Defined Character Properties in the perlunicode manpage</a> and <a href="../../lib/pods/perlsec.html">the perlsec manpage</a>.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="testing">Testing</a></h1>
+<p>Many of the tests have been refactored to use testing libraries more
+consistently. In some cases test files were created or deleted:</p>
+<ul>
+<li>
+<p>The tests for <code>split /\s/</code> and Unicode have been moved from
+<em class="file">t/op/split.t</em> to the new <em class="file">t/op/split_unicode.t</em>.</p>
+</li>
+<li>
+<p><em class="file">t/re/re.t</em> has been moved to <em class="file">ext/re/t/re_funcs_u.t</em>.</p>
+</li>
+<li>
+<p>The tests for [perl #72922] have been moved from <em class="file">t/re/qr.t</em> to the new
+<em class="file">t/re/qr-72922.t</em>.</p>
+</li>
+<li>
+<p><em class="file">t/re/reg_unsafe.t</em> has been deleted and its only test moved to
+<em class="file">t/re/pat_advanced.t</em>.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="selected_bug_fixes">Selected Bug Fixes</a></h1>
+<ul>
+<li>
+<p>A fix for a bug in <a href="../../lib/pods/perlfunc.html#length"><code>length(undef)</code></a> in 5.13.4 introduced a regression that
+meant <code>print length undef</code> did not warn when warnings were enabled. It now
+correctly warns [perl #85508].</p>
+</li>
+<li>
+<p>The <code>(?|...)</code> regular expression construct no longer crashes if the final
+branch has more sets of capturing parentheses than any other branch. This
+was fixed in Perl 5.10.1 for the case of a single branch, but that fix did
+not take multiple branches into account [perl #84746].</p>
+</li>
+<li>
+<p>Accessing an element of a package array with a hard-coded number (as
+opposed to an arbitrary expression) would crash if the array did not exist.
+Usually the array would be autovivified during compilation, but typeglob
+manipulation could remove it, as in these two cases which used to crash:</p>
+<pre>
+  <span class="variable">*d</span> <span class="operator">=</span> <span class="variable">*a</span><span class="operator">;</span>  <span class="keyword">print</span> <span class="variable">$d</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+  <span class="keyword">undef</span> <span class="variable">*d</span><span class="operator">;</span> <span class="keyword">print</span> <span class="variable">$d</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+</li>
+<li>
+<p><code>#line</code> directives in string evals were not properly updating the arrays
+of lines of code (<code>@{&quot;_&lt;...&quot;}</code>) that the debugger (or any debugging or
+profiling module) uses. In threaded builds, they were not being updated at
+all. In non-threaded builds, the line number was ignored, so any change to
+the existing line number would cause the lines to be misnumbered
+[perl #79442].</p>
+</li>
+<li>
+<p><code>$AUTOLOAD</code> used to remain tainted forever if it ever became tainted. Now
+it is correctly untainted if an autoloaded method is called and the method
+name was not tainted.</p>
+</li>
+<li>
+<p>A bug has been fixed in the implementation of <code>{...}</code> quantifiers in
+regular expressions that prevented the code block in
+<code>/((\w+)(?{ print $2 })){2}/</code> from seeing the <code>$2</code> sometimes
+[perl #84294].</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#sprintf"><code>sprintf</code></a> now dies when passed a tainted scalar for the format. It did
+already die for arbitrary expressions, but not for simple scalars
+[perl #82250].</p>
+</li>
+<li>
+<p>DESTROY methods of objects implementing ties are no longer able to crash by
+accessing the tied variable through a weak reference [perl #86328].</p>
+</li>
+<li>
+<p>On Windows, calling kill(9, $child) on a pseudo-process created by the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>
+emulation is inherently unstable.  It can also be responsible for overriding
+the parent process exit code with a value of '9' if the parent terminates
+right after killing the child.  This condition will now happen a lot less
+often than before.</p>
+<p>See also <a href="../../lib/pods/perlfunc.html#fork">fork() emulation will not wait for signalled children</a> for a
+better way to terminate child processes that avoids deadlocks altogether.</p>
+</li>
+<li>
+<p>Ensure that the <code>exists &amp;Errno::EFOO</code> idiom continues to work as documented.</p>
+<p>A change post-5.12 caused the documented idiom not to work if Errno was loaded
+after the <a href="../../lib/pods/perlfunc.html#exists"><code>exists</code></a> code had been compiled, as the compiler implicitly creates
+typeglobs in the Errno symbol table when it builds the optree for the <code>exists
+code</code>.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">Acknowledgements</a></h1>
+<p>Perl 5.13.11 represents approximately one month of development since Perl
+5.13.10 and contains approximately 80,000 lines of changes across 549 files from
+31 authors and committers:</p>
+<p>Alastair Douglas, Arvan, Boris Ratner, brian d foy, Chris 'BinGOs' Williams,
+Craig A. Berry, David Golden, David Leadbeater, David Mitchell, Father
+Chrysostomos, Florian Ragwitz, Jan Dubois, Karl Williamson, Kevin Ryde, Leon
+Brocard, Leon Timmermans, Michael Stevens, Michael Witten, Moritz Lenz, Nicholas
+Clark, Paul Johnson, Peter John Acklam, Reini Urban, Robin Barker, Steve Hay,
+Sullivan Beck, Tony Cook, Vadim Konovalov, Yves Orton, Zefram and Ævar Arnfjörð
+Bjarmason</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting_bugs">Reporting Bugs</a></h1>
+<p>If you find what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the perl
+bug database at <a href="http://rt.perl.org/perlbug/">http://rt.perl.org/perlbug/</a> .  There may also be
+information at <a href="http://www.perl.org/">http://www.perl.org/</a> , the Perl Home Page.</p>
+<p>If you believe you have an unreported bug, please run the <em>perlbug</em>
+program included with your release.  Be sure to trim your bug down
+to a tiny but sufficient test case.  Your bug report, along with the
+output of <code>perl -V</code>, will be sent off to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a> to be
+analysed by the Perl porting team.</p>
+<p>If the bug you are reporting has security implications, which make it
+inappropriate to send to a publicly archived mailing list, then please send
+it to <a href="mailto:perl5-security-report@perl.org.">perl5-security-report@perl.org.</a> This points to a closed subscription
+unarchived mailing list, which includes all the core committers, who be able
+to help assess the impact of issues, figure out a resolution, and help
+co-ordinate the release of patches to mitigate or fix the problem across all
+platforms on which Perl is supported. Please only use this address for
+security issues in the Perl core, not for modules independently
+distributed on CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The <em class="file">Changes</em> file for an explanation of how to view exhaustive details
+on what changed.</p>
+<p>The <em class="file">INSTALL</em> file for how to build Perl.</p>
+<p>The <em class="file">README</em> file for general stuff.</p>
+<p>The <em class="file">Artistic</em> and <em class="file">Copying</em> files for copyright information.</p>
+
+</body>
+
+</html>

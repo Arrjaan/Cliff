@@ -1,0 +1,200 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Sub::Exporter::Util - utilities to make Sub::Exporter easier</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Sub::Exporter::Util - utilities to make Sub::Exporter easier</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#the_utilities">THE UTILITIES</a></li>
+	<ul>
+
+		<li><a href="#curry_method">curry_method</a></li>
+		<li><a href="#curry_chain">curry_chain</a></li>
+		<li><a href="#merge_col">merge_col</a></li>
+		<li><a href="#mixin_installer">mixin_installer</a></li>
+		<li><a href="#like">like</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Sub::Exporter::Util - utilities to make Sub::Exporter easier</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 0.982</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides a number of utility functions for performing common or
+useful operations when setting up a Sub::Exporter configuration.  All of the
+utilites may be exported, but none are by default.</p>
+<p>
+</p>
+<hr />
+<h1><a name="the_utilities">THE UTILITIES</a></h1>
+<p>
+</p>
+<h2><a name="curry_method">curry_method</a></h2>
+<pre>
+  <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">some_method</span> <span class="operator">=&gt;</span> <span class="variable">curry_method</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>This utility returns a generator which will produce an invocant-curried version
+of a method.  In other words, it will export a method call with the exporting
+class built in as the invocant.</p>
+<p>A module importing the code some the above example might do this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Some::Module</span> <span class="string">qw(some_method)</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">some_method</span><span class="operator">;</span>
+</pre>
+<p>This would be equivalent to:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Some::Module</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">Some::Module</span><span class="operator">-&gt;</span><span class="variable">some_method</span><span class="operator">;</span>
+</pre>
+<p>If Some::Module is subclassed and the subclass's import method is called to
+import <code>some_method</code>, the subclass will be curried in as the invocant.</p>
+<p>If an argument is provided for <code>curry_method</code> it is used as the name of the
+curried method to export.  This means you could export a Widget constructor
+like this:</p>
+<pre>
+  <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">widget</span> <span class="operator">=&gt;</span> <span class="variable">curry_method</span><span class="operator">(</span><span class="string">'new'</span><span class="operator">)</span> <span class="operator">}</span>
+</pre>
+<p>This utility may also be called as <code>curry_class</code>, for backwards compatibility.</p>
+<p>
+</p>
+<h2><a name="curry_chain">curry_chain</a></h2>
+<p><code>curry_chain</code> behaves like <code>/curry_method</code>, but is meant for generating
+exports that will call several methods in succession.</p>
+<pre>
+  <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">reticulate</span> <span class="operator">=&gt;</span> <span class="variable">curry_chain</span><span class="operator">(</span><span class="operator">[</span>
+      <span class="string">new</span> <span class="operator">=&gt;</span> <span class="string">gather_data</span> <span class="operator">=&gt;</span> <span class="string">analyze</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">detail</span> <span class="operator">=&gt;</span> <span class="number">100</span> <span class="operator">]</span> <span class="operator">=&gt;</span> <span class="variable">results</span>
+    <span class="operator">]</span><span class="operator">),</span>
+  <span class="operator">}</span>
+</pre>
+<p>If imported from Spliner, calling the <code>reticulate</code> routine will be equivalent
+to:</p>
+<pre>
+  <span class="variable">Splinter</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">-&gt;</span><span class="variable">gather_data</span><span class="operator">-&gt;</span><span class="variable">analyze</span><span class="operator">(</span><span class="string">detail</span> <span class="operator">=&gt;</span> <span class="number">100</span><span class="operator">)-&gt;</span><span class="variable">results</span><span class="operator">;</span>
+</pre>
+<p>If any method returns something on which methods may not be called, the routine
+croaks.</p>
+<p>The arguments to <code>curry_chain</code> form an optlist.  The names are methods to be
+called and the arguments, if given, are arrayrefs to be dereferenced and passed
+as arguments to those methods.  <code>curry_chain</code> returns a generator like those
+expected by Sub::Exporter.</p>
+<p><strong>Achtung!</strong> at present, there is no way to pass arguments from the generated
+routine to the method calls.  This will probably be solved in future revisions
+by allowing the opt list's values to be subroutines that will be called with
+the generated routine's stack.</p>
+<p>
+</p>
+<h2><a name="merge_col">merge_col</a></h2>
+<pre>
+  <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="variable">merge_col</span><span class="operator">(</span><span class="string">defaults</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">twiddle</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="string">'_twiddle_gen'</span><span class="operator">,</span>
+      <span class="string">tweak</span>   <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_tweak_gen</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">),</span>
+  <span class="operator">}</span>
+</pre>
+<p>This utility wraps the given generator in one that will merge the named
+collection into its args before calling it.  This means that you can support a
+&quot;default&quot; collector in multipe exports without writing the code each time.</p>
+<p>You can specify as many pairs of collection names and generators as you like.</p>
+<p>
+</p>
+<h2><a name="mixin_installer">mixin_installer</a></h2>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">installer</span> <span class="operator">=&gt;</span> <span class="variable">Sub::Exporter::Util::mixin_installer</span><span class="operator">,</span>
+    <span class="string">exports</span>   <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(foo bar baz)</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>This utility returns an installer that will install into a superclass and
+adjust the ISA importing class to include the newly generated superclass.</p>
+<p>If the target of importing is an object, the hierarchy is reversed: the new
+class will be ISA the object's class, and the object will be reblessed.</p>
+<p><strong>Prerequisites</strong>: This utility requires that Package::Generator be installed.</p>
+<p>
+</p>
+<h2><a name="like">like</a></h2>
+<p>It's a collector that adds imports for anything like given regex.</p>
+<p>If you provide this configuration:</p>
+<pre>
+  <span class="string">exports</span>    <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(igrep imap islurp exhausted)</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="string">collectors</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-like</span> <span class="operator">=&gt;</span> <span class="variable">Sub::Exporter::Util::like</span> <span class="operator">}</span><span class="operator">,</span>
+</pre>
+<p>A user may import from your module like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Your::Iterator</span> <span class="operator">-</span><span class="string">like</span> <span class="operator">=&gt;</span> <span class="string">qr/^i/</span><span class="operator">;</span> <span class="comment"># imports igre, imap, islurp</span>
+</pre>
+<p>or</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Your::Iterator</span> <span class="operator">-</span><span class="string">like</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qr/^i/</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-prefix</span> <span class="operator">=&gt;</span> <span class="string">'your_'</span> <span class="operator">}</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>The group-like prefix and suffix arguments are respected; other arguments are
+passed on to the generators for matching exports.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Ricardo SIGNES, <code>&lt;rjbs@cpan.org&gt;</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Please report any bugs or feature requests through the web interface at
+<a href="http://rt.cpan.org">http://rt.cpan.org</a>. I will be notified, and then you'll automatically be
+notified of progress on your bug as I make changes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2006-2007, Ricardo SIGNES.  This program is free software;  you can
+redistribute it and/or modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,168 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Net::netent - by-name interface to Perl's built-in getnet* functions</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Net::netent - by-name interface to Perl's built-in getnet* functions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#note">NOTE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::netent - by-name interface to Perl's built-in getnet*() functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">Net::netent</span> <span class="string">qw(:FIELDS)</span><span class="operator">;</span>
+ <span class="keyword">getnetbyname</span><span class="operator">(</span><span class="string">"loopback"</span><span class="operator">)</span>               <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"bad net"</span><span class="operator">;</span>
+ <span class="keyword">printf</span> <span class="string">"%s is %08X\n"</span><span class="operator">,</span> <span class="variable">$n_name</span><span class="operator">,</span> <span class="variable">$n_net</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="keyword">use</span> <span class="variable">Net::netent</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">$n</span> <span class="operator">=</span> <span class="keyword">getnetbyname</span><span class="operator">(</span><span class="string">"loopback"</span><span class="operator">)</span>          <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"bad net"</span><span class="operator">;</span>
+ <span class="operator">{</span> <span class="comment"># there's gotta be a better way, eh?</span>
+     <span class="variable">@bytes</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">"C4"</span><span class="operator">,</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"N"</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">net</span><span class="operator">));</span>
+     <span class="keyword">shift</span> <span class="variable">@bytes</span> <span class="keyword">while</span> <span class="variable">@bytes</span> <span class="operator">&amp;&amp;</span> <span class="variable">$bytes</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">==</span> <span class="number">0</span><span class="operator">;</span>
+ <span class="operator">}</span>
+ <span class="keyword">printf</span> <span class="string">"%s is %08X [%d.%d.%d.%d]\n"</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">net</span><span class="operator">,</span> <span class="variable">@bytes</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module's default exports override the core <a href="../../lib/pods/perlfunc.html#getnetbyname"><code>getnetbyname()</code></a> and
+<a href="../../lib/pods/perlfunc.html#getnetbyaddr"><code>getnetbyaddr()</code></a> functions, replacing them with versions that return
+&quot;Net::netent&quot; objects.  This object has methods that return the similarly
+named structure field name from the C's netent structure from <em class="file">netdb.h</em>;
+namely name, aliases, addrtype, and net.  The aliases 
+method returns an array reference, the rest scalars.</p>
+<p>You may also import all the structure fields directly into your namespace
+as regular variables using the :FIELDS import tag.  (Note that this still
+overrides your core functions.)  Access these fields as variables named
+with a preceding <code>n_</code>.  Thus, <code>$net_obj-&gt;name()</code> corresponds to
+$n_name if you import the fields.  Array references are available as
+regular array variables, so for example <code>@{ $net_obj-&gt;aliases()
+}</code> would be simply @n_aliases.</p>
+<p>The <code>getnet()</code> function is a simple front-end that forwards a numeric
+argument to <a href="../../lib/pods/perlfunc.html#getnetbyaddr"><code>getnetbyaddr()</code></a>, and the rest
+to <a href="../../lib/pods/perlfunc.html#getnetbyname"><code>getnetbyname()</code></a>.</p>
+<p>To access this functionality without the core overrides,
+pass the <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> an empty import list, and then access
+function functions with their full qualified names.
+On the other hand, the built-ins are still available
+via the <code>CORE::</code> pseudo-package.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>The <code>getnet()</code> functions do this in the Perl core:</p>
+<pre>
+    <span class="variable">sv_setiv</span><span class="operator">(</span><span class="variable">sv</span><span class="operator">,</span> <span class="operator">(</span><span class="variable">I32</span><span class="operator">)</span><span class="variable">nent</span><span class="operator">-&gt;</span><span class="variable">n_net</span><span class="operator">);</span>
+</pre>
+<p>The <code>gethost()</code> functions do this in the Perl core:</p>
+<pre>
+    <span class="variable">sv_setpvn</span><span class="operator">(</span><span class="variable">sv</span><span class="operator">,</span> <span class="variable">hent</span><span class="operator">-&gt;</span><span class="variable">h_addr</span><span class="operator">,</span> <span class="variable">len</span><span class="operator">);</span>
+</pre>
+<p>That means that the address comes back in binary for the
+host functions, and as a regular perl integer for the net ones.
+This seems a bug, but here's how to deal with it:</p>
+<pre>
+ <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+ <span class="keyword">use</span> <span class="variable">Socket</span><span class="operator">;</span>
+ <span class="keyword">use</span> <span class="variable">Net::netent</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">@ARGV</span> <span class="operator">=</span> <span class="operator">(</span><span class="string">'loopback'</span><span class="operator">)</span> <span class="keyword">unless</span> <span class="variable">@ARGV</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="keyword">my</span><span class="operator">(</span><span class="variable">$n</span><span class="operator">,</span> <span class="variable">$net</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="keyword">for</span> <span class="variable">$net</span> <span class="operator">(</span> <span class="variable">@ARGV</span> <span class="operator">)</span> <span class="operator">{</span>
+</pre>
+<pre>
+     <span class="keyword">unless</span> <span class="operator">(</span><span class="variable">$n</span> <span class="operator">=</span> <span class="keyword">getnetbyname</span><span class="operator">(</span><span class="variable">$net</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="keyword">warn</span> <span class="string">"</span><span class="variable">$0</span><span class="string">: no such net: </span><span class="variable">$net</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="keyword">next</span><span class="operator">;</span>
+     <span class="operator">}</span>
+</pre>
+<pre>
+     <span class="keyword">printf</span> <span class="string">"\n%s is %s%s\n"</span><span class="operator">,</span> 
+            <span class="variable">$net</span><span class="operator">,</span> 
+            <span class="keyword">lc</span><span class="operator">(</span><span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">)</span> <span class="keyword">eq</span> <span class="keyword">lc</span><span class="operator">(</span><span class="variable">$net</span><span class="operator">)</span> <span class="operator">?</span> <span class="string">""</span> <span class="operator">:</span> <span class="string">"*really* "</span><span class="operator">,</span>
+            <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>
+</pre>
+<pre>
+     <span class="keyword">print</span> <span class="string">"\taliases are "</span><span class="operator">,</span> <span class="keyword">join</span><span class="operator">(</span><span class="string">", "</span><span class="operator">,</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">aliases</span><span class="operator">}</span><span class="operator">),</span> <span class="string">"\n"</span>
+                <span class="keyword">if</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">aliases</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+     <span class="comment"># this is stupid; first, why is this not in binary?</span>
+     <span class="comment"># second, why am i going through these convolutions</span>
+     <span class="comment"># to make it looks right</span>
+     <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">@a</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">"C4"</span><span class="operator">,</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"N"</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">net</span><span class="operator">));</span>
+        <span class="keyword">shift</span> <span class="variable">@a</span> <span class="keyword">while</span> <span class="variable">@a</span> <span class="operator">&amp;&amp;</span> <span class="variable">$a</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">==</span> <span class="number">0</span><span class="operator">;</span>
+        <span class="keyword">printf</span> <span class="string">"\taddr is %s [%d.%d.%d.%d]\n"</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">net</span><span class="operator">,</span> <span class="variable">@a</span><span class="operator">;</span>
+     <span class="operator">}</span>
+</pre>
+<pre>
+     <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$n</span> <span class="operator">=</span> <span class="keyword">getnetbyaddr</span><span class="operator">(</span><span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">net</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">lc</span><span class="operator">(</span><span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">)</span> <span class="keyword">ne</span> <span class="keyword">lc</span><span class="operator">(</span><span class="variable">$net</span><span class="operator">))</span> <span class="operator">{</span>
+            <span class="keyword">printf</span> <span class="string">"\tThat addr reverses to net %s!\n"</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>
+            <span class="variable">$net</span> <span class="operator">=</span> <span class="variable">$n</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>
+            <span class="keyword">redo</span><span class="operator">;</span>
+        <span class="operator">}</span> 
+     <span class="operator">}</span>
+      <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="note">NOTE</a></h1>
+<p>While this class is currently implemented using the Class::Struct
+module to build a struct-like class, you shouldn't rely upon this.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Tom Christiansen</p>
+
+</body>
+
+</html>

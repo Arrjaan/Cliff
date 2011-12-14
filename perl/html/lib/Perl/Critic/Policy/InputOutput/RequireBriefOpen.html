@@ -1,0 +1,160 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::InputOutput::RequireBriefOpen - Close filehandles as soon as possible after opening them.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::InputOutput::RequireBriefOpen - Close filehandles as soon as possible after opening them.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<ul>
+
+		<li><a href="#io__file__new"><code>IO::File-&gt;new</code></a></li>
+		<li><a href="#is_it_the_right_lexical">Is it the right lexical?</a></li>
+	</ul>
+
+	<li><a href="#credits">CREDITS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::InputOutput::RequireBriefOpen - Close filehandles as soon as possible after opening them.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>One way that production systems fail unexpectedly is by running out of
+filehandles.  Filehandles are a finite resource on every operating
+system that I'm aware of, and running out of them is virtually
+impossible to recover from.  The solution is to not run out in the
+first place.  What causes programs to run out of filehandles?
+Usually, it's leaks: you open a filehandle and forget to close it, or
+just wait a really long time before closing it.</p>
+<p>This problem is rarely exposed by test systems, because the tests
+rarely run long enough or have enough load to hit the filehandle
+limit.  So, the best way to avoid the problem is 1) always close all
+filehandles that you open and 2) close them as soon as is practical.</p>
+<p>This policy takes note of calls to <a href="../../../../../lib/pods/perlfunc.html#open"><code>open()</code></a> where there is no
+matching <a href="../../../../../lib/pods/perlfunc.html#close"><code>close()</code></a> call within <code>N</code> lines of code.  If you really
+need to do a lot of processing on an open filehandle, then you can
+move that processing to another method like this:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> process_data_file </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">open</span> <span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="variable">$filename</span>
+            <span class="keyword">or</span> <span class="variable">croak</span> <span class="string">'Failed to read datafile '</span> <span class="operator">.</span>  <span class="variable">$filename</span> <span class="operator">.</span> <span class="string">'; '</span> <span class="operator">.</span> <span class="variable">$OS_ERROR</span><span class="operator">;</span>
+        <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">_parse_input_data</span><span class="operator">(</span><span class="variable">$fh</span><span class="operator">);</span>
+        <span class="keyword">close</span> <span class="variable">$fh</span><span class="operator">;</span>
+        <span class="keyword">return</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> _parse_input_data </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$fh</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$line</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">$fh</span><span class="operator">&gt;)</span> <span class="operator">{</span>
+            <span class="operator">...</span>
+        <span class="operator">}</span>
+        <span class="keyword">return</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>As a special case, this policy also allows code to return the
+filehandle after the <a href="../../../../../lib/pods/perlfunc.html#open"><code>open</code></a> instead of closing it.  Just like the
+close, however, that <a href="../../../../../lib/pods/perlfunc.html#return"><code>return</code></a> has to be within the right number of
+lines.  From there, you're on your own to figure out whether the code
+is promptly closing the filehandle.</p>
+<p>The STDIN, STDOUT, and STDERR handles are exempt from this policy.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This policy allows <a href="../../../../../lib/pods/perlfunc.html#close"><code>close()</code></a> invocations to be up to <code>N</code> lines after
+their corresponding <a href="../../../../../lib/pods/perlfunc.html#open"><code>open()</code></a> calls, where <code>N</code> defaults to 9.  You
+can override this to set it to a different number with the <code>lines</code>
+setting.  To do this, put entries in a <em class="file">.perlcriticrc</em> file like
+this:</p>
+<pre>
+  [InputOutput::RequireBriefOpen]
+  lines = 5</pre>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>
+</p>
+<h2><a name="io__file__new"><code>IO::File-&gt;new</code></a></h2>
+<p>This policy only looks for explicit <a href="../../../../../lib/pods/perlfunc.html#open"><code>open</code></a> calls.  It does not detect
+calls to <code>CORE::open</code> or <code>IO::File-&gt;new</code> or the like.</p>
+<p>
+</p>
+<h2><a name="is_it_the_right_lexical">Is it the right lexical?</a></h2>
+<p>We don't currently check for redeclared filehandles.  So the following
+code is false negative, for example, because the outer scoped
+filehandle is not closed:</p>
+<pre>
+    <span class="keyword">open</span> <span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="variable">$file1</span> <span class="keyword">or</span> <span class="variable">croak</span><span class="operator">;</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">open</span> <span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="variable">$file2</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="operator">&lt;</span><span class="variable">$fh</span><span class="operator">&gt;;</span>
+        <span class="keyword">close</span> <span class="variable">$fh</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>This is a contrived example, but it isn't uncommon for people to use
+<code>$fh</code> for the name of the filehandle every time.  Perhaps it's time
+to think of better variable names...</p>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Initial development of this policy was supported by a grant from the
+Perl Foundation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2007-2011 Chris Dolan.  Many rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module</p>
+
+</body>
+
+</html>

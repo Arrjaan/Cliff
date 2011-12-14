@@ -1,0 +1,367 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>lwpcook - The libwww-perl cookbook</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>lwpcook - The libwww-perl cookbook</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#get">GET</a></li>
+	<li><a href="#head">HEAD</a></li>
+	<li><a href="#post">POST</a></li>
+	<li><a href="#proxies">PROXIES</a></li>
+	<li><a href="#access_to_protected_documents">ACCESS TO PROTECTED DOCUMENTS</a></li>
+	<li><a href="#cookies">COOKIES</a></li>
+	<li><a href="#https">HTTPS</a></li>
+	<li><a href="#mirroring">MIRRORING</a></li>
+	<li><a href="#large_documents">LARGE DOCUMENTS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>lwpcook - The libwww-perl cookbook</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document contain some examples that show typical usage of the
+libwww-perl library.  You should consult the documentation for the
+individual modules for more detail.</p>
+<p>All examples should be runnable programs. You can, in most cases, test
+the code sections by piping the program text directly to perl.</p>
+<p>
+</p>
+<hr />
+<h1><a name="get">GET</a></h1>
+<p>It is very easy to use this library to just fetch documents from the
+net.  The LWP::Simple module provides the <code>get()</code> function that return
+the document specified by its URL argument:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::Simple</span><span class="operator">;</span>
+  <span class="variable">$doc</span> <span class="operator">=</span> <span class="variable">get</span> <span class="string">'http://www.linpro.no/lwp/'</span><span class="operator">;</span>
+</pre>
+<p>or, as a perl one-liner using the <code>getprint()</code> function:</p>
+<pre>
+  perl -MLWP::Simple -e 'getprint &quot;<a href="http://www.linpro.no/lwp/&quot">http://www.linpro.no/lwp/&quot</a>;'</pre>
+<p>or, how about fetching the latest perl by running this command:</p>
+<pre>
+  perl -MLWP::Simple -e '
+    getstore &quot;<a href="ftp://ftp.sunet.se/pub/lang/perl/CPAN/src/latest.tar.gz&quot">ftp://ftp.sunet.se/pub/lang/perl/CPAN/src/latest.tar.gz&quot</a>;,
+             &quot;perl.tar.gz&quot;'</pre>
+<p>You will probably first want to find a CPAN site closer to you by
+running something like the following command:</p>
+<pre>
+  perl -MLWP::Simple -e 'getprint &quot;<a href="http://www.perl.com/perl/CPAN/CPAN.html&quot">http://www.perl.com/perl/CPAN/CPAN.html&quot</a>;'</pre>
+<p>Enough of this simple stuff!  The LWP object oriented interface gives
+you more control over the request sent to the server.  Using this
+interface you have full control over headers sent and how you want to
+handle the response returned.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">agent</span><span class="operator">(</span><span class="string">"</span><span class="variable">$0</span><span class="string">/0.1 "</span> <span class="operator">.</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">agent</span><span class="operator">);</span>
+  <span class="comment"># $ua-&gt;agent("Mozilla/8.0") # pretend we are very capable browser</span>
+</pre>
+<pre>
+  <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="string">'http://www.linpro.no/lwp'</span><span class="operator">);</span>
+  <span class="variable">$req</span><span class="operator">-&gt;</span><span class="variable">header</span><span class="operator">(</span><span class="string">'Accept'</span> <span class="operator">=&gt;</span> <span class="string">'text/html'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment"># send request</span>
+  <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment"># check the outcome</span>
+  <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">is_success</span><span class="operator">)</span> <span class="operator">{</span>
+     <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">decoded_content</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  <span class="keyword">else</span> <span class="operator">{</span>
+     <span class="keyword">print</span> <span class="string">"Error: "</span> <span class="operator">.</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">status_line</span> <span class="operator">.</span> <span class="string">"\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>The lwp-request program (alias GET) that is distributed with the
+library can also be used to fetch documents from WWW servers.</p>
+<p>
+</p>
+<hr />
+<h1><a name="head">HEAD</a></h1>
+<p>If you just want to check if a document is present (i.e. the URL is
+valid) try to run code that looks like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">if</span> <span class="operator">(</span><span class="variable">head</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">))</span> <span class="operator">{</span>
+     <span class="comment"># ok document exists</span>
+  <span class="operator">}</span>
+</pre>
+<p>The <code>head()</code> function really returns a list of meta-information about
+the document.  The first three values of the list returned are the
+document type, the size of the document, and the age of the document.</p>
+<p>More control over the request or access to all header values returned
+require that you use the object oriented interface described for GET
+above.  Just s/GET/HEAD/g.</p>
+<p>
+</p>
+<hr />
+<h1><a name="post">POST</a></h1>
+<p>There is no simple procedural interface for posting data to a WWW server.  You
+must use the object oriented interface for this. The most common POST
+operation is to access a WWW form application:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">POST</span> <span class="operator">=&gt;</span> <span class="string">'http://www.perl.com/cgi-bin/BugGlimpse'</span><span class="operator">);</span>
+  <span class="variable">$req</span><span class="operator">-&gt;</span><span class="variable">content_type</span><span class="operator">(</span><span class="string">'application/x-www-form-urlencoded'</span><span class="operator">);</span>
+  <span class="variable">$req</span><span class="operator">-&gt;</span><span class="variable">content</span><span class="operator">(</span><span class="string">'match=www&amp;errors=0'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">);</span>
+  <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">as_string</span><span class="operator">;</span>
+</pre>
+<p>Lazy people use the HTTP::Request::Common module to set up a suitable
+POST request message (it handles all the escaping issues) and has a
+suitable default for the content_type:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">HTTP::Request::Common</span> <span class="string">qw(POST)</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">POST</span> <span class="string">'http://www.perl.com/cgi-bin/BugGlimpse'</span><span class="operator">,</span>
+                <span class="operator">[</span> <span class="string">search</span> <span class="operator">=&gt;</span> <span class="string">'www'</span><span class="operator">,</span> <span class="string">errors</span> <span class="operator">=&gt;</span> <span class="number">0</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">print</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">)-&gt;</span><span class="variable">as_string</span><span class="operator">;</span>
+</pre>
+<p>The lwp-request program (alias POST) that is distributed with the
+library can also be used for posting data.</p>
+<p>
+</p>
+<hr />
+<h1><a name="proxies">PROXIES</a></h1>
+<p>Some sites use proxies to go through fire wall machines, or just as
+cache in order to improve performance.  Proxies can also be used for
+accessing resources through protocols not supported directly (or
+supported badly :-) by the libwww-perl library.</p>
+<p>You should initialize your proxy setting before you start sending
+requests:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">env_proxy</span><span class="operator">;</span> <span class="comment"># initialize from environment variables</span>
+  <span class="comment"># or</span>
+  <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">proxy</span><span class="operator">(</span><span class="string">ftp</span>  <span class="operator">=&gt;</span> <span class="string">'http://proxy.myorg.com'</span><span class="operator">);</span>
+  <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">proxy</span><span class="operator">(</span><span class="string">wais</span> <span class="operator">=&gt;</span> <span class="string">'http://proxy.myorg.com'</span><span class="operator">);</span>
+  <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">no_proxy</span><span class="operator">(</span><span class="string">qw(no se fi)</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="string">'wais://xxx.com/'</span><span class="operator">);</span>
+  <span class="keyword">print</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">)-&gt;</span><span class="variable">as_string</span><span class="operator">;</span>
+</pre>
+<p>The LWP::Simple interface will call <code>env_proxy()</code> for you automatically.
+Applications that use the $ua-&gt;<code>env_proxy()</code> method will normally not
+use the $ua-&gt;<code>proxy()</code> and $ua-&gt;<code>no_proxy()</code> methods.</p>
+<p>Some proxies also require that you send it a username/password in
+order to let requests through.  You should be able to add the
+required header, with something like this:</p>
+<pre>
+ <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+ <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">proxy</span><span class="operator">(</span><span class="operator">[</span><span class="string">'http'</span><span class="operator">,</span> <span class="string">'ftp'</span><span class="operator">]</span> <span class="operator">=&gt;</span> <span class="string">'http://username:password@proxy.myorg.com'</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'GET'</span><span class="operator">,</span><span class="string">"http://www.perl.com"</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">);</span>
+ <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">decoded_content</span> <span class="keyword">if</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">is_success</span><span class="operator">;</span>
+</pre>
+<p>Replace <code>proxy.myorg.com</code>, <code>username</code> and
+<code>password</code> with something suitable for your site.</p>
+<p>
+</p>
+<hr />
+<h1><a name="access_to_protected_documents">ACCESS TO PROTECTED DOCUMENTS</a></h1>
+<p>Documents protected by basic authorization can easily be accessed
+like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="string">'http://www.linpro.no/secret/'</span><span class="operator">);</span>
+  <span class="variable">$req</span><span class="operator">-&gt;</span><span class="variable">authorization_basic</span><span class="operator">(</span><span class="string">'aas'</span><span class="operator">,</span> <span class="string">'mypassword'</span><span class="operator">);</span>
+  <span class="keyword">print</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">)-&gt;</span><span class="variable">as_string</span><span class="operator">;</span>
+</pre>
+<p>The other alternative is to provide a subclass of <em>LWP::UserAgent</em> that
+overrides the <code>get_basic_credentials()</code> method. Study the <em>lwp-request</em>
+program for an example of this.</p>
+<p>
+</p>
+<hr />
+<h1><a name="cookies">COOKIES</a></h1>
+<p>Some sites like to play games with cookies.  By default LWP ignores
+cookies provided by the servers it visits.  LWP will collect cookies
+and respond to cookie requests if you set up a cookie jar.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">HTTP::Cookies</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">cookie_jar</span><span class="operator">(</span><span class="variable">HTTP::Cookies</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">file</span> <span class="operator">=&gt;</span> <span class="string">"lwpcookies.txt"</span><span class="operator">,</span>
+                                     <span class="string">autosave</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">));</span>
+</pre>
+<pre>
+  <span class="comment"># and then send requests just as you used to do</span>
+  <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="string">"http://www.yahoo.no"</span><span class="operator">));</span>
+  <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">status_line</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>As you visit sites that send you cookies to keep, then the file
+<em class="file">lwpcookies.txt&quot;</em> will grow.</p>
+<p>
+</p>
+<hr />
+<h1><a name="https">HTTPS</a></h1>
+<p>URLs with https scheme are accessed in exactly the same way as with
+http scheme, provided that an SSL interface module for LWP has been
+properly installed (see the <em class="file">README.SSL</em> file found in the
+libwww-perl distribution for more details).  If no SSL interface is
+installed for LWP to use, then you will get &quot;501 Protocol scheme
+'https' is not supported&quot; errors when accessing such URLs.</p>
+<p>Here's an example of fetching and printing a WWW page using SSL:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="string">'https://www.helsinki.fi/'</span><span class="operator">);</span>
+  <span class="keyword">my</span> <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">);</span>
+  <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">is_success</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">as_string</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  <span class="keyword">else</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"Failed: "</span><span class="operator">,</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">status_line</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="mirroring">MIRRORING</a></h1>
+<p>If you want to mirror documents from a WWW server, then try to run
+code similar to this at regular intervals:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">%mirrors</span> <span class="operator">=</span> <span class="operator">(</span>
+     <span class="string">'http://www.sn.no/'</span>             <span class="operator">=&gt;</span> <span class="string">'sn.html'</span><span class="operator">,</span>
+     <span class="string">'http://www.perl.com/'</span>          <span class="operator">=&gt;</span> <span class="string">'perl.html'</span><span class="operator">,</span>
+     <span class="string">'http://www.sn.no/libwww-perl/'</span> <span class="operator">=&gt;</span> <span class="string">'lwp.html'</span><span class="operator">,</span>
+     <span class="string">'gopher://gopher.sn.no/'</span>        <span class="operator">=&gt;</span> <span class="string">'gopher.html'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">while</span> <span class="operator">((</span><span class="variable">$url</span><span class="operator">,</span> <span class="variable">$localfile</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">each</span><span class="operator">(</span><span class="variable">%mirrors</span><span class="operator">))</span> <span class="operator">{</span>
+     <span class="variable">mirror</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">,</span> <span class="variable">$localfile</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>Or, as a perl one-liner:</p>
+<pre>
+  <span class="variable">perl</span> <span class="operator">-</span><span class="variable">MLWP::Simple</span> <span class="keyword">-e</span> <span class="string">'mirror("http://www.perl.com/", "perl.html")'</span><span class="operator">;</span>
+</pre>
+<p>The document will not be transferred unless it has been updated.</p>
+<p>
+</p>
+<hr />
+<h1><a name="large_documents">LARGE DOCUMENTS</a></h1>
+<p>If the document you want to fetch is too large to be kept in memory,
+then you have two alternatives.  You can instruct the library to write
+the document content to a file (second $ua-&gt;<code>request()</code> argument is a file
+name):</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$req</span> <span class="operator">=</span> <span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span>
+                <span class="string">'http://www.linpro.no/lwp/libwww-perl-5.46.tar.gz'</span><span class="operator">);</span>
+  <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$req</span><span class="operator">,</span> <span class="string">"libwww-perl.tar.gz"</span><span class="operator">);</span>
+  <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">is_success</span><span class="operator">)</span> <span class="operator">{</span>
+     <span class="keyword">print</span> <span class="string">"ok\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  <span class="keyword">else</span> <span class="operator">{</span>
+     <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">status_line</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>Or you can process the document as it arrives (second $ua-&gt;<code>request()</code>
+argument is a code reference):</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">LWP::UserAgent</span><span class="operator">;</span>
+  <span class="variable">$ua</span> <span class="operator">=</span> <span class="variable">LWP::UserAgent</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">$URL</span> <span class="operator">=</span> <span class="string">'ftp://ftp.unit.no/pub/rfc/rfc-index.txt'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$expected_length</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$bytes_received</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$res</span> <span class="operator">=</span>
+     <span class="variable">$ua</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">HTTP::Request</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="variable">$URL</span><span class="operator">),</span>
+               <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                   <span class="keyword">my</span><span class="operator">(</span><span class="variable">$chunk</span><span class="operator">,</span> <span class="variable">$res</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+                   <span class="variable">$bytes_received</span> <span class="operator">+=</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">$chunk</span><span class="operator">);</span>
+                   <span class="keyword">unless</span> <span class="operator">(</span><span class="keyword">defined</span> <span class="variable">$expected_length</span><span class="operator">)</span> <span class="operator">{</span>
+                      <span class="variable">$expected_length</span> <span class="operator">=</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">content_length</span> <span class="operator">||</span> <span class="number">0</span><span class="operator">;</span>
+                   <span class="operator">}</span>
+                   <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$expected_length</span><span class="operator">)</span> <span class="operator">{</span>
+                        <span class="keyword">printf</span> <span class="variable">STDERR</span> <span class="string">"%d%% - "</span><span class="operator">,</span>
+                                  <span class="number">100</span> <span class="operator">*</span> <span class="variable">$bytes_received</span> <span class="operator">/</span> <span class="variable">$expected_length</span><span class="operator">;</span>
+                   <span class="operator">}</span>
+                   <span class="keyword">print</span> <span class="variable">STDERR</span> <span class="string">"</span><span class="variable">$bytes_received</span><span class="string"> bytes received\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+                   <span class="comment"># XXX Should really do something with the chunk itself</span>
+                   <span class="comment"># print $chunk;</span>
+                                  <span class="operator">});</span>
+                      <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">status_line</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1996-2001, Gisle Aas</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

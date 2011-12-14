@@ -1,0 +1,452 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>autodie::hints - Provide hints about user subroutines to autodie</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>autodie::hints - Provide hints about user subroutines to autodie</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#introduction">Introduction</a></li>
+		<li><a href="#what_are_hints">What are hints?</a></li>
+		<li><a href="#example_hints">Example hints</a></li>
+	</ul>
+
+	<li><a href="#manually_setting_hints_from_within_your_program">Manually setting hints from within your program</a></li>
+	<li><a href="#adding_hints_to_your_module">Adding hints to your module</a></li>
+	<li><a href="#insisting_on_hints">Insisting on hints</a></li>
+	<li><a href="#diagnostics">Diagnostics</a></li>
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>autodie::hints - Provide hints about user subroutines to autodie</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Your::Module</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">our</span> <span class="variable">%DOES</span> <span class="operator">=</span> <span class="operator">(</span> <span class="string">'autodie::hints::provider'</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> AUTODIE_HINTS </span><span class="operator">{</span>
+        <span class="keyword">return</span> <span class="operator">{</span>
+            <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="variable">HINTS</span><span class="operator">,</span> <span class="string">list</span> <span class="operator">=&gt;</span> <span class="variable">SOME_HINTS</span> <span class="operator">}</span><span class="operator">,</span>
+            <span class="string">bar</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="variable">HINTS</span><span class="operator">,</span> <span class="string">list</span> <span class="operator">=&gt;</span> <span class="variable">MORE_HINTS</span> <span class="operator">}</span><span class="operator">,</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># Later, in your main program...</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Your::Module</span> <span class="string">qw(foo bar)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">autodie</span>      <span class="string">qw(:default foo bar)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">foo</span><span class="operator">();</span>         <span class="comment"># succeeds or dies based on scalar hints</span>
+</pre>
+<pre>
+    <span class="comment"># Alternatively, hints can be set on subroutines we've</span>
+    <span class="comment"># imported.</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie::hints</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Some::Module</span> <span class="string">qw(think_positive)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+            <span class="operator">\&amp;</span><span class="variable">think_positive</span><span class="operator">,</span>
+            <span class="operator">{</span>
+                <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">&lt;=</span> <span class="number">0</span> <span class="operator">}</span>
+            <span class="operator">}</span>
+        <span class="operator">)</span>
+    <span class="operator">}</span>
+    <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw(think_positive)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">think_positive</span><span class="operator">(...);</span>    <span class="comment"># Returns positive or dies.</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>
+</p>
+<h2><a name="introduction">Introduction</a></h2>
+<p>The <a href="../../lib/autodie.html">the autodie manpage</a> pragma is very smart when it comes to working with
+Perl's built-in functions.  The behaviour for these functions are
+fixed, and <code>autodie</code> knows exactly how they try to signal failure.</p>
+<p>But what about user-defined subroutines from modules?  If you use
+<code>autodie</code> on a user-defined subroutine then it assumes the following
+behaviour to demonstrate failure:</p>
+<ul>
+<li>
+<p>A false value, in scalar context</p>
+</li>
+<li>
+<p>An empty list, in list context</p>
+</li>
+<li>
+<p>A list containing a single undef, in list context</p>
+</li>
+</ul>
+<p>All other return values (including the list of the single zero, and the
+list containing a single empty string) are considered successful.  However,
+real-world code isn't always that easy.  Perhaps the code you're working
+with returns a string containing the word &quot;FAIL&quot; upon failure, or a
+two element list containing <code>(undef, &quot;human error message&quot;)</code>.  To make
+autodie work with these sorts of subroutines, we have
+the <em>hinting interface</em>.</p>
+<p>The hinting interface allows <em>hints</em> to be provided to <code>autodie</code>
+on how it should detect failure from user-defined subroutines.  While
+these <em>can</em> be provided by the end-user of <code>autodie</code>, they are ideally
+written into the module itself, or into a helper module or sub-class
+of <code>autodie</code> itself.</p>
+<p>
+</p>
+<h2><a name="what_are_hints">What are hints?</a></h2>
+<p>A <em>hint</em> is a subroutine or value that is checked against the
+return value of an autodying subroutine.  If the match returns true,
+<code>autodie</code> considers the subroutine to have failed.</p>
+<p>If the hint provided is a subroutine, then <code>autodie</code> will pass
+the complete return value to that subroutine.  If the hint is
+any other value, then <code>autodie</code> will smart-match against the
+value provided.  In Perl 5.8.x there is no smart-match operator, and as such
+only subroutine hints are supported in these versions.</p>
+<p>Hints can be provided for both scalar and list contexts.  Note
+that an autodying subroutine will never see a void context, as
+<code>autodie</code> always needs to capture the return value for examination.
+Autodying subroutines called in void context act as if they're called
+in a scalar context, but their return value is discarded after it
+has been checked.</p>
+<p>
+</p>
+<h2><a name="example_hints">Example hints</a></h2>
+<p>Hints may consist of scalars, array references, regular expressions and
+subroutine references.  You can specify different hints for how
+failure should be identified in scalar and list contexts.</p>
+<p>These examples apply for use in the <code>AUTODIE_HINTS</code> subroutine and when
+calling <code>autodie::hints-</code>set_hints_for()&gt;.</p>
+<p>The most common context-specific hints are:</p>
+<pre>
+        <span class="comment"># Scalar failures always return undef:</span>
+            <span class="operator">{</span>  <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># Scalar failures return any false value [default expectation]:</span>
+            <span class="operator">{</span>  <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">!</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">}</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># Scalar failures always return zero explicitly:</span>
+            <span class="operator">{</span>  <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="string">'0'</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># List failures always return an empty list:</span>
+            <span class="operator">{</span>  <span class="string">list</span> <span class="operator">=&gt;</span> <span class="operator">[]</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># List failures return () or (undef) [default expectation]:</span>
+            <span class="operator">{</span>  <span class="string">list</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">!</span> <span class="variable">@_</span> <span class="operator">||</span> <span class="variable">@_</span> <span class="operator">==</span> <span class="number">1</span> <span class="operator">&amp;&amp;</span> <span class="operator">!</span><span class="keyword">defined</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">}</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># List failures return () or a single false value:</span>
+            <span class="operator">{</span>  <span class="string">list</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">!</span> <span class="variable">@_</span> <span class="operator">||</span> <span class="variable">@_</span> <span class="operator">==</span> <span class="number">1</span> <span class="operator">&amp;&amp;</span> <span class="operator">!</span><span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">}</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># List failures return (undef, "some string")</span>
+            <span class="operator">{</span>  <span class="string">list</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">@_</span> <span class="operator">==</span> <span class="number">2</span> <span class="operator">&amp;&amp;</span> <span class="operator">!</span><span class="keyword">defined</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">}</span>  <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># Unsuccessful foo() returns 'FAIL' or '_FAIL' in scalar context,</span>
+        <span class="comment">#                    returns (-1) in list context...</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+            <span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,</span>
+            <span class="operator">{</span>
+                <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="string">qr/^ _? FAIL $/xms</span><span class="operator">,</span>
+                <span class="string">list</span>   <span class="operator">=&gt;</span> <span class="operator">[</span><span class="operator">-</span><span class="number">1</span><span class="operator">]</span><span class="operator">,</span>
+            <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># Unsuccessful foo() returns 0 in all contexts...</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+            <span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,</span>
+            <span class="operator">{</span>
+                <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+                <span class="string">list</span>   <span class="operator">=&gt;</span> <span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">,</span>
+            <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<p>This &quot;in all contexts&quot; construction is very common, and can be
+abbreviated, using the 'fail' key.  This sets both the <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar</code></a>
+and <code>list</code> hints to the same value:</p>
+<pre>
+        <span class="comment"># Unsuccessful foo() returns 0 in all contexts...</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+            <span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,</span>
+            <span class="operator">{</span>
+                <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">@_</span> <span class="operator">==</span> <span class="number">1</span> <span class="keyword">and</span> <span class="keyword">defined</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="keyword">and</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">==</span> <span class="number">0</span> <span class="operator">}</span>
+            <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># Unsuccessful think_positive() returns negative number on failure...</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+            <span class="operator">\&amp;</span><span class="variable">think_positive</span><span class="operator">,</span>
+            <span class="operator">{</span>
+                <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">&lt;</span> <span class="number">0</span> <span class="operator">}</span>
+            <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># Unsuccessful my_system() returns non-zero on failure...</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+            <span class="operator">\&amp;</span><span class="variable">my_system</span><span class="operator">,</span>
+            <span class="operator">{</span>
+                <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">!=</span> <span class="number">0</span> <span class="operator">}</span>
+            <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="manually_setting_hints_from_within_your_program">Manually setting hints from within your program</a></h1>
+<p>If you are using a module which returns something special on failure, then
+you can manually create hints for each of the desired subroutines.  Once
+the hints are specified, they are available for all files and modules loaded
+thereafter, thus you can move this work into a module and it will still
+work.</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Some::Module</span> <span class="string">qw(foo bar)</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">autodie::hints</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+                <span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,</span>
+                <span class="operator">{</span>
+                        <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="variable">SCALAR_HINT</span><span class="operator">,</span>
+                        <span class="string">list</span>   <span class="operator">=&gt;</span> <span class="variable">LIST_HINT</span><span class="operator">,</span>
+                <span class="operator">}</span>
+        <span class="operator">);</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+                <span class="operator">\&amp;</span><span class="variable">bar</span><span class="operator">,</span>
+                <span class="operator">{</span> <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="variable">SOME_HINT</span><span class="operator">,</span> <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<p>It is possible to pass either a subroutine reference (recommended) or a fully
+qualified subroutine name as the first argument.  This means you can set hints
+on modules that <em>might</em> get loaded:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">autodie::hints</span><span class="operator">;</span>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(</span>
+                <span class="string">'Some::Module:bar'</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="variable">SCALAR_HINT</span><span class="operator">,</span> <span class="operator">}</span>
+        <span class="operator">);</span>
+</pre>
+<p>This technique is most useful when you have a project that uses a
+lot of third-party modules.  You can define all your possible hints
+in one-place.  This can even be in a sub-class of autodie.  For
+example:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">my::autodie</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">use</span> <span class="variable">parent</span> <span class="string">qw(autodie)</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">autodie::hints</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">autodie::hints</span><span class="operator">-&gt;</span><span class="variable">set_hints_for</span><span class="operator">(...);</span>
+</pre>
+<pre>
+        <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>You can now <code>use my::autodie</code>, which will work just like the standard
+<code>autodie</code>, but is now aware of any hints that you've set.</p>
+<p>
+</p>
+<hr />
+<h1><a name="adding_hints_to_your_module">Adding hints to your module</a></h1>
+<p><code>autodie</code> provides a passive interface to allow you to declare hints for
+your module.  These hints will be found and used by <code>autodie</code> if it
+is loaded, but otherwise have no effect (or dependencies) without autodie.
+To set these, your module needs to declare that it <em>does</em> the
+<code>autodie::hints::provider</code> role.  This can be done by writing your
+own <code>DOES</code> method, using a system such as <code>Class::DOES</code> to handle
+the heavy-lifting for you, or declaring a <code>%DOES</code> package variable
+with a <code>autodie::hints::provider</code> key and a corresponding true value.</p>
+<p>Note that checking for a <code>%DOES</code> hash is an <code>autodie</code>-only
+short-cut.  Other modules do not use this mechanism for checking
+roles, although you can use the <code>Class::DOES</code> module from the
+CPAN to allow it.</p>
+<p>In addition, you must define a <code>AUTODIE_HINTS</code> subroutine that returns
+a hash-reference containing the hints for your subroutines:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Your::Module</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># We can use the Class::DOES from the CPAN to declare adherence</span>
+        <span class="comment"># to a role.</span>
+</pre>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Class::DOES</span> <span class="string">'autodie::hints::provider'</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Alternatively, we can declare the role in %DOES.  Note that</span>
+        <span class="comment"># this is an autodie specific optimisation, although Class::DOES</span>
+        <span class="comment"># can be used to promote this to a true role declaration.</span>
+</pre>
+<pre>
+        <span class="keyword">our</span> <span class="variable">%DOES</span> <span class="operator">=</span> <span class="operator">(</span> <span class="string">'autodie::hints::provider'</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># Finally, we must define the hints themselves.</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> AUTODIE_HINTS </span><span class="operator">{</span>
+            <span class="keyword">return</span> <span class="operator">{</span>
+                <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="variable">HINTS</span><span class="operator">,</span> <span class="string">list</span> <span class="operator">=&gt;</span> <span class="variable">SOME_HINTS</span> <span class="operator">}</span><span class="operator">,</span>
+                <span class="string">bar</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">scalar</span> <span class="operator">=&gt;</span> <span class="variable">HINTS</span><span class="operator">,</span> <span class="string">list</span> <span class="operator">=&gt;</span> <span class="variable">MORE_HINTS</span> <span class="operator">}</span><span class="operator">,</span>
+                <span class="string">baz</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">fail</span> <span class="operator">=&gt;</span> <span class="variable">HINTS</span> <span class="operator">}</span><span class="operator">,</span>
+            <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<p>This allows your code to set hints without relying on <code>autodie</code> and
+<code>autodie::hints</code> being loaded, or even installed.  In this way your
+code can do the right thing when <code>autodie</code> is installed, but does not
+need to depend upon it to function.</p>
+<p>
+</p>
+<hr />
+<h1><a name="insisting_on_hints">Insisting on hints</a></h1>
+<p>When a user-defined subroutine is wrapped by <code>autodie</code>, it will
+use hints if they are available, and otherwise reverts to the
+<em>default behaviour</em> described in the introduction of this document.
+This can be problematic if we expect a hint to exist, but (for
+whatever reason) it has not been loaded.</p>
+<p>We can ask autodie to <em>insist</em> that a hint be used by prefixing
+an exclamation mark to the start of the subroutine name.  A lone
+exclamation mark indicates that <em>all</em> subroutines after it must
+have hints declared.</p>
+<pre>
+        <span class="comment"># foo() and bar() must have their hints defined</span>
+        <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw( !foo !bar baz )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Everything must have hints (recommended).</span>
+        <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw( ! foo bar baz )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># bar() and baz() must have their hints defined</span>
+        <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw( foo ! bar baz )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Enable autodie for all of Perl's supported built-ins,</span>
+        <span class="comment"># as well as for foo(), bar() and baz().  Everything must</span>
+        <span class="comment"># have hints.</span>
+        <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw( ! :all foo bar baz )</span><span class="operator">;</span>
+</pre>
+<p>If hints are not available for the specified subroutines, this will cause a
+compile-time error.  Insisting on hints for Perl's built-in functions
+(eg, <a href="../../lib/pods/perlfunc.html#open"><code>open</code></a> and <a href="../../lib/pods/perlfunc.html#close"><code>close</code></a>) is always successful.</p>
+<p>Insisting on hints is <em>strongly</em> recommended.</p>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">Diagnostics</a></h1>
+<dl>
+<dt><strong><a name="attempts_to_set_hints_for_unidentifiable_subroutine" class="item">Attempts to set_hints_for unidentifiable subroutine</a></strong></dt>
+
+<dd>
+<p>You've called <code>autodie::hints-&gt;set_hints_for()</code> using a subroutine
+reference, but that reference could not be resolved back to a
+subroutine name.  It may be an anonymous subroutine (which can't
+be made autodying), or may lack a name for other reasons.</p>
+<p>If you receive this error with a subroutine that has a real name,
+then you may have found a bug in autodie.  See <a href="../../lib/autodie/bugs.html">BUGS in the autodie manpage</a>
+for how to report this.</p>
+</dd>
+<dt><strong><a name="fail_hints_cannot_be_provided_with_either_scalar_or_list_hints_for_s" class="item">fail hints cannot be provided with either scalar or list hints for %s</a></strong></dt>
+
+<dd>
+<p>When defining hints, you can either supply both <code>list</code> and
+<a href="../../lib/pods/perlfunc.html#scalar"><code>scalar</code></a> keywords, <em>or</em> you can provide a single <code>fail</code> keyword.
+You can't mix and match them.</p>
+</dd>
+<dt><strong><a name="_s" class="item">%s hint missing for %s</a></strong></dt>
+
+<dd>
+<p>You've provided either a <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar</code></a> hint without supplying
+a <code>list</code> hint, or vice-versa.  You <em>must</em> supply both <a href="../../lib/pods/perlfunc.html#scalar"><code>scalar</code></a>
+and <code>list</code> hints, <em>or</em> a single <code>fail</code> hint.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<ul>
+<li>
+<p>Dr Damian Conway for suggesting the hinting interface and providing the
+example usage.</p>
+</li>
+<li>
+<p>Jacinta Richardson for translating much of my ideas into this
+documentation.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Copyright 2009, Paul Fenwick &lt;<a href="mailto:pjf@perltraining.com.au">pjf@perltraining.com.au</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This module is free software.  You may distribute it under the
+same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/autodie.html">the autodie manpage</a>, <a href="../../Class/DOES.html">the Class::DOES manpage</a></p>
+
+</body>
+
+</html>

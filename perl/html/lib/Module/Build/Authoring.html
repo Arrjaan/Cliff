@@ -1,0 +1,369 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Module::Build::Authoring - Authoring Module::Build modules</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Module::Build::Authoring - Authoring Module::Build modules</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#structure">STRUCTURE</a></li>
+	<li><a href="#subclassing">SUBCLASSING</a></li>
+	<li><a href="#prerequisites">PREREQUISITES</a></li>
+	<ul>
+
+		<li><a href="#types_of_prerequisites">Types of prerequisites</a></li>
+		<li><a href="#format_of_prerequisites">Format of prerequisites</a></li>
+		<li><a href="#xs_extensions">XS Extensions</a></li>
+	</ul>
+
+	<li><a href="#saving_configuration_information">SAVING CONFIGURATION INFORMATION</a></li>
+	<li><a href="#starting_module_development">STARTING MODULE DEVELOPMENT</a></li>
+	<li><a href="#automation">AUTOMATION</a></li>
+	<li><a href="#migration">MIGRATION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::Build::Authoring - Authoring Module::Build modules</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>When creating a <code>Build.PL</code> script for a module, something like the
+following code will typically be used:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Module::Build</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$build</span> <span class="operator">=</span> <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span>
+    <span class="operator">(</span>
+     <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+     <span class="string">license</span>  <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+     <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+                  <span class="string">'perl'</span>          <span class="operator">=&gt;</span> <span class="string">'5.6.1'</span><span class="operator">,</span>
+                  <span class="string">'Some::Module'</span>  <span class="operator">=&gt;</span> <span class="string">'1.23'</span><span class="operator">,</span>
+                  <span class="string">'Other::Module'</span> <span class="operator">=&gt;</span> <span class="string">'&gt;= 1.2, != 1.5, &lt; 2.0'</span><span class="operator">,</span>
+                 <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>A simple module could get away with something as short as this for its
+<code>Build.PL</code> script:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Module::Build</span><span class="operator">;</span>
+  <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+    <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+    <span class="string">license</span>     <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+  <span class="operator">)-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>The model used by <code>Module::Build</code> is a lot like the <code>MakeMaker</code>
+metaphor, with the following correspondences:</p>
+<pre>
+   In Module::Build                 In ExtUtils::MakeMaker
+  ---------------------------      ------------------------
+   Build.PL (initial script)        Makefile.PL (initial script)
+   Build (a short perl script)      Makefile (a long Makefile)
+   _build/ (saved state info)       various config text in the Makefile</pre>
+<p>Any customization can be done simply by subclassing <code>Module::Build</code>
+and adding a method called (for example) <code>ACTION_test</code>, overriding
+the default 'test' action.  You could also add a method called
+<code>ACTION_whatever</code>, and then you could perform the action <code>Build
+whatever</code>.</p>
+<p>For information on providing compatibility with
+<code>ExtUtils::MakeMaker</code>, see <a href="../../../lib/Module/Build/Compat.html">the Module::Build::Compat manpage</a> and
+<a href="http://www.makemaker.org/wiki/index.cgi?ModuleBuildConversionGuide">http://www.makemaker.org/wiki/index.cgi</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="structure">STRUCTURE</a></h1>
+<p>Module::Build creates a class hierarchy conducive to customization.
+Here is the parent-child class hierarchy in classy ASCII art:</p>
+<pre>
+   /--------------------\
+   |   Your::Parent     |  (If you subclass Module::Build)
+   \--------------------/
+            |
+            |
+   /--------------------\  (Doesn't define any functionality
+   |   Module::Build    |   of its own - just figures out what
+   \--------------------/   other modules to load.)
+            |
+            |
+   /-----------------------------------\  (Some values of $^O may
+   |   Module::Build::Platform::$^O    |   define specialized functionality.
+   \-----------------------------------/   Otherwise it's ...::Default, a
+            |                              pass-through class.)
+            |
+   /--------------------------\
+   |   Module::Build::Base    |  (Most of the functionality of 
+   \--------------------------/   Module::Build is defined here.)</pre>
+<p>
+</p>
+<hr />
+<h1><a name="subclassing">SUBCLASSING</a></h1>
+<p>Right now, there are two ways to subclass Module::Build.  The first
+way is to create a regular module (in a <code>.pm</code> file) that inherits
+from Module::Build, and use that module's class instead of using
+Module::Build directly:</p>
+<pre>
+  ------ in Build.PL: ----------
+  #!/usr/bin/perl</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">lib</span> <span class="string">q(/nonstandard/library/path)</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">My::Builder</span><span class="operator">;</span>  <span class="comment"># Or whatever you want to call it</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$build</span> <span class="operator">=</span> <span class="variable">My::Builder</span><span class="operator">-&gt;</span><span class="variable">new</span>
+    <span class="operator">(</span>
+     <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>  <span class="comment"># All the regular args...</span>
+     <span class="string">license</span>     <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+     <span class="string">dist_author</span> <span class="operator">=&gt;</span> <span class="string">'A N Other &lt;me@here.net.au&gt;'</span><span class="operator">,</span>
+     <span class="string">requires</span>    <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Carp</span> <span class="operator">=&gt;</span> <span class="number">0</span> <span class="operator">}</span>
+    <span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>This is relatively straightforward, and is the best way to do things
+if your My::Builder class contains lots of code.  The
+<code>create_build_script()</code> method will ensure that the current value of
+<a href="../../../lib/pods/perlvar.html#_inc"><code>@INC</code></a> (including the <code>/nonstandard/library/path</code>) is propagated to
+the Build script, so that My::Builder can be found when running build
+actions.  If you find that you need to <a href="../../../lib/pods/perlfunc.html#chdir"><code>chdir</code></a> into a different directories
+in your subclass methods or actions, be sure to always return to the original
+directory (available via the <code>base_dir()</code> method) before returning control
+to the parent class.  This is important to avoid data serialization problems.</p>
+<p>For very small additions, Module::Build provides a <code>subclass()</code>
+method that lets you subclass Module::Build more conveniently, without
+creating a separate file for your module:</p>
+<pre>
+  ------ in Build.PL: ----------
+  #!/usr/bin/perl</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Module::Build</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">subclass</span>
+    <span class="operator">(</span>
+     <span class="string">class</span> <span class="operator">=&gt;</span> <span class="string">'My::Builder'</span><span class="operator">,</span>
+     <span class="string">code</span> <span class="operator">=&gt;</span> <span class="string">q{
+       sub ACTION_foo {
+         print "I'm fooing to death!\n";
+       }
+     }</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$build</span> <span class="operator">=</span> <span class="variable">$class</span><span class="operator">-&gt;</span><span class="variable">new</span>
+    <span class="operator">(</span>
+     <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>  <span class="comment"># All the regular args...</span>
+     <span class="string">license</span>     <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+     <span class="string">dist_author</span> <span class="operator">=&gt;</span> <span class="string">'A N Other &lt;me@here.net.au&gt;'</span><span class="operator">,</span>
+     <span class="string">requires</span>    <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Carp</span> <span class="operator">=&gt;</span> <span class="number">0</span> <span class="operator">}</span>
+    <span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>Behind the scenes, this actually does create a <code>.pm</code> file, since the
+code you provide must persist after Build.PL is run if it is to be
+very useful.</p>
+<p>See also the documentation for the <a href="../../../lib/Module/Build/API.html#subclass__">subclass() in the Module::Build::API manpage</a>
+method.</p>
+<p>
+</p>
+<hr />
+<h1><a name="prerequisites">PREREQUISITES</a></h1>
+<p>
+</p>
+<h2><a name="types_of_prerequisites">Types of prerequisites</a></h2>
+<p>To specify what versions of other modules are used by this
+distribution, several types of prerequisites can be defined with the
+following parameters:</p>
+<dl>
+<dt><strong><a name="configure_requires" class="item">configure_requires</a></strong></dt>
+
+<dd>
+<p>Items that must be installed <em>before</em> configuring this distribution
+(i.e. before running the <em class="file">Build.PL</em> script).  This might be a
+specific minimum version of <code>Module::Build</code> or any other module the
+<em class="file">Build.PL</em> needs in order to do its stuff.  Clients like <code>CPAN.pm</code>
+or <code>CPANPLUS</code> will be expected to pick <a href="#configure_requires"><code>configure_requires</code></a> out of the
+<em class="file">META.yml</em> file and install these items before running the
+<code>Build.PL</code>.</p>
+<p>If no configure_requires is specified, the current version of Module::Build
+is automatically added to configure_requires.</p>
+</dd>
+<dt><strong><a name="build_requires" class="item">build_requires</a></strong></dt>
+
+<dd>
+<p>Items that are necessary for building and testing this distribution,
+but aren't necessary after installation.  This can help users who only
+want to install these items temporarily.  It also helps reduce the
+size of the CPAN dependency graph if everything isn't smooshed into
+<a href="#requires"><code>requires</code></a>.</p>
+</dd>
+<dt><strong><a name="requires" class="item">requires</a></strong></dt>
+
+<dd>
+<p>Items that are necessary for basic functioning.</p>
+</dd>
+<dt><strong><a name="recommends" class="item">recommends</a></strong></dt>
+
+<dd>
+<p>Items that are recommended for enhanced functionality, but there are
+ways to use this distribution without having them installed.  You
+might also think of this as &quot;can use&quot; or &quot;is aware of&quot; or &quot;changes
+behavior in the presence of&quot;.</p>
+</dd>
+<dt><strong><a name="conflicts" class="item">conflicts</a></strong></dt>
+
+<dd>
+<p>Items that can cause problems with this distribution when installed.
+This is pretty rare.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="format_of_prerequisites">Format of prerequisites</a></h2>
+<p>The prerequisites are given in a hash reference, where the keys are
+the module names and the values are version specifiers:</p>
+<pre>
+  <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+               <span class="variable">Foo::Module</span> <span class="operator">=&gt;</span> <span class="string">'2.4'</span><span class="operator">,</span>
+               <span class="variable">Bar::Module</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+               <span class="variable">Ken::Module</span> <span class="operator">=&gt;</span> <span class="string">'&gt;= 1.2, != 1.5, &lt; 2.0'</span><span class="operator">,</span>
+               <span class="string">perl</span> <span class="operator">=&gt;</span> <span class="string">'5.6.0'</span>
+              <span class="operator">}</span><span class="operator">,</span>
+</pre>
+<p>The above four version specifiers have different effects.  The value
+<code>'2.4'</code> means that <strong>at least</strong> version 2.4 of <code>Foo::Module</code> must be
+installed.  The value <code>0</code> means that <strong>any</strong> version of <code>Bar::Module</code>
+is acceptable, even if <code>Bar::Module</code> doesn't define a version.  The
+more verbose value <code>'&gt;= 1.2, != 1.5, &lt; 2.0'</code> means that
+<code>Ken::Module</code>'s version must be <strong>at least</strong> 1.2, <strong>less than</strong> 2.0,
+and <strong>not equal to</strong> 1.5.  The list of criteria is separated by commas,
+and all criteria must be satisfied.</p>
+<p>A special <code>perl</code> entry lets you specify the versions of the Perl
+interpreter that are supported by your module.  The same version
+dependency-checking semantics are available, except that we also
+understand perl's new double-dotted version numbers.</p>
+<p>
+</p>
+<h2><a name="xs_extensions">XS Extensions</a></h2>
+<p>Modules which need to compile XS code should list <code>ExtUtils::CBuilder</code>
+as a <a href="#build_requires"><code>build_requires</code></a> element.</p>
+<p>
+</p>
+<hr />
+<h1><a name="saving_configuration_information">SAVING CONFIGURATION INFORMATION</a></h1>
+<p>Module::Build provides a very convenient way to save configuration
+information that your installed modules (or your regression tests) can
+access.  If your Build process calls the <code>feature()</code> or
+<code>config_data()</code> methods, then a <code>Foo::Bar::ConfigData</code> module will
+automatically be created for you, where <code>Foo::Bar</code> is the
+<code>module_name</code> parameter as passed to <code>new()</code>.  This module provides
+access to the data saved by these methods, and a way to update the
+values.  There is also a utility script called <code>config_data</code>
+distributed with Module::Build that provides a command line interface
+to this same functionality.  See also the generated
+<code>Foo::Bar::ConfigData</code> documentation, and the <code>config_data</code>
+script's documentation, for more information.</p>
+<p>
+</p>
+<hr />
+<h1><a name="starting_module_development">STARTING MODULE DEVELOPMENT</a></h1>
+<p>When starting development on a new module, it's rarely worth your time
+to create a tree of all the files by hand.  Some automatic
+module-creators are available: the oldest is <code>h2xs</code>, which has
+shipped with perl itself for a long time.  Its name reflects the fact
+that modules were originally conceived of as a way to wrap up a C
+library (thus the <a href="../../../lib/pods/perlrun.html#h"><code>h</code></a> part) into perl extensions (thus the <code>xs</code>
+part).</p>
+<p>These days, <code>h2xs</code> has largely been superseded by modules like
+<code>ExtUtils::ModuleMaker</code>, and <code>Module::Starter</code>.  They have varying
+degrees of support for <code>Module::Build</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="automation">AUTOMATION</a></h1>
+<p>One advantage of Module::Build is that since it's implemented as Perl
+methods, you can invoke these methods directly if you want to install
+a module non-interactively.  For instance, the following Perl script
+will invoke the entire build/install procedure:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$build</span> <span class="operator">=</span> <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'MyModule'</span><span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">dispatch</span><span class="operator">(</span><span class="string">'build'</span><span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">dispatch</span><span class="operator">(</span><span class="string">'test'</span><span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">dispatch</span><span class="operator">(</span><span class="string">'install'</span><span class="operator">);</span>
+</pre>
+<p>If any of these steps encounters an error, it will throw a fatal
+exception.</p>
+<p>You can also pass arguments as part of the build process:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$build</span> <span class="operator">=</span> <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'MyModule'</span><span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">dispatch</span><span class="operator">(</span><span class="string">'build'</span><span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">dispatch</span><span class="operator">(</span><span class="string">'test'</span><span class="operator">,</span> <span class="string">verbose</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">);</span>
+  <span class="variable">$build</span><span class="operator">-&gt;</span><span class="variable">dispatch</span><span class="operator">(</span><span class="string">'install'</span><span class="operator">,</span> <span class="string">sitelib</span> <span class="operator">=&gt;</span> <span class="string">'/my/secret/place/'</span><span class="operator">);</span>
+</pre>
+<p>Building and installing modules in this way skips creating the
+<code>Build</code> script.</p>
+<p>
+</p>
+<hr />
+<h1><a name="migration">MIGRATION</a></h1>
+<p>Note that if you want to provide both a <em class="file">Makefile.PL</em> and a
+<em class="file">Build.PL</em> for your distribution, you probably want to add the
+following to <code>WriteMakefile</code> in your <em class="file">Makefile.PL</em> so that <code>MakeMaker</code>
+doesn't try to run your <em class="file">Build.PL</em> as a normal <em class="file">.PL</em> file:</p>
+<pre>
+  <span class="string">PL_FILES</span> <span class="operator">=&gt;</span> <span class="operator">{}</span><span class="operator">,</span>
+</pre>
+<p>You may also be interested in looking at the <code>Module::Build::Compat</code>
+module, which can automatically create various kinds of <em class="file">Makefile.PL</em>
+compatibility layers.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Ken Williams &lt;<a href="mailto:kwilliams@cpan.org">kwilliams@cpan.org</a>&gt;</p>
+<p>Development questions, bug reports, and patches should be sent to the
+Module-Build mailing list at &lt;<a href="mailto:module-build@perl.org">module-build@perl.org</a>&gt;.</p>
+<p>Bug reports are also welcome at
+&lt;http://rt.cpan.org/NoAuth/Bugs.html?Dist=Module-Build&gt;.</p>
+<p>The latest development version is available from the Git
+repository at &lt;https://github.com/dagolden/module-build/&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><code>perl(1)</code>, <a href="../../../lib/Module/Build.html">the Module::Build manpage</a>(3), <a href="../../../lib/Module/Build/API.html">the Module::Build::API manpage</a>(3),
+<a href="../../../lib/Module/Build/Cookbook.html">the Module::Build::Cookbook manpage</a>(3), <a href="../../../lib/ExtUtils/MakeMaker.html">the ExtUtils::MakeMaker manpage</a>(3), <a href="../../../lib/CPAN/Meta/YAML.html">the YAML manpage</a>(3)</p>
+<p><em class="file">META.yml</em> Specification:
+<a href="../../../CPAN/META/Spec.html">the CPAN::META::Spec manpage</a></p>
+<p><a href="http://www.dsmit.com/cons/">http://www.dsmit.com/cons/</a></p>
+<p><a href="http://search.cpan.org/dist/PerlBuildSystem/">http://search.cpan.org/dist/PerlBuildSystem/</a></p>
+
+</body>
+
+</html>

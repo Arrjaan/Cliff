@@ -1,0 +1,218 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perldbmfilter - Perl DBM Filters</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perldbmfilter - Perl DBM Filters</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#the_filter">The Filter</a></li>
+		<li><a href="#an_example__the_null_termination_problem_">An Example: the NULL termination problem.</a></li>
+		<li><a href="#another_example__key_is_a_c_int_">Another Example: Key is a C int.</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perldbmfilter - Perl DBM Filters</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    $db = tie %hash, 'DBM', ...</pre>
+<pre>
+    <span class="variable">$old_filter</span> <span class="operator">=</span> <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_store_key</span>  <span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$old_filter</span> <span class="operator">=</span> <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_store_value</span><span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$old_filter</span> <span class="operator">=</span> <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_fetch_key</span>  <span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$old_filter</span> <span class="operator">=</span> <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_fetch_value</span><span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The four <code>filter_*</code> methods shown above are available in all the DBM
+modules that ship with Perl, namely DB_File, GDBM_File, NDBM_File,
+ODBM_File and SDBM_File.</p>
+<p>Each of the methods works identically, and is used to install (or
+uninstall) a single DBM Filter. The only difference between them is the
+place that the filter is installed.</p>
+<p>To summarise:</p>
+<dl>
+<dt><strong><a name="filter_store_key" class="item"><strong>filter_store_key</strong></a></strong></dt>
+
+<dd>
+<p>If a filter has been installed with this method, it will be invoked
+every time you write a key to a DBM database.</p>
+</dd>
+<dt><strong><a name="filter_store_value" class="item"><strong>filter_store_value</strong></a></strong></dt>
+
+<dd>
+<p>If a filter has been installed with this method, it will be invoked
+every time you write a value to a DBM database.</p>
+</dd>
+<dt><strong><a name="filter_fetch_key" class="item"><strong>filter_fetch_key</strong></a></strong></dt>
+
+<dd>
+<p>If a filter has been installed with this method, it will be invoked
+every time you read a key from a DBM database.</p>
+</dd>
+<dt><strong><a name="filter_fetch_value" class="item"><strong>filter_fetch_value</strong></a></strong></dt>
+
+<dd>
+<p>If a filter has been installed with this method, it will be invoked
+every time you read a value from a DBM database.</p>
+</dd>
+</dl>
+<p>You can use any combination of the methods from none to all four.</p>
+<p>All filter methods return the existing filter, if present, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>
+if not.</p>
+<p>To delete a filter pass <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> to it.</p>
+<p>
+</p>
+<h2><a name="the_filter">The Filter</a></h2>
+<p>When each filter is called by Perl, a local copy of <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> will contain
+the key or value to be filtered. Filtering is achieved by modifying
+the contents of <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>. The return code from the filter is ignored.</p>
+<p>
+</p>
+<h2><a name="an_example__the_null_termination_problem_">An Example: the NULL termination problem.</a></h2>
+<p>DBM Filters are useful for a class of problems where you <em>always</em>
+want to make the same transformation to all keys, all values or both.</p>
+<p>For example, consider the following scenario. You have a DBM database
+that you need to share with a third-party C application. The C application
+assumes that <em>all</em> keys and values are NULL terminated. Unfortunately
+when Perl writes to DBM databases it doesn't use NULL termination, so
+your Perl application will have to manage NULL termination itself. When
+you write to the database you will have to use something like this:</p>
+<pre>
+    <span class="variable">$hash</span><span class="operator">{</span><span class="string">"</span><span class="variable">$key</span><span class="string">\0"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"</span><span class="variable">$value</span><span class="string">\0"</span><span class="operator">;</span>
+</pre>
+<p>Similarly the NULL needs to be taken into account when you are considering
+the length of existing keys/values.</p>
+<p>It would be much better if you could ignore the NULL terminations issue
+in the main application code and have a mechanism that automatically
+added the terminating NULL to all keys and values whenever you write to
+the database and have them removed when you read from the database. As I'm
+sure you have already guessed, this is a problem that DBM Filters can
+fix very easily.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">SDBM_File</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Fcntl</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">%hash</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$filename</span> <span class="operator">=</span> <span class="string">"filt"</span><span class="operator">;</span>
+    <span class="keyword">unlink</span> <span class="variable">$filename</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$db</span> <span class="operator">=</span> <span class="keyword">tie</span><span class="operator">(</span><span class="variable">%hash</span><span class="operator">,</span> <span class="string">'SDBM_File'</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">,</span> <span class="variable">O_RDWR</span><span class="operator">|</span><span class="variable">O_CREAT</span><span class="operator">,</span> <span class="number">0640</span><span class="operator">)</span>
+      <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot open </span><span class="variable">$filename</span><span class="string">: $!\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># Install DBM Filters</span>
+    <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_fetch_key</span>  <span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="regex">s/\0$//</span>    <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_store_key</span>  <span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">.=</span> <span class="string">"\0"</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_fetch_value</span><span class="operator">(</span> 
+        <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">'uninitialized'</span><span class="operator">;</span> <span class="regex">s/\0$//</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_store_value</span><span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">.=</span> <span class="string">"\0"</span> <span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$hash</span><span class="operator">{</span><span class="string">"abc"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"def"</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">$hash</span><span class="operator">{</span><span class="string">"ABC"</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="comment"># ...</span>
+    <span class="keyword">undef</span> <span class="variable">$db</span><span class="operator">;</span>
+    <span class="keyword">untie</span> <span class="variable">%hash</span><span class="operator">;</span>
+</pre>
+<p>The code above uses SDBM_File, but it will work with any of the DBM
+modules.</p>
+<p>Hopefully the contents of each of the filters should be
+self-explanatory. Both &quot;fetch&quot; filters remove the terminating NULL,
+and both &quot;store&quot; filters add a terminating NULL.</p>
+<p>
+</p>
+<h2><a name="another_example__key_is_a_c_int_">Another Example: Key is a C int.</a></h2>
+<p>Here is another real-life example. By default, whenever Perl writes to
+a DBM database it always writes the key and value as strings. So when
+you use this:</p>
+<pre>
+    <span class="variable">$hash</span><span class="operator">{</span><span class="string">12345</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"something"</span><span class="operator">;</span>
+</pre>
+<p>the key 12345 will get stored in the DBM database as the 5 byte string
+&quot;12345&quot;. If you actually want the key to be stored in the DBM database
+as a C int, you will have to use <a href="../../lib/pods/perlfunc.html#pack"><code>pack</code></a> when writing, and <a href="../../lib/pods/perlfunc.html#unpack"><code>unpack</code></a>
+when reading.</p>
+<p>Here is a DBM Filter that does it:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">DB_File</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">%hash</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$filename</span> <span class="operator">=</span> <span class="string">"filt"</span><span class="operator">;</span>
+    <span class="keyword">unlink</span> <span class="variable">$filename</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$db</span> <span class="operator">=</span> <span class="keyword">tie</span> <span class="variable">%hash</span><span class="operator">,</span> <span class="string">'DB_File'</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">,</span> <span class="variable">O_CREAT</span><span class="operator">|</span><span class="variable">O_RDWR</span><span class="operator">,</span> <span class="number">0666</span><span class="operator">,</span> <span class="variable">$DB_HASH</span> 
+      <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Cannot open </span><span class="variable">$filename</span><span class="string">: $!\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_fetch_key</span>  <span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">"i"</span><span class="operator">,</span> <span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$db</span><span class="operator">-&gt;</span><span class="variable">filter_store_key</span>  <span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=</span> <span class="keyword">pack</span> <span class="operator">(</span><span class="string">"i"</span><span class="operator">,</span> <span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="operator">);</span>
+    <span class="variable">$hash</span><span class="operator">{</span><span class="string">123</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"def"</span><span class="operator">;</span>
+    <span class="comment"># ...</span>
+    <span class="keyword">undef</span> <span class="variable">$db</span><span class="operator">;</span>
+    <span class="keyword">untie</span> <span class="variable">%hash</span><span class="operator">;</span>
+</pre>
+<p>The code above uses DB_File, but again it will work with any of the
+DBM modules.</p>
+<p>This time only two filters have been used; we only need to manipulate
+the contents of the key, so it wasn't necessary to install any value
+filters.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><em>DB_File</em>, <em>GDBM_File</em>, <a href="../../lib/Memoize/NDBM_File.html">the NDBM_File manpage</a>, <em>ODBM_File</em> and <a href="../../lib/SDBM_File.html">the SDBM_File manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Paul Marquess</p>
+
+</body>
+
+</html>

@@ -1,0 +1,395 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Extending::Recipe1 - Moose extension overview</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Extending::Recipe1 - Moose extension overview</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#playing_nice_with_others">Playing Nice With Others</a></li>
+	</ul>
+
+	<li><a href="#parts_of_moose_you_can_extend">PARTS OF Moose YOU CAN EXTEND</a></li>
+	<ul>
+
+		<li><a href="#metaclass_extensions">Metaclass Extensions</a></li>
+		<li><a href="#providing_sugar_functions">Providing Sugar Functions</a></li>
+		<li><a href="#object_class_extensions">Object Class Extensions</a></li>
+		<li><a href="#providing_a_role">Providing a Role</a></li>
+		<li><a href="#new_types">New Types</a></li>
+	</ul>
+
+	<li><a href="#roles_vs_traits_vs_subclasses">ROLES VS TRAITS VS SUBCLASSES</a></li>
+	<li><a href="#using_your_extension">USING YOUR EXTENSION</a></li>
+	<ul>
+
+		<li><a href="#extensions_as_metaclass_traits">Extensions as Metaclass Traits</a></li>
+		<li><a href="#extensions_as_metaclass__and_base_object__subclasses">Extensions as Metaclass (and Base Object) Subclasses</a></li>
+		<li><a href="#extensions_as_metaclass__and_base_object__roles">Extensions as Metaclass (and Base Object) Roles</a></li>
+		<li><a href="#providing_sugar">Providing Sugar</a></li>
+	</ul>
+
+	<li><a href="#legacy_extension_mechanisms">LEGACY EXTENSION MECHANISMS</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Extending::Recipe1 - Moose extension overview</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Moose provides several ways in which extensions can hook into Moose
+and change its behavior. Moose also has a lot of behavior that can be
+changed. This recipe will provide an overview of each extension method
+and give you some recommendations on what tools to use.</p>
+<p>If you haven't yet read the recipes on metaclasses, go read those
+first. You can't write Moose extensions without understanding the
+metaclasses, and those recipes also demonstrate some basic extension
+mechanisms, such as metaclass subclasses and traits.</p>
+<p>
+</p>
+<h2><a name="playing_nice_with_others">Playing Nice With Others</a></h2>
+<p>One of the goals of this overview is to help you build extensions that
+cooperate well with other extensions. This is especially important if
+you plan to release your extension to CPAN.</p>
+<p>Moose comes with several modules that exist to help your write
+cooperative extensions. These are <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> and
+<a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a>. By using these two modules, you will ensure
+that your extension works with both the Moose core features and any
+other CPAN extension using those modules.</p>
+<p>
+</p>
+<hr />
+<h1><a name="parts_of_moose_you_can_extend">PARTS OF Moose YOU CAN EXTEND</a></h1>
+<p>The types of things you might want to do in Moose extensions fall into
+a few broad categories.</p>
+<p>
+</p>
+<h2><a name="metaclass_extensions">Metaclass Extensions</a></h2>
+<p>One way of extending Moose is by extending one or more Moose
+metaclasses. For example, in <a href="../../../../lib/Moose/Cookbook/Meta/Recipe4.html">the Moose::Cookbook::Meta::Recipe4 manpage</a> we saw
+a metaclass subclass that added a <code>table</code> attribute to the
+metaclass. If you were writing an ORM, this would be a logical
+extension.</p>
+<p>Many of the Moose extensions on CPAN work by providing an attribute
+metaclass extension. For example, the <a href="../../../../MooseX/AttributeHelpers.html">the MooseX::AttributeHelpers manpage</a>
+distribution provides a new attribute metaclass that lets you delegate
+behavior to a non-object attribute (a hashref or simple number).</p>
+<p>A metaclass extension can be packaged as a subclass or a
+role/trait. If you can, we recommend using traits instead of
+subclasses, since it's much easier to combine disparate traits than it
+is to combine a bunch of subclasses.</p>
+<p>When your extensions are implemented as roles, you can apply them with
+the <a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a> module.</p>
+<p>
+</p>
+<h2><a name="providing_sugar_functions">Providing Sugar Functions</a></h2>
+<p>As part of a metaclass extension, you may also want to provide some
+sugar functions, just like <a href="../../../../lib/Moose.html">Moose.pm</a> does. Moose provides a
+helper module called <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> that makes this much
+simpler. We will be use <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> in several of the extension
+recipes.</p>
+<p>
+</p>
+<h2><a name="object_class_extensions">Object Class Extensions</a></h2>
+<p>Another common Moose extension technique is to change the default
+object class's behavior. For example, the <a href="../../../../MooseX/Singleton.html">the MooseX::Singleton manpage</a>
+extension changes the behavior of your objects so that they are
+singletons. The <a href="../../../../MooseX/StrictConstructor.html">the MooseX::StrictConstructor manpage</a> extension makes the
+constructor reject arguments which don't match its attributes.</p>
+<p>Object class extensions often include metaclass extensions as well. In
+particular, if you want your object extension to work when a class is
+made immutable, you may need to extend some or all of the
+<a href="../../../../lib/Moose/Meta/Instance.html">the Moose::Meta::Instance manpage</a>, <a href="../../../../lib/Moose/Meta/Method/Constructor.html">the Moose::Meta::Method::Constructor manpage</a>, and
+<a href="../../../../lib/Moose/Meta/Method/Destructor.html">the Moose::Meta::Method::Destructor manpage</a> objects.</p>
+<p>The <a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a> module lets you apply roles to the base
+object class, as well as the meta classes just mentioned.</p>
+<p>
+</p>
+<h2><a name="providing_a_role">Providing a Role</a></h2>
+<p>Some extensions come in the form of a role for you to consume. The
+<a href="../../../../MooseX/Object/Pluggable.html">the MooseX::Object::Pluggable manpage</a> extension is a great example of this. In
+fact, despite the <code>MooseX</code> name, it does not actually change anything
+about Moose's behavior. Instead, it is just a role that an object
+which wants to be pluggable can consume.</p>
+<p>If you are implementing this sort of extension, you don't need to do
+anything special. You simply create a role and document that it should
+be used via the normal <code>with</code> sugar:</p>
+<pre>
+   <span class="keyword">package</span> <span class="variable">MyApp::User</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="variable">with</span> <span class="string">'MooseX::My::Role'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="new_types">New Types</a></h2>
+<p>Another common Moose extension is a new type for the Moose type
+system. In this case, you simply create a type in your module. When
+people load your module, the type is created, and they can refer to it
+by name after that. The <a href="../../../../MooseX/Types/URI.html">the MooseX::Types::URI manpage</a> and
+<a href="../../../../MooseX/Types/DateTime.html">the MooseX::Types::DateTime manpage</a> distributions are two good examples of how
+this works. These both build on top of the <a href="../../../../MooseX/Types.html">the MooseX::Types manpage</a> extension.</p>
+<p>
+</p>
+<hr />
+<h1><a name="roles_vs_traits_vs_subclasses">ROLES VS TRAITS VS SUBCLASSES</a></h1>
+<p>It is important to understand that <strong>roles and traits are the same thing</strong>. A
+trait is simply a role applied to a instance. The only thing that may
+distinguish the two is that a trait can be packaged in a way that lets Moose
+resolve a short name to a class name. In other words, with a trait, the caller
+can refer to it by a short name like &quot;Big&quot;, and Moose will resolve it to a
+class like <code>MooseX::Embiggen::Meta::Attribute::Role::Big</code>.</p>
+<p>See <a href="../../../../lib/Moose/Cookbook/Meta/Recipe3.html">the Moose::Cookbook::Meta::Recipe3 manpage</a> and
+<a href="../../../../lib/Moose/Cookbook/Meta/Recipe5.html">the Moose::Cookbook::Meta::Recipe5 manpage</a> for examples of traits in action. In
+particular, both of these recipes demonstrate the trait resolution
+mechanism.</p>
+<p>Implementing an extension as a (set of) metaclass or base object
+role(s) will make your extension more cooperative. It is hard for an
+end-user to effectively combine together multiple metaclass
+subclasses, but it is very easy to combine roles.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_your_extension">USING YOUR EXTENSION</a></h1>
+<p>There are a number of ways in which an extension can be applied. In
+some cases you can provide multiple ways of consuming your extension.</p>
+<p>
+</p>
+<h2><a name="extensions_as_metaclass_traits">Extensions as Metaclass Traits</a></h2>
+<p>If your extension is available as a trait, you can ask end users to
+simply specify it in a list of traits. Currently, this only works for
+(class) metaclass and attribute metaclass traits:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">-</span><span class="string">traits</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'Big'</span><span class="operator">,</span> <span class="string">'Blue'</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'animal'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">traits</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'Big'</span><span class="operator">,</span> <span class="string">'Blue'</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">...</span>
+  <span class="operator">);</span>
+</pre>
+<p>If your extension applies to any other metaclass, or the object base
+class, you cannot use the trait mechanism.</p>
+<p>The benefit of the trait mechanism is that is very easy to see where a
+trait is applied in the code, and consumers have fine-grained control
+over what the trait applies to. This is especially true for attribute
+traits, where you can apply the trait to just one attribute in a
+class.</p>
+<p>
+</p>
+<h2><a name="extensions_as_metaclass__and_base_object__subclasses">Extensions as Metaclass (and Base Object) Subclasses</a></h2>
+<p>Moose does not provide any simple APIs for consumers to use a subclass
+extension, except for attribute metaclasses. The attribute declaration
+options include a <code>metaclass</code> option a consumer of your extension can
+use to specify your subclass.</p>
+<p>This is one reason why implementing an extension as a subclass can be
+a poor choice. However, you can force the use of certain subclasses at
+import time by calling <code>Moose-&gt;init_meta</code> for the caller, and
+providing an alternate metaclass or base object class.</p>
+<p>If you do want to do this, you should look at using <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>
+to re-export the <a href="../../../../lib/Moose.html">Moose.pm</a> sugar function. With
+<a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>, if your exporting class has an <code>init_meta</code>
+method, <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> makes sure that this <code>init_meta</code> method
+gets called when your class is imported.</p>
+<p>Then in your <code>init_meta</code> you can arrange for the caller to use your
+subclasses:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MooseX::Embiggen</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen::Meta::Class</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen::Object</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span> <span class="string">also</span> <span class="operator">=&gt;</span> <span class="string">'Moose'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init_meta </span><span class="operator">{</span>
+      <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># just your package name</span>
+      <span class="keyword">my</span> <span class="variable">%options</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="variable">Moose</span><span class="operator">-&gt;</span><span class="variable">init_meta</span><span class="operator">(</span>
+          <span class="string">for_class</span>  <span class="operator">=&gt;</span> <span class="variable">$options</span><span class="operator">{</span><span class="string">for_class</span><span class="operator">}</span><span class="operator">,</span>
+          <span class="string">metaclass</span>  <span class="operator">=&gt;</span> <span class="string">'MooseX::Embiggen::Meta::Class'</span><span class="operator">,</span>
+          <span class="string">base_class</span> <span class="operator">=&gt;</span> <span class="string">'MooseX::Embiggen::Object'</span><span class="operator">,</span>
+      <span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>NOTE: Make sure that your <code>init_meta</code> returns the metaclass object, just as
+<code>Moose-&gt;init_meta</code> does.</p>
+<p>
+</p>
+<h2><a name="extensions_as_metaclass__and_base_object__roles">Extensions as Metaclass (and Base Object) Roles</a></h2>
+<p>Implementing your extensions as metaclass roles makes your extensions
+easy to apply, and cooperative with other role-based extensions for
+metaclasses.</p>
+<p>Just as with a subclass, you will probably want to package your
+extensions for consumption with a single module that uses
+<a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>. However, in this case, you will use
+<a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a> to apply all of your roles. The advantage of
+using this module is that <em>it preserves any subclassing or roles
+already applied to the user's metaclasses</em>. This means that your
+extension is cooperative <em>by default</em>, and consumers of your
+extension can easily use it with other role-based extensions. Most
+uses of <a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a> can be handled by <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>
+directly; see the <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> docs.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MooseX::Embiggen</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen::Role::Meta::Class</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen::Role::Meta::Attribute</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen::Role::Meta::Method::Constructor</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen::Role::Object</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$import</span><span class="operator">,</span> <span class="variable">$unimport</span><span class="operator">,</span> <span class="variable">$init_meta</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">build_import_methods</span><span class="operator">(</span>
+      <span class="string">also</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'Moose'</span><span class="operator">]</span> <span class="string">metaclass_roles</span> <span class="operator">=&gt;</span>
+          <span class="operator">[</span><span class="string">'MooseX::Embiggen::Role::Meta::Class'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">attribute_metaclass_roles</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MooseX::Embiggen::Role::Meta::Attribute'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">constructor_class_roles</span> <span class="operator">=&gt;</span>
+          <span class="operator">[</span><span class="string">'MooseX::Embiggen::Role::Meta::Method::Constructor'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">base_class_roles</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MooseX::Embiggen::Role::Object'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">install</span>          <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw(import unimport)</span><span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init_meta </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$package</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">%options</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="variable">Moose</span><span class="operator">-&gt;</span><span class="variable">init_meta</span><span class="operator">(</span><span class="variable">%options</span><span class="operator">);</span>
+      <span class="keyword">return</span> <span class="variable">$package</span><span class="operator">-&gt;</span><span class="variable">$init_meta</span><span class="operator">(</span><span class="variable">%options</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>As you can see from this example, you can use <a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a>
+to apply roles to any metaclass, as well as the base object class. If
+some other extension has already applied its own roles, they will be
+preserved when your extension applies its roles, and vice versa.</p>
+<p>
+</p>
+<h2><a name="providing_sugar">Providing Sugar</a></h2>
+<p>With <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>, you can also export your own sugar functions,
+as well as those from other modules:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MooseX::Embiggen</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span>
+      <span class="string">with_meta</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'embiggen'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">also</span>      <span class="operator">=&gt;</span> <span class="string">'Moose'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> embiggen </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">embiggen</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>And then the consumer of your extension can use your <code>embiggen</code> sub:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Consumer</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MooseX::Embiggen</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">extends</span> <span class="string">'Thing'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">embiggen</span> <span class="operator">...;</span>
+</pre>
+<p>This can be combined with metaclass and base class roles quite easily.</p>
+<p>
+</p>
+<hr />
+<h1><a name="legacy_extension_mechanisms">LEGACY EXTENSION MECHANISMS</a></h1>
+<p>Before the existence of <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> and
+<a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a>, there were a number of other ways to extend
+Moose. In general, these methods were less cooperative, and only
+worked well with a single extension.</p>
+<p>These methods include <a href="../../../../lib/metaclass.html">metaclass.pm</a>, <a href="../../../../Moose/Policy.html">the Moose::Policy manpage</a>
+(which uses <a href="../../../../lib/metaclass.html">metaclass.pm</a> under the hood), and various
+hacks to do what <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> does. Please do not use these for
+your own extensions.</p>
+<p>Note that if you write a cooperative extension, it should cooperate
+with older extensions, though older extensions generally do not
+cooperate with each other.</p>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>If you can write your extension as one or more metaclass and base
+object roles, please consider doing so. Make sure to read the docs for
+<a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> and <a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a> as well.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

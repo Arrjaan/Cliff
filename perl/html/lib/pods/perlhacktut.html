@@ -1,0 +1,227 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlhacktut - Walk through the creation of a simple C code patch</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlhacktut - Walk through the creation of a simple C code patch</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#example_of_a_simple_patch">EXAMPLE OF A SIMPLE PATCH</a></li>
+	<ul>
+
+		<li><a href="#writing_the_patch">Writing the patch</a></li>
+		<li><a href="#testing_the_patch">Testing the patch</a></li>
+		<li><a href="#documenting_the_patch">Documenting the patch</a></li>
+		<li><a href="#submit">Submit</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perlhacktut - Walk through the creation of a simple C code patch</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document takes you through a simple patch example.</p>
+<p>If you haven't read <a href="../../lib/pods/perlhack.html">the perlhack manpage</a> yet, go do that first! You might also
+want to read through <a href="../../lib/pods/perlsource.html">the perlsource manpage</a> too.</p>
+<p>Once you're done here, check out <a href="../../lib/pods/perlhacktips.html">the perlhacktips manpage</a> next.</p>
+<p>
+</p>
+<hr />
+<h1><a name="example_of_a_simple_patch">EXAMPLE OF A SIMPLE PATCH</a></h1>
+<p>Let's take a simple patch from start to finish.</p>
+<p>Here's something Larry suggested: if a <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> is the first active format
+during a <a href="../../lib/pods/perlfunc.html#pack"><code>pack</code></a>, (for example, <code>pack &quot;U3C8&quot;, @stuff</code>) then the
+resulting string should be treated as UTF-8 encoded.</p>
+<p>If you are working with a git clone of the Perl repository, you will
+want to create a branch for your changes. This will make creating a
+proper patch much simpler. See the <a href="../../lib/pods/perlgit.html">the perlgit manpage</a> for details on how to do
+this.</p>
+<p>
+</p>
+<h2><a name="writing_the_patch">Writing the patch</a></h2>
+<p>How do we prepare to fix this up? First we locate the code in question
+- the <a href="../../lib/pods/perlfunc.html#pack"><code>pack</code></a> happens at runtime, so it's going to be in one of the
+<em class="file">pp</em> files. Sure enough, <code>pp_pack</code> is in <em class="file">pp.c</em>. Since we're going
+to be altering this file, let's copy it to <em class="file">pp.c~</em>.</p>
+<p>[Well, it was in <em class="file">pp.c</em> when this tutorial was written. It has now
+been split off with <code>pp_unpack</code> to its own file, <em class="file">pp_pack.c</em>]</p>
+<p>Now let's look over <code>pp_pack</code>: we take a pattern into <code>pat</code>, and then
+loop over the pattern, taking each format character in turn into
+<code>datum_type</code>. Then for each possible format character, we swallow up
+the other arguments in the pattern (a field width, an asterisk, and so
+on) and convert the next chunk input into the specified format, adding
+it onto the output SV <code>cat</code>.</p>
+<p>How do we know if the <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> is the first format in the <code>pat</code>? Well, if
+we have a pointer to the start of <code>pat</code> then, if we see a <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> we can
+test whether we're still at the start of the string. So, here's where
+<code>pat</code> is set up:</p>
+<pre>
+    <span class="variable">STRLEN</span> <span class="variable">fromlen</span><span class="operator">;</span>
+    <span class="variable">register</span> <span class="variable">char</span> <span class="variable">*pat</span> <span class="operator">=</span> <span class="variable">SvPVx</span><span class="operator">(*++</span><span class="variable">MARK</span><span class="operator">,</span> <span class="variable">fromlen</span><span class="operator">);</span>
+    <span class="variable">register</span> <span class="variable">char</span> <span class="variable">*patend</span> <span class="operator">=</span> <span class="variable">pat</span> <span class="operator">+</span> <span class="variable">fromlen</span><span class="operator">;</span>
+    <span class="variable">register</span> <span class="variable">I32</span> <span class="variable">len</span><span class="operator">;</span>
+    <span class="variable">I32</span> <span class="variable">datumtype</span><span class="operator">;</span>
+    <span class="variable">SV</span> <span class="variable">*fromstr</span><span class="operator">;</span>
+</pre>
+<p>We'll have another string pointer in there:</p>
+<pre>
+    <span class="variable">STRLEN</span> <span class="variable">fromlen</span><span class="operator">;</span>
+    <span class="variable">register</span> <span class="variable">char</span> <span class="variable">*pat</span> <span class="operator">=</span> <span class="variable">SvPVx</span><span class="operator">(*++</span><span class="variable">MARK</span><span class="operator">,</span> <span class="variable">fromlen</span><span class="operator">);</span>
+    <span class="variable">register</span> <span class="variable">char</span> <span class="variable">*patend</span> <span class="operator">=</span> <span class="variable">pat</span> <span class="operator">+</span> <span class="variable">fromlen</span><span class="operator">;</span>
+     <span class="operator">+</span>  <span class="variable">char</span> <span class="variable">*patcopy</span><span class="operator">;</span>
+    <span class="variable">register</span> <span class="variable">I32</span> <span class="variable">len</span><span class="operator">;</span>
+    <span class="variable">I32</span> <span class="variable">datumtype</span><span class="operator">;</span>
+    <span class="variable">SV</span> <span class="variable">*fromstr</span><span class="operator">;</span>
+</pre>
+<p>And just before we start the loop, we'll set <code>patcopy</code> to be the start
+of <code>pat</code>:</p>
+<pre>
+    <span class="variable">items</span> <span class="operator">=</span> <span class="variable">SP</span> <span class="operator">-</span> <span class="variable">MARK</span><span class="operator">;</span>
+    <span class="variable">MARK</span><span class="operator">++;</span>
+    <span class="variable">sv_setpvn</span><span class="operator">(</span><span class="variable">cat</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="number">0</span><span class="operator">);</span>
+     <span class="operator">+</span>  <span class="variable">patcopy</span> <span class="operator">=</span> <span class="variable">pat</span><span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">pat</span> <span class="operator">&lt;</span> <span class="variable">patend</span><span class="operator">)</span> <span class="operator">{</span>
+</pre>
+<p>Now if we see a <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> which was at the start of the string, we turn on
+the <code>UTF8</code> flag for the output SV, <code>cat</code>:</p>
+<pre>
+ <span class="operator">+</span>  <span class="keyword">if</span> <span class="operator">(</span><span class="variable">datumtype</span> <span class="operator">==</span> <span class="string">'U'</span> <span class="operator">&amp;&amp;</span> <span class="variable">pat</span><span class="operator">==</span><span class="variable">patcopy</span><span class="operator">+</span><span class="number">1</span><span class="operator">)</span>
+ <span class="operator">+</span>      <span class="variable">SvUTF8_on</span><span class="operator">(</span><span class="variable">cat</span><span class="operator">);</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">datumtype</span> <span class="operator">==</span> <span class="string">'#'</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">while</span> <span class="operator">(</span><span class="variable">pat</span> <span class="operator">&lt;</span> <span class="variable">patend</span> <span class="operator">&amp;&amp;</span> <span class="variable">*pat</span> <span class="operator">!=</span> <span class="string">'\n'</span><span class="operator">)</span>
+            <span class="variable">pat</span><span class="operator">++;</span>
+</pre>
+<p>Remember that it has to be <code>patcopy+1</code> because the first character of
+the string is the <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> which has been swallowed into <code>datumtype!</code></p>
+<p>Oops, we forgot one thing: what if there are spaces at the start of the
+pattern? <a href="../../lib/pods/perlfunc.html#pack"><code>pack(&quot;  U*&quot;, @stuff)</code></a> will have <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> as the first active
+character, even though it's not the first thing in the pattern. In this
+case, we have to advance <code>patcopy</code> along with <code>pat</code> when we see
+spaces:</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">isSPACE</span><span class="operator">(</span><span class="variable">datumtype</span><span class="operator">))</span>
+        <span class="keyword">continue</span><span class="operator">;</span>
+</pre>
+<p>needs to become</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">isSPACE</span><span class="operator">(</span><span class="variable">datumtype</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="variable">patcopy</span><span class="operator">++;</span>
+        <span class="keyword">continue</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>OK. That's the C part done. Now we must do two additional things before
+this patch is ready to go: we've changed the behaviour of Perl, and so
+we must document that change. We must also provide some more regression
+tests to make sure our patch works and doesn't create a bug somewhere
+else along the line.</p>
+<p>
+</p>
+<h2><a name="testing_the_patch">Testing the patch</a></h2>
+<p>The regression tests for each operator live in <em class="file">t/op/</em>, and so we make
+a copy of <em class="file">t/op/pack.t</em> to <em class="file">t/op/pack.t~</em>. Now we can add our tests
+to the end. First, we'll test that the <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> does indeed create Unicode
+strings.</p>
+<p>t/op/pack.t has a sensible <code>ok()</code> function, but if it didn't we could use
+the one from t/test.pl.</p>
+<pre>
+ <span class="keyword">require</span> <span class="string">'./test.pl'</span><span class="operator">;</span>
+ <span class="variable">plan</span><span class="operator">(</span> <span class="string">tests</span> <span class="operator">=&gt;</span> <span class="number">159</span> <span class="operator">);</span>
+</pre>
+<p>so instead of this:</p>
+<pre>
+ <span class="keyword">print</span> <span class="string">'not '</span> <span class="keyword">unless</span> <span class="string">"1.20.300.4000"</span> <span class="keyword">eq</span> <span class="keyword">sprintf</span> <span class="string">"%vd"</span><span class="operator">,</span>
+                                               <span class="keyword">pack</span><span class="operator">(</span><span class="string">"U*"</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">20</span><span class="operator">,</span><span class="number">300</span><span class="operator">,</span><span class="number">4000</span><span class="operator">);</span>
+ <span class="keyword">print</span> <span class="string">"ok </span><span class="variable">$test</span><span class="string">\n"</span><span class="operator">;</span> <span class="variable">$test</span><span class="operator">++;</span>
+</pre>
+<p>we can write the more sensible (see <a href="../../lib/Test/More.html">the Test::More manpage</a> for a full
+explanation of <code>is()</code> and other testing functions).</p>
+<pre>
+ <span class="variable">is</span><span class="operator">(</span> <span class="string">"1.20.300.4000"</span><span class="operator">,</span> <span class="keyword">sprintf</span> <span class="string">"%vd"</span><span class="operator">,</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"U*"</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">20</span><span class="operator">,</span><span class="number">300</span><span class="operator">,</span><span class="number">4000</span><span class="operator">),</span>
+                                       <span class="string">"U* produces Unicode"</span> <span class="operator">);</span>
+</pre>
+<p>Now we'll test that we got that space-at-the-beginning business right:</p>
+<pre>
+ <span class="variable">is</span><span class="operator">(</span> <span class="string">"1.20.300.4000"</span><span class="operator">,</span> <span class="keyword">sprintf</span> <span class="string">"%vd"</span><span class="operator">,</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"  U*"</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">20</span><span class="operator">,</span><span class="number">300</span><span class="operator">,</span><span class="number">4000</span><span class="operator">),</span>
+                                     <span class="string">"  with spaces at the beginning"</span> <span class="operator">);</span>
+</pre>
+<p>And finally we'll test that we don't make Unicode strings if <a href="../../lib/pods/perlrun.html#u"><code>U</code></a> is
+<strong>not</strong> the first active format:</p>
+<pre>
+ <span class="variable">isnt</span><span class="operator">(</span> <span class="variable">v1</span><span class="number">.20</span><span class="operator">.</span><span class="number">300.4000</span><span class="operator">,</span> <span class="keyword">sprintf</span> <span class="string">"%vd"</span><span class="operator">,</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"C0U*"</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">20</span><span class="operator">,</span><span class="number">300</span><span class="operator">,</span><span class="number">4000</span><span class="operator">),</span>
+                                       <span class="string">"U* not first isn't Unicode"</span> <span class="operator">);</span>
+</pre>
+<p>Mustn't forget to change the number of tests which appears at the top,
+or else the automated tester will get confused. This will either look
+like this:</p>
+<pre>
+ <span class="keyword">print</span> <span class="string">"1..156\n"</span><span class="operator">;</span>
+</pre>
+<p>or this:</p>
+<pre>
+ <span class="variable">plan</span><span class="operator">(</span> <span class="string">tests</span> <span class="operator">=&gt;</span> <span class="number">156</span> <span class="operator">);</span>
+</pre>
+<p>We now compile up Perl, and run it through the test suite. Our new
+tests pass, hooray!</p>
+<p>
+</p>
+<h2><a name="documenting_the_patch">Documenting the patch</a></h2>
+<p>Finally, the documentation. The job is never done until the paperwork
+is over, so let's describe the change we've just made. The relevant
+place is <em class="file">pod/perlfunc.pod</em>; again, we make a copy, and then we'll
+insert this text in the description of <a href="../../lib/pods/perlfunc.html#pack"><code>pack</code></a>:</p>
+<pre>
+ =item *</pre>
+<pre>
+ If the pattern begins with a C&lt;U&gt;, the resulting string will be treated
+ as UTF-8-encoded Unicode. You can force UTF-8 encoding on in a string
+ with an initial C&lt;U0&gt;, and the bytes that follow will be interpreted as
+ Unicode characters. If you don't want this to happen, you can begin
+ your pattern with C&lt;C0&gt; (or anything else) to force Perl not to UTF-8
+ encode your string, and then follow this with a C&lt;U*&gt; somewhere in your
+ pattern.</pre>
+<p>
+</p>
+<h2><a name="submit">Submit</a></h2>
+<p>See <a href="../../lib/pods/perlhack.html">the perlhack manpage</a> for details on how to submit this patch.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This document was originally written by Nathan Torkington, and is
+maintained by the perl5-porters mailing list.</p>
+
+</body>
+
+</html>

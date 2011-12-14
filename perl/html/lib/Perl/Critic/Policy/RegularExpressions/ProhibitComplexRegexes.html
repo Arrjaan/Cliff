@@ -1,0 +1,152 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::RegularExpressions::ProhibitComplexRegexes - Split long regexps into smaller C&lt;qr//&gt; chunks.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::RegularExpressions::ProhibitComplexRegexes - Split long regexps into smaller C&lt;qr//&gt; chunks.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#case_study">CASE STUDY</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::RegularExpressions::ProhibitComplexRegexes - Split long regexps into smaller <a href="../../../../../lib/pods/perlfunc.html#qr_"><code>qr//</code></a> chunks.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Big regexps are hard to read, perhaps even the hardest part of Perl.
+A good practice to write digestible chunks of regexp and put them
+together.  This policy flags any regexp that is longer than <code>N</code>
+characters, where <code>N</code> is a configurable value that defaults to 60.
+If the regexp uses the <a href="../../../../../lib/pods/perlrun.html#x"><code>x</code></a> flag, then the length is computed after
+parsing out any comments or whitespace.</p>
+<p>Unfortunately the use of descriptive (and therefore longish) variable
+names can cause regexps to be in violation of this policy, so
+interpolated variables are counted as 4 characters no matter how long
+their names actually are.</p>
+<p>
+</p>
+<hr />
+<h1><a name="case_study">CASE STUDY</a></h1>
+<p>As an example, look at the regexp used to match email addresses in
+<a href="../../../../../Email/Valid/Loose.html">Email::Valid::Loose</a> (tweaked lightly to wrap
+for POD)</p>
+<pre>
+    <span class="operator">(</span><span class="regex">?x-ism:(?</span><span class="operator">:</span><span class="operator">[</span><span class="operator">^(\</span><span class="number">040</span><span class="operator">)&lt;&gt;</span><span class="variable">@,</span><span class="operator">;:</span><span class="string">".\\\[\]\000-\037\x80-\xff]+(?![^(\040)&lt;&gt;@,;:"</span><span class="operator">.\\\</span><span class="operator">[</span><span class="operator">\</span><span class="operator">]</span>
+    <span class="operator">\</span><span class="number">000</span><span class="operator">-\</span><span class="number">037</span><span class="operator">\</span><span class="variable">x80</span><span class="operator">-\</span><span class="variable">xff</span><span class="operator">]</span><span class="operator">)|</span><span class="string">"[^\\\x80-\xff\n\015"</span><span class="operator">]*(</span><span class="regex">?:\\[^\x80-\xff][^\\\x80-\xff\n\015
+    "]*)*")(?</span><span class="operator">:(</span><span class="regex">?:[^(\040)&lt;&gt;@,;:".\\\[\]\000-\037\x80-\xff]+(?</span><span class="operator">!</span><span class="operator">[</span><span class="operator">^(\</span><span class="number">040</span><span class="operator">)&lt;&gt;</span><span class="variable">@,</span><span class="operator">;:</span><span class="string">".\\\[
+    \]\000-\037\x80-\xff])|"</span><span class="operator">[</span><span class="operator">^\\\</span><span class="variable">x80</span><span class="operator">-\</span><span class="variable">xff</span><span class="operator">\</span><span class="variable">n</span><span class="operator">\</span><span class="number">015</span><span class="string">"]*(?:\\[^\x80-\xff][^\\\x80-\xff\n
+    \015"</span><span class="operator">]</span><span class="operator">*)*</span><span class="string">")|\.)*\@(?:[^(\040)&lt;&gt;@,;:"</span><span class="operator">.\\\</span><span class="operator">[</span><span class="operator">\</span><span class="operator">]</span><span class="operator">\</span><span class="number">000</span><span class="operator">-\</span><span class="number">037</span><span class="operator">\</span><span class="variable">x80</span><span class="operator">-\</span><span class="variable">xff</span><span class="operator">]</span><span class="operator">+(</span><span class="regex">?![^(\040)&lt;&gt;@,
+    ;:".\\\[\]\000-\037\x80-\xff])|\[(?</span><span class="operator">:</span><span class="operator">[</span><span class="operator">^\\\</span><span class="variable">x80</span><span class="operator">-\</span><span class="variable">xff</span><span class="operator">\</span><span class="variable">n</span><span class="operator">\</span><span class="number">015</span><span class="operator">\</span><span class="operator">[</span><span class="operator">\</span><span class="operator">]]</span><span class="operator">|\\</span><span class="operator">[</span><span class="operator">^\</span><span class="variable">x80</span><span class="operator">-\</span><span class="variable">xff</span><span class="operator">]</span><span class="operator">)*\]</span>
+    <span class="operator">)(</span><span class="regex">?:\.(?</span><span class="operator">:</span><span class="operator">[</span><span class="operator">^(\</span><span class="number">040</span><span class="operator">)&lt;&gt;</span><span class="variable">@,</span><span class="operator">;:</span><span class="string">".\\\[\]\000-\037\x80-\xff]+(?![^(\040)&lt;&gt;@,;:"</span><span class="operator">.\\\</span><span class="operator">[</span><span class="operator">\</span><span class="operator">]</span><span class="operator">\</span><span class="number">000</span>
+    <span class="operator">-\</span><span class="number">037</span><span class="operator">\</span><span class="variable">x80</span><span class="operator">-\</span><span class="variable">xff</span><span class="operator">]</span><span class="operator">)|\</span><span class="operator">[</span><span class="operator">(</span><span class="regex">?:[^\\\x80-\xff\n\015\[\]]|\\[^\x80-\xff])*\]))*)
+    </span>
+</pre>
+<p>which is constructed from the following code:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$esc</span>         <span class="operator">=</span> <span class="string">'\\\\'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$period</span>      <span class="operator">=</span> <span class="string">'\.'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$space</span>       <span class="operator">=</span> <span class="string">'\040'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$open_br</span>     <span class="operator">=</span> <span class="string">'\['</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$close_br</span>    <span class="operator">=</span> <span class="string">'\]'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$nonASCII</span>    <span class="operator">=</span> <span class="string">'\x80-\xff'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$ctrl</span>        <span class="operator">=</span> <span class="string">'\000-\037'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$cr_list</span>     <span class="operator">=</span> <span class="string">'\n\015'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$qtext</span>       <span class="operator">=</span> <span class="string">qq/[^</span><span class="variable">$esc$nonASCII$cr_list</span><span class="string">\"]/</span><span class="operator">;</span> <span class="comment"># "</span>
+    <span class="keyword">my</span> <span class="variable">$dtext</span>       <span class="operator">=</span> <span class="string">qq/[^</span><span class="variable">$esc$nonASCII$cr_list$open_br$close_br</span><span class="string">]/</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$quoted_pair</span> <span class="operator">=</span> <span class="string">qq&lt;</span><span class="variable">$esc</span><span class="string">&gt;</span><span class="operator">.</span><span class="string">qq&lt;[^</span><span class="variable">$nonASCII</span><span class="string">]&gt;</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$atom_char</span>   <span class="operator">=</span> <span class="string">qq/[^(</span><span class="variable">$space</span><span class="string">)&lt;&gt;\@,;:\".</span><span class="variable">$esc$open_br$close_br$ctrl$nonASCII</span><span class="string">]/</span><span class="operator">;</span><span class="comment"># "</span>
+    <span class="keyword">my</span> <span class="variable">$atom</span>        <span class="operator">=</span> <span class="string">qq&lt;</span><span class="variable">$atom_char</span><span class="string">+(?!</span><span class="variable">$atom_char</span><span class="string">)&gt;</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$quoted_str</span>  <span class="operator">=</span> <span class="string">qq&lt;\"</span><span class="variable">$qtext</span><span class="string">*(?:</span><span class="variable">$quoted_pair$qtext</span><span class="string">*)*\"&gt;</span><span class="operator">;</span> <span class="comment"># "</span>
+    <span class="keyword">my</span> <span class="variable">$word</span>        <span class="operator">=</span> <span class="string">qq&lt;(?:</span><span class="variable">$atom</span><span class="string">|</span><span class="variable">$quoted_str</span><span class="string">)&gt;</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$domain_ref</span>  <span class="operator">=</span> <span class="variable">$atom</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$domain_lit</span>  <span class="operator">=</span> <span class="string">qq&lt;</span><span class="variable">$open_br</span><span class="string">(?:</span><span class="variable">$dtext</span><span class="string">|</span><span class="variable">$quoted_pair</span><span class="string">)*</span><span class="variable">$close_br</span><span class="string">&gt;</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$sub_domain</span>  <span class="operator">=</span> <span class="string">qq&lt;(?:</span><span class="variable">$domain_ref</span><span class="string">|</span><span class="variable">$domain_lit</span><span class="string">)&gt;</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$domain</span>      <span class="operator">=</span> <span class="string">qq&lt;</span><span class="variable">$sub_domain</span><span class="string">(?:</span><span class="variable">$period$sub_domain</span><span class="string">)*&gt;</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$local_part</span>  <span class="operator">=</span> <span class="string">qq&lt;</span><span class="variable">$word</span><span class="string">(?:</span><span class="variable">$word</span><span class="string">|</span><span class="variable">$period</span><span class="string">)*&gt;</span><span class="operator">;</span> <span class="comment"># This part is modified</span>
+    <span class="variable">$Addr_spec_re</span>   <span class="operator">=</span> <span class="string">qr&lt;</span><span class="variable">$local_part</span><span class="string">\@</span><span class="variable">$domain</span><span class="string">&gt;</span><span class="operator">;</span>
+</pre>
+<p>If you read the code from bottom to top, it is quite readable.  And,
+you can even see the one violation of <a href="http://www.ietf.org/rfc/rfc822.txt" class="rfc">RFC822</a> that Tatsuhiko Miyagawa
+deliberately put into Email::Valid::Loose to allow periods.  Look for
+the <code>|\.</code> in the upper regexp to see that same deviation.</p>
+<p>One could certainly argue that the top regexp could be re-written more
+legibly with <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m//x</code></a> and comments.  But the bottom version is
+self-documenting and, for example, doesn't repeat <code>\x80-\xff</code> 18
+times.  Furthermore, it's much easier to compare the second version
+against the source BNF grammar in <a href="http://www.ietf.org/rfc/rfc822.txt" class="rfc">RFC 822</a> to judge whether the
+implementation is sound even before running tests.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This policy allows regexps up to <code>N</code> characters long, where <code>N</code>
+defaults to 60.  You can override this to set it to a different number
+with the <code>max_characters</code> setting.  To do this, put entries in a
+<em class="file">.perlcriticrc</em> file like this:</p>
+<pre>
+    [RegularExpressions::ProhibitComplexRegexes]
+    max_characters = 40</pre>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Initial development of this policy was supported by a grant from the
+Perl Foundation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2007-2011 Chris Dolan.  Many rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module</p>
+
+</body>
+
+</html>

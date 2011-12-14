@@ -1,0 +1,590 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perllexwarn - Perl Lexical Warnings</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perllexwarn - Perl Lexical Warnings</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#default_warnings_and_optional_warnings">Default Warnings and Optional Warnings</a></li>
+		<li><a href="#what_s_wrong_with__w_and___w">What's wrong with <strong>-w</strong> and <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a></a></li>
+		<li><a href="#controlling_warnings_from_the_command_line">Controlling Warnings from the Command Line</a></li>
+		<li><a href="#backward_compatibility">Backward Compatibility</a></li>
+		<li><a href="#category_hierarchy">Category Hierarchy</a></li>
+		<li><a href="#fatal_warnings">Fatal Warnings</a></li>
+		<li><a href="#reporting_warnings_from_a_module">Reporting Warnings from a Module</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perllexwarn - Perl Lexical Warnings</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>use warnings</code> pragma enables to control precisely what warnings are
+to be enabled in which parts of a Perl program. It's a more flexible
+alternative for both the command line flag <strong>-w</strong> and the equivalent Perl
+variable, <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a>.</p>
+<p>This pragma works just like the <code>strict</code> pragma.
+This means that the scope of the warning pragma is limited to the
+enclosing block. It also means that the pragma setting will not
+leak across files (via <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a>, <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> or <a href="../../lib/pods/perlfunc.html#do"><code>do</code></a>). This allows
+authors to independently define the degree of warning checks that will
+be applied to their module.</p>
+<p>By default, optional warnings are disabled, so any legacy code that
+doesn't attempt to control the warnings will work unchanged.</p>
+<p>All warnings are enabled in a block by either of these:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">'all'</span><span class="operator">;</span>
+</pre>
+<p>Similarly all warnings are disabled in a block by either of these:</p>
+<pre>
+    <span class="keyword">no</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">'all'</span><span class="operator">;</span>
+</pre>
+<p>For example, consider the code below:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">@a</span><span class="operator">;</span>
+    <span class="operator">{</span>
+        <span class="keyword">no</span> <span class="variable">warnings</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>The code in the enclosing block has warnings enabled, but the inner
+block has them disabled. In this case that means the assignment to the
+scalar <code>$c</code> will trip the <code>&quot;Scalar value @a[0] better written as $a[0]&quot;</code>
+warning, but the assignment to the scalar <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a> will not.</p>
+<p>
+</p>
+<h2><a name="default_warnings_and_optional_warnings">Default Warnings and Optional Warnings</a></h2>
+<p>Before the introduction of lexical warnings, Perl had two classes of
+warnings: mandatory and optional.</p>
+<p>As its name suggests, if your code tripped a mandatory warning, you
+would get a warning whether you wanted it or not.
+For example, the code below would always produce an <code>&quot;isn't numeric&quot;</code>
+warning about the &quot;2:&quot;.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=</span> <span class="string">"2:"</span> <span class="operator">+</span> <span class="number">3</span><span class="operator">;</span>
+</pre>
+<p>With the introduction of lexical warnings, mandatory warnings now become
+<em>default</em> warnings. The difference is that although the previously
+mandatory warnings are still enabled by default, they can then be
+subsequently enabled or disabled with the lexical warning pragma. For
+example, in the code below, an <code>&quot;isn't numeric&quot;</code> warning will only
+be reported for the <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> variable.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=</span> <span class="string">"2:"</span> <span class="operator">+</span> <span class="number">3</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="string">"2:"</span> <span class="operator">+</span> <span class="number">3</span><span class="operator">;</span>
+</pre>
+<p>Note that neither the <strong>-w</strong> flag or the <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> can be used to
+disable/enable default warnings. They are still mandatory in this case.</p>
+<p>
+</p>
+<h2><a name="what_s_wrong_with__w_and___w">What's wrong with <strong>-w</strong> and <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a></a></h2>
+<p>Although very useful, the big problem with using <strong>-w</strong> on the command
+line to enable warnings is that it is all or nothing. Take the typical
+scenario when you are writing a Perl program. Parts of the code you
+will write yourself, but it's very likely that you will make use of
+pre-written Perl modules. If you use the <strong>-w</strong> flag in this case, you
+end up enabling warnings in pieces of code that you haven't written.</p>
+<p>Similarly, using <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> to either disable or enable blocks of code is
+fundamentally flawed. For a start, say you want to disable warnings in
+a block of code. You might expect this to be enough to do the trick:</p>
+<pre>
+     <span class="operator">{</span>
+         <span class="keyword">local</span> <span class="operator">(</span><span class="variable">$^W</span><span class="operator">)</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+         <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=+</span> <span class="number">2</span><span class="operator">;</span>
+         <span class="keyword">my</span> <span class="variable">$b</span><span class="operator">;</span> <span class="keyword">chop</span> <span class="variable">$b</span><span class="operator">;</span>
+     <span class="operator">}</span>
+</pre>
+<p>When this code is run with the <strong>-w</strong> flag, a warning will be produced
+for the <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> line:  <code>&quot;Reversed += operator&quot;</code>.</p>
+<p>The problem is that Perl has both compile-time and run-time warnings. To
+disable compile-time warnings you need to rewrite the code like this:</p>
+<pre>
+     <span class="operator">{</span>
+         <span class="keyword">BEGIN</span> <span class="operator">{</span> <span class="variable">$^W</span> <span class="operator">=</span> <span class="number">0</span> <span class="operator">}</span>
+         <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=+</span> <span class="number">2</span><span class="operator">;</span>
+         <span class="keyword">my</span> <span class="variable">$b</span><span class="operator">;</span> <span class="keyword">chop</span> <span class="variable">$b</span><span class="operator">;</span>
+     <span class="operator">}</span>
+</pre>
+<p>The other big problem with <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> is the way you can inadvertently
+change the warning setting in unexpected places in your code. For example,
+when the code below is run (without the <strong>-w</strong> flag), the second call
+to <code>doit</code> will trip a <code>&quot;Use of uninitialized value&quot;</code> warning, whereas
+the first will not.</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> doit
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$b</span><span class="operator">;</span> <span class="keyword">chop</span> <span class="variable">$b</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="variable">doit</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="operator">{</span>
+        <span class="keyword">local</span> <span class="operator">(</span><span class="variable">$^W</span><span class="operator">)</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+        <span class="variable">doit</span><span class="operator">()</span>
+    <span class="operator">}</span>
+</pre>
+<p>This is a side-effect of <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> being dynamically scoped.</p>
+<p>Lexical warnings get around these limitations by allowing finer control
+over where warnings can or can't be tripped.</p>
+<p>
+</p>
+<h2><a name="controlling_warnings_from_the_command_line">Controlling Warnings from the Command Line</a></h2>
+<p>There are three Command Line flags that can be used to control when
+warnings are (or aren't) produced:</p>
+<dl>
+<dt><strong><a name="w3" class="item"><strong>-w</strong></a></strong></dt>
+
+<dd>
+<p>This is  the existing flag. If the lexical warnings pragma is <strong>not</strong>
+used in any of you code, or any of the modules that you use, this flag
+will enable warnings everywhere. See <a href="#backward_compatibility">Backward Compatibility</a> for
+details of how this flag interacts with lexical warnings.</p>
+</dd>
+<dt><strong><a name="w2" class="item"><strong>-W</strong></a></strong></dt>
+
+<dd>
+<p>If the <strong>-W</strong> flag is used on the command line, it will enable all warnings
+throughout the program regardless of whether warnings were disabled
+locally using <code>no warnings</code> or <a href="../../lib/pods/perlvar.html#__w"><code>$^W =0</code></a>. This includes all files that get
+included via <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a>, <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> or <a href="../../lib/pods/perlfunc.html#do"><code>do</code></a>.
+Think of it as the Perl equivalent of the &quot;lint&quot; command.</p>
+</dd>
+<dt><strong><a name="x4" class="item"><strong>-X</strong></a></strong></dt>
+
+<dd>
+<p>Does the exact opposite to the <strong>-W</strong> flag, i.e. it disables all warnings.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="backward_compatibility">Backward Compatibility</a></h2>
+<p>If you are used with working with a version of Perl prior to the
+introduction of lexically scoped warnings, or have code that uses both
+lexical warnings and <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a>, this section will describe how they interact.</p>
+<p>How Lexical Warnings interact with <strong>-w</strong>/<a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a>:</p>
+<ol>
+<li>
+<p>If none of the three command line flags (<strong>-w</strong>, <strong>-W</strong> or <strong>-X</strong>) that
+control warnings is used and neither <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> or the <code>warnings</code> pragma
+are used, then default warnings will be enabled and optional warnings
+disabled.
+This means that legacy code that doesn't attempt to control the warnings
+will work unchanged.</p>
+</li>
+<li>
+<p>The <strong>-w</strong> flag just sets the global <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> variable as in 5.005. This
+means that any legacy code that currently relies on manipulating <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a>
+to control warning behavior will still work as is.</p>
+</li>
+<li>
+<p>Apart from now being a boolean, the <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> variable operates in exactly
+the same horrible uncontrolled global way, except that it cannot
+disable/enable default warnings.</p>
+</li>
+<li>
+<p>If a piece of code is under the control of the <code>warnings</code> pragma,
+both the <a href="../../lib/pods/perlvar.html#__w"><code>$^W</code></a> variable and the <strong>-w</strong> flag will be ignored for the
+scope of the lexical warning.</p>
+</li>
+<li>
+<p>The only way to override a lexical warnings setting is with the <strong>-W</strong>
+or <strong>-X</strong> command line flags.</p>
+</li>
+</ol>
+<p>The combined effect of 3 &amp; 4 is that it will allow code which uses
+the <code>warnings</code> pragma to control the warning behavior of $^W-type
+code (using a <code>local $^W=0</code>) if it really wants to, but not vice-versa.</p>
+<p>
+</p>
+<h2><a name="category_hierarchy">Category Hierarchy</a></h2>
+<p>A hierarchy of &quot;categories&quot; have been defined to allow groups of warnings
+to be enabled/disabled in isolation.</p>
+<p>The current hierarchy is:</p>
+<pre>
+  all -+
+       |
+       +- closure
+       |
+       +- deprecated
+       |
+       +- exiting
+       |
+       +- glob
+       |
+       +- io -----------+
+       |                |
+       |                +- closed
+       |                |
+       |                +- exec
+       |                |
+       |                +- layer
+       |                |
+       |                +- newline
+       |                |
+       |                +- pipe
+       |                |
+       |                +- unopened
+       |
+       +- imprecision
+       |
+       +- misc
+       |
+       +- numeric
+       |
+       +- once
+       |
+       +- overflow
+       |
+       +- pack
+       |
+       +- portable
+       |
+       +- recursion
+       |
+       +- redefine
+       |
+       +- regexp
+       |
+       +- severe -------+
+       |                |
+       |                +- debugging
+       |                |
+       |                +- inplace
+       |                |
+       |                +- internal
+       |                |
+       |                +- malloc
+       |
+       +- signal
+       |
+       +- substr
+       |
+       +- syntax -------+
+       |                |
+       |                +- ambiguous
+       |                |
+       |                +- bareword
+       |                |
+       |                +- digit
+       |                |
+       |                +- illegalproto
+       |                |
+       |                +- parenthesis
+       |                |
+       |                +- precedence
+       |                |
+       |                +- printf
+       |                |
+       |                +- prototype
+       |                |
+       |                +- qw
+       |                |
+       |                +- reserved
+       |                |
+       |                +- semicolon
+       |
+       +- taint
+       |
+       +- threads
+       |
+       +- uninitialized
+       |
+       +- unpack
+       |
+       +- untie
+       |
+       +- utf8----------+
+       |                |
+       |                +- surrogate
+       |                |
+       |                +- non_unicode
+       |                |
+       |                +- nonchar
+       |
+       +- void</pre>
+<p>Just like the &quot;strict&quot; pragma any of these categories can be combined</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">qw(void redefine)</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">qw(io syntax untie)</span><span class="operator">;</span>
+</pre>
+<p>Also like the &quot;strict&quot; pragma, if there is more than one instance of the
+<code>warnings</code> pragma in a given scope the cumulative effect is additive.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">qw(void)</span><span class="operator">;</span> <span class="comment"># only "void" warnings enabled</span>
+    <span class="operator">...</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">qw(io)</span><span class="operator">;</span>   <span class="comment"># only "void" &amp; "io" warnings enabled</span>
+    <span class="operator">...</span>
+    <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">qw(void)</span><span class="operator">;</span>  <span class="comment"># only "io" warnings enabled</span>
+</pre>
+<p>To determine which category a specific warning has been assigned to see
+<a href="../../lib/pods/perldiag.html">the perldiag manpage</a>.</p>
+<p>Note: In Perl 5.6.1, the lexical warnings category &quot;deprecated&quot; was a
+sub-category of the &quot;syntax&quot; category. It is now a top-level category
+in its own right.</p>
+<p>
+</p>
+<h2><a name="fatal_warnings">Fatal Warnings</a></h2>
+<p>The presence of the word &quot;FATAL&quot; in the category list will escalate any
+warnings detected from the categories specified in the lexical scope
+into fatal errors. In the code below, the use of <a href="../../lib/pods/perlfunc.html#time"><code>time</code></a>, <a href="../../lib/pods/perlfunc.html#length"><code>length</code></a>
+and <a href="../../lib/pods/perlfunc.html#join"><code>join</code></a> can all produce a <code>&quot;Useless use of xxx in void context&quot;</code>
+warning.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">time</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="operator">{</span>
+        <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">FATAL</span> <span class="operator">=&gt;</span> <span class="string">qw(void)</span><span class="operator">;</span>
+        <span class="keyword">length</span> <span class="string">"abc"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">join</span> <span class="string">""</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span><span class="number">2</span><span class="operator">,</span><span class="number">3</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="string">"done\n"</span><span class="operator">;</span>
+</pre>
+<p>When run it produces this output</p>
+<pre>
+    Useless use of time in void context at fatal line 3.
+    Useless use of length in void context at fatal line 7.</pre>
+<p>The scope where <a href="../../lib/pods/perlfunc.html#length"><code>length</code></a> is used has escalated the <code>void</code> warnings
+category into a fatal error, so the program terminates immediately it
+encounters the warning.</p>
+<p>To explicitly turn off a &quot;FATAL&quot; warning you just disable the warning
+it is associated with.  So, for example, to disable the &quot;void&quot; warning
+in the example above, either of these will do the trick:</p>
+<pre>
+    <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">qw(void)</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">FATAL</span> <span class="operator">=&gt;</span> <span class="string">qw(void)</span><span class="operator">;</span>
+</pre>
+<p>If you want to downgrade a warning that has been escalated into a fatal
+error back to a normal warning, you can use the &quot;NONFATAL&quot; keyword. For
+example, the code below will promote all warnings into fatal errors,
+except for those in the &quot;syntax&quot; category.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">FATAL</span> <span class="operator">=&gt;</span> <span class="string">'all'</span><span class="operator">,</span> <span class="string">NONFATAL</span> <span class="operator">=&gt;</span> <span class="string">'syntax'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="reporting_warnings_from_a_module">Reporting Warnings from a Module</a></h2>
+<p>The <code>warnings</code> pragma provides a number of functions that are useful for
+module authors. These are used when you want to report a module-specific
+warning to a calling module has enabled warnings via the <code>warnings</code>
+pragma.</p>
+<p>Consider the module <code>MyMod::Abc</code> below.</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">MyMod::Abc</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings::register</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> open </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$path</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$path</span> <span class="operator">!~</span> <span class="regex">m#^/#</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">warnings::warn</span><span class="operator">(</span><span class="string">"changing relative path to /var/abc"</span><span class="operator">)</span>
+                <span class="keyword">if</span> <span class="variable">warnings::enabled</span><span class="operator">();</span>
+            <span class="variable">$path</span> <span class="operator">=</span> <span class="string">"/var/abc/</span><span class="variable">$path</span><span class="string">"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>The call to <code>warnings::register</code> will create a new warnings category
+called &quot;MyMod::Abc&quot;, i.e. the new category name matches the current
+package name. The <a href="../../lib/pods/perlfunc.html#open"><code>open</code></a> function in the module will display a warning
+message if it gets given a relative path as a parameter. This warnings
+will only be displayed if the code that uses <code>MyMod::Abc</code> has actually
+enabled them with the <code>warnings</code> pragma like below.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">MyMod::Abc</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">'MyMod::Abc'</span><span class="operator">;</span>
+    <span class="operator">...</span>
+    <span class="variable">abc::open</span><span class="operator">(</span><span class="string">"../fred.txt"</span><span class="operator">);</span>
+</pre>
+<p>It is also possible to test whether the pre-defined warnings categories are
+set in the calling module with the <code>warnings::enabled</code> function. Consider
+this snippet of code:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">MyMod::Abc</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> open </span><span class="operator">{</span>
+        <span class="variable">warnings::warnif</span><span class="operator">(</span><span class="string">"deprecated"</span><span class="operator">,</span> 
+                         <span class="string">"open is deprecated, use new instead"</span><span class="operator">);</span>
+        <span class="variable">new</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> new
+    ...
+    1</span><span class="operator">;</span>
+</pre>
+<p>The function <a href="../../lib/pods/perlfunc.html#open"><code>open</code></a> has been deprecated, so code has been included to
+display a warning message whenever the calling module has (at least) the
+&quot;deprecated&quot; warnings category enabled. Something like this, say.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">'deprecated'</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">MyMod::Abc</span><span class="operator">;</span>
+    <span class="operator">...</span>
+    <span class="variable">MyMod::Abc::open</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">);</span>
+</pre>
+<p>Either the <code>warnings::warn</code> or <code>warnings::warnif</code> function should be
+used to actually display the warnings message. This is because they can
+make use of the feature that allows warnings to be escalated into fatal
+errors. So in this case</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">MyMod::Abc</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">FATAL</span> <span class="operator">=&gt;</span> <span class="string">'MyMod::Abc'</span><span class="operator">;</span>
+    <span class="operator">...</span>
+    <span class="variable">MyMod::Abc::open</span><span class="operator">(</span><span class="string">'../fred.txt'</span><span class="operator">);</span>
+</pre>
+<p>the <code>warnings::warnif</code> function will detect this and die after
+displaying the warning message.</p>
+<p>The three warnings functions, <code>warnings::warn</code>, <code>warnings::warnif</code>
+and <code>warnings::enabled</code> can optionally take an object reference in place
+of a category name. In this case the functions will use the class name
+of the object as the warnings category.</p>
+<p>Consider this example:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Original</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">no</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings::register</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> new
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">bless</span> <span class="operator">[]</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> check
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$value</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$value</span> <span class="operator">% </span><span class="number">2</span> <span class="operator">&amp;&amp;</span> <span class="variable">warnings::enabled</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">))</span>
+          <span class="operator">{</span> <span class="variable">warnings::warn</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="string">"Odd numbers are unsafe"</span><span class="operator">)</span> <span class="operator">}</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> doit
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$value</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">check</span><span class="operator">(</span><span class="variable">$value</span><span class="operator">);</span>
+        <span class="comment"># ...</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="number">1</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Derived</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings::register</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Original</span><span class="operator">;</span>
+    <span class="keyword">our</span> <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( Original )</span><span class="operator">;</span>
+    <span class="keyword">sub</span><span class="variable"> new
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">bless</span> <span class="operator">[]</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>The code below makes use of both modules, but it only enables warnings from 
+<code>Derived</code>.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Original</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Derived</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span> <span class="string">'Derived'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">Original</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">doit</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="variable">Derived</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">doit</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>When this code is run only the <code>Derived</code> object, <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a>, will generate
+a warning.</p>
+<pre>
+    Odd numbers are unsafe at main.pl line 7</pre>
+<p>Notice also that the warning is reported at the line where the object is first
+used.</p>
+<p>When registering new categories of warning, you can supply more names to
+warnings::register like this:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">MyModule</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings::register</span> <span class="string">qw(format precision)</span><span class="operator">;</span>
+</pre>
+<pre>
+    ...</pre>
+<pre>
+    <span class="variable">warnings::warnif</span><span class="operator">(</span><span class="string">'MyModule::format'</span><span class="operator">,</span> <span class="string">'...'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/warnings.html">the warnings manpage</a>, <a href="../../lib/pods/perldiag.html">the perldiag manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Paul Marquess</p>
+
+</body>
+
+</html>

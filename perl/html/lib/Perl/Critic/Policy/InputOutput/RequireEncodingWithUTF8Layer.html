@@ -1,0 +1,117 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::InputOutput::RequireEncodingWithUTF8Layer - Write C&lt;&lt; open $fh, q{&lt;:encoding}, $filename; &gt;&gt; instead of C&lt;&lt; open $fh, q{{&lt;:utf8}, $filename; &gt;&gt;.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::InputOutput::RequireEncodingWithUTF8Layer - Write C&lt;&lt; open $fh, q{&lt;:encoding}, $filename; &gt;&gt; instead of C&lt;&lt; open $fh, q{{&lt;:utf8}, $filename; &gt;&gt;.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::InputOutput::RequireEncodingWithUTF8Layer - Write <code>open $fh, q{&lt;:encoding(UTF-8)}, $filename;</code> instead of <code>open $fh, q{{&lt;:utf8}, $filename;</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Use of the <a href="../../../../../lib/pods/perlrun.html#utf8"><code>:utf8</code></a> I/O layer (as opposed to <code>:encoding(UTF8)</code> or
+<code>:encoding(UTF-8)</code>) was suggested in the Perl documentation up to
+version 5.8.8. This may be OK for output, but on input <a href="../../../../../lib/pods/perlrun.html#utf8"><code>:utf8</code></a> does not
+validate the input, leading to unexpected results.</p>
+<p>An exploit based on this behavior of <a href="../../../../../lib/pods/perlrun.html#utf8"><code>:utf8</code></a> is exhibited on PerlMonks
+at <a href="http://www.perlmonks.org/?node_id=644786">http://www.perlmonks.org/</a>. The exploit involves a
+string read from an external file and sanitized with <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m/^(\w+)$/</code></a>,
+where <code>$1</code> nonetheless ends up containing shell meta-characters.</p>
+<p>To summarize:</p>
+<pre>
+ <span class="keyword">open</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;:utf8'</span><span class="operator">,</span> <span class="string">'foo.txt'</span><span class="operator">;</span>             <span class="comment"># BAD</span>
+ <span class="keyword">open</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;:encoding(UTF8)'</span><span class="operator">,</span> <span class="string">'foo.txt'</span><span class="operator">;</span>   <span class="comment"># GOOD</span>
+ <span class="keyword">open</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;:encoding(UTF-8)'</span><span class="operator">,</span> <span class="string">'foo.txt'</span><span class="operator">;</span>  <span class="comment"># BETTER</span>
+</pre>
+<p>See the <a href="../../../../../lib/Encode.html">Encode</a> documentation for the difference between
+<code>UTF8</code> and <code>UTF-8</code>. The short version is that <code>UTF-8</code> implements the
+Unicode standard, and <code>UTF8</code> is liberalized.</p>
+<p>For consistency's sake, this policy checks files opened for output as
+well as input, For complete coverage it also checks <a href="../../../../../lib/pods/perlfunc.html#binmode"><code>binmode()</code></a> calls,
+where the direction the operation can not be determined.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This Policy is not configurable except for the standard options.</p>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>Because <code>Perl::Critic</code> does a static analysis, this policy can not
+detect cases like</p>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$encoding</span> <span class="operator">=</span> <span class="string">':utf8'</span><span class="operator">;</span>
+ <span class="keyword">binmode</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="variable">$encoding</span><span class="operator">;</span>
+</pre>
+<p>where the encoding is computed.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../../../lib/PerlIO.html">PerlIO</a></p>
+<p><a href="../../../../../lib/Encode.html">Encode</a></p>
+<p><code>perldoc -f binmode</code></p>
+<p><a href="http://www.socialtext.net/perl5/index.cgi?the_utf8_perlio_layer">http://www.socialtext.net/perl5/index.cgi</a></p>
+<p><a href="http://www.perlmonks.org/?node_id=644786">http://www.perlmonks.org/</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Thomas R. Wyant, III <em class="file">wyant at cpan dot org</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2010-2011 Thomas R. Wyant, III</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

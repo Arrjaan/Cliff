@@ -1,0 +1,332 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Thread::Queue - Thread-safe queues</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Thread::Queue - Thread-safe queues</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#queue_creation">QUEUE CREATION</a></li>
+	<li><a href="#basic_methods">BASIC METHODS</a></li>
+	<li><a href="#advanced_methods">ADVANCED METHODS</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#maintainer">MAINTAINER</a></li>
+	<li><a href="#license">LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Thread::Queue - Thread-safe queues</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>This document describes Thread::Queue version 2.12</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">threads</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Thread::Queue</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$q</span> <span class="operator">=</span> <span class="variable">Thread::Queue</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>    <span class="comment"># A new empty queue</span>
+</pre>
+<pre>
+    <span class="comment"># Worker thread</span>
+    <span class="keyword">my</span> <span class="variable">$thr</span> <span class="operator">=</span> <span class="variable">threads</span><span class="operator">-&gt;</span><span class="variable">create</span><span class="operator">(</span><span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+                                <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$item</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">dequeue</span><span class="operator">())</span> <span class="operator">{</span>
+                                    <span class="comment"># Do work on $item</span>
+                                <span class="operator">}</span>
+                             <span class="operator">})-&gt;</span><span class="variable">detach</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># Send work to the thread</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="variable">$item1</span><span class="operator">,</span> <span class="operator">...);</span>
+</pre>
+<pre>
+    <span class="comment"># Count of items in the queue</span>
+    <span class="keyword">my</span> <span class="variable">$left</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">pending</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># Non-blocking dequeue</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">defined</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$item</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">dequeue_nb</span><span class="operator">()))</span> <span class="operator">{</span>
+        <span class="comment"># Work on $item</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># Get the second item in the queue without dequeuing anything</span>
+    <span class="keyword">my</span> <span class="variable">$item</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">peek</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># Insert two items into the queue just behind the head</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="variable">$item1</span><span class="operator">,</span> <span class="variable">$item2</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># Extract the last two items on the queue</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$item1</span><span class="operator">,</span> <span class="variable">$item2</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(-</span><span class="number">2</span><span class="operator">,</span> <span class="number">2</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides thread-safe FIFO queues that can be accessed safely by
+any number of threads.</p>
+<p>Any data types supported by <a href="../../lib/threads/shared.html">the threads::shared manpage</a> can be passed via queues:</p>
+<dl>
+<dt><strong><a name="ordinary_scalars" class="item">Ordinary scalars</a></strong></dt>
+
+<dt><strong><a name="array_refs" class="item">Array refs</a></strong></dt>
+
+<dt><strong><a name="hash_refs" class="item">Hash refs</a></strong></dt>
+
+<dt><strong><a name="scalar_refs" class="item">Scalar refs</a></strong></dt>
+
+<dt><strong><a name="objects_based_on_the_above" class="item">Objects based on the above</a></strong></dt>
+
+</dl>
+<p>Ordinary scalars are added to queues as they are.</p>
+<p>If not already thread-shared, the other complex data types will be cloned
+(recursively, if needed, and including any <a href="../../lib/pods/perlfunc.html#bless"><code>bless</code></a>ings and read-only
+settings) into thread-shared structures before being placed onto a queue.</p>
+<p>For example, the following would cause <a href="../../lib/Thread/Queue.html">the Thread::Queue manpage</a> to create a empty,
+shared array reference via <code>&amp;shared([])</code>, copy the elements 'foo', 'bar'
+and 'baz' from <code>@ary</code> into it, and then place that shared reference onto
+the queue:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@ary</span> <span class="operator">=</span> <span class="string">qw/foo bar baz/</span><span class="operator">;</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(\</span><span class="variable">@ary</span><span class="operator">);</span>
+</pre>
+<p>However, for the following, the items are already shared, so their references
+are added directly to the queue, and no cloning takes place:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@ary</span> <span class="operator">:</span><span class="variable">shared</span> <span class="operator">=</span> <span class="string">qw/foo bar baz/</span><span class="operator">;</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(\</span><span class="variable">@ary</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$obj</span> <span class="operator">=</span> <span class="operator">&amp;</span><span class="variable">shared</span><span class="operator">(</span><span class="operator">{}</span><span class="operator">);</span>
+    <span class="variable">$$obj</span><span class="operator">{</span><span class="string">'foo'</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">'bar'</span><span class="operator">;</span>
+    <span class="variable">$$obj</span><span class="operator">{</span><span class="string">'qux'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">99</span><span class="operator">;</span>
+    <span class="keyword">bless</span><span class="operator">(</span><span class="variable">$obj</span><span class="operator">,</span> <span class="string">'My::Class'</span><span class="operator">);</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="variable">$obj</span><span class="operator">);</span>
+</pre>
+<p>See <a href="#limitations">LIMITATIONS</a> for caveats related to passing objects via queues.</p>
+<p>
+</p>
+<hr />
+<h1><a name="queue_creation">QUEUE CREATION</a></h1>
+<dl>
+<dt><strong><a name="new" class="item">-&gt;<code>new()</code></a></strong></dt>
+
+<dd>
+<p>Creates a new empty queue.</p>
+</dd>
+<dt><strong>-&gt;new(LIST)</strong></dt>
+
+<dd>
+<p>Creates a new queue pre-populated with the provided list of items.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="basic_methods">BASIC METHODS</a></h1>
+<p>The following methods deal with queues on a FIFO basis.</p>
+<dl>
+<dt><strong><a name="enqueue" class="item">-&gt;enqueue(LIST)</a></strong></dt>
+
+<dd>
+<p>Adds a list of items onto the end of the queue.</p>
+</dd>
+<dt><strong><a name="dequeue" class="item">-&gt;<code>dequeue()</code></a></strong></dt>
+
+<dt><strong>-&gt;dequeue(COUNT)</strong></dt>
+
+<dd>
+<p>Removes the requested number of items (default is 1) from the head of the
+queue, and returns them.  If the queue contains fewer than the requested
+number of items, then the thread will be blocked until the requisite number
+of items are available (i.e., until other threads &lt;enqueue&gt; more items).</p>
+</dd>
+<dt><strong><a name="dequeue_nb" class="item">-&gt;<code>dequeue_nb()</code></a></strong></dt>
+
+<dt><strong>-&gt;dequeue_nb(COUNT)</strong></dt>
+
+<dd>
+<p>Removes the requested number of items (default is 1) from the head of the
+queue, and returns them.  If the queue contains fewer than the requested
+number of items, then it immediately (i.e., non-blocking) returns whatever
+items there are on the queue.  If the queue is empty, then <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is
+returned.</p>
+</dd>
+<dt><strong><a name="pending" class="item">-&gt;<code>pending()</code></a></strong></dt>
+
+<dd>
+<p>Returns the number of items still in the queue.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="advanced_methods">ADVANCED METHODS</a></h1>
+<p>The following methods can be used to manipulate items anywhere in a queue.</p>
+<p>To prevent the contents of a queue from being modified by another thread
+while it is being examined and/or changed, <a href="../../lib/threads/shared.html#lock_variable">lock</a> the queue inside a local block:</p>
+<pre>
+    <span class="operator">{</span>
+        <span class="keyword">lock</span><span class="operator">(</span><span class="variable">$q</span><span class="operator">);</span>   <span class="comment"># Keep other threads from changing the queue's contents</span>
+        <span class="keyword">my</span> <span class="variable">$item</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">peek</span><span class="operator">();</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$item</span> <span class="operator">...)</span> <span class="operator">{</span>
+            <span class="operator">...</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+    <span class="comment"># Queue is now unlocked</span>
+</pre>
+<dl>
+<dt><strong><a name="peek" class="item">-&gt;<code>peek()</code></a></strong></dt>
+
+<dt><strong>-&gt;peek(INDEX)</strong></dt>
+
+<dd>
+<p>Returns an item from the queue without dequeuing anything.  Defaults to the
+the head of queue (at index position 0) if no index is specified.  Negative
+index values are supported as with <a href="../../lib/pods/perldata.html#subscripts">arrays</a> (i.e., -1
+is the end of the queue, -2 is next to last, and so on).</p>
+<p>If no items exists at the specified index (i.e., the queue is empty, or the
+index is beyond the number of items on the queue), then <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+<p>Remember, the returned item is not removed from the queue, so manipulating a
+<a href="#peek"><code>peek</code></a>ed at reference affects the item on the queue.</p>
+</dd>
+<dt><strong><a name="insert" class="item">-&gt;insert(INDEX, LIST)</a></strong></dt>
+
+<dd>
+<p>Adds the list of items to the queue at the specified index position (0
+is the head of the list).  Any existing items at and beyond that position are
+pushed back past the newly added items:</p>
+<pre>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">4</span><span class="operator">);</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="string">qw/foo bar/</span><span class="operator">);</span>
+    <span class="comment"># Queue now contains:  1, foo, bar, 2, 3, 4</span>
+</pre>
+<p>Specifying an index position greater than the number of items in the queue
+just adds the list to the end.</p>
+<p>Negative index positions are supported:</p>
+<pre>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">4</span><span class="operator">);</span>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(-</span><span class="number">2</span><span class="operator">,</span> <span class="string">qw/foo bar/</span><span class="operator">);</span>
+    <span class="comment"># Queue now contains:  1, 2, foo, bar, 3, 4</span>
+</pre>
+<p>Specifying a negative index position greater than the number of items in the
+queue adds the list to the head of the queue.</p>
+</dd>
+<dt><strong><a name="extract" class="item">-&gt;<code>extract()</code></a></strong></dt>
+
+<dt><strong>-&gt;extract(INDEX)</strong></dt>
+
+<dt><strong>-&gt;extract(INDEX, COUNT)</strong></dt>
+
+<dd>
+<p>Removes and returns the specified number of items (defaults to 1) from the
+specified index position in the queue (0 is the head of the queue).  When
+called with no arguments, <a href="#extract"><code>extract</code></a> operates the same as <a href="#dequeue_nb"><code>dequeue_nb</code></a>.</p>
+<p>This method is non-blocking, and will return only as many items as are
+available to fulfill the request:</p>
+<pre>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">,</span> <span class="number">4</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$item</span>  <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(</span><span class="number">2</span><span class="operator">)</span>     <span class="comment"># Returns 3</span>
+                                   <span class="comment"># Queue now contains:  1, 2, 4</span>
+    <span class="keyword">my</span> <span class="variable">@items</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="number">3</span><span class="operator">)</span>  <span class="comment"># Returns (2, 4)</span>
+                                   <span class="comment"># Queue now contains:  1</span>
+</pre>
+<p>Specifying an index position greater than the number of items in the
+queue results in <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or an empty list being returned.</p>
+<pre>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="string">'foo'</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$nada</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(</span><span class="number">3</span><span class="operator">)</span>      <span class="comment"># Returns undef</span>
+    <span class="keyword">my</span> <span class="variable">@nada</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="number">3</span><span class="operator">)</span>   <span class="comment"># Returns ()</span>
+</pre>
+<p>Negative index positions are supported.  Specifying a negative index position
+greater than the number of items in the queue may return items from the head
+of the queue (similar to <a href="#dequeue_nb"><code>dequeue_nb</code></a>) if the count overlaps the head of the
+queue from the specified position (i.e. if queue size + index + count is
+greater than zero):</p>
+<pre>
+    <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">enqueue</span><span class="operator">(</span><span class="string">qw/foo bar baz/</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@nada</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(-</span><span class="number">6</span><span class="operator">,</span> <span class="number">2</span><span class="operator">);</span>   <span class="comment"># Returns ()         - (3+(-6)+2) &lt;= 0</span>
+    <span class="keyword">my</span> <span class="variable">@some</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(-</span><span class="number">6</span><span class="operator">,</span> <span class="number">4</span><span class="operator">);</span>   <span class="comment"># Returns (foo)      - (3+(-6)+4) &gt; 0</span>
+                                     <span class="comment"># Queue now contains:  bar, baz</span>
+    <span class="keyword">my</span> <span class="variable">@rest</span> <span class="operator">=</span> <span class="variable">$q</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(-</span><span class="number">3</span><span class="operator">,</span> <span class="number">4</span><span class="operator">);</span>   <span class="comment"># Returns (bar, baz) - (2+(-3)+4) &gt; 0</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>Queues created by <a href="../../lib/Thread/Queue.html">the Thread::Queue manpage</a> can be used in both threaded and
+non-threaded applications.</p>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>Passing objects on queues may not work if the objects' classes do not support
+sharing.  See <a href="../../lib/threads/shared.html#bugs_and_limitations">BUGS AND LIMITATIONS in the threads::shared manpage</a> for more.</p>
+<p>Passing array/hash refs that contain objects may not work for Perl prior to
+5.10.0.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Thread::Queue Discussion Forum on CPAN:
+<a href="http://www.cpanforum.com/dist/Thread-Queue">http://www.cpanforum.com/dist/Thread-Queue</a></p>
+<p><a href="../../lib/threads.html">the threads manpage</a>, <a href="../../lib/threads/shared.html">the threads::shared manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="maintainer">MAINTAINER</a></h1>
+<p>Jerry D. Hedden, &lt;jdhedden&nbsp;AT&nbsp;cpan&nbsp;DOT&nbsp;org&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.</p>
+
+</body>
+
+</html>

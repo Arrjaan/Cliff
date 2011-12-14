@@ -1,0 +1,373 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>HTML::Element::traverse - discussion of HTML::Element's traverse method</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>HTML::Element::traverse - discussion of HTML::Element's traverse method</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#the_traverse_method">THE TRAVERSE METHOD</a></li>
+	<ul>
+
+		<li><a href="#traversing_with_recursive_anonymous_routines">Traversing with Recursive Anonymous Routines</a></li>
+		<li><a href="#doing_recursive_things_iteratively">Doing Recursive Things Iteratively</a></li>
+		<li><a href="#pruning_and_whatnot">Pruning and Whatnot</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>HTML::Element::traverse - discussion of HTML::Element's traverse method</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="comment"># $element-&gt;traverse is unnecessary and obscure.</span>
+  <span class="comment">#   Don't use it in new code.</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>HTML::Element</code> provides a method <a href="#traverse"><code>traverse</code></a> that traverses the tree
+and calls user-specified callbacks for each node, in pre- or
+post-order.  However, use of the method is quite superfluous: if you
+want to recursively visit every node in the tree, it's almost always
+simpler to write a subroutine does just that, than it is to bundle up
+the pre- and/or post-order code in callbacks for the <a href="#traverse"><code>traverse</code></a>
+method.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>Suppose you want to traverse at/under a node $tree and give elements
+an 'id' attribute unless they already have one.</p>
+<p>You can use the <a href="#traverse"><code>traverse</code></a> method:</p>
+<pre>
+  <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$counter</span> <span class="operator">=</span> <span class="string">'x0000'</span><span class="operator">;</span>
+    <span class="variable">$start_node</span><span class="operator">-&gt;</span><span class="variable">traverse</span><span class="operator">(</span>
+      <span class="operator">[</span> <span class="comment"># Callbacks;</span>
+        <span class="comment"># pre-order callback:</span>
+        <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+          <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+          <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">,</span> <span class="variable">$counter</span><span class="operator">++)</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">);</span>
+          <span class="keyword">return</span> <span class="variable">HTML::Element::OK</span><span class="operator">;</span> <span class="comment"># keep traversing</span>
+        <span class="operator">},</span>
+        <span class="comment"># post-order callback:</span>
+        <span class="keyword">undef</span>
+      <span class="operator">]</span><span class="operator">,</span>
+      <span class="number">1</span><span class="operator">,</span> <span class="comment"># don't call the callbacks for text nodes</span>
+    <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>or you can just be simple and clear (and not have to understand the
+calling format for <a href="#traverse"><code>traverse</code></a>) by writing a sub that traverses the
+tree by just calling itself:</p>
+<pre>
+  <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$counter</span> <span class="operator">=</span> <span class="string">'x0000'</span><span class="operator">;</span>
+    <span class="keyword">sub</span><span class="variable"> give_id </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+      <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">,</span> <span class="variable">$counter</span><span class="operator">++)</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">);</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">(</span><span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">content_list</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">give_id</span><span class="operator">(</span><span class="variable">$c</span><span class="operator">)</span> <span class="keyword">if</span> <span class="keyword">ref</span> <span class="variable">$c</span><span class="operator">;</span> <span class="comment"># ignore text nodes</span>
+      <span class="operator">}</span>
+    <span class="operator">};</span>
+    <span class="variable">give_id</span><span class="operator">(</span><span class="variable">$start_node</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>See, isn't that nice and clear?</p>
+<p>But, if you really need to know:</p>
+<p>
+</p>
+<hr />
+<h1><a name="the_traverse_method">THE TRAVERSE METHOD</a></h1>
+<p>The <a href="#traverse"><code>traverse()</code></a> method is a general object-method for traversing a
+tree or subtree and calling user-specified callbacks.  It accepts the
+following syntaxes:</p>
+<dl>
+<dt><strong><a name="traverse" class="item">$h-&gt;traverse(\&amp;callback)</a></strong></dt>
+
+<dt><strong>or $h-&gt;traverse(\&amp;callback, $ignore_text)</strong></dt>
+
+<dt><strong>or $h-&gt;traverse( [\&amp;pre_callback,\&amp;post_callback] , $ignore_text)</strong></dt>
+
+</dl>
+<p>These all mean to traverse the element and all of its children.  That
+is, this method starts at node $h, &quot;pre-order visits&quot; $h, traverses its
+children, and then will &quot;post-order visit&quot; $h.  &quot;Visiting&quot; means that
+the callback routine is called, with these arguments:</p>
+<pre>
+    $_[0] : the node (element or text segment),
+    $_[1] : a startflag, and
+    $_[2] : the depth</pre>
+<p>If the $ignore_text parameter is given and true, then the pre-order
+call <em>will not</em> be happen for text content.</p>
+<p>The startflag is 1 when we enter a node (i.e., in pre-order calls) and
+0 when we leave the node (in post-order calls).</p>
+<p>Note, however, that post-order calls don't happen for nodes that are
+text segments or are elements that are prototypically empty (like &quot;br&quot;,
+&quot;hr&quot;, etc.).</p>
+<p>If we visit text nodes (i.e., unless $ignore_text is given and true),
+then when text nodes are visited, we will also pass two extra
+arguments to the callback:</p>
+<pre>
+    $_[3] : the element that's the parent
+             of this text node
+    $_[4] : the index of this text node
+             in its parent's content list</pre>
+<p>Note that you can specify that the pre-order routine can
+be a different routine from the post-order one:</p>
+<pre>
+    <span class="variable">$h</span><span class="operator">-&gt;</span><span class="variable">traverse</span><span class="operator">(</span> <span class="operator">[</span><span class="operator">\&amp;</span><span class="variable">pre_callback</span><span class="operator">,\&amp;</span><span class="variable">post_callback</span><span class="operator">]</span><span class="operator">,</span> <span class="operator">...);</span>
+</pre>
+<p>You can also specify that no post-order calls are to be made,
+by providing a false value as the post-order routine:</p>
+<pre>
+    <span class="variable">$h</span><span class="operator">-&gt;</span><span class="variable">traverse</span><span class="operator">(</span><span class="operator">[</span> <span class="operator">\&amp;</span><span class="variable">pre_callback</span><span class="operator">,</span><span class="number">0</span> <span class="operator">]</span><span class="operator">,</span> <span class="operator">...);</span>
+</pre>
+<p>And similarly for suppressing pre-order callbacks:</p>
+<pre>
+    <span class="variable">$h</span><span class="operator">-&gt;</span><span class="variable">traverse</span><span class="operator">(</span><span class="operator">[</span> <span class="number">0</span><span class="operator">,\&amp;</span><span class="variable">post_callback</span> <span class="operator">]</span><span class="operator">,</span> <span class="operator">...);</span>
+</pre>
+<p>Note that these two syntaxes specify the same operation:</p>
+<pre>
+    <span class="variable">$h</span><span class="operator">-&gt;</span><span class="variable">traverse</span><span class="operator">(</span><span class="operator">[</span><span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,\&amp;</span><span class="variable">foo</span><span class="operator">]</span><span class="operator">,</span> <span class="operator">...);</span>
+    <span class="variable">$h</span><span class="operator">-&gt;</span><span class="variable">traverse</span><span class="operator">(</span> <span class="operator">\&amp;</span><span class="variable">foo</span>       <span class="operator">,</span> <span class="operator">...);</span>
+</pre>
+<p>The return values from calls to your pre- or post-order 
+routines are significant, and are used to control recursion
+into the tree.</p>
+<p>These are the values you can return, listed in descending order
+of my estimation of their usefulness:</p>
+<dl>
+<dt><strong><a name="html_element_ok_1_or_any_other_true_value" class="item">HTML::Element::OK, 1, or any other true value</a></strong></dt>
+
+<dd>
+<p>...to keep on traversing.</p>
+<p>Note that <code>HTML::Element::OK</code> et
+al are constants.  So if you're running under <code>use strict</code>
+(as I hope you are), and you say:
+<code>return HTML::Element::PRUEN</code>
+the compiler will flag this as an error (an unallowable
+bareword, specifically), whereas if you spell PRUNE correctly,
+the compiler will not complain.</p>
+</dd>
+<dt><strong><a name="undef_0_0_or_html_element_prune" class="item">undef, 0, '0', '', or HTML::Element::PRUNE</a></strong></dt>
+
+<dd>
+<p>...to block traversing under the current element's content.
+(This is ignored if received from a post-order callback,
+since by then the recursion has already happened.)
+If this is returned by a pre-order callback, no
+post-order callback for the current node will happen.
+(Recall that if your callback exits with just <a href="../../../lib/pods/perlfunc.html#return"><code>return;</code></a>,
+it is returning undef -- at least in scalar context, and
+<a href="#traverse"><code>traverse</code></a> always calls your callbacks in scalar context.)</p>
+</dd>
+<dt><strong><a name="html_element_abort" class="item">HTML::Element::ABORT</a></strong></dt>
+
+<dd>
+<p>...to abort the whole traversal immediately.
+This is often useful when you're looking for just the first
+node in the tree that meets some criterion of yours.</p>
+</dd>
+<dt><strong><a name="html_element_prune_up" class="item">HTML::Element::PRUNE_UP</a></strong></dt>
+
+<dd>
+<p>...to abort continued traversal into this node and its parent
+node.  No post-order callback for the current or parent
+node will happen.</p>
+</dd>
+<dt><strong><a name="html_element_prune_softly" class="item">HTML::Element::PRUNE_SOFTLY</a></strong></dt>
+
+<dd>
+<p>Like PRUNE, except that the post-order call for the current
+node is not blocked.</p>
+</dd>
+</dl>
+<p>Almost every task to do with extracting information from a tree can be
+expressed in terms of traverse operations (usually in only one pass,
+and usually paying attention to only pre-order, or to only
+post-order), or operations based on traversing. (In fact, many of the
+other methods in this class are basically calls to <a href="#traverse"><code>traverse()</code></a> with
+particular arguments.)</p>
+<p>The source code for HTML::Element and HTML::TreeBuilder contain
+several examples of the use of the &quot;traverse&quot; method to gather
+information about the content of trees and subtrees.</p>
+<p>(Note: you should not change the structure of a tree <em>while</em> you are
+traversing it.)</p>
+<p>[End of documentation for the <a href="#traverse"><code>traverse()</code></a> method]</p>
+<p>
+</p>
+<h2><a name="traversing_with_recursive_anonymous_routines">Traversing with Recursive Anonymous Routines</a></h2>
+<p>Now, if you've been reading
+<em>Structure and Interpretation of Computer Programs</em> too much, maybe
+you even want a recursive lambda.  Go ahead:</p>
+<pre>
+  <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$counter</span> <span class="operator">=</span> <span class="string">'x0000'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$give_id</span><span class="operator">;</span>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+      <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">,</span> <span class="variable">$counter</span><span class="operator">++)</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">);</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">(</span><span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">content_list</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$give_id</span><span class="operator">-&gt;(</span><span class="variable">$c</span><span class="operator">)</span> <span class="keyword">if</span> <span class="keyword">ref</span> <span class="variable">$c</span><span class="operator">;</span> <span class="comment"># ignore text nodes</span>
+      <span class="operator">}</span>
+    <span class="operator">};</span>
+    <span class="variable">$give_id</span><span class="operator">-&gt;(</span><span class="variable">$start_node</span><span class="operator">);</span>
+    <span class="keyword">undef</span> <span class="variable">$give_id</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>It's a bit nutty, and it's <em>still</em> more concise than a call to the
+<a href="#traverse"><code>traverse</code></a> method!</p>
+<p>It is left as an exercise to the reader to figure out how to do the
+same thing without using a <code>$give_id</code> symbol at all.</p>
+<p>It is also left as an exercise to the reader to figure out why I
+undefine <code>$give_id</code>, above; and why I could achieved the same effect
+with any of:</p>
+<pre>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="string">'I like pie!'</span><span class="operator">;</span>
+       <span class="comment"># or...</span>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="operator">[]</span><span class="operator">;</span>
+       <span class="comment"># or even;</span>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Mmmm pie!\n"</span> <span class="operator">};</span>
+</pre>
+<p>But not:</p>
+<pre>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"I'm </span><span class="variable">$give_id</span><span class="string"> and I like pie!\n"</span> <span class="operator">};</span>
+       <span class="comment"># nor...</span>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">$give_id</span><span class="operator">;</span>
+       <span class="comment"># nor...</span>
+    <span class="variable">$give_id</span> <span class="operator">=</span> <span class="operator">{</span> <span class="string">'pie'</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$give_id</span><span class="operator">,</span> <span class="string">'mode'</span> <span class="operator">=&gt;</span> <span class="string">'a la'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="doing_recursive_things_iteratively">Doing Recursive Things Iteratively</a></h2>
+<p>Note that you may at times see an iterative implementation of
+pre-order traversal, like so:</p>
+<pre>
+   <span class="operator">{</span>
+     <span class="keyword">my</span> <span class="variable">@to_do</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$tree</span><span class="operator">);</span> <span class="comment"># start-node</span>
+     <span class="keyword">while</span><span class="operator">(</span><span class="variable">@to_do</span><span class="operator">)</span> <span class="operator">{</span>
+       <span class="keyword">my</span> <span class="variable">$this</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="variable">@to_do</span><span class="operator">;</span>
+       
+       <span class="comment"># "Visit" the node:</span>
+       <span class="variable">$this</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">,</span> <span class="variable">$counter</span><span class="operator">++)</span>
+        <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$this</span><span class="operator">-&gt;</span><span class="variable">attr</span><span class="operator">(</span><span class="string">'id'</span><span class="operator">);</span>
+       
+       <span class="keyword">unshift</span> <span class="variable">@to_do</span><span class="operator">,</span> <span class="keyword">grep</span> <span class="keyword">ref</span> <span class="variable">$_</span><span class="operator">,</span> <span class="variable">$this</span><span class="operator">-&gt;</span><span class="variable">content_list</span><span class="operator">;</span>
+        <span class="comment"># Put children on the stack -- they'll be visited next</span>
+     <span class="operator">}</span>
+   <span class="operator">}</span>
+</pre>
+<p>This can <em>under certain circumstances</em> be more efficient than just a
+normal recursive routine, but at the cost of being rather obscure.  It
+gains efficiency by avoiding the overhead of function-calling, but
+since there are several method dispatches however you do it (to
+<code>attr</code> and <code>content_list</code>), the overhead for a simple function call
+is insignificant.</p>
+<p>
+</p>
+<h2><a name="pruning_and_whatnot">Pruning and Whatnot</a></h2>
+<p>The <a href="#traverse"><code>traverse</code></a> method does have the fairly neat features of 
+the <code>ABORT</code>, <code>PRUNE_UP</code> and <code>PRUNE_SOFTLY</code> signals.  None of these
+can be implemented <em>totally</em> straightforwardly with recursive
+routines, but it is quite possible.  <code>ABORT</code>-like behavior can be
+implemented either with using non-local returning with <a href="../../../lib/pods/perlfunc.html#eval"><code>eval</code></a>/<a href="../../../lib/pods/perlfunc.html#die"><code>die</code></a>:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$died_on</span><span class="operator">;</span> <span class="comment"># if you need to know where...</span>
+  <span class="keyword">sub</span><span class="variable"> thing </span><span class="operator">{</span>
+    <span class="operator">...</span> <span class="variable">visits</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">...</span>
+    <span class="operator">...</span> <span class="variable">maybe</span> <span class="variable">set</span> <span class="variable">$died_on</span> <span class="variable">to</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="keyword">and</span> <span class="keyword">die</span> <span class="string">"ABORT_TRAV"</span> <span class="operator">...</span>
+    <span class="operator">...</span> <span class="keyword">else</span> <span class="variable">call</span> <span class="variable">thing</span><span class="operator">(</span><span class="variable">$child</span><span class="operator">)</span> <span class="keyword">for</span> <span class="keyword">each</span> <span class="variable">child</span><span class="operator">...</span>
+    <span class="operator">...</span><span class="variable">any</span> <span class="variable">post</span><span class="operator">-</span><span class="variable">order</span> <span class="variable">visiting</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">...</span>
+  <span class="operator">}</span>
+  <span class="keyword">eval</span> <span class="operator">{</span> <span class="variable">thing</span><span class="operator">(</span><span class="variable">$node</span><span class="operator">)</span> <span class="operator">};</span>
+  <span class="keyword">if</span><span class="operator">(</span><span class="variable">$@</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">if</span><span class="operator">(</span><span class="variable">$@</span> <span class="operator">=~</span> <span class="regex">m&lt;^ABORT_TRAV&gt;</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="operator">...</span><span class="variable">it</span> <span class="variable">died</span> <span class="operator">(</span><span class="variable">aborted</span><span class="operator">)</span> <span class="variable">on</span> <span class="variable">$died_on</span><span class="operator">...</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+      <span class="keyword">die</span> <span class="variable">$@</span><span class="operator">;</span> <span class="comment"># some REAL error happened</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>or you can just do it with flags:</p>
+<pre>
+  <span class="keyword">my</span><span class="operator">(</span><span class="variable">$abort_flag</span><span class="operator">,</span> <span class="variable">$died_on</span><span class="operator">);</span>
+  <span class="keyword">sub</span><span class="variable"> thing </span><span class="operator">{</span>
+    <span class="operator">...</span> <span class="variable">visits</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">...</span>
+    <span class="operator">...</span> <span class="variable">maybe</span> <span class="variable">set</span> <span class="variable">$abort_flag</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="variable">$died_on</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span> <span class="keyword">return</span><span class="operator">;</span>
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">(</span><span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="variable">content_list</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="variable">thing</span><span class="operator">(</span><span class="variable">$c</span><span class="operator">);</span>
+      <span class="keyword">return</span> <span class="keyword">if</span> <span class="variable">$abort_flag</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="operator">...</span><span class="variable">any</span> <span class="variable">post</span><span class="operator">-</span><span class="variable">order</span> <span class="variable">visiting</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">...</span>
+    <span class="keyword">return</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="variable">$abort_flag</span> <span class="operator">=</span> <span class="variable">$died_on</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+  <span class="variable">thing</span><span class="operator">(</span><span class="variable">$node</span><span class="operator">);</span>
+  <span class="operator">...</span><span class="keyword">if</span> <span class="keyword">defined</span> <span class="variable">$abort_flag</span><span class="operator">,</span> <span class="variable">it</span> <span class="variable">died</span> <span class="variable">on</span> <span class="variable">$died_on</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../lib/HTML/Element.html">the HTML::Element manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2000,2001 Sean M. Burke</p>
+<p>
+</p>
+<hr />
+<h1><a name="author_current_author__jeff_fearn__jfearn_cpan_org__">AUTHOR
+Current Author:
+	Jeff Fearn <code>&lt;jfearn@cpan.org&gt;</code>.</a></h1>
+<p><table cellspacing="0" cellpadding="0"><tr><td>Original HTML-Tree author:
+<tr><td><td>Gisle Aas.</table></p>
+<p><table cellspacing="0" cellpadding="0"><tr><td>Former Authors:
+<tr><td><td>Sean M. Burke.
+<tr><td><td>Andy Lester.
+<tr><td><td>Pete Krawczyk <code>&lt;petek@cpan.org&gt;</code>.</table></p>
+
+</body>
+
+</html>

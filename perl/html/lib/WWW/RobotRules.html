@@ -1,0 +1,214 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>WWW::RobotRules - database of robots.txt-derived permissions</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>WWW::RobotRules - database of robots.txt-derived permissions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#robots_txt">ROBOTS.TXT</a></li>
+	<li><a href="#robots_txt_examples">ROBOTS.TXT EXAMPLES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>WWW::RobotRules - database of robots.txt-derived permissions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">WWW::RobotRules</span><span class="operator">;</span>
+ <span class="keyword">my</span> <span class="variable">$rules</span> <span class="operator">=</span> <span class="variable">WWW::RobotRules</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'MOMspider/1.0'</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="keyword">use</span> <span class="variable">LWP::Simple</span> <span class="string">qw(get)</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="operator">{</span>
+   <span class="keyword">my</span> <span class="variable">$url</span> <span class="operator">=</span> <span class="string">"http://some.place/robots.txt"</span><span class="operator">;</span>
+   <span class="keyword">my</span> <span class="variable">$robots_txt</span> <span class="operator">=</span> <span class="variable">get</span> <span class="variable">$url</span><span class="operator">;</span>
+   <span class="variable">$rules</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">,</span> <span class="variable">$robots_txt</span><span class="operator">)</span> <span class="keyword">if</span> <span class="keyword">defined</span> <span class="variable">$robots_txt</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="operator">{</span>
+   <span class="keyword">my</span> <span class="variable">$url</span> <span class="operator">=</span> <span class="string">"http://some.other.place/robots.txt"</span><span class="operator">;</span>
+   <span class="keyword">my</span> <span class="variable">$robots_txt</span> <span class="operator">=</span> <span class="variable">get</span> <span class="variable">$url</span><span class="operator">;</span>
+   <span class="variable">$rules</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">,</span> <span class="variable">$robots_txt</span><span class="operator">)</span> <span class="keyword">if</span> <span class="keyword">defined</span> <span class="variable">$robots_txt</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="comment"># Now we can check if a URL is valid for those servers</span>
+ <span class="comment"># whose "robots.txt" files we've gotten and parsed:</span>
+ <span class="keyword">if</span><span class="operator">(</span><span class="variable">$rules</span><span class="operator">-&gt;</span><span class="variable">allowed</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">))</span> <span class="operator">{</span>
+     <span class="variable">$c</span> <span class="operator">=</span> <span class="variable">get</span> <span class="variable">$url</span><span class="operator">;</span>
+     <span class="operator">...</span>
+ <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module parses <em class="file">/robots.txt</em> files as specified in
+&quot;A Standard for Robot Exclusion&quot;, at
+&lt;http://www.robotstxt.org/wc/norobots.html&gt;
+Webmasters can use the <em class="file">/robots.txt</em> file to forbid conforming
+robots from accessing parts of their web site.</p>
+<p>The parsed files are kept in a WWW::RobotRules object, and this object
+provides methods to check if access to a given URL is prohibited.  The
+same WWW::RobotRules object can be used for one or more parsed
+<em class="file">/robots.txt</em> files on any number of hosts.</p>
+<p>The following methods are provided:</p>
+<dl>
+<dt><strong><a name="new" class="item">$rules = WWW::RobotRules-&gt;<code>new($robot_name)</code></a></strong></dt>
+
+<dd>
+<p>This is the constructor for WWW::RobotRules objects.  The first
+argument given to <a href="#new"><code>new()</code></a> is the name of the robot.</p>
+</dd>
+<dt><strong><a name="parse" class="item">$rules-&gt;parse($robot_txt_url, $content, $fresh_until)</a></strong></dt>
+
+<dd>
+<p>The <a href="#parse"><code>parse()</code></a> method takes as arguments the URL that was used to
+retrieve the <em class="file">/robots.txt</em> file, and the contents of the file.</p>
+</dd>
+<dt><strong><a name="allowed" class="item">$rules-&gt;<code>allowed($uri)</code></a></strong></dt>
+
+<dd>
+<p>Returns TRUE if this robot is allowed to retrieve this URL.</p>
+</dd>
+<dt><strong><a name="agent" class="item">$rules-&gt;<code>agent([$name])</code></a></strong></dt>
+
+<dd>
+<p>Get/set the agent name. NOTE: Changing the agent name will clear the robots.txt
+rules and expire times out of the cache.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="robots_txt">ROBOTS.TXT</a></h1>
+<p>The format and semantics of the &quot;/robots.txt&quot; file are as follows
+(this is an edited abstract of
+&lt;http://www.robotstxt.org/wc/norobots.html&gt;):</p>
+<p>The file consists of one or more records separated by one or more
+blank lines. Each record contains lines of the form</p>
+<pre>
+  &lt;field-name&gt;: &lt;value&gt;</pre>
+<p>The field name is case insensitive.  Text after the '#' character on a
+line is ignored during parsing.  This is used for comments.  The
+following &lt;field-names&gt; can be used:</p>
+<dl>
+<dt><strong><a name="user_agent" class="item">User-Agent</a></strong></dt>
+
+<dd>
+<p>The value of this field is the name of the robot the record is
+describing access policy for.  If more than one <em>User-Agent</em> field is
+present the record describes an identical access policy for more than
+one robot. At least one field needs to be present per record.  If the
+value is '*', the record describes the default access policy for any
+robot that has not not matched any of the other records.</p>
+<p>The <em>User-Agent</em> fields must occur before the <em>Disallow</em> fields.  If a
+record contains a <em>User-Agent</em> field after a <em>Disallow</em> field, that
+constitutes a malformed record.  This parser will assume that a blank
+line should have been placed before that <em>User-Agent</em> field, and will
+break the record into two.  All the fields before the <em>User-Agent</em> field
+will constitute a record, and the <em>User-Agent</em> field will be the first
+field in a new record.</p>
+</dd>
+<dt><strong><a name="disallow" class="item">Disallow</a></strong></dt>
+
+<dd>
+<p>The value of this field specifies a partial URL that is not to be
+visited. This can be a full path, or a partial path; any URL that
+starts with this value will not be retrieved</p>
+</dd>
+</dl>
+<p>Unrecognized records are ignored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="robots_txt_examples">ROBOTS.TXT EXAMPLES</a></h1>
+<p>The following example &quot;/robots.txt&quot; file specifies that no robots
+should visit any URL starting with &quot;/cyberworld/map/&quot; or &quot;/tmp/&quot;:</p>
+<pre>
+  User-agent: *
+  Disallow: /cyberworld/map/ # This is an infinite virtual URL space
+  Disallow: /tmp/ # these will soon disappear</pre>
+<p>This example &quot;/robots.txt&quot; file specifies that no robots should visit
+any URL starting with &quot;/cyberworld/map/&quot;, except the robot called
+&quot;cybermapper&quot;:</p>
+<pre>
+  User-agent: *
+  Disallow: /cyberworld/map/ # This is an infinite virtual URL space</pre>
+<pre>
+  # Cybermapper knows where to go.
+  User-agent: cybermapper
+  Disallow:</pre>
+<p>This example indicates that no robots should visit this site further:</p>
+<pre>
+  # go away
+  User-agent: *
+  Disallow: /</pre>
+<p>This is an example of a malformed robots.txt file.</p>
+<pre>
+  # robots.txt for ancientcastle.example.com
+  # I've locked myself away.
+  User-agent: *
+  Disallow: /
+  # The castle is your home now, so you can go anywhere you like.
+  User-agent: Belle
+  Disallow: /west-wing/ # except the west wing!
+  # It's good to be the Prince...
+  User-agent: Beast
+  Disallow:</pre>
+<p>This file is missing the required blank lines between records.
+However, the intention is clear.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/LWP/RobotUA.html">the LWP::RobotUA manpage</a>, <a href="../../lib/WWW/RobotRules/AnyDBM_File.html">the WWW::RobotRules::AnyDBM_File manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<pre>
+  Copyright 1995-2009, Gisle Aas
+  Copyright 1995, Martijn Koster</pre>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

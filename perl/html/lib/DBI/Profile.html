@@ -1,0 +1,699 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>DBI::Profile - Performance profiling and benchmarking for the DBI</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>DBI::Profile - Performance profiling and benchmarking for the DBI</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#overview">OVERVIEW</a></li>
+	<li><a href="#enabling_a_profile">ENABLING A PROFILE</a></li>
+	<li><a href="#the_profile_object">THE PROFILE OBJECT</a></li>
+	<ul>
+
+		<li><a href="#data">Data</a></li>
+		<li><a href="#path">Path</a></li>
+		<ul>
+
+			<li><a href="#special_constant">Special Constant</a></li>
+			<li><a href="#code_reference">Code Reference</a></li>
+			<li><a href="#subroutine_specifier">Subroutine Specifier</a></li>
+			<li><a href="#attribute_specifier">Attribute Specifier</a></li>
+			<li><a href="#reference_to_a_scalar">Reference to a Scalar</a></li>
+			<li><a href="#other_values">Other Values</a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#reporting">REPORTING</a></li>
+	<ul>
+
+		<li><a href="#report_format">Report Format</a></li>
+		<li><a href="#report_destination">Report Destination</a></li>
+	</ul>
+
+	<li><a href="#child_handles">CHILD HANDLES</a></li>
+	<li><a href="#profile_object_methods">PROFILE OBJECT METHODS</a></li>
+	<ul>
+
+		<li><a href="#format">format</a></li>
+		<li><a href="#as_node_path_list">as_node_path_list</a></li>
+		<li><a href="#as_text">as_text</a></li>
+	</ul>
+
+	<li><a href="#custom_data_manipulation">CUSTOM DATA MANIPULATION</a></li>
+	<ul>
+
+		<li><a href="#dbi_profile_merge_nodes">dbi_profile_merge_nodes</a></li>
+	</ul>
+
+	<li><a href="#custom_data_collection">CUSTOM DATA COLLECTION</a></li>
+	<ul>
+
+		<li><a href="#using_the_path_attribute">Using The Path Attribute</a></li>
+		<li><a href="#adding_your_own_samples">Adding Your Own Samples</a></li>
+	</ul>
+
+	<li><a href="#subclassing">SUBCLASSING</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>DBI::Profile - Performance profiling and benchmarking for the DBI</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>The easiest way to enable DBI profiling is to set the DBI_PROFILE
+environment variable to 2 and then run your code as usual:</p>
+<pre>
+  DBI_PROFILE=2 prog.pl</pre>
+<p>This will profile your program and then output a textual summary
+grouped by query when the program exits.  You can also enable profiling by
+setting the Profile attribute of any DBI handle:</p>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">2</span><span class="operator">;</span>
+</pre>
+<p>Then the summary will be printed when the handle is destroyed.</p>
+<p>Many other values apart from are possible - see <a href="#enabling_a_profile">ENABLING A PROFILE</a> below.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The DBI::Profile module provides a simple interface to collect and
+report performance and benchmarking data from the DBI.</p>
+<p>For a more elaborate interface, suitable for larger programs, see
+<a href="../../lib/DBI/ProfileDumper.html">DBI::ProfileDumper</a> and <a href="../../bin/dbiprof.html">dbiprof</a>.
+For Apache/mod_perl applications see
+<a href="../../lib/DBI/ProfileDumper/Apache.html">DBI::ProfileDumper::Apache</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="overview">OVERVIEW</a></h1>
+<p>Performance data collection for the DBI is built around several
+concepts which are important to understand clearly.</p>
+<dl>
+<dt><strong><a name="method_dispatch" class="item">Method Dispatch</a></strong></dt>
+
+<dd>
+<p>Every method call on a DBI handle passes through a single 'dispatch'
+function which manages all the common aspects of DBI method calls,
+such as handling the RaiseError attribute.</p>
+</dd>
+<dt><strong><a name="data_collection" class="item">Data Collection</a></strong></dt>
+
+<dd>
+<p>If profiling is enabled for a handle then the dispatch code takes
+a high-resolution timestamp soon after it is entered. Then, after
+calling the appropriate method and just before returning, it takes
+another high-resolution timestamp and calls a function to record
+the information.  That function is passed the two timestamps
+plus the DBI handle and the name of the method that was called.
+That data about a single DBI method call is called a <em>profile sample</em>.</p>
+</dd>
+<dt><strong><a name="data_filtering" class="item">Data Filtering</a></strong></dt>
+
+<dd>
+<p>If the method call was invoked by the DBI or by a driver then the call is
+ignored for profiling because the time spent will be accounted for by the
+original 'outermost' call for your code.</p>
+<p>For example, the calls that the <code>selectrow_arrayref()</code> method makes
+to <code>prepare()</code> and <code>execute()</code> etc. are not counted individually
+because the time spent in those methods is going to be allocated
+to the <code>selectrow_arrayref()</code> method when it returns. If this was not
+done then it would be very easy to double count time spent inside
+the DBI.</p>
+</dd>
+<dt><strong><a name="data_storage_tree" class="item">Data Storage Tree</a></strong></dt>
+
+<dd>
+<p>The profile data is accumulated as 'leaves on a tree'. The 'path' through the
+branches of the tree to a particular leaf is determined dynamically for each sample.
+This is a key feature of DBI profiling.</p>
+<p>For each profiled method call the DBI walks along the Path and uses each value
+in the Path to step into and grow the Data tree.</p>
+<p>For example, if the Path is</p>
+<pre>
+  [ 'foo', 'bar', 'baz' ]</pre>
+<p>then the new profile sample data will be <em>merged</em> into the tree at</p>
+<pre>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Data</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">foo</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">bar</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">baz</span><span class="operator">}</span>
+</pre>
+<p>But it's not very useful to merge all the call data into one leaf node (except
+to get an overall 'time spent inside the DBI' total).  It's more common to want
+the Path to include dynamic values such as the current statement text and/or
+the name of the method called to show what the time spent inside the DBI was for.</p>
+<p>The Path can contain some 'magic cookie' values that are automatically replaced
+by corresponding dynamic values when they're used. These magic cookies always
+start with a punctuation character.</p>
+<p>For example a value of '<code>!MethodName</code>' in the Path causes the corresponding
+entry in the Data to be the name of the method that was called.
+For example, if the Path was:</p>
+<pre>
+  [ 'foo', '!MethodName', 'bar' ]</pre>
+<p>and the <code>selectall_arrayref()</code> method was called, then the profile sample data
+for that call will be merged into the tree at:</p>
+<pre>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Data</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">foo</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">selectall_arrayref</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">bar</span><span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="profile_data" class="item">Profile Data</a></strong></dt>
+
+<dd>
+<p>Profile data is stored at the 'leaves' of the tree as references
+to an array of numeric values. For example:</p>
+<pre>
+  [
+    106,                  # 0: count of samples at this node
+    0.0312958955764771,   # 1: total duration
+    0.000490069389343262, # 2: first duration
+    0.000176072120666504, # 3: shortest duration
+    0.00140702724456787,  # 4: longest duration
+    1023115819.83019,     # 5: time of first sample
+    1023115819.86576,     # 6: time of last sample
+  ]</pre>
+<p>After the first sample, later samples always update elements 0, 1, and 6, and
+may update 3 or 4 depending on the duration of the sampled call.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="enabling_a_profile">ENABLING A PROFILE</a></h1>
+<p>Profiling is enabled for a handle by assigning to the Profile
+attribute. For example:</p>
+<pre>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">DBI::Profile</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+</pre>
+<p>The Profile attribute holds a blessed reference to a hash object
+that contains the profile data and attributes relating to it.</p>
+<p>The class the Profile object is blessed into is expected to
+provide at least a DESTROY method which will dump the profile data
+to the DBI trace file handle (STDERR by default).</p>
+<p>All these examples have the same effect as each other:</p>
+<pre>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"/DBI::Profile"</span><span class="operator">;</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">DBI::Profile</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">{</span> <span class="string">Path</span> <span class="operator">=&gt;</span> <span class="operator">[]</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Similarly, these examples have the same effect as each other:</p>
+<pre>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">6</span><span class="operator">;</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"6/DBI::Profile"</span><span class="operator">;</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"!Statement:!MethodName/DBI::Profile"</span><span class="operator">;</span>
+  <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">{</span> <span class="string">Path</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'!Statement'</span><span class="operator">,</span> <span class="string">'!MethodName'</span> <span class="operator">]</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>If a non-blessed hash reference is given then the DBI::Profile
+module is automatically <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a>'d and the reference is blessed
+into that class.</p>
+<p>If a string is given then it is processed like this:</p>
+<pre>
+    ($path, $module, $args) = split /\//, $string, 3</pre>
+<pre>
+    @path = split /:/, $path
+    @args = split /:/, $args</pre>
+<pre>
+    eval &quot;require $module&quot; if $module
+    $module ||= &quot;DBI::Profile&quot;</pre>
+<pre>
+    $module-&gt;new( Path =&gt; \@Path, @args )</pre>
+<p>So the first value is used to select the Path to be used (see below).
+The second value, if present, is used as the name of a module which
+will be loaded and it's <code>new</code> method called. If not present it
+defaults to DBI::Profile. Any other values are passed as arguments
+to the <code>new</code> method. For example: &quot;<code>2/DBIx::OtherProfile/Foo:42</code>&quot;.</p>
+<p>Numbers can be used as a shorthand way to enable common Path values.
+The simplest way to explain how the values are interpreted is to show the code:</p>
+<pre>
+    <span class="keyword">push</span> <span class="variable">@Path</span><span class="operator">,</span> <span class="string">"DBI"</span>           <span class="keyword">if</span> <span class="variable">$path_elem</span> <span class="operator">&amp;</span> <span class="number">0x01</span><span class="operator">;</span>
+    <span class="keyword">push</span> <span class="variable">@Path</span><span class="operator">,</span> <span class="string">"!Statement"</span>    <span class="keyword">if</span> <span class="variable">$path_elem</span> <span class="operator">&amp;</span> <span class="number">0x02</span><span class="operator">;</span>
+    <span class="keyword">push</span> <span class="variable">@Path</span><span class="operator">,</span> <span class="string">"!MethodName"</span>   <span class="keyword">if</span> <span class="variable">$path_elem</span> <span class="operator">&amp;</span> <span class="number">0x04</span><span class="operator">;</span>
+    <span class="keyword">push</span> <span class="variable">@Path</span><span class="operator">,</span> <span class="string">"!MethodClass"</span>  <span class="keyword">if</span> <span class="variable">$path_elem</span> <span class="operator">&amp;</span> <span class="number">0x08</span><span class="operator">;</span>
+    <span class="keyword">push</span> <span class="variable">@Path</span><span class="operator">,</span> <span class="string">"!Caller2"</span>      <span class="keyword">if</span> <span class="variable">$path_elem</span> <span class="operator">&amp;</span> <span class="number">0x10</span><span class="operator">;</span>
+</pre>
+<p>So &quot;2&quot; is the same as &quot;!Statement&quot; and &quot;6&quot; (2+4) is the same as
+&quot;!Statement:!Method&quot;.  Those are the two most commonly used values.  Using a
+negative number will reverse the path. Thus &quot;-6&quot; will group by method name then
+statement.</p>
+<p>The splitting and parsing of string values assigned to the Profile
+attribute may seem a little odd, but there's a good reason for it.
+Remember that attributes can be embedded in the Data Source Name
+string which can be passed in to a script as a parameter. For
+example:</p>
+<pre>
+    <span class="variable">dbi</span><span class="operator">:</span><span class="variable">DriverName</span><span class="operator">(</span><span class="string">Profile</span><span class="operator">=&gt;</span><span class="number">2</span><span class="operator">):</span><span class="variable">dbname</span>
+    <span class="variable">dbi</span><span class="operator">:</span><span class="variable">DriverName</span><span class="operator">(</span><span class="string">Profile</span><span class="operator">=&gt;</span><span class="operator">{</span><span class="string">Username</span><span class="operator">}</span><span class="operator">:!</span><span class="variable">Statement</span><span class="operator">/</span><span class="variable">MyProfiler</span><span class="operator">/</span><span class="variable">Foo</span><span class="operator">:</span><span class="number">42</span><span class="operator">):</span><span class="variable">dbname</span>
+</pre>
+<p>And also, if the <code>DBI_PROFILE</code> environment variable is set then
+The DBI arranges for every driver handle to share the same profile
+object. When perl exits a single profile summary will be generated
+that reflects (as nearly as practical) the total use of the DBI by
+the application.</p>
+<p>
+</p>
+<hr />
+<h1><a name="the_profile_object">THE PROFILE OBJECT</a></h1>
+<p>The DBI core expects the Profile attribute value to be a hash
+reference and if the following values don't exist it will create
+them as needed:</p>
+<p>
+</p>
+<h2><a name="data">Data</a></h2>
+<p>A reference to a hash containing the collected profile data.</p>
+<p>
+</p>
+<h2><a name="path">Path</a></h2>
+<p>The Path value is a reference to an array. Each element controls the
+value to use at the corresponding level of the profile Data tree.</p>
+<p>If the value of Path is anything other than an array reference,
+it is treated as if it was:</p>
+<pre>
+        [ '!Statement' ]</pre>
+<p>The elements of Path array can be one of the following types:</p>
+<p>
+</p>
+<h3><a name="special_constant">Special Constant</a></h3>
+<p><strong>!Statement</strong></p>
+<p>Use the current Statement text. Typically that's the value of the Statement
+attribute for the handle the method was called with. Some methods, like
+<code>commit()</code> and <code>rollback()</code>, are unrelated to a particular statement. For those
+methods !Statement records an empty string.</p>
+<p>For statement handles this is always simply the string that was
+given to <code>prepare()</code> when the handle was created.  For database handles
+this is the statement that was last prepared or executed on that
+database handle. That can lead to a little 'fuzzyness' because, for
+example, calls to the <code>quote()</code> method to build a new statement will
+typically be associated with the previous statement. In practice
+this isn't a significant issue and the dynamic Path mechanism can
+be used to setup your own rules.</p>
+<p><strong>!MethodName</strong></p>
+<p>Use the name of the DBI method that the profile sample relates to.</p>
+<p><strong>!MethodClass</strong></p>
+<p>Use the fully qualified name of the DBI method, including
+the package, that the profile sample relates to. This shows you
+where the method was implemented. For example:</p>
+<pre>
+  'DBD::_::db::selectrow_arrayref' =&gt;
+      0.022902s
+  'DBD::mysql::db::selectrow_arrayref' =&gt;
+      2.244521s / 99 = 0.022445s avg (first 0.022813s, min 0.022051s, max 0.028932s)</pre>
+<p>The &quot;DBD::_::db::selectrow_arrayref&quot; shows that the driver has
+inherited the selectrow_arrayref method provided by the DBI.</p>
+<p>But you'll note that there is only one call to
+DBD::_::db::selectrow_arrayref but another 99 to
+DBD::mysql::db::selectrow_arrayref. Currently the first
+call doesn't record the true location. That may change.</p>
+<p><strong>!Caller</strong></p>
+<p>Use a string showing the filename and line number of the code calling the method.</p>
+<p><strong>!Caller2</strong></p>
+<p>Use a string showing the filename and line number of the code calling the
+method, as for !Caller, but also include filename and line number of the code
+that called that. Calls from DBI:: and DBD:: packages are skipped.</p>
+<p><strong>!File</strong></p>
+<p>Same as !Caller above except that only the filename is included, not the line number.</p>
+<p><strong>!File2</strong></p>
+<p>Same as !Caller2 above except that only the filenames are included, not the line number.</p>
+<p><strong>!Time</strong></p>
+<p>Use the current value of <a href="../../lib/pods/perlfunc.html#time"><code>time()</code></a>. Rarely used. See the more useful <code>!Time~N</code> below.</p>
+<p><strong>!Time~N</strong></p>
+<p>Where <code>N</code> is an integer. Use the current value of <a href="../../lib/pods/perlfunc.html#time"><code>time()</code></a> but with reduced precision.
+The value used is determined in this way:</p>
+<pre>
+    int( time() / N ) * N</pre>
+<p>This is a useful way to segregate a profile into time slots. For example:</p>
+<pre>
+    [ '!Time~60', '!Statement' ]</pre>
+<p>
+</p>
+<h3><a name="code_reference">Code Reference</a></h3>
+<p>The subroutine is passed the handle it was called on and the DBI method name.
+The current Statement is in $_. The statement string should not be modified,
+so most subs start with <a href="../../lib/pods/perlfunc.html#local"><code>local $_ = $_;</code></a>.</p>
+<p>The list of values it returns is used at that point in the Profile Path.</p>
+<p>The sub can 'veto' (reject) a profile sample by including a reference to undef
+in the returned list. That can be useful when you want to only profile
+statements that match a certain pattern, or only profile certain methods.</p>
+<p>
+</p>
+<h3><a name="subroutine_specifier">Subroutine Specifier</a></h3>
+<p>A Path element that begins with '<code>&amp;</code>' is treated as the name of a subroutine
+in the DBI::ProfileSubs namespace and replaced with the corresponding code reference.</p>
+<p>Currently this only works when the Path is specified by the <code>DBI_PROFILE</code>
+environment variable.</p>
+<p>Also, currently, the only subroutine in the DBI::ProfileSubs namespace is
+<code>'&amp;norm_std_n3'</code>. That's a very handy subroutine when profiling code that
+doesn't use placeholders. See <a href="../../lib/DBI/ProfileSubs.html">the DBI::ProfileSubs manpage</a> for more information.</p>
+<p>
+</p>
+<h3><a name="attribute_specifier">Attribute Specifier</a></h3>
+<p>A string enclosed in braces, such as '<code>{Username}</code>', specifies that the current
+value of the corresponding database handle attribute should be used at that
+point in the Path.</p>
+<p>
+</p>
+<h3><a name="reference_to_a_scalar">Reference to a Scalar</a></h3>
+<p>Specifies that the current value of the referenced scalar be used at that point
+in the Path.  This provides an efficient way to get 'contextual' values into
+your profile.</p>
+<p>
+</p>
+<h3><a name="other_values">Other Values</a></h3>
+<p>Any other values are stringified and used literally.</p>
+<p>(References, and values that begin with punctuation characters are reserved.)</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting">REPORTING</a></h1>
+<p>
+</p>
+<h2><a name="report_format">Report Format</a></h2>
+<p>The current accumulated profile data can be formatted and output using</p>
+<pre>
+    <span class="keyword">print</span> <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">format</span><span class="operator">;</span>
+</pre>
+<p>To discard the profile data and start collecting fresh data
+you can do:</p>
+<pre>
+    <span class="variable">$h</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Data</span><span class="operator">}</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+</pre>
+<p>The default results format looks like this:</p>
+<pre>
+  DBI::Profile: 0.001015s 42.7% (5 calls) programname @ YYYY-MM-DD HH:MM:SS
+  '' =&gt;
+      0.000024s / 2 = 0.000012s avg (first 0.000015s, min 0.000009s, max 0.000015s)
+  'SELECT mode,size,name FROM table' =&gt;
+      0.000991s / 3 = 0.000330s avg (first 0.000678s, min 0.000009s, max 0.000678s)</pre>
+<p>Which shows the total time spent inside the DBI, with a count of
+the total number of method calls and the name of the script being
+run, then a formatted version of the profile data tree.</p>
+<p>If the results are being formatted when the perl process is exiting
+(which is usually the case when the DBI_PROFILE environment variable
+is used) then the percentage of time the process spent inside the
+DBI is also shown. If the process is not exiting then the percentage is
+calculated using the time between the first and last call to the DBI.</p>
+<p>In the example above the paths in the tree are only one level deep and
+use the Statement text as the value (that's the default behaviour).</p>
+<p>The merged profile data at the 'leaves' of the tree are presented
+as total time spent, count, average time spent (which is simply total
+time divided by the count), then the time spent on the first call,
+the time spent on the fastest call, and finally the time spent on
+the slowest call.</p>
+<p>The 'avg', 'first', 'min' and 'max' times are not particularly
+useful when the profile data path only contains the statement text.
+Here's an extract of a more detailed example using both statement
+text and method name in the path:</p>
+<pre>
+  'SELECT mode,size,name FROM table' =&gt;
+      'FETCH' =&gt;
+          0.000076s
+      'fetchrow_hashref' =&gt;
+          0.036203s / 108 = 0.000335s avg (first 0.000490s, min 0.000152s, max 0.002786s)</pre>
+<p>Here you can see the 'avg', 'first', 'min' and 'max' for the
+108 calls to <code>fetchrow_hashref()</code> become rather more interesting.
+Also the data for FETCH just shows a time value because it was only
+called once.</p>
+<p>Currently the profile data is output sorted by branch names. That
+may change in a later version so the leaf nodes are sorted by total
+time per leaf node.</p>
+<p>
+</p>
+<h2><a name="report_destination">Report Destination</a></h2>
+<p>The default method of reporting is for the DESTROY method of the
+Profile object to format the results and write them using:</p>
+<pre>
+    <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">trace_msg</span><span class="operator">(</span><span class="variable">$results</span><span class="operator">,</span> <span class="number">0</span><span class="operator">);</span>  <span class="comment"># see $ON_DESTROY_DUMP below</span>
+</pre>
+<p>to write them to the DBI <code>trace()</code> filehandle (which defaults to
+STDERR). To direct the DBI trace filehandle to write to a file
+without enabling tracing the <code>trace()</code> method can be called with a
+trace level of 0. For example:</p>
+<pre>
+    <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">trace</span><span class="operator">(</span><span class="number">0</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">);</span>
+</pre>
+<p>The same effect can be achieved without changing the code by
+setting the <code>DBI_TRACE</code> environment variable to <code>0=filename</code>.</p>
+<p>The $DBI::Profile::ON_DESTROY_DUMP variable holds a code ref
+that's called to perform the output of the formatted results.
+The default value is:</p>
+<pre>
+  <span class="variable">$ON_DESTROY_DUMP</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">trace_msg</span><span class="operator">(</span><span class="variable">$results</span><span class="operator">,</span> <span class="number">0</span><span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<p>Apart from making it easy to send the dump elsewhere, it can also
+be useful as a simple way to disable dumping results.</p>
+<p>
+</p>
+<hr />
+<h1><a name="child_handles">CHILD HANDLES</a></h1>
+<p>Child handles inherit a reference to the Profile attribute value
+of their parent.  So if profiling is enabled for a database handle
+then by default the statement handles created from it all contribute
+to the same merged profile data tree.</p>
+<p>
+</p>
+<hr />
+<h1><a name="profile_object_methods">PROFILE OBJECT METHODS</a></h1>
+<p>
+</p>
+<h2><a name="format">format</a></h2>
+<p>See <a href="#reporting">REPORTING</a>.</p>
+<p>
+</p>
+<h2><a name="as_node_path_list">as_node_path_list</a></h2>
+<pre>
+  <span class="variable">@ary</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">as_node_path_list</span><span class="operator">();</span>
+  <span class="variable">@ary</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">as_node_path_list</span><span class="operator">(</span><span class="variable">$node</span><span class="operator">,</span> <span class="variable">$path</span><span class="operator">);</span>
+</pre>
+<p>Returns the collected data ($dbh-&gt;{Profile}{Data}) restructured into a list of
+array refs, one for each leaf node in the Data tree. This 'flat' structure is
+often much simpler for applications to work with.</p>
+<p>The first element of each array ref is a reference to the leaf node.
+The remaining elements are the 'path' through the data tree to that node.</p>
+<p>For example, given a data tree like this:</p>
+<pre>
+    <span class="operator">{</span><span class="variable">key1a</span><span class="operator">}</span><span class="operator">{</span><span class="string">key2a</span><span class="operator">}[</span><span class="variable">node1</span><span class="operator">]</span>
+    <span class="operator">{</span><span class="string">key1a</span><span class="operator">}{</span><span class="string">key2b</span><span class="operator">}[</span><span class="variable">node2</span><span class="operator">]</span>
+    <span class="operator">{</span><span class="string">key1b</span><span class="operator">}{</span><span class="string">key2a</span><span class="operator">}{</span><span class="string">key3a</span><span class="operator">}[</span><span class="variable">node3</span><span class="operator">]</span>
+</pre>
+<p>The <code>as_node_path_list()</code> method  will return this list:</p>
+<pre>
+    [ [node1], 'key1a', 'key2a' ]
+    [ [node2], 'key1a', 'key2b' ]
+    [ [node3], 'key1b', 'key2a', 'key3a' ]</pre>
+<p>The nodes are ordered by key, depth-first.</p>
+<p>The $node argument can be used to focus on a sub-tree.
+If not specified it defaults to $dbh-&gt;{Profile}{Data}.</p>
+<p>The $path argument can be used to specify a list of path elements that will be
+added to each element of the returned list. If not specified it defaults to a a
+ref to an empty array.</p>
+<p>
+</p>
+<h2><a name="as_text">as_text</a></h2>
+<pre>
+  <span class="variable">@txt</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">as_text</span><span class="operator">();</span>
+  <span class="variable">$txt</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">as_text</span><span class="operator">(</span><span class="operator">{</span>
+      <span class="string">node</span>      <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+      <span class="string">path</span>      <span class="operator">=&gt;</span> <span class="operator">[]</span><span class="operator">,</span>
+      <span class="string">separator</span> <span class="operator">=&gt;</span> <span class="string">" &gt; "</span><span class="operator">,</span>
+      <span class="string">format</span>    <span class="operator">=&gt;</span> <span class="string">'%1$s: %11$fs / %10$d = %2$fs avg (first %12$fs, min %13$fs, max %14$fs)'</span><span class="operator">.</span><span class="string">"\n"</span><span class="operator">;</span>
+      <span class="string">sortsub</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">},</span>
+  <span class="operator">);</span>
+</pre>
+<p>Returns the collected data ($dbh-&gt;{Profile}{Data}) reformatted into a list of formatted strings.
+In scalar context the list is returned as a single concatenated string.</p>
+<p>A hashref can be used to pass in arguments, the default values are shown in the example above.</p>
+<p>The <code>node</code> and &lt;path&gt; arguments are passed to <code>as_node_path_list()</code>.</p>
+<p>The <code>separator</code> argument is used to join the elements of the path for each leaf node.</p>
+<p>The <code>sortsub</code> argument is used to pass in a ref to a sub that will order the list.
+The subroutine will be passed a reference to the array returned by
+<code>as_node_path_list()</code> and should sort the contents of the array in place.
+The return value from the sub is ignored. For example, to sort the nodes by the
+second level key you could use:</p>
+<pre>
+  <span class="string">sortsub</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">my</span> <span class="variable">$ary</span><span class="operator">=</span><span class="keyword">shift</span><span class="operator">;</span> <span class="variable">@$ary</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="operator">{</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span> <span class="keyword">cmp</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span> <span class="operator">}</span> <span class="variable">@$ary</span> <span class="operator">}</span>
+</pre>
+<p>The <a href="../../lib/pods/perlfunc.html#format"><code>format</code></a> argument is a <a href="../../lib/pods/perlfunc.html#sprintf"><code>sprintf</code></a> format string that specifies the format
+to use for each leaf node.  It uses the explicit format parameter index
+mechanism to specify which of the arguments should appear where in the string.
+The arguments to sprintf are:</p>
+<pre>
+     1:  path to node, joined with the separator
+     2:  average duration (total duration/count)
+         (3 thru 9 are currently unused)
+    10:  count
+    11:  total duration
+    12:  first duration
+    13:  smallest duration
+    14:  largest duration
+    15:  time of first call
+    16:  time of first call</pre>
+<p>
+</p>
+<hr />
+<h1><a name="custom_data_manipulation">CUSTOM DATA MANIPULATION</a></h1>
+<p>Recall that <code>$h-&gt;{Profile}-&gt;{Data}</code> is a reference to the collected data.
+Either to a 'leaf' array (when the Path is empty, i.e., DBI_PROFILE env var is 1),
+or a reference to hash containing values that are either further hash
+references or leaf array references.</p>
+<p>Sometimes it's useful to be able to summarise some or all of the collected data.
+The <code>dbi_profile_merge_nodes()</code> function can be used to merge leaf node values.</p>
+<p>
+</p>
+<h2><a name="dbi_profile_merge_nodes">dbi_profile_merge_nodes</a></h2>
+<pre>
+  <span class="keyword">use</span> <span class="variable">DBI</span> <span class="string">qw(dbi_profile_merge_nodes)</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">$time_in_dbi</span> <span class="operator">=</span> <span class="variable">dbi_profile_merge_nodes</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$totals</span><span class="operator">=</span><span class="operator">[]</span><span class="operator">,</span> <span class="variable">@$leaves</span><span class="operator">);</span>
+</pre>
+<p>Merges profile data node. Given a reference to a destination array, and zero or
+more references to profile data, merges the profile data into the destination array.
+For example:</p>
+<pre>
+  <span class="variable">$time_in_dbi</span> <span class="operator">=</span> <span class="variable">dbi_profile_merge_nodes</span><span class="operator">(</span>
+      <span class="keyword">my</span> <span class="variable">$totals</span><span class="operator">=</span><span class="operator">[]</span><span class="operator">,</span>
+      <span class="operator">[</span> <span class="number">10</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">51</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">11</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">01</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">22</span><span class="operator">,</span> <span class="number">1023110000</span><span class="operator">,</span> <span class="number">1023110010</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">[</span> <span class="number">15</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">42</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">12</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">02</span><span class="operator">,</span> <span class="number">0</span><span class="operator">.</span><span class="number">23</span><span class="operator">,</span> <span class="number">1023110005</span><span class="operator">,</span> <span class="number">1023110009</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>$totals will then contain</p>
+<pre>
+  [ 25, 0.93, 0.11, 0.01, 0.23, 1023110000, 1023110010 ]</pre>
+<p>and $time_in_dbi will be 0.93;</p>
+<p>The second argument need not be just leaf nodes. If given a reference to a hash
+then the hash is recursively searched for for leaf nodes and all those found
+are merged.</p>
+<p>For example, to get the time spent 'inside' the DBI during an http request,
+your logging code run at the end of the request (i.e. mod_perl LogHandler)
+could use:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$time_in_dbi</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$Profile</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># if DBI profiling is enabled</span>
+      <span class="variable">$time_in_dbi</span> <span class="operator">=</span> <span class="variable">dbi_profile_merge_nodes</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$total</span><span class="operator">=</span><span class="operator">[]</span><span class="operator">,</span> <span class="variable">$Profile</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Data</span><span class="operator">}</span><span class="operator">);</span>
+      <span class="variable">$Profile</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Data</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span> <span class="comment"># reset the profile data</span>
+  <span class="operator">}</span>
+</pre>
+<p>If profiling has been enabled then $time_in_dbi will hold the time spent inside
+the DBI for that handle (and any other handles that share the same profile data)
+since the last request.</p>
+<p>Prior to DBI 1.56 the <code>dbi_profile_merge_nodes()</code> function was called <code>dbi_profile_merge()</code>.
+That name still exists as an alias.</p>
+<p>
+</p>
+<hr />
+<h1><a name="custom_data_collection">CUSTOM DATA COLLECTION</a></h1>
+<p>
+</p>
+<h2><a name="using_the_path_attribute">Using The Path Attribute</a></h2>
+<pre>
+  <span class="variable">XXX</span> <span class="variable">example</span> <span class="variable">to</span> <span class="variable">be</span> <span class="variable">added</span> <span class="variable">later</span> <span class="variable">using</span> <span class="variable">a</span> <span class="variable">selectall_arrayref</span> <span class="variable">call</span>
+  <span class="variable">XXX</span> <span class="variable">nested</span> <span class="variable">inside</span> <span class="variable">a</span> <span class="variable">fetch</span> <span class="variable">loop</span> <span class="variable">where</span> <span class="variable">the</span> <span class="variable">first</span> <span class="variable">column</span> <span class="variable">of</span> <span class="variable">the</span>
+  <span class="variable">XXX</span> <span class="variable">outer</span> <span class="variable">loop</span> <span class="variable">is</span> <span class="variable">bound</span> <span class="variable">to</span> <span class="variable">the</span> <span class="variable">profile</span> <span class="variable">Path</span> <span class="variable">using</span>
+  <span class="variable">XXX</span> <span class="variable">bind_column</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$</span><span class="operator">{</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Path</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">}</span><span class="operator">)</span>
+  <span class="variable">XXX</span> <span class="variable">so</span> <span class="variable">you</span> <span class="variable">end</span> <span class="variable">up</span> <span class="variable">with</span> <span class="variable">separate</span> <span class="variable">profiles</span> <span class="keyword">for</span> <span class="keyword">each</span> <span class="variable">loop</span>
+  <span class="variable">XXX</span> <span class="operator">(</span><span class="variable">patches</span> <span class="variable">welcome</span> <span class="variable">to</span> <span class="variable">add</span> <span class="variable">this</span> <span class="variable">to</span> <span class="variable">the</span> <span class="variable">docs</span> <span class="operator">:)</span>
+</pre>
+<p>
+</p>
+<h2><a name="adding_your_own_samples">Adding Your Own Samples</a></h2>
+<p>The <code>dbi_profile()</code> function can be used to add extra sample data
+into the profile data tree. For example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DBI</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">DBI::Profile</span> <span class="operator">(</span><span class="variable">dbi_profile</span> <span class="variable">dbi_time</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$t1</span> <span class="operator">=</span> <span class="variable">dbi_time</span><span class="operator">();</span> <span class="comment"># floating point high-resolution time</span>
+</pre>
+<pre>
+    ... execute code you want to profile here ...</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$t2</span> <span class="operator">=</span> <span class="variable">dbi_time</span><span class="operator">();</span>
+    <span class="variable">dbi_profile</span><span class="operator">(</span><span class="variable">$h</span><span class="operator">,</span> <span class="variable">$statement</span><span class="operator">,</span> <span class="variable">$method</span><span class="operator">,</span> <span class="variable">$t1</span><span class="operator">,</span> <span class="variable">$t2</span><span class="operator">);</span>
+</pre>
+<p>The $h parameter is the handle the extra profile sample should be
+associated with. The $statement parameter is the string to use where
+the Path specifies !Statement. If $statement is undef
+then $h-&gt;{Statement} will be used. Similarly $method is the string
+to use if the Path specifies !MethodName. There is no
+default value for $method.</p>
+<p>The $h-&gt;{Profile}{Path} attribute is processed by <code>dbi_profile()</code> in
+the usual way.</p>
+<p>The $h parameter is usually a DBI handle but it can also be a reference to a
+hash, in which case the <code>dbi_profile()</code> acts on each defined value in the hash.
+This is an efficient way to update multiple profiles with a single sample,
+and is used by the <em>DashProfiler</em> module.</p>
+<p>
+</p>
+<hr />
+<h1><a name="subclassing">SUBCLASSING</a></h1>
+<p>Alternate profile modules must subclass DBI::Profile to help ensure
+they work with future versions of the DBI.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>Applications which generate many different statement strings
+(typically because they don't use placeholders) and profile with
+!Statement in the Path (the default) will consume memory
+in the Profile Data structure for each statement. Use a code ref
+in the Path to return an edited (simplified) form of the statement.</p>
+<p>If a method throws an exception itself (not via RaiseError) then
+it won't be counted in the profile.</p>
+<p>If a HandleError subroutine throws an exception (rather than returning
+0 and letting RaiseError do it) then the method call won't be counted
+in the profile.</p>
+<p>Time spent in DESTROY is added to the profile of the parent handle.</p>
+<p>Time spent in DBI-&gt;*() methods is not counted. The time spent in
+the driver connect method, $drh-&gt;<a href="../../lib/pods/perlfunc.html#connect"><code>connect()</code></a>, when it's called by
+DBI-&gt;connect is counted if the DBI_PROFILE environment variable is set.</p>
+<p>Time spent fetching tied variables, $DBI::errstr, is counted.</p>
+<p>Time spent in FETCH for $h-&gt;{Profile} is not counted, so getting the profile
+data doesn't alter it.</p>
+<p>DBI::PurePerl does not support profiling (though it could in theory).</p>
+<p>A few platforms don't support the <code>gettimeofday()</code> high resolution
+time function used by the DBI (and available via the <code>dbi_time()</code> function).
+In which case you'll get integer resolution time which is mostly useless.</p>
+<p>On Windows platforms the <code>dbi_time()</code> function is limited to millisecond
+resolution. Which isn't sufficiently fine for our needs, but still
+much better than integer resolution. This limited resolution means
+that fast method calls will often register as taking 0 time. And
+timings in general will have much more 'jitter' depending on where
+within the 'current millisecond' the start and and timing was taken.</p>
+<p>This documentation could be more clear. Probably needs to be reordered
+to start with several examples and build from there.  Trying to
+explain the concepts first seems painful and to lead to just as
+many forward references.  (Patches welcome!)</p>
+
+</body>
+
+</html>

@@ -1,0 +1,815 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlgit - Detailed information about git and the Perl repository</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlgit - Detailed information about git and the Perl repository</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#cloning_the_repository">CLONING THE REPOSITORY</a></li>
+	<li><a href="#working_with_the_repository">WORKING WITH THE REPOSITORY</a></li>
+	<ul>
+
+		<li><a href="#finding_out_your_status">Finding out your status</a></li>
+		<li><a href="#patch_workflow">Patch workflow</a></li>
+		<li><a href="#committing_your_changes">Committing your changes</a></li>
+		<li><a href="#using_git_to_send_patch_emails">Using git to send patch emails</a></li>
+		<li><a href="#a_note_on_derived_files">A note on derived files</a></li>
+		<li><a href="#cleaning_a_working_directory">Cleaning a working directory</a></li>
+		<li><a href="#bisecting">Bisecting</a></li>
+		<ul>
+
+			<li><a href="#grafts">Grafts</a></li>
+		</ul>
+
+		<li><a href="#topic_branches_and_rewriting_history">Topic branches and rewriting history</a></li>
+	</ul>
+
+	<li><a href="#write_access_to_the_git_repository">WRITE ACCESS TO THE GIT REPOSITORY</a></li>
+	<ul>
+
+		<li><a href="#committing_to_blead">Committing to blead</a></li>
+		<li><a href="#committing_to_maintenance_versions">Committing to maintenance versions</a></li>
+		<li><a href="#grafts">Grafts</a></li>
+		<li><a href="#merging_from_a_branch_via_github">Merging from a branch via GitHub</a></li>
+		<li><a href="#a_note_on_camel_and_dromedary">A note on camel and dromedary</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perlgit - Detailed information about git and the Perl repository</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document provides details on using git to develop Perl. If you are
+just interested in working on a quick patch, see <a href="../../lib/pods/perlhack.html">the perlhack manpage</a> first.
+This document is intended for people who are regular contributors to
+Perl, including those with write access to the git repository.</p>
+<p>
+</p>
+<hr />
+<h1><a name="cloning_the_repository">CLONING THE REPOSITORY</a></h1>
+<p>All of Perl's source code is kept centrally in a Git repository at
+<em>perl5.git.perl.org</em>.</p>
+<p>You can make a read-only clone of the repository by running:</p>
+<pre>
+  % git clone git://perl5.git.perl.org/perl.git perl</pre>
+<p>This uses the git protocol (port 9418).</p>
+<p>If you cannot use the git protocol for firewall reasons, you can also
+clone via http, though this is much slower:</p>
+<pre>
+  % git clone <a href="http://perl5.git.perl.org/perl.git">http://perl5.git.perl.org/perl.git</a> perl</pre>
+<p>
+</p>
+<hr />
+<h1><a name="working_with_the_repository">WORKING WITH THE REPOSITORY</a></h1>
+<p>Once you have changed into the repository directory, you can inspect
+it. After a clone the repository will contain a single local branch,
+which will be the current branch as well, as indicated by the asterisk.</p>
+<pre>
+  % git branch
+  * blead</pre>
+<p>Using the -a switch to <code>branch</code> will also show the remote tracking
+branches in the repository:</p>
+<pre>
+  % git branch -a
+  * blead
+    origin/HEAD
+    origin/blead
+  ...</pre>
+<p>The branches that begin with &quot;origin&quot; correspond to the &quot;git remote&quot;
+that you cloned from (which is named &quot;origin&quot;). Each branch on the
+remote will be exactly tracked by theses branches. You should NEVER do
+work on these remote tracking branches. You only ever do work in a
+local branch. Local branches can be configured to automerge (on pull)
+from a designated remote tracking branch. This is the case with the
+default branch <code>blead</code> which will be configured to merge from the
+remote tracking branch <code>origin/blead</code>.</p>
+<p>You can see recent commits:</p>
+<pre>
+  % git log</pre>
+<p>And pull new changes from the repository, and update your local
+repository (must be clean first)</p>
+<pre>
+  % git pull</pre>
+<p>Assuming we are on the branch <code>blead</code> immediately after a pull, this
+command would be more or less equivalent to:</p>
+<pre>
+  % git fetch
+  % git merge origin/blead</pre>
+<p>In fact if you want to update your local repository without touching
+your working directory you do:</p>
+<pre>
+  % git fetch</pre>
+<p>And if you want to update your remote-tracking branches for all defined
+remotes simultaneously you can do</p>
+<pre>
+  % git remote update</pre>
+<p>Neither of these last two commands will update your working directory,
+however both will update the remote-tracking branches in your
+repository.</p>
+<p>To make a local branch of a remote branch:</p>
+<pre>
+  % git checkout -b maint-5.10 origin/maint-5.10</pre>
+<p>To switch back to blead:</p>
+<pre>
+  % git checkout blead</pre>
+<p>
+</p>
+<h2><a name="finding_out_your_status">Finding out your status</a></h2>
+<p>The most common git command you will use will probably be</p>
+<pre>
+  % git status</pre>
+<p>This command will produce as output a description of the current state
+of the repository, including modified files and unignored untracked
+files, and in addition it will show things like what files have been
+staged for the next commit, and usually some useful information about
+how to change things. For instance the following:</p>
+<pre>
+  $ git status
+  # On branch blead
+  # Your branch is ahead of 'origin/blead' by 1 commit.
+  #
+  # Changes to be committed:
+  #   (use &quot;git reset HEAD &lt;file&gt;...&quot; to unstage)
+  #
+  #       modified:   pod/<a href="../../lib/pods/perlgit.html">perlgit</a>.pod
+  #
+  # Changed but not updated:
+  #   (use &quot;git add &lt;file&gt;...&quot; to update what will be committed)
+  #
+  #       modified:   pod/<a href="../../lib/pods/perlgit.html">perlgit</a>.pod
+  #
+  # Untracked files:
+  #   (use &quot;git add &lt;file&gt;...&quot; to include in what will be committed)
+  #
+  #       deliberate.untracked</pre>
+<p>This shows that there were changes to this document staged for commit,
+and that there were further changes in the working directory not yet
+staged. It also shows that there was an untracked file in the working
+directory, and as you can see shows how to change all of this. It also
+shows that there is one commit on the working branch <code>blead</code> which has
+not been pushed to the <code>origin</code> remote yet. <strong>NOTE</strong>: that this output
+is also what you see as a template if you do not provide a message to
+<code>git commit</code>.</p>
+<p>
+</p>
+<h2><a name="patch_workflow">Patch workflow</a></h2>
+<p>First, please read <a href="../../lib/pods/perlhack.html">the perlhack manpage</a> for details on hacking the Perl core.
+That document covers many details on how to create a good patch.</p>
+<p>If you already have a Perl repository, you should ensure that you're on
+the <em>blead</em> branch, and your repository is up to date:</p>
+<pre>
+  % git checkout blead
+  % git pull</pre>
+<p>It's preferable to patch against the latest blead version, since this
+is where new development occurs for all changes other than critical bug
+fixes. Critical bug fix patches should be made against the relevant
+maint branches, or should be submitted with a note indicating all the
+branches where the fix should be applied.</p>
+<p>Now that we have everything up to date, we need to create a temporary
+new branch for these changes and switch into it:</p>
+<pre>
+  % git checkout -b orange</pre>
+<p>which is the short form of</p>
+<pre>
+  % git branch orange
+  % git checkout orange</pre>
+<p>Creating a topic branch makes it easier for the maintainers to rebase
+or merge back into the master blead for a more linear history. If you
+don't work on a topic branch the maintainer has to manually cherry pick
+your changes onto blead before they can be applied.</p>
+<p>That'll get you scolded on perl5-porters, so don't do that. Be Awesome.</p>
+<p>Then make your changes. For example, if Leon Brocard changes his name
+to Orange Brocard, we should change his name in the AUTHORS file:</p>
+<pre>
+  <span class="operator">% </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">pi</span> <span class="keyword">-e</span> <span class="string">'s{Leon Brocard}{Orange Brocard}'</span> <span class="variable">AUTHORS</span>
+</pre>
+<p>You can see what files are changed:</p>
+<pre>
+  % git status
+  # On branch orange
+  # Changes to be committed:
+  #   (use &quot;git reset HEAD &lt;file&gt;...&quot; to unstage)
+  #
+  #    modified:   AUTHORS
+  #</pre>
+<p>And you can see the changes:</p>
+<pre>
+  % git diff
+  diff --git a/AUTHORS b/AUTHORS
+  index 293dd70..722c93e 100644
+  --- a/AUTHORS
+  +++ b/AUTHORS
+  @@ -541,7 +541,7 @@    Lars Hecking                   &lt;lhecking@nmrc.ucc.ie&gt;
+   Laszlo Molnar                  &lt;laszlo.molnar@eth.ericsson.se&gt;
+   Leif Huhn                      &lt;leif@hale.dkstat.com&gt;
+   Len Johnson                    &lt;lenjay@ibm.net&gt;
+  -Leon Brocard                   &lt;acme@astray.com&gt;
+  +Orange Brocard                 &lt;acme@astray.com&gt;
+   Les Peters                     &lt;lpeters@aol.net&gt;
+   Lesley Binks                   &lt;lesley.binks@gmail.com&gt;
+   Lincoln D. Stein               &lt;lstein@cshl.org&gt;</pre>
+<p>Now commit your change locally:</p>
+<pre>
+  % git commit -a -m 'Rename Leon Brocard to Orange Brocard'
+  Created commit 6196c1d: Rename Leon Brocard to Orange Brocard
+   1 files changed, 1 insertions(+), 1 deletions(-)</pre>
+<p>The <a href="../../lib/pods/perlrun.html#a"><code>-a</code></a> option is used to include all files that git tracks that you
+have changed. If at this time, you only want to commit some of the
+files you have worked on, you can omit the <a href="../../lib/pods/perlrun.html#a"><code>-a</code></a> and use the command
+<code>git add FILE ...</code> before doing the commit. <code>git add
+--interactive</code> allows you to even just commit portions of files
+instead of all the changes in them.</p>
+<p>The <a href="../../lib/pods/perlguts.html#m"><code>-m</code></a> option is used to specify the commit message. If you omit it,
+git will open a text editor for you to compose the message
+interactively. This is useful when the changes are more complex than
+the sample given here, and, depending on the editor, to know that the
+first line of the commit message doesn't exceed the 50 character legal
+maximum.</p>
+<p>Once you've finished writing your commit message and exited your
+editor, git will write your change to disk and tell you something like
+this:</p>
+<pre>
+  Created commit daf8e63: explain git status and stuff about remotes
+   1 files changed, 83 insertions(+), 3 deletions(-)</pre>
+<p>If you re-run <code>git status</code>, you should see something like this:</p>
+<pre>
+  % git status
+  # On branch blead
+  # Your branch is ahead of 'origin/blead' by 2 commits.
+  #
+  # Untracked files:
+  #   (use &quot;git add &lt;file&gt;...&quot; to include in what will be committed)
+  #
+  #       deliberate.untracked
+  nothing added to commit but untracked files present (use &quot;git add&quot; to track)</pre>
+<p>When in doubt, before you do anything else, check your status and read
+it carefully, many questions are answered directly by the git status
+output.</p>
+<p>You can examine your last commit with:</p>
+<pre>
+  % git show HEAD</pre>
+<p>and if you are not happy with either the description or the patch
+itself you can fix it up by editing the files once more and then issue:</p>
+<pre>
+  % git commit -a --amend</pre>
+<p>Now you should create a patch file for all your local changes:</p>
+<pre>
+  % git format-patch -M origin..
+  0001-Rename-Leon-Brocard-to-Orange-Brocard.patch</pre>
+<p>You should now send an email to to
+<em><a href="mailto:perlbug@perl.org">perlbug@perl.org</a></em> with a description of your
+changes, and include this patch file as an attachment. In addition to
+being tracked by RT, mail to perlbug will automatically be forwarded to
+perl5-porters (with manual moderation, so please be patient). You
+should only send patches to
+<em><a href="mailto:perl5-porters@perl.org">perl5-porters@perl.org</a></em> directly if the
+patch is not ready to be applied, but intended for discussion.</p>
+<p>See the next section for how to configure and use git to send these
+emails for you.</p>
+<p>If you want to delete your temporary branch, you may do so with:</p>
+<pre>
+  % git checkout blead
+  % git branch -d orange
+  error: The branch 'orange' is not an ancestor of your current HEAD.
+  If you are sure you want to delete it, run 'git branch -D orange'.
+  % git branch -D orange
+  Deleted branch orange.</pre>
+<p>
+</p>
+<h2><a name="committing_your_changes">Committing your changes</a></h2>
+<p>Assuming that you'd like to commit all the changes you've made as a
+single atomic unit, run this command:</p>
+<pre>
+   % git commit -a</pre>
+<p>(That <a href="../../lib/pods/perlrun.html#a"><code>-a</code></a> tells git to add every file you've changed to this commit.
+New files aren't automatically added to your commit when you use
+<code>commit -a</code> If you want to add files or to commit some, but not all of
+your changes, have a look at the documentation for <code>git add</code>.)</p>
+<p>Git will start up your favorite text editor, so that you can craft a
+commit message for your change. See <a href="../../lib/pods/perlhack.html#commit_message">Commit message in the perlhack manpage</a> for more
+information about what makes a good commit message.</p>
+<p>Once you've finished writing your commit message and exited your
+editor, git will write your change to disk and tell you something like
+this:</p>
+<pre>
+  Created commit daf8e63: explain git status and stuff about remotes
+   1 files changed, 83 insertions(+), 3 deletions(-)</pre>
+<p>If you re-run <code>git status</code>, you should see something like this:</p>
+<pre>
+  % git status
+  # On branch blead
+  # Your branch is ahead of 'origin/blead' by 2 commits.
+  #
+  # Untracked files:
+  #   (use &quot;git add &lt;file&gt;...&quot; to include in what will be committed)
+  #
+  #       deliberate.untracked
+  nothing added to commit but untracked files present (use &quot;git add&quot; to track)</pre>
+<p>When in doubt, before you do anything else, check your status and read
+it carefully, many questions are answered directly by the git status
+output.</p>
+<p>
+</p>
+<h2><a name="using_git_to_send_patch_emails">Using git to send patch emails</a></h2>
+<p>Please read <a href="../../lib/pods/perlhack.html">the perlhack manpage</a> first in order to figure out where your patches
+should be sent.</p>
+<p>In your ~/git/perl repository, set the destination email to perl's bug
+tracker:</p>
+<pre>
+  $ git config sendemail.to perlbug@perl.org</pre>
+<p>Or maybe perl5-porters:</p>
+<pre>
+  $ git config sendemail.to perl5-porters@perl.org</pre>
+<p>Then you can use git directly to send your patch emails:</p>
+<pre>
+  $ git send-email 0001-Rename-Leon-Brocard-to-Orange-Brocard.patch</pre>
+<p>You may need to set some configuration variables for your particular
+email service provider. For example, to set your global git config to
+send email via a gmail account:</p>
+<pre>
+  $ git config --global sendemail.smtpserver smtp.gmail.com
+  $ git config --global sendemail.smtpssl 1
+  $ git config --global sendemail.smtpuser YOURUSERNAME@gmail.com</pre>
+<p>With this configuration, you will be prompted for your gmail password
+when you run 'git send-email'. You can also configure
+<code>sendemail.smtppass</code> with your password if you don't care about having
+your password in the .gitconfig file.</p>
+<p>
+</p>
+<h2><a name="a_note_on_derived_files">A note on derived files</a></h2>
+<p>Be aware that many files in the distribution are derivative--avoid
+patching them, because git won't see the changes to them, and the build
+process will overwrite them. Patch the originals instead. Most
+utilities (like perldoc) are in this category, i.e. patch
+<em class="file">utils/perldoc.PL</em> rather than <em class="file">utils/perldoc</em>. Similarly, don't
+create patches for files under $src_root/ext from their copies found in
+$install_root/lib. If you are unsure about the proper location of a
+file that may have gotten copied while building the source
+distribution, consult the <code>MANIFEST</code>.</p>
+<p>
+</p>
+<h2><a name="cleaning_a_working_directory">Cleaning a working directory</a></h2>
+<p>The command <code>git clean</code> can with varying arguments be used as a
+replacement for <code>make clean</code>.</p>
+<p>To reset your working directory to a pristine condition you can do:</p>
+<pre>
+  % git clean -dxf</pre>
+<p>However, be aware this will delete ALL untracked content. You can use</p>
+<pre>
+  % git clean -Xf</pre>
+<p>to remove all ignored untracked files, such as build and test
+byproduct, but leave any  manually created files alone.</p>
+<p>If you only want to cancel some uncommitted edits, you can use <code>git
+checkout</code> and give it a list of files to be reverted, or <code>git checkout
+-f</code> to revert them all.</p>
+<p>If you want to cancel one or several commits, you can use <code>git reset</code>.</p>
+<p>
+</p>
+<h2><a name="bisecting">Bisecting</a></h2>
+<p><code>git</code> provides a built-in way to determine, with a binary search in
+the history, which commit should be blamed for introducing a given bug.</p>
+<p>Suppose that we have a script <em class="file">~/testcase.pl</em> that exits with <code>0</code>
+when some behaviour is correct, and with <code>1</code> when it's faulty. You
+need an helper script that automates building <code>perl</code> and running the
+testcase:</p>
+<pre>
+  % cat ~/run
+  #!/bin/sh
+  git clean -dxf</pre>
+<pre>
+  # If you get './makedepend: 1: Syntax error: Unterminated quoted
+  # string' when bisecting versions of perl older than 5.9.5 this hack
+  # will work around the bug in makedepend.SH which was fixed in
+  # version 96a8704c. Make sure to comment out `git checkout makedepend.SH'
+  # below too.
+  git show blead:makedepend.SH &gt; makedepend.SH</pre>
+<pre>
+  # If you can use ccache, add -Dcc=ccache\ gcc -Dld=gcc to the Configure line
+  # if Encode is not needed for the test, you can speed up the bisect by
+  # excluding it from the runs with -Dnoextensions=Encode
+  sh Configure -des -Dusedevel -Doptimize=&quot;-g&quot;
+  test -f config.sh || exit 125
+  # Correct makefile for newer GNU gcc
+  perl -ni -we 'print unless /&lt;(?:built-in|command)/' makefile x2p/makefile
+  # if you just need miniperl, replace test_prep with miniperl
+  make test_prep
+  [ -x ./perl ] || exit 125
+  ./perl -Ilib ~/testcase.pl
+  ret=$?
+  [ $ret -gt 127 ] &amp;&amp; ret=127
+  # git checkout makedepend.SH
+  git clean -dxf
+  exit $ret</pre>
+<p>This script may return <code>125</code> to indicate that the corresponding commit
+should be skipped. Otherwise, it returns the status of
+<em class="file">~/testcase.pl</em>.</p>
+<p>You first enter in bisect mode with:</p>
+<pre>
+  % git bisect start</pre>
+<p>For example, if the bug is present on <code>HEAD</code> but wasn't in 5.10.0,
+<code>git</code> will learn about this when you enter:</p>
+<pre>
+  % git bisect bad
+  % git bisect good perl-5.10.0
+  Bisecting: 853 revisions left to test after this</pre>
+<p>This results in checking out the median commit between <code>HEAD</code> and
+<code>perl-5.10.0</code>. You can then run the bisecting process with:</p>
+<pre>
+  % git bisect run ~/run</pre>
+<p>When the first bad commit is isolated, <code>git bisect</code> will tell you so:</p>
+<pre>
+  ca4cfd28534303b82a216cfe83a1c80cbc3b9dc5 is first bad commit
+  commit ca4cfd28534303b82a216cfe83a1c80cbc3b9dc5
+  Author: Dave Mitchell &lt;davem@fdisolutions.com&gt;
+  Date:   Sat Feb 9 14:56:23 2008 +0000</pre>
+<pre>
+      [perl #49472] Attributes + Unknown Error
+      ...</pre>
+<pre>
+  bisect run success</pre>
+<p>You can peek into the bisecting process with <code>git bisect log</code> and
+<code>git bisect visualize</code>. <code>git bisect reset</code> will get you out of bisect
+mode.</p>
+<p>Please note that the first <code>good</code> state must be an ancestor of the
+first <code>bad</code> state. If you want to search for the commit that <em>solved</em>
+some bug, you have to negate your test case (i.e. exit with <code>1</code> if OK
+and <code>0</code> if not) and still mark the lower bound as <code>good</code> and the
+upper as <code>bad</code>. The &quot;first bad commit&quot; has then to be understood as
+the &quot;first commit where the bug is solved&quot;.</p>
+<p><code>git help bisect</code> has much more information on how you can tweak your
+binary searches.
+=head1 Topic branches and rewriting history</p>
+<p>Individual committers should create topic branches under
+<strong>yourname</strong>/<strong>some_descriptive_name</strong>. Other committers should check
+with a topic branch's creator before making any change to it.</p>
+<p>The simplest way to create a remote topic branch that works on all
+versions of git is to push the current head as a new branch on the
+remote, then check it out locally:</p>
+<pre>
+  $ branch=&quot;$yourname/$some_descriptive_name&quot;
+  $ git push origin HEAD:$branch
+  $ git checkout -b $branch origin/$branch</pre>
+<p>Users of git 1.7 or newer can do it in a more obvious manner:</p>
+<pre>
+  $ branch=&quot;$yourname/$some_descriptive_name&quot;
+  $ git checkout -b $branch
+  $ git push origin -u $branch</pre>
+<p>If you are not the creator of <strong>yourname</strong>/<strong>some_descriptive_name</strong>, you
+might sometimes find that the original author has edited the branch's
+history. There are lots of good reasons for this. Sometimes, an author
+might simply be rebasing the branch onto a newer source point.
+Sometimes, an author might have found an error in an early commit which
+they wanted to fix before merging the branch to blead.</p>
+<p>Currently the master repository is configured to forbid
+non-fast-forward merges. This means that the branches within can not be
+rebased and pushed as a single step.</p>
+<p>The only way you will ever be allowed to rebase or modify the history
+of a pushed branch is to delete it and push it as a new branch under
+the same name. Please think carefully about doing this. It may be
+better to sequentially rename your branches so that it is easier for
+others working with you to cherry-pick their local changes onto the new
+version. (XXX: needs explanation).</p>
+<p>If you want to rebase a personal topic branch, you will have to delete
+your existing topic branch and push as a new version of it. You can do
+this via the following formula (see the explanation about <code>refspec</code>'s
+in the git push documentation for details) after you have rebased your
+branch:</p>
+<pre>
+   # first rebase
+   $ git checkout $user/$topic
+   $ git fetch
+   $ git rebase origin/blead</pre>
+<pre>
+   # then &quot;delete-and-push&quot;
+   $ git push origin :$user/$topic
+   $ git push origin $user/$topic</pre>
+<p><strong>NOTE:</strong> it is forbidden at the repository level to delete any of the
+&quot;primary&quot; branches. That is any branch matching
+<code>m!^(blead|maint|perl)!</code>. Any attempt to do so will result in git
+producing an error like this:</p>
+<pre>
+    $ git push origin :blead
+    *** It is forbidden to delete blead/maint branches in this repository
+    error: hooks/update exited with error code 1
+    error: hook declined to update refs/heads/blead
+    To ssh://perl5.git.perl.org/perl
+     ! [remote rejected] blead (hook declined)
+     error: failed to push some refs to 'ssh://perl5.git.perl.org/perl'</pre>
+<p>As a matter of policy we do <strong>not</strong> edit the history of the blead and
+maint-* branches. If a typo (or worse) sneaks into a commit to blead or
+maint-*, we'll fix it in another commit. The only types of updates
+allowed on these branches are &quot;fast-forward's&quot;, where all history is
+preserved.</p>
+<p>Annotated tags in the canonical perl.git repository will never be
+deleted or modified. Think long and hard about whether you want to push
+a local tag to perl.git before doing so. (Pushing unannotated tags is
+not allowed.)</p>
+<p>
+</p>
+<h3><a name="grafts">Grafts</a></h3>
+<p>The perl history contains one mistake which was not caught in the
+conversion: a merge was recorded in the history between blead and
+maint-5.10 where no merge actually occurred. Due to the nature of git,
+this is now impossible to fix in the public repository. You can remove
+this mis-merge locally by adding the following line to your
+<code>.git/info/grafts</code> file:</p>
+<pre>
+  296f12bbbbaa06de9be9d09d3dcf8f4528898a49 434946e0cb7a32589ed92d18008aaa1d88515930</pre>
+<p>It is particularly important to have this graft line if any bisecting
+is done in the area of the &quot;merge&quot; in question.</p>
+<p>
+</p>
+<h2><a name="topic_branches_and_rewriting_history">Topic branches and rewriting history</a></h2>
+<p>Individual committers should create topic branches under
+<strong>yourname</strong>/<strong>some_descriptive_name</strong>. Other committers should check
+with a topic branch's creator before making any change to it.</p>
+<p>The simplest way to create a remote topic branch that works on all
+versions of git is to push the current head as a new branch on the
+remote, then check it out locally:</p>
+<pre>
+  $ branch=&quot;$yourname/$some_descriptive_name&quot;
+  $ git push origin HEAD:$branch
+  $ git checkout -b $branch origin/$branch</pre>
+<p>Users of git 1.7 or newer can do it in a more obvious manner:</p>
+<pre>
+  $ branch=&quot;$yourname/$some_descriptive_name&quot;
+  $ git checkout -b $branch
+  $ git push origin -u $branch</pre>
+<p>If you are not the creator of <strong>yourname</strong>/<strong>some_descriptive_name</strong>, you
+might sometimes find that the original author has edited the branch's
+history. There are lots of good reasons for this. Sometimes, an author
+might simply be rebasing the branch onto a newer source point.
+Sometimes, an author might have found an error in an early commit which
+they wanted to fix before merging the branch to blead.</p>
+<p>Currently the master repository is configured to forbid
+non-fast-forward merges. This means that the branches within can not be
+rebased and pushed as a single step.</p>
+<p>The only way you will ever be allowed to rebase or modify the history
+of a pushed branch is to delete it and push it as a new branch under
+the same name. Please think carefully about doing this. It may be
+better to sequentially rename your branches so that it is easier for
+others working with you to cherry-pick their local changes onto the new
+version. (XXX: needs explanation).</p>
+<p>If you want to rebase a personal topic branch, you will have to delete
+your existing topic branch and push as a new version of it. You can do
+this via the following formula (see the explanation about <code>refspec</code>'s
+in the git push documentation for details) after you have rebased your
+branch:</p>
+<pre>
+   # first rebase
+   $ git checkout $user/$topic
+   $ git fetch
+   $ git rebase origin/blead</pre>
+<pre>
+   # then &quot;delete-and-push&quot;
+   $ git push origin :$user/$topic
+   $ git push origin $user/$topic</pre>
+<p><strong>NOTE:</strong> it is forbidden at the repository level to delete any of the
+&quot;primary&quot; branches. That is any branch matching
+<code>m!^(blead|maint|perl)!</code>. Any attempt to do so will result in git
+producing an error like this:</p>
+<pre>
+    $ git push origin :blead
+    *** It is forbidden to delete blead/maint branches in this repository
+    error: hooks/update exited with error code 1
+    error: hook declined to update refs/heads/blead
+    To ssh://perl5.git.perl.org/perl
+     ! [remote rejected] blead (hook declined)
+     error: failed to push some refs to 'ssh://perl5.git.perl.org/perl'</pre>
+<p>As a matter of policy we do <strong>not</strong> edit the history of the blead and
+maint-* branches. If a typo (or worse) sneaks into a commit to blead or
+maint-*, we'll fix it in another commit. The only types of updates
+allowed on these branches are &quot;fast-forward's&quot;, where all history is
+preserved.</p>
+<p>Annotated tags in the canonical perl.git repository will never be
+deleted or modified. Think long and hard about whether you want to push
+a local tag to perl.git before doing so. (Pushing unannotated tags is
+not allowed.)</p>
+<p>
+</p>
+<hr />
+<h1><a name="write_access_to_the_git_repository">WRITE ACCESS TO THE GIT REPOSITORY</a></h1>
+<p>Once you have write access, you will need to modify the URL for the
+origin remote to enable pushing. Edit <em class="file">.git/config</em> with the
+git-config(1) command:</p>
+<pre>
+  % git config remote.origin.url ssh://perl5.git.perl.org/perl.git</pre>
+<p>You can also set up your user name and e-mail address. Most people do
+this once globally in their <em class="file">~/.gitconfig</em> by doing something like:</p>
+<pre>
+  % git config --global user.name &quot;Ævar Arnfjörð Bjarmason&quot;
+  % git config --global user.email avarab@gmail.com</pre>
+<p>However if you'd like to override that just for perl then execute then
+execute something like the following in <em class="file">perl</em>:</p>
+<pre>
+  % git config user.email avar@cpan.org</pre>
+<p>It is also possible to keep <code>origin</code> as a git remote, and add a new
+remote for ssh access:</p>
+<pre>
+  % git remote add camel perl5.git.perl.org:/perl.git</pre>
+<p>This allows you to update your local repository by pulling from
+<code>origin</code>, which is faster and doesn't require you to authenticate, and
+to push your changes back with the <code>camel</code> remote:</p>
+<pre>
+  % git fetch camel
+  % git push camel</pre>
+<p>The <code>fetch</code> command just updates the <code>camel</code> refs, as the objects
+themselves should have been fetched when pulling from <code>origin</code>.
+=head1 Accepting a patch</p>
+<p>If you have received a patch file generated using the above section,
+you should try out the patch.</p>
+<p>First we need to create a temporary new branch for these changes and
+switch into it:</p>
+<pre>
+  % git checkout -b experimental</pre>
+<p>Patches that were formatted by <code>git format-patch</code> are applied with
+<code>git am</code>:</p>
+<pre>
+  % git am 0001-Rename-Leon-Brocard-to-Orange-Brocard.patch
+  Applying Rename Leon Brocard to Orange Brocard</pre>
+<p>If just a raw diff is provided, it is also possible use this two-step
+process:</p>
+<pre>
+  % git apply bugfix.diff
+  % git commit -a -m &quot;Some fixing&quot; --author=&quot;That Guy &lt;that.guy@internets.com&gt;&quot;</pre>
+<p>Now we can inspect the change:</p>
+<pre>
+  % git show HEAD
+  commit b1b3dab48344cff6de4087efca3dbd63548ab5e2
+  Author: Leon Brocard &lt;acme@astray.com&gt;
+  Date:   Fri Dec 19 17:02:59 2008 +0000</pre>
+<pre>
+    Rename Leon Brocard to Orange Brocard</pre>
+<pre>
+  diff --git a/AUTHORS b/AUTHORS
+  index 293dd70..722c93e 100644
+  --- a/AUTHORS
+  +++ b/AUTHORS
+  @@ -541,7 +541,7 @@ Lars Hecking                        &lt;lhecking@nmrc.ucc.ie&gt;
+   Laszlo Molnar                  &lt;laszlo.molnar@eth.ericsson.se&gt;
+   Leif Huhn                      &lt;leif@hale.dkstat.com&gt;
+   Len Johnson                    &lt;lenjay@ibm.net&gt;
+  -Leon Brocard                   &lt;acme@astray.com&gt;
+  +Orange Brocard                 &lt;acme@astray.com&gt;
+   Les Peters                     &lt;lpeters@aol.net&gt;
+   Lesley Binks                   &lt;lesley.binks@gmail.com&gt;
+   Lincoln D. Stein               &lt;lstein@cshl.org&gt;</pre>
+<p>If you are a committer to Perl and you think the patch is good, you can
+then merge it into blead then push it out to the main repository:</p>
+<pre>
+  % git checkout blead
+  % git merge experimental
+  % git push</pre>
+<p>If you want to delete your temporary branch, you may do so with:</p>
+<pre>
+  % git checkout blead
+  % git branch -d experimental
+  error: The branch 'experimental' is not an ancestor of your current HEAD.
+  If you are sure you want to delete it, run 'git branch -D experimental'.
+  % git branch -D experimental
+  Deleted branch experimental.</pre>
+<p>
+</p>
+<h2><a name="committing_to_blead">Committing to blead</a></h2>
+<p>The 'blead' branch will become the next production release of Perl.</p>
+<p>Before pushing <em>any</em> local change to blead, it's incredibly important
+that you do a few things, lest other committers come after you with
+pitchforks and torches:</p>
+<ul>
+<li>
+<p>Make sure you have a good commit message. See <a href="../../lib/pods/perlhack.html#commit_message">Commit message in the perlhack manpage</a> for details.</p>
+</li>
+<li>
+<p>Run the test suite. You might not think that one typo fix would break a
+test file. You'd be wrong. Here's an example of where not running the
+suite caused problems. A patch was submitted that added a couple of
+tests to an existing .t. It couldn't possibly affect anything else, so
+no need to test beyond the single affected .t, right?  But, the
+submitter's email address had changed since the last of their
+submissions, and this caused other tests to fail. Running the test
+target given in the next item would have caught this problem.</p>
+</li>
+<li>
+<p>If you don't run the full test suite, at least <code>make test_porting</code>.
+This will run basic sanity checks. To see which sanity checks, have a
+look in <em class="file">t/porting</em>.</p>
+</li>
+<li>
+<p>If you make any changes that affect miniperl or core routines that have
+different code paths for miniperl, be sure to run <code>make minitest</code>. 
+This will catch problems that even the full test suite will not catch
+because it runs a subset of tests under miniperl rather than perl.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="committing_to_maintenance_versions">Committing to maintenance versions</a></h2>
+<p>Maintenance versions should only be altered to add critical bug fixes,
+see <a href="../../lib/pods/perlpolicy.html">the perlpolicy manpage</a>.</p>
+<p>To commit to a maintenance version of perl, you need to create a local
+tracking branch:</p>
+<pre>
+  % git checkout --track -b maint-5.005 origin/maint-5.005</pre>
+<p>This creates a local branch named <code>maint-5.005</code>, which tracks the
+remote branch <code>origin/maint-5.005</code>. Then you can pull, commit, merge
+and push as before.</p>
+<p>You can also cherry-pick commits from blead and another branch, by
+using the <code>git cherry-pick</code> command. It is recommended to use the
+<strong>-x</strong> option to <code>git cherry-pick</code> in order to record the SHA1 of the
+original commit in the new commit message.</p>
+<p>Before pushing any change to a maint version, make sure you've
+satisfied the steps in <a href="#committing_to_blead">Committing to blead</a> above.</p>
+<p>
+</p>
+<h2><a name="grafts">Grafts</a></h2>
+<p>The perl history contains one mistake which was not caught in the
+conversion: a merge was recorded in the history between blead and
+maint-5.10 where no merge actually occurred. Due to the nature of git,
+this is now impossible to fix in the public repository. You can remove
+this mis-merge locally by adding the following line to your
+<code>.git/info/grafts</code> file:</p>
+<pre>
+  296f12bbbbaa06de9be9d09d3dcf8f4528898a49 434946e0cb7a32589ed92d18008aaa1d88515930</pre>
+<p>It is particularly important to have this graft line if any bisecting
+is done in the area of the &quot;merge&quot; in question.</p>
+<p>
+</p>
+<h2><a name="merging_from_a_branch_via_github">Merging from a branch via GitHub</a></h2>
+<p>While we don't encourage the submission of patches via GitHub, that
+will still happen. Here is a guide to merging patches from a GitHub
+repository.</p>
+<pre>
+  % git remote add avar git://github.com/avar/perl.git
+  % git fetch avar</pre>
+<p>Now you can see the differences between the branch and blead:</p>
+<pre>
+  % git diff avar/orange</pre>
+<p>And you can see the commits:</p>
+<pre>
+  % git log avar/orange</pre>
+<p>If you approve of a specific commit, you can cherry pick it:</p>
+<pre>
+  % git cherry-pick 0c24b290ae02b2ab3304f51d5e11e85eb3659eae</pre>
+<p>Or you could just merge the whole branch if you like it all:</p>
+<pre>
+  % git merge avar/orange</pre>
+<p>And then push back to the repository:</p>
+<pre>
+  % git push</pre>
+<p>
+</p>
+<h2><a name="a_note_on_camel_and_dromedary">A note on camel and dromedary</a></h2>
+<p>The committers have SSH access to the two servers that serve
+<code>perl5.git.perl.org</code>. One is <code>perl5.git.perl.org</code> itself (<em>camel</em>),
+which is the 'master' repository. The second one is
+<code>users.perl5.git.perl.org</code> (<em>dromedary</em>), which can be used for
+general testing and development. Dromedary syncs the git tree from
+camel every few minutes, you should not push there. Both machines also
+have a full CPAN mirror in /srv/CPAN, please use this. To share files
+with the general public, dromedary serves your ~/public_html/ as
+<code>http://users.perl5.git.perl.org/~yourlogin/</code></p>
+<p>These hosts have fairly strict firewalls to the outside. Outgoing, only
+rsync, ssh and git are allowed. For http and ftp, you can use
+<a href="http://webproxy:3128">http://webproxy:3128</a> as proxy. Incoming, the firewall tries to detect
+attacks and blocks IP addresses with suspicious activity. This
+sometimes (but very rarely) has false positives and you might get
+blocked. The quickest way to get unblocked is to notify the admins.</p>
+<p>These two boxes are owned, hosted, and operated by booking.com. You can
+reach the sysadmins in #p5p on irc.perl.org or via mail to
+<code>perl5-porters@perl.org</code>.</p>
+
+</body>
+
+</html>

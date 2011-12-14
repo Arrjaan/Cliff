@@ -1,0 +1,373 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Text::Diff - Perform diffs on files and record sets</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Text::Diff - Perform diffs on files and record sets</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#formatting_classes">Formatting Classes</a></li>
+	<ul>
+
+		<li><a href="#text__diff__base">Text::Diff::Base</a></li>
+		<li><a href="#text__diff__unified">Text::Diff::Unified</a></li>
+		<li><a href="#text__diff__table">Text::Diff::Table</a></li>
+		<li><a href="#text__diff__context">Text::Diff::Context</a></li>
+		<li><a href="#text__diff__oldstyle">Text::Diff::OldStyle</a></li>
+	</ul>
+
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Text::Diff - Perform diffs on files and record sets</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Text::Diff</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">## Mix and match filenames, strings, file handles, producer subs,</span>
+    <span class="comment">## or arrays of records; returns diff in a string.</span>
+    <span class="comment">## WARNING: can return B&lt;large&gt; diffs for large files.</span>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">diff</span> <span class="string">"file1.txt"</span><span class="operator">,</span> <span class="string">"file2.txt"</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">STYLE</span> <span class="operator">=&gt;</span> <span class="string">"Context"</span> <span class="operator">}</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">diff</span> <span class="operator">\</span><span class="variable">$string1</span><span class="operator">,</span>   <span class="operator">\</span><span class="variable">$string2</span><span class="operator">,</span>   <span class="operator">\</span><span class="variable">%options</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">diff</span> <span class="operator">\</span><span class="variable">*FH1</span><span class="operator">,</span>       <span class="operator">\</span><span class="variable">*FH2</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">diff</span> <span class="operator">\&amp;</span><span class="variable">reader1</span><span class="operator">,</span>   <span class="operator">\&amp;</span><span class="variable">reader2</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">diff</span> <span class="operator">\</span><span class="variable">@records1</span><span class="operator">,</span>  <span class="operator">\</span><span class="variable">@records2</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">## May also mix input types:</span>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">diff</span> <span class="operator">\</span><span class="variable">@records1</span><span class="operator">,</span>  <span class="string">"file_B.txt"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>diff()</code> provides a basic set of services akin to the GNU <code>diff</code> utility.  It
+is not anywhere near as feature complete as GNU <code>diff</code>, but it is better
+integrated with Perl and available on all platforms.  It is often faster than
+shelling out to a system's <code>diff</code> executable for small files, and generally
+slower on larger files.</p>
+<p>Relies on <a href="../../lib/Algorithm/Diff.html">the Algorithm::Diff manpage</a> for, well, the algorithm.  This may not produce
+the same exact diff as a system's local <code>diff</code> executable, but it will be a
+valid diff and comprehensible by <code>patch</code>.  We haven't seen any differences
+between Algorithm::Diff's logic and GNU diff's, but we have not examined them
+to make sure they are indeed identical.</p>
+<p><strong>Note</strong>: If you don't want to import the <code>diff</code> function, do one of the
+following:</p>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Text::Diff</span> <span class="operator">();</span>
+</pre>
+<pre>
+   <span class="keyword">require</span> <span class="variable">Text::Diff</span><span class="operator">;</span>
+</pre>
+<p>That's a pretty rare occurence, so <code>diff()</code> is exported by default.
+=head1 OPTIONS</p>
+<p><code>diff()</code> takes two parameters from which to draw input and a set of
+options to control it's output.  The options are:</p>
+<dl>
+<dt><strong><a name="filename_a_mtime_a_filename_b_mtime_b" class="item">FILENAME_A, MTIME_A, FILENAME_B, MTIME_B</a></strong></dt>
+
+<dd>
+<p>The name of the file and the modification time &quot;files&quot;</p>
+<p>These are filled in automatically for each file when <code>diff()</code> is passed a
+filename, unless a defined value is passed in.</p>
+<p>If a filename is not passed in and FILENAME_A and FILENAME_B are not provided
+or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, the header will not be printed.</p>
+<p>Unused on <code>OldStyle</code> diffs.</p>
+</dd>
+<dt><strong><a name="offset_a_offset_b" class="item">OFFSET_A, OFFSET_B</a></strong></dt>
+
+<dd>
+<p>The index of the first line / element.  These default to 1 for all
+parameter types except ARRAY references, for which the default is 0.  This
+is because ARRAY references are presumed to be data structures, while the
+others are line oriented text.</p>
+</dd>
+<dt><strong><a name="style" class="item">STYLE</a></strong></dt>
+
+<dd>
+<p>&quot;Unified&quot;, &quot;Context&quot;, &quot;OldStyle&quot;, or an object or class reference for a class
+providing <a href="#file_header"><code>file_header()</code></a>, <a href="#hunk_header"><code>hunk_header()</code></a>, <code>hunk()</code>, <code>hunk_footer()</code> and
+<code>file_footer()</code> methods.  The two <code>footer()</code> methods are provided for
+overloading only; none of the formats provide them.</p>
+<p>Defaults to &quot;Unified&quot; (unlike standard <code>diff</code>, but Unified is what's most
+often used in submitting patches and is the most human readable of the three.</p>
+<p>If the package indicated by the STYLE has no <code>hunk()</code> method, c&lt;diff()&gt; will
+load it automatically (lazy loading).  Since all such packages should inherit
+from Text::Diff::Base, this should be marvy.</p>
+<p>Styles may be specified as class names (<a href="#style"><code>STYLE =</code></a> &quot;Foo&quot;), in which case they
+will be <code>new()</code>ed with no parameters, or as objects (<a href="#style"><code>STYLE =</code></a> Foo-&gt;new&gt;).</p>
+</dd>
+<dt><strong><a name="context" class="item">CONTEXT</a></strong></dt>
+
+<dd>
+<p>How many lines before and after each diff to display.  Ignored on old-style
+diffs.  Defaults to 3.</p>
+</dd>
+<dt><strong><a name="output" class="item">OUTPUT</a></strong></dt>
+
+<dd>
+<p>Examples and their equivalent subroutines:</p>
+<pre>
+    <span class="string">OUTPUT</span>   <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">*FOOHANDLE</span><span class="operator">,</span>   <span class="comment"># like: sub { print FOOHANDLE shift() }</span>
+    <span class="string">OUTPUT</span>   <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$output</span><span class="operator">,</span>      <span class="comment"># like: sub { $output .= shift }</span>
+    <span class="string">OUTPUT</span>   <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">@output</span><span class="operator">,</span>      <span class="comment"># like: sub { push @output, shift }</span>
+    <span class="string">OUTPUT</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$output</span> <span class="operator">.=</span> <span class="keyword">shift</span> <span class="operator">},</span>
+</pre>
+<p>If no <a href="#output"><code>OUTPUT</code></a> is supplied, returns the diffs in a string.  If
+<a href="#output"><code>OUTPUT</code></a> is a <code>CODE</code> ref, it will be called once with the (optional)
+file header, and once for each hunk body with the text to emit.  If
+<a href="#output"><code>OUTPUT</code></a> is an <a href="../../lib/IO/Handle.html">the IO::Handle manpage</a>, output will be emitted to that handle.</p>
+</dd>
+<dt><strong><a name="filename_prefix_a_filename_prefix_b" class="item">FILENAME_PREFIX_A, FILENAME_PREFIX_B</a></strong></dt>
+
+<dd>
+<p>The string to print before the filename in the header. Unused on <code>OldStyle</code>
+diffs.  Defaults are <code>&quot;---&quot;</code>, <code>&quot;+++&quot;</code> for Unified and <code>&quot;***&quot;</code>, <code>&quot;+++&quot;</code> for
+Context.</p>
+</dd>
+<dt><strong><a name="keygen_keygen_args" class="item">KEYGEN, KEYGEN_ARGS</a></strong></dt>
+
+<dd>
+<p>These are passed to <a href="../../lib/Algorithm/Diff.html#traverse_sequences">traverse_sequences in the Algorithm::Diff manpage</a>.</p>
+</dd>
+</dl>
+<p><strong>Note</strong>: if neither <code>FILENAME_</code> option is defined, the header will not be
+printed.  If at one is present, the other and both MTIME_ options must be
+present or &quot;Use of undefined variable&quot; warnings will be generated (except
+on <code>OldStyle</code> diffs, which ignores these options).</p>
+<p>
+</p>
+<hr />
+<h1><a name="formatting_classes">Formatting Classes</a></h1>
+<p>These functions implement the output formats.  They are grouped in to classes
+so <code>diff()</code> can use class names to call the correct set of output routines and so
+that you may inherit from them easily.  There are no constructors or instance
+methods for these classes, though subclasses may provide them if need be.</p>
+<p>Each class has <a href="#file_header"><code>file_header()</code></a>, <a href="#hunk_header"><code>hunk_header()</code></a>, <code>hunk()</code>, and <code>footer()</code> methods
+identical to those documented in the Text::Diff::Unified section.  <code>header()</code> is
+called before the <code>hunk()</code> is first called, <code>footer()</code> afterwards.  The default
+footer function is an empty method provided for overloading:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> footer </span><span class="operator">{</span> <span class="keyword">return</span> <span class="string">"End of patch\n"</span> <span class="operator">}</span>
+</pre>
+<p>Some output formats are provided by external modules (which are loaded
+automatically), such as <a href="../../lib/Text/Diff/Table.html">the Text::Diff::Table manpage</a>.  These are
+are documented here to keep the documentation simple.</p>
+<p>
+</p>
+<h2><a name="text__diff__base">Text::Diff::Base</a></h2>
+<p>Returns &quot;&quot; for all methods (other than <code>new()</code>).</p>
+<p>
+</p>
+<h2><a name="text__diff__unified">Text::Diff::Unified</a></h2>
+<pre>
+  --- A   Mon Nov 12 23:49:30 2001
+  +++ B   Mon Nov 12 23:49:30 2001
+  @@ -2,13 +2,13 @@
+   2
+   3
+   4
+  -5d
+  +5a
+   6
+   7
+   8
+   9
+  +9a
+   10
+   11
+  -11d
+   12
+   13</pre>
+<dl>
+<dt><strong><a name="file_header" class="item">file_header</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$s</span> <span class="operator">=</span> <span class="variable">Text::Diff::Unified</span><span class="operator">-&gt;</span><span class="variable">file_header</span><span class="operator">(</span> <span class="variable">$options</span> <span class="operator">);</span>
+</pre>
+<p>Returns a string containing a unified header.  The sole parameter is the
+options hash passed in to <code>diff()</code>, containing at least:</p>
+<pre>
+  FILENAME_A  =&gt; $fn1,
+  MTIME_A     =&gt; $mtime1,
+  FILENAME_B  =&gt; $fn2,
+  MTIME_B     =&gt; $mtime2</pre>
+<p>May also contain</p>
+<pre>
+  FILENAME_PREFIX_A    =&gt; &quot;---&quot;,
+  FILENAME_PREFIX_B    =&gt; &quot;+++&quot;,</pre>
+<p>to override the default prefixes (default values shown).</p>
+</dd>
+<dt><strong><a name="hunk_header" class="item">hunk_header</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">Text::Diff::Unified</span><span class="operator">-&gt;</span><span class="variable">hunk_header</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@ops</span><span class="operator">,</span> <span class="variable">$options</span> <span class="operator">);</span>
+</pre>
+<p>Returns a string containing the output of one hunk of unified diff.</p>
+</dd>
+<dt><strong><a name="text_diff_unified_hunk" class="item">Text::Diff::Unified::hunk</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">Text::Diff::Unified</span><span class="operator">-&gt;</span><span class="variable">hunk</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq_a</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq_b</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@ops</span><span class="operator">,</span> <span class="variable">$options</span> <span class="operator">);</span>
+</pre>
+<p>Returns a string containing the output of one hunk of unified diff.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="text__diff__table">Text::Diff::Table</a></h2>
+<pre>
+  +--+----------------------------------+--+------------------------------+
+  |  |../Test-Differences-0.2/MANIFEST  |  |../Test-Differences/MANIFEST  |
+  |  |Thu Dec 13 15:38:49 2001          |  |Sat Dec 15 02:09:44 2001      |
+  +--+----------------------------------+--+------------------------------+
+  |  |                                  * 1|Changes                       *
+  | 1|Differences.pm                    | 2|Differences.pm                |
+  | 2|MANIFEST                          | 3|MANIFEST                      |
+  |  |                                  * 4|MANIFEST.SKIP                 *
+  | 3|Makefile.PL                       | 5|Makefile.PL                   |
+  |  |                                  * 6|t/00escape.t                  *
+  | 4|t/00flatten.t                     | 7|t/00flatten.t                 |
+  | 5|t/01text_vs_data.t                | 8|t/01text_vs_data.t            |
+  | 6|t/10test.t                        | 9|t/10test.t                    |
+  +--+----------------------------------+--+------------------------------+</pre>
+<p>This format also goes to some pains to highlight &quot;invisible&quot; characters on
+differing elements by selectively escaping whitespace:</p>
+<pre>
+  +--+--------------------------+--------------------------+
+  |  |demo_ws_A.txt             |demo_ws_B.txt             |
+  |  |Fri Dec 21 08:36:32 2001  |Fri Dec 21 08:36:50 2001  |
+  +--+--------------------------+--------------------------+
+  | 1|identical                 |identical                 |
+  * 2|        spaced in         |        also spaced in    *
+  * 3|embedded space            |embedded        tab       *
+  | 4|identical                 |identical                 |
+  * 5|        spaced in         |\ttabbed in               *
+  * 6|trailing spaces\s\s\n     |trailing tabs\t\t\n       *
+  | 7|identical                 |identical                 |
+  * 8|lf line\n                 |crlf line\r\n             *
+  * 9|embedded ws               |embedded\tws              *
+  +--+--------------------------+--------------------------+</pre>
+<p>See <a href="#text__diff__table">Text::Diff::Table</a> for more details, including how the whitespace
+escaping works.</p>
+<p>
+</p>
+<h2><a name="text__diff__context">Text::Diff::Context</a></h2>
+<pre>
+    *** A   Mon Nov 12 23:49:30 2001
+    --- B   Mon Nov 12 23:49:30 2001
+    ***************
+    *** 2,14 ****
+      2
+      3
+      4
+    ! 5d
+      6
+      7
+      8
+      9
+      10
+      11
+    - 11d
+      12
+      13
+    --- 2,14 ----
+      2
+      3
+      4
+    ! 5a
+      6
+      7
+      8
+      9
+    + 9a
+      10
+      11
+      12
+      13</pre>
+<p>Note: <a href="#hunk_header"><code>hunk_header()</code></a> returns only &quot;***************\n&quot;.</p>
+<p>
+</p>
+<h2><a name="text__diff__oldstyle">Text::Diff::OldStyle</a></h2>
+<pre>
+    5c5
+    &lt; 5d
+    ---
+    &gt; 5a
+    9a10
+    &gt; 9a
+    12d12
+    &lt; 11d</pre>
+<p>Note: no <a href="#file_header"><code>file_header()</code></a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>Must suck both input files entirely in to memory and store them with a normal
+amount of Perlish overhead (one array location) per record.  This is implied by
+the implementation of Algorithm::Diff, which takes two arrays.  If
+Algorithm::Diff ever offers an incremental mode, this can be changed (contact
+the maintainers of Algorithm::Diff and Text::Diff if you need this; it
+shouldn't be too terribly hard to tie arrays in this fashion).</p>
+<p>Does not provide most of the more refined GNU diff options: recursive directory
+tree scanning, ignoring blank lines / whitespace, etc., etc.  These can all be
+added as time permits and need arises, many are rather easy; patches quite
+welcome.</p>
+<p>Uses closures internally, this may lead to leaks on <code>perl</code> versions 5.6.1 and
+prior if used many times over a process' life time.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Adam Kennedy &lt;<a href="mailto:adamk@cpan.org">adamk@cpan.org</a>&gt;</p>
+<p>Barrie Slaymaker &lt;<a href="mailto:barries@slaysys.com">barries@slaysys.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Some parts copyright 2009 Adam Kennedy.</p>
+<p>Copyright 2001 Barrie Slaymaker.  All Rights Reserved.</p>
+<p>You may use this under the terms of either the Artistic License or GNU Public
+License v 2.0 or greater.</p>
+
+</body>
+
+</html>

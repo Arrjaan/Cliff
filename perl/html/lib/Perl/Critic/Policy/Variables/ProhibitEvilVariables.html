@@ -1,0 +1,162 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::Variables::ProhibitEvilVariables - Ban variables that aren't blessed by your shop.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::Variables::ProhibitEvilVariables - Ban variables that aren't blessed by your shop.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#restrictions">RESTRICTIONS</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::Variables::ProhibitEvilVariables - Ban variables that aren't blessed by your shop.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Use this policy if you wish to prohibit the use of specific variables. These
+may be global variables warned against in <code>perlvar</code>, or just variables whose
+names you do not like.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>The set of prohibited variables is configurable via the <code>variables</code> and
+<code>variables_file</code> options.</p>
+<p>The value of <code>variables</code> should be a string of space-delimited, fully
+qualified variable names and/or regular expressions.  An example of
+prohibiting two specific variables in a <em class="file">.perlcriticrc</em> file:</p>
+<pre>
+    <span class="operator">[</span><span class="variable">Variables::ProhibitEvilVariables</span><span class="operator">]</span>
+    <span class="variable">variables</span> <span class="operator">=</span> <span class="variable">$[</span> <span class="variable">$^S</span> <span class="variable">$SIG</span><span class="operator">{</span><span class="string">__DIE__</span><span class="operator">}</span>
+</pre>
+<p>If you prohibit an array or hash (e.g. <a href="../../../../../lib/pods/perlvar.html#_inc"><code>@INC</code></a>), use of elements of the array
+or hash will be prohibited as well. If you specify a subscripted variable (e.g.
+<code>$SIG{__DIE__}</code>), only the literal subscript specified will be detected. The
+above &lt;.perlcritic&gt; file, for example, will cause <code>perlcritic (1)</code> to detect
+<code>$SIG{__DIE__} = \&amp;foo</code>, but not</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="string">'__DIE__'</span><span class="operator">;</span>
+    <span class="variable">$SIG</span><span class="operator">{</span><span class="variable">$foo</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">;</span>
+</pre>
+<p>Regular expressions are identified by values beginning and ending with
+slashes.  Any variable with a name that matches <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m/pattern/sm</code></a> will be
+forbidden.  For example:</p>
+<pre>
+    [Variables::ProhibitEvilVariables]
+    variables = /acme/</pre>
+<p>would cause all variables that match <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m/acme/</code></a> to be forbidden.  If
+you want a case-blind check, you can use (?i: ... ).  For example</p>
+<pre>
+    [Variables::ProhibitEvilVariables]
+    variables = /(?i:acme)/</pre>
+<p>forbids variables that match <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m/acme/smi</code></a>.</p>
+<p>In addition, you can override the default message (&quot;Prohibited variable
+&quot;<em>variable</em>&quot; used&quot;) with your own, in order to give suggestions for
+alternative action.  To do so, put your message in curly braces after
+the variable name or regular expression.  Like this:</p>
+<pre>
+    <span class="operator">[</span><span class="variable">Variables::ProhibitEvilVariables</span><span class="operator">]</span>
+    <span class="variable">variables</span> <span class="operator">=</span> <span class="variable">$[</span> <span class="operator">{</span><span class="variable">Found</span> <span class="keyword">use</span> <span class="variable">of</span> <span class="variable">$[</span><span class="operator">.</span> <span class="variable">Program</span> <span class="variable">to</span> <span class="variable">base</span> <span class="keyword">index</span> <span class="number">0</span> <span class="variable">instead</span><span class="operator">}</span>
+</pre>
+<p>If your message contains curly braces, you can enclose it in parentheses,
+angle brackets, or square brackets instead.</p>
+<p>Similarly, the <code>variables_file</code> option gives the name of a file
+containing specifications for prohibited variables.  Only one variable
+specification is allowed per line and comments start with an octothorp
+and run to end of line; no curly braces are necessary for delimiting
+messages:</p>
+<pre>
+    $[      # Prohibit the &quot;$[&quot; variable and use the default message.</pre>
+<pre>
+    # Prohibit the &quot;$^S&quot; variable and give a replacement message.
+    $^S     Having to think about $^S in exception handlers is just wrong</pre>
+<pre>
+    # Use a regular expression.
+    /acme/  No coyotes allowed.</pre>
+<p>By default, there are no prohibited variables, although I can think of a
+few that should be.  See <code>perldoc perlvar</code> for a few suggestions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="restrictions">RESTRICTIONS</a></h1>
+<p>Variables of the form <code>${^foo}</code> are not recognized by PPI as of version
+1.206. When PPI recognizes these, this policy will Just Work for them too.</p>
+<p>Only direct references to prohibited variables and literal subscripts will be
+recognized. For example, if you prohibit $[, the first line in</p>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">$[</span><span class="operator">;</span>
+ <span class="variable">$$foo</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>will be flagged as a violation, but not the second, even though the second, in
+fact, assigns to $[. Similarly, if you prohibit $SIG{__DIE__}, this policy
+will not recognize</p>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">=</span> <span class="string">'__DIE__'</span><span class="operator">;</span>
+ <span class="variable">$SIG</span><span class="operator">{</span><span class="variable">$foo</span><span class="operator">}</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="keyword">warn</span> <span class="string">'I cannot die!'</span><span class="operator">};</span>
+</pre>
+<p>as an assignment to $SIG{__DIE__}.</p>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>This policy leans heavily on
+<a href="../../../../../lib/Perl/Critic/Policy/Modules/ProhibitEvilModules.html">Perl::Critic::Policy::Modules::ProhibitEvilModules</a>
+by Jeffrey Ryan Thalhammer.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Thomas R. Wyant, III <em class="file">wyant at cpan dot org</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2009-2011 Thomas R. Wyant, III</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module.</p>
+
+</body>
+
+</html>

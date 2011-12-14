@@ -1,0 +1,499 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Try::Tiny - minimal try/catch with proper localization of $@</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Try::Tiny - minimal try/catch with proper localization of $@</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#exports">EXPORTS</a></li>
+	<li><a href="#background">BACKGROUND</a></li>
+	<ul>
+
+		<li><a href="#clobbering___">Clobbering $@</a></li>
+		<li><a href="#localizing____silently_masks_errors">Localizing $@ silently masks errors</a></li>
+		<li><a href="#___might_not_be_a_true_value">$@ might not be a true value</a></li>
+	</ul>
+
+	<li><a href="#shiny_syntax">SHINY SYNTAX</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#lightning_talk">LIGHTNING TALK</a></li>
+	<li><a href="#version_control">VERSION CONTROL</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Try::Tiny - minimal try/catch with proper localization of $@</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>You can use Try::Tiny's <a href="#try"><code>try</code></a> and <a href="#catch"><code>catch</code></a> to expect and handle exceptional
+conditions, avoiding quirks in Perl and common mistakes:</p>
+<pre>
+        <span class="comment"># handle errors with a catch handler</span>
+        <span class="variable">try</span> <span class="operator">{</span>
+                <span class="keyword">die</span> <span class="string">"foo"</span><span class="operator">;</span>
+        <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span>
+                <span class="keyword">warn</span> <span class="string">"caught error: </span><span class="variable">$_</span><span class="string">"</span><span class="operator">;</span> <span class="comment"># not $@</span>
+        <span class="operator">};</span>
+</pre>
+<p>You can also use it like a stanalone <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> to catch and ignore any error
+conditions.  Obviously, this is an extreme measure not to be undertaken
+lightly:</p>
+<pre>
+        <span class="comment"># just silence errors</span>
+        <span class="variable">try</span> <span class="operator">{</span>
+                <span class="keyword">die</span> <span class="string">"foo"</span><span class="operator">;</span>
+        <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides bare bones <a href="#try"><code>try</code></a>/<a href="#catch"><code>catch</code></a>/<a href="#finally"><code>finally</code></a> statements that are designed to
+minimize common mistakes with eval blocks, and NOTHING else.</p>
+<p>This is unlike <a href="#trycatch">TryCatch</a> which provides a nice syntax and avoids adding
+another call stack layer, and supports calling <a href="../../lib/pods/perlfunc.html#return"><code>return</code></a> from the try block to
+return from the parent subroutine. These extra features come at a cost of a few
+dependencies, namely <a href="../../Devel/Declare.html">the Devel::Declare manpage</a> and <a href="../../Scope/Upper.html">the Scope::Upper manpage</a> which are
+occasionally problematic, and the additional catch filtering uses <a href="../../lib/Moose.html">the Moose manpage</a>
+type constraints which may not be desirable either.</p>
+<p>The main focus of this module is to provide simple and reliable error handling
+for those having a hard time installing <a href="#trycatch">TryCatch</a>, but who still want to
+write correct <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> blocks without 5 lines of boilerplate each time.</p>
+<p>It's designed to work as correctly as possible in light of the various
+pathological edge cases (see <em>BACKGROUND</em>) and to be compatible with any style
+of error values (simple strings, references, objects, overloaded objects, etc).</p>
+<p>If the try block dies, it returns the value of the last statement executed in
+the catch block, if there is one. Otherwise, it returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> in scalar
+context or the empty list in list context. The following two examples both
+assign <code>&quot;bar&quot;</code> to <code>$x</code>.</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">try</span> <span class="operator">{</span> <span class="keyword">die</span> <span class="string">"foo"</span> <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span> <span class="string">"bar"</span> <span class="operator">};</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="keyword">eval</span> <span class="operator">{</span> <span class="keyword">die</span> <span class="string">"foo"</span> <span class="operator">}</span> <span class="operator">||</span> <span class="string">"bar"</span><span class="operator">;</span>
+</pre>
+<p>You can add finally blocks making the following true.</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="variable">try</span> <span class="operator">{</span> <span class="keyword">die</span> <span class="string">'foo'</span> <span class="operator">}</span> <span class="variable">finally</span> <span class="operator">{</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="string">'bar'</span> <span class="operator">};</span>
+        <span class="variable">try</span> <span class="operator">{</span> <span class="keyword">die</span> <span class="string">'foo'</span> <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span> <span class="keyword">warn</span> <span class="string">"Got a die: </span><span class="variable">$_</span><span class="string">"</span> <span class="operator">}</span> <span class="variable">finally</span> <span class="operator">{</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="string">'bar'</span> <span class="operator">};</span>
+</pre>
+<p>Finally blocks are always executed making them suitable for cleanup code
+which cannot be handled using local.  You can add as many finally blocks to a
+given try block as you like.</p>
+<p>
+</p>
+<hr />
+<h1><a name="exports">EXPORTS</a></h1>
+<p>All functions are exported by default using <a href="../../lib/Exporter.html">the Exporter manpage</a>.</p>
+<p>If you need to rename the <a href="#try"><code>try</code></a>, <a href="#catch"><code>catch</code></a> or <a href="#finally"><code>finally</code></a> keyword consider using
+<a href="../../Sub/Import.html">the Sub::Import manpage</a> to get <a href="../../lib/Sub/Exporter.html">the Sub::Exporter manpage</a>'s flexibility.</p>
+<dl>
+<dt><strong><a name="try" class="item">try (&amp;;@)</a></strong></dt>
+
+<dd>
+<p>Takes one mandatory try subroutine, an optional catch subroutine &amp; finally
+subroutine.</p>
+<p>The mandatory subroutine is evaluated in the context of an <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> block.</p>
+<p>If no error occurred the value from the first block is returned, preserving
+list/scalar context.</p>
+<p>If there was an error and the second subroutine was given it will be invoked
+with the error in <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> (localized) and as that block's first and only
+argument.</p>
+<p><a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> does <strong>not</strong> contain the error. Inside the <a href="#catch"><code>catch</code></a> block it has the same
+value it had before the <a href="#try"><code>try</code></a> block was executed.</p>
+<p>Note that the error may be false, but if that happens the <a href="#catch"><code>catch</code></a> block will
+still be invoked.</p>
+<p>Once all execution is finished then the finally block if given will execute.</p>
+</dd>
+<dt><strong><a name="catch" class="item">catch (&amp;;$)</a></strong></dt>
+
+<dd>
+<p>Intended to be used in the second argument position of <a href="#try"><code>try</code></a>.</p>
+<p>Returns a reference to the subroutine it was given but blessed as
+<code>Try::Tiny::Catch</code> which allows try to decode correctly what to do
+with this code reference.</p>
+<pre>
+        <span class="variable">catch</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>Inside the catch block the caught error is stored in <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>, while previous
+value of <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> is still available for use.  This value may or may not be
+meaningful depending on what happened before the <a href="#try"><code>try</code></a>, but it might be a good
+idea to preserve it in an error stack.</p>
+<p>For code that captures <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> when throwing new errors (i.e.
+<a href="../../Class/Throwable.html">the Class::Throwable manpage</a>), you'll need to do:</p>
+<pre>
+        <span class="keyword">local</span> <span class="variable">$@</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="finally" class="item">finally (&amp;;$)</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">try</span>     <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+  <span class="variable">catch</span>   <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+  <span class="variable">finally</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+</pre>
+<p>Or</p>
+<pre>
+  <span class="variable">try</span>     <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+  <span class="variable">finally</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+</pre>
+<p>Or even</p>
+<pre>
+  <span class="variable">try</span>     <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+  <span class="variable">finally</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+  <span class="variable">catch</span>   <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+</pre>
+<p>Intended to be the second or third element of <a href="#try"><code>try</code></a>. Finally blocks are always
+executed in the event of a successful <a href="#try"><code>try</code></a> or if <a href="#catch"><code>catch</code></a> is run. This allows
+you to locate cleanup code which cannot be done via <a href="../../lib/pods/perlfunc.html#local"><code>local()</code></a> e.g. closing a file
+handle.</p>
+<p>When invoked, the finally block is passed the error that was caught.  If no
+error was caught, it is passed nothing.  (Note that the finally block does not
+localize <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> with the error, since unlike in a catch block, there is no way
+to know if <a href="../../lib/pods/perlvar.html#__"><code>$_ == undef</code></a> implies that there were no errors.) In other words,
+the following code does just what you would expect:</p>
+<pre>
+  <span class="variable">try</span> <span class="operator">{</span>
+    <span class="variable">die_sometimes</span><span class="operator">();</span>
+  <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span>
+    <span class="comment"># ...code run in case of error</span>
+  <span class="operator">}</span> <span class="variable">finally</span> <span class="operator">{</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">@_</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"The try block died with: </span><span class="variable">@_</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"The try block ran without error.\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+  <span class="operator">};</span>
+</pre>
+<p><strong>You must always do your own error handling in the finally block</strong>. <code>Try::Tiny</code> will
+not do anything about handling possible errors coming from code located in these
+blocks.</p>
+<p>In the same way <a href="#catch"><code>catch()</code></a> blesses the code reference this subroutine does the same
+except it bless them as <code>Try::Tiny::Finally</code>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="background">BACKGROUND</a></h1>
+<p>There are a number of issues with <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>.</p>
+<p>
+</p>
+<h2><a name="clobbering___">Clobbering $@</a></h2>
+<p>When you run an eval block and it succeeds, <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> will be cleared, potentially
+clobbering an error that is currently being caught.</p>
+<p>This causes action at a distance, clearing previous errors your caller may have
+not yet handled.</p>
+<p><a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> must be properly localized before invoking <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> in order to avoid this
+issue.</p>
+<p>More specifically, <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> is clobbered at the beginning of the <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>, which
+also makes it impossible to capture the previous error before you die (for
+instance when making exception objects with error stacks).</p>
+<p>For this reason <a href="#try"><code>try</code></a> will actually set <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> to its previous value (before
+the localization) in the beginning of the <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> block.</p>
+<p>
+</p>
+<h2><a name="localizing____silently_masks_errors">Localizing $@ silently masks errors</a></h2>
+<p>Inside an eval block <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> behaves sort of like:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> die </span><span class="operator">{</span>
+                <span class="variable">$@</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+                <span class="variable">return_undef_from_eval</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<p>This means that if you were polite and localized <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> you can't die in that
+scope, or your error will be discarded (printing &quot;Something's wrong&quot; instead).</p>
+<p>The workaround is very ugly:</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$error</span> <span class="operator">=</span> <span class="keyword">do</span> <span class="operator">{</span>
+                <span class="keyword">local</span> <span class="variable">$@</span><span class="operator">;</span>
+                <span class="keyword">eval</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+                <span class="variable">$@</span><span class="operator">;</span>
+        <span class="operator">};</span>
+</pre>
+<pre>
+        <span class="operator">...</span>
+        <span class="keyword">die</span> <span class="variable">$error</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="___might_not_be_a_true_value">$@ might not be a true value</a></h2>
+<p>This code is wrong:</p>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$@</span> <span class="operator">)</span> <span class="operator">{</span>
+                <span class="operator">...</span>
+        <span class="operator">}</span>
+</pre>
+<p>because due to the previous caveats it may have been unset.</p>
+<p><a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> could also be an overloaded error object that evaluates to false, but
+that's asking for trouble anyway.</p>
+<p>The classic failure mode is:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Object::DESTROY </span><span class="operator">{</span>
+                <span class="keyword">eval</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">eval</span> <span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$obj</span> <span class="operator">=</span> <span class="variable">Object</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="keyword">die</span> <span class="string">"foo"</span><span class="operator">;</span>
+                        <span class="operator">};</span>
+</pre>
+<pre>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$@</span> <span class="operator">)</span> <span class="operator">{</span>
+</pre>
+<pre>
+        }</pre>
+<p>In this case since <code>Object::DESTROY</code> is not localizing <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> but still uses
+<a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>, it will set <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> to <code>&quot;&quot;</code>.</p>
+<p>The destructor is called when the stack is unwound, after <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> sets <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> to
+<code>&quot;foo at Foo.pm line 42\n&quot;</code>, so by the time <code>if ( $@ )</code> is evaluated it has
+been cleared by <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> in the destructor.</p>
+<p>The workaround for this is even uglier than the previous ones. Even though we
+can't save the value of <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> from code that doesn't localize, we can at least
+be sure the eval was aborted due to an error:</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$failed</span> <span class="operator">=</span> <span class="keyword">not</span> <span class="keyword">eval</span> <span class="operator">{</span>
+                <span class="operator">...</span>
+</pre>
+<pre>
+                <span class="keyword">return</span> <span class="number">1</span><span class="operator">;</span>
+                        <span class="operator">};</span>
+</pre>
+<p>This is because an <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> that caught a <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> will always return a false
+value.</p>
+<p>
+</p>
+<hr />
+<h1><a name="shiny_syntax">SHINY SYNTAX</a></h1>
+<p>Using Perl 5.10 you can use <a href="../../lib/pods/perlsyn.html#switch_statements">Switch statements in the perlsyn manpage</a>.</p>
+<p>The <a href="#catch"><code>catch</code></a> block is invoked in a topicalizer context (like a <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> block),
+but note that you can't return a useful value from <a href="#catch"><code>catch</code></a> using the <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a>
+blocks without an explicit <a href="../../lib/pods/perlfunc.html#return"><code>return</code></a>.</p>
+<p>This is somewhat similar to Perl 6's <code>CATCH</code> blocks. You can use it to
+concisely match errors:</p>
+<pre>
+        <span class="variable">try</span> <span class="operator">{</span>
+                <span class="keyword">require</span> <span class="variable">Foo</span><span class="operator">;</span>
+        <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span>
+                <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^Can't locate .*?\.pm in \@INC/</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">}</span> <span class="comment"># ignore</span>
+                <span class="keyword">default</span> <span class="operator">{</span> <span class="keyword">die</span> <span class="variable">$_</span> <span class="operator">}</span>
+        <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<ul>
+<li>
+<p><a href="../../lib/pods/perlvar.html#__"><code>@_</code></a> is not available within the <a href="#try"><code>try</code></a> block, so you need to copy your
+arglist. In case you want to work with argument values directly via <a href="../../lib/pods/perlvar.html#__"><code>@_</code></a>
+aliasing (i.e. allow <code>$_[1] = &quot;foo&quot;</code>), you need to pass <a href="../../lib/pods/perlvar.html#__"><code>@_</code></a> by reference:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> foo </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">@args</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+                <span class="variable">try</span> <span class="operator">{</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">bar</span><span class="operator">(</span><span class="variable">@args</span><span class="operator">)</span> <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<p>or</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> bar_in_place </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$args</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">@_</span><span class="operator">;</span>
+                <span class="variable">try</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">bar</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="keyword">for</span> <span class="variable">@$args</span> <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#return"><code>return</code></a> returns from the <a href="#try"><code>try</code></a> block, not from the parent sub (note that
+this is also how <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> works, but not how <a href="#trycatch">TryCatch</a> works):</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> parent_sub </span><span class="operator">{</span>
+      <span class="variable">try</span> <span class="operator">{</span>
+          <span class="keyword">die</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="variable">catch</span> <span class="operator">{</span>
+          <span class="keyword">return</span><span class="operator">;</span>
+      <span class="operator">};</span>
+</pre>
+<pre>
+      <span class="keyword">say</span> <span class="string">"this text WILL be displayed, even though an exception is thrown"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>Instead, you should capture the return value:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> parent_sub </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$success</span> <span class="operator">=</span> <span class="variable">try</span> <span class="operator">{</span>
+          <span class="keyword">die</span><span class="operator">;</span>
+          <span class="number">1</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">return</span> <span class="keyword">unless</span> <span class="variable">$success</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">say</span> <span class="string">"This text WILL NEVER appear!"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>Note that if you have a catch block, it must return undef for this to work,
+since if a catch block exists, its return value is returned in place of undef
+when an exception is thrown.</p>
+</li>
+<li>
+<p><a href="#try"><code>try</code></a> introduces another caller stack frame. <a href="../../lib/Sub/Uplevel.html">the Sub::Uplevel manpage</a> is not used. <a href="../../lib/Carp.html">the Carp manpage</a>
+will not report this when using full stack traces, though, because
+<code>%Carp::Internal</code> is used. This lack of magic is considered a feature.</p>
+</li>
+<li>
+<p>The value of <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> in the <a href="#catch"><code>catch</code></a> block is not guaranteed to be the value of
+the exception thrown (<a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>) in the <a href="#try"><code>try</code></a> block.  There is no safe way to
+ensure this, since <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> may be used unhygenically in destructors.  The only
+guarantee is that the <a href="#catch"><code>catch</code></a> will be called if an exception is thrown.</p>
+</li>
+<li>
+<p>The return value of the <a href="#catch"><code>catch</code></a> block is not ignored, so if testing the result
+of the expression for truth on success, be sure to return a false value from
+the <a href="#catch"><code>catch</code></a> block:</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$obj</span> <span class="operator">=</span> <span class="variable">try</span> <span class="operator">{</span>
+                <span class="variable">MightFail</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span>
+                <span class="operator">...</span>
+</pre>
+<pre>
+                <span class="keyword">return</span><span class="operator">;</span> <span class="comment"># avoid returning a true value;</span>
+                        <span class="operator">};</span>
+</pre>
+<pre>
+        <span class="keyword">return</span> <span class="keyword">unless</span> <span class="variable">$obj</span><span class="operator">;</span>
+</pre>
+</li>
+<li>
+<p><code>$SIG{__DIE__}</code> is still in effect.</p>
+<p>Though it can be argued that <code>$SIG{__DIE__}</code> should be disabled inside of
+<a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> blocks, since it isn't people have grown to rely on it. Therefore in
+the interests of compatibility, <a href="#try"><code>try</code></a> does not disable <code>$SIG{__DIE__}</code> for
+the scope of the error throwing code.</p>
+</li>
+<li>
+<p>Lexical <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> may override the one set by <a href="#catch"><code>catch</code></a>.</p>
+<p>For example Perl 5.10's <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> form uses a lexical <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>, creating some
+confusing behavior:</p>
+<pre>
+        <span class="keyword">given</span> <span class="operator">(</span><span class="variable">$foo</span><span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">when</span> <span class="operator">(...)</span> <span class="operator">{</span>
+                        <span class="variable">try</span> <span class="operator">{</span>
+                                <span class="operator">...</span>
+                        <span class="operator">}</span> <span class="variable">catch</span> <span class="operator">{</span>
+                                <span class="keyword">warn</span> <span class="variable">$_</span><span class="operator">;</span> <span class="comment"># will print $foo, not the error</span>
+                                <span class="keyword">warn</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span> <span class="comment"># instead, get the error like this</span>
+                        <span class="operator">}</span>
+                <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="trycatch" class="item"><a href="#trycatch">TryCatch</a></a></strong></dt>
+
+<dd>
+<p>Much more feature complete, more convenient semantics, but at the cost of
+implementation complexity.</p>
+</dd>
+<dt><strong><a name="autodie" class="item"><a href="../../lib/autodie.html">the autodie manpage</a></a></strong></dt>
+
+<dd>
+<p>Automatic error throwing for builtin functions and more. Also designed to
+work well with <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a>/<a href="../../lib/pods/perlfunc.html#when"><code>when</code></a>.</p>
+</dd>
+<dt><strong><a name="throwable" class="item"><a href="#throwable">Throwable</a></a></strong></dt>
+
+<dd>
+<p>A lightweight role for rolling your own exception classes.</p>
+</dd>
+<dt><strong><a name="error" class="item"><a href="../../lib/CPANPLUS/Error.html">the Error manpage</a></a></strong></dt>
+
+<dd>
+<p>Exception object implementation with a <a href="#try"><code>try</code></a> statement. Does not localize
+<a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>.</p>
+</dd>
+<dt><strong><a name="exception_class_trycatch" class="item"><a href="../../Exception/Class/TryCatch.html">the Exception::Class::TryCatch manpage</a></a></strong></dt>
+
+<dd>
+<p>Provides a <a href="#catch"><code>catch</code></a> statement, but properly calling <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> is your
+responsibility.</p>
+<p>The <a href="#try"><code>try</code></a> keyword pushes <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> onto an error stack, avoiding some of the
+issues with <a href="../../lib/pods/perlvar.html#__"><code>$@</code></a>, but you still need to localize to prevent clobbering.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="lightning_talk">LIGHTNING TALK</a></h1>
+<p>I gave a lightning talk about this module, you can see the slides (Firefox
+only):</p>
+<p><a href="http://nothingmuch.woobling.org/talks/takahashi.xul?data=yapc_asia_2009/try_tiny.txt">http://nothingmuch.woobling.org/talks/takahashi.xul</a></p>
+<p>Or read the source:</p>
+<p><a href="http://nothingmuch.woobling.org/talks/yapc_asia_2009/try_tiny.yml">http://nothingmuch.woobling.org/talks/yapc_asia_2009/try_tiny.yml</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="version_control">VERSION CONTROL</a></h1>
+<p><a href="http://github.com/nothingmuch/try-tiny/">http://github.com/nothingmuch/try-tiny/</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Yuval Kogman &lt;<a href="mailto:nothingmuch@woobling.org">nothingmuch@woobling.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<pre>
+        Copyright (c) 2009 Yuval Kogman. All rights reserved.
+        This program is free software; you can redistribute
+        it and/or modify it under the terms of the MIT license.</pre>
+
+</body>
+
+</html>

@@ -1,0 +1,212 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Data::Dump - Pretty printing of data structures</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Data::Dump - Pretty printing of data structures</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#history">HISTORY</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Data::Dump - Pretty printing of data structures</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">Data::Dump</span> <span class="string">qw(dump)</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">$str</span> <span class="operator">=</span> <span class="keyword">dump</span><span class="operator">(</span><span class="variable">@list</span><span class="operator">);</span>
+ <span class="variable">@copy_of_list</span> <span class="operator">=</span> <span class="keyword">eval</span> <span class="variable">$str</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="comment"># or use it for easy debug printout</span>
+ <span class="keyword">use</span> <span class="variable">Data::Dump</span><span class="operator">;</span> <span class="variable">dd</span> <span class="keyword">localtime</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provide a few functions that traverse their
+argument and produces a string as its result.  The string contains
+Perl code that, when <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>ed, produces a deep copy of the original
+arguments.</p>
+<p>The main feature of the module is that it strives to produce output
+that is easy to read.  Example:</p>
+<pre>
+    <span class="variable">@a</span> <span class="operator">=</span> <span class="operator">(</span><span class="number">1</span><span class="operator">,</span> <span class="operator">[</span><span class="number">2</span><span class="operator">,</span> <span class="number">3</span><span class="operator">]</span><span class="operator">,</span> <span class="operator">{</span><span class="number">4</span> <span class="operator">=&gt;</span> <span class="number">5</span><span class="operator">}</span><span class="operator">);</span>
+    <span class="keyword">dump</span><span class="operator">(</span><span class="variable">@a</span><span class="operator">);</span>
+</pre>
+<p>Produces:</p>
+<pre>
+    <span class="string">"(1, [2, 3], { 4 =&gt; 5 })"</span>
+</pre>
+<p>If you dump just a little data, it is output on a single line. If
+you dump data that is more complex or there is a lot of it, line breaks
+are automatically added to keep it easy to read.</p>
+<p>The following functions are provided (only the dd* functions are exported by default):</p>
+<dl>
+<dt><strong><a name="dump" class="item">dump( ... )</a></strong></dt>
+
+<dt><strong><a name="pp" class="item">pp( ... )</a></strong></dt>
+
+<dd>
+<p>Returns a string containing a Perl expression.  If you pass this
+string to Perl's built-in <a href="../../lib/pods/perlfunc.html#eval"><code>eval()</code></a> function it should return a copy of
+the arguments you passed to <a href="#dump"><code>dump()</code></a>.</p>
+<p>If you call the function with multiple arguments then the output will
+be wrapped in parenthesis &quot;( ..., ... )&quot;.  If you call the function with a
+single argument the output will not have the wrapping.  If you call the function with
+a single scalar (non-reference) argument it will just return the
+scalar quoted if needed, but never break it into multiple lines.  If you
+pass multiple arguments or references to arrays of hashes then the
+return value might contain line breaks to format it for easier
+reading.  The returned string will never be &quot;\n&quot; terminated, even if
+contains multiple lines.  This allows code like this to place the
+semicolon in the expected place:</p>
+<pre>
+   <span class="keyword">print</span> <span class="string">'$obj = '</span><span class="operator">,</span> <span class="keyword">dump</span><span class="operator">(</span><span class="variable">$obj</span><span class="operator">),</span> <span class="string">";\n"</span><span class="operator">;</span>
+</pre>
+<p>If <a href="#dump"><code>dump()</code></a> is called in void context, then the dump is printed on
+STDERR and then &quot;\n&quot; terminated.  You might find this useful for quick
+debug printouts, but the dd*() functions might be better alternatives
+for this.</p>
+<p>There is no difference between <a href="#dump"><code>dump()</code></a> and <a href="#pp"><code>pp()</code></a>, except that <a href="#dump"><code>dump()</code></a>
+shares its name with a not-so-useful perl builtin.  Because of this
+some might want to avoid using that name.</p>
+</dd>
+<dt><strong><a name="quote" class="item">quote( $string )</a></strong></dt>
+
+<dd>
+<p>Returns a quoted version of the provided string.</p>
+<p>It differs from <a href="#dump"><code>dump($string)</code></a> in that it will quote even numbers and
+not try to come up with clever expressions that might shorten the
+output.  If a non-scalar argument is provided then it's just stringified
+instead of traversed.</p>
+</dd>
+<dt><strong><a name="dd" class="item">dd( ... )</a></strong></dt>
+
+<dt><strong><a name="ddx" class="item">ddx( ... )</a></strong></dt>
+
+<dd>
+<p>These functions will call <a href="#dump"><code>dump()</code></a> on their argument and print the
+result to STDOUT (actually, it's the currently selected output handle, but
+STDOUT is the default for that).</p>
+<p>The difference between them is only that <a href="#ddx"><code>ddx()</code></a> will prefix the lines
+it prints with &quot;# &quot; and mark the first line with the file and line
+number where it was called.  This is meant to be useful for debug
+printouts of state within programs.</p>
+</dd>
+<dt><strong><a name="dumpf" class="item">dumpf( ..., \&amp;filter )</a></strong></dt>
+
+<dd>
+<p>Short hand for calling the <code>dump_filtered()</code> function of <a href="../../lib/Data/Dump/Filtered.html">the Data::Dump::Filtered manpage</a>.
+This works like <a href="#dump"><code>dump()</code></a>, but the last argument should be a filter callback
+function.  As objects are visited the filter callback is invoked and it
+can modify how the objects are dumped.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>There are a few global variables that can be set to modify the output
+generated by the dump functions.  It's wise to localize the setting of
+these.</p>
+<dl>
+<dt><strong><a name="_data__dump__indent" class="item">$Data::Dump::INDENT</a></strong></dt>
+
+<dd>
+<p>This holds the string that's used for indenting multiline data structures.
+It's default value is &quot;  &quot; (two spaces).  Set it to &quot;&quot; to suppress indentation.
+Setting it to &quot;| &quot; makes for nice visuals even if the dump output then fails to
+be valid Perl.</p>
+</dd>
+<dt><strong><a name="_data__dump__try_base64" class="item">$Data::Dump::TRY_BASE64</a></strong></dt>
+
+<dd>
+<p>How long must a binary string be before we try to use the base64 encoding
+for the dump output.  The default is 50.  Set it to 0 to disable base64 dumps.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>Code references will be dumped as <a href="../../lib/pods/perlfunc.html#sub"><code>sub { ... }</code></a>. Thus, <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a>ing them will
+not reproduce the original routine.  The <code>...</code>-operator used will also require
+perl-5.12 or better to be evaled.</p>
+<p>If you forget to explicitly import the <a href="#dump"><code>dump</code></a> function, your code will
+core dump. That's because you just called the builtin <a href="#dump"><code>dump</code></a> function
+by accident, which intentionally dumps core.  Because of this you can
+also import the same function as <a href="#pp"><code>pp</code></a>, mnemonic for &quot;pretty-print&quot;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p>The <code>Data::Dump</code> module grew out of frustration with Sarathy's
+in-most-cases-excellent <code>Data::Dumper</code>.  Basic ideas and some code
+are shared with Sarathy's module.</p>
+<p>The <code>Data::Dump</code> module provides a much simpler interface than
+<code>Data::Dumper</code>.  No OO interface is available and there are fewer
+configuration options to worry about.  The other benefit is
+that the dump produced does not try to set any variables.  It only
+returns what is needed to produce a copy of the arguments.  This means
+that <a href="#dump"><code>dump(&quot;foo&quot;)</code></a> simply returns <code>'&quot;foo&quot;'</code>, and <a href="#dump"><code>dump(1..3)</code></a> simply
+returns <code>'(1, 2, 3)'</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/Data/Dump/Filtered.html">the Data::Dump::Filtered manpage</a>, <a href="../../lib/Data/Dump/Trace.html">the Data::Dump::Trace manpage</a>, <a href="../../lib/Data/Dumper.html">the Data::Dumper manpage</a>, <a href="../../lib/JSON.html">the JSON manpage</a>,
+<a href="../../lib/Storable.html">the Storable manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p>The <code>Data::Dump</code> module is written by Gisle Aas &lt;<a href="mailto:gisle@aas.no">gisle@aas.no</a>&gt;, based
+on <code>Data::Dumper</code> by Gurusamy Sarathy &lt;<a href="mailto:gsar@umich.edu">gsar@umich.edu</a>&gt;.</p>
+<pre>
+ Copyright 1998-2010 Gisle Aas.
+ Copyright 1996-1998 Gurusamy Sarathy.</pre>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

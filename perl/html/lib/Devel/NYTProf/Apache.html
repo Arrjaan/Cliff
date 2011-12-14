@@ -1,0 +1,151 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Devel::NYTProf::Apache - Profile mod_perl applications with Devel::NYTProf</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Devel::NYTProf::Apache - Profile mod_perl applications with Devel::NYTProf</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#example_httpd_conf">Example httpd.conf</a></li>
+	</ul>
+
+	<li><a href="#virtual_hosts">VIRTUAL HOSTS</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Devel::NYTProf::Apache - Profile mod_perl applications with Devel::NYTProf</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  # in your Apache config file with mod_perl installed
+  PerlPassEnv NYTPROF
+  PerlModule Devel::NYTProf::Apache</pre>
+<p>If you're using virtual hosts with <code>PerlOptions</code> that include either
+<code>+Parent</code> or <code>+Clone</code> then see <a href="#virtual_hosts">VIRTUAL HOSTS</a> below.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module allows mod_perl applications to be profiled using
+<code>Devel::NYTProf</code>.</p>
+<p>If the NYTPROF environment variable isn't set <em>at the time
+Devel::NYTProf::Apache is loaded</em> then Devel::NYTProf::Apache will issue a
+warning and default it to:</p>
+<pre>
+  file=/tmp/nytprof.$$.out</pre>
+<p>The file actually created by NTProf will also have the process id appended to
+it because the <code>addpid</code> option is enabled by default.</p>
+<p>See <a href="../../../lib/Devel/NYTProf.html#environment_variables">ENVIRONMENT VARIABLES in the Devel::NYTProf manpage</a> for 
+more details on the settings effected by this environment variable.
+Try using <code>PerlPassEnv</code> so you can set the NYTPROF environment variable externally.</p>
+<p>Each profiled mod_perl process will need to have terminated before you can
+successfully read the profile data file. The simplest approach is to start the
+httpd, make some requests (e.g., 100 of the same request), then stop it and
+process the profile data.</p>
+<p>Alternatively you could send a TERM signal to the httpd worker process to
+terminate that one process. The parent httpd process will start up another one
+for you ready for more profiling.</p>
+<p>
+</p>
+<h2><a name="example_httpd_conf">Example httpd.conf</a></h2>
+<p>It's often a good idea to use just one child process when profiling, which you
+can do by setting the <code>MaxClients</code> to 1 in httpd.conf.</p>
+<p>Using an <code>IfDefine</code> blocks lets you leave the profile configuration in place
+and enable it whenever it's needed by adding <code>-D NYTPROF</code> to the httpd startup
+command line.</p>
+<pre>
+  &lt;IfDefine NYTPROF&gt;
+      MaxClients 1
+      PerlModule Devel::NYTProf::Apache
+  &lt;/IfDefine&gt;</pre>
+<p>
+</p>
+<hr />
+<h1><a name="virtual_hosts">VIRTUAL HOSTS</a></h1>
+<p>If your httpd configuration includes virtual hosts with <code>PerlOptions</code> that
+include either <code>+Parent</code> or <code>+Clone</code> then mod_perl2 will create a new perl
+interpreter to handle requests for that virtual host.
+This causes some issues for profiling.</p>
+<p>If <code>Devel::NYTProf::Apache</code> is loaded in the top-level configuration then
+activity in any virtual hosts that use their own perl interpreter won't be
+profiled. Normal virtual hosts will be profiled just fine.</p>
+<p>You can profile a <em>single</em> virtual host that uses its own perl interpreter by
+loading <code>Devel::NYTProf::Apache</code> <em>inside the configuration for that virtual
+host</em>. In this case <em>do not</em> use <code>PerlModule</code> directive. You need to use
+a <code>Perl</code> directive instead, like this:</p>
+<pre>
+    <span class="operator">&lt;</span><span class="variable">VirtualHost</span> <span class="operator">*:</span><span class="number">1234</span><span class="operator">&gt;</span>
+        <span class="operator">...</span>
+        <span class="operator">&lt;</span><span class="variable">Perl</span><span class="operator">&gt;</span> <span class="keyword">use</span> <span class="variable">Devel::NYTProf::Apache</span><span class="operator">;</span> <span class="operator">&lt;/</span><span class="variable">Perl</span><span class="operator">&gt;</span>
+        <span class="operator">...</span>
+    <span class="operator">&lt;/</span><span class="variable">VirtualHost</span><span class="operator">&gt;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>Profiling mod_perl on Windows is not supported because NYTProf currently
+doesn't support threads.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../lib/Devel/NYTProf.html">the Devel::NYTProf manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p><strong>Adam Kaplan</strong>, <code>&lt;akaplan at nytimes.com&gt;</code>
+<strong>Tim Bunce</strong>, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a> and <a href="http://blog.timbunce.org">http://blog.timbunce.org</a>
+<strong>Steve Peters</strong>, <code>&lt;steve at fisharerojo.org&gt;</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<pre>
+  Copyright (C) 2008 by Adam Kaplan and The New York Times Company.
+  Copyright (C) 2008 by Steve Peters.
+  Copyright (C) 2008 by Tim Bunce.</pre>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,1101 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Net::SSLeay - Perl extension for using OpenSSL</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Net::SSLeay - Perl extension for using OpenSSL</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#alternate_versions_of_the_api">Alternate versions of the API</a></li>
+		<li><a href="#using_client_certificates">Using client certificates</a></li>
+		<li><a href="#working_through_a_web_proxy">Working through a web proxy</a></li>
+		<li><a href="#certificate_verification_and_certificate_revoocation_lists__crls_">Certificate verification and Certificate Revoocation Lists (CRLs)</a></li>
+		<li><a href="#convenience_routines">Convenience routines</a></li>
+		<li><a href="#low_level_api">Low level API</a></li>
+		<li><a href="#sockets">Sockets</a></li>
+		<li><a href="#callbacks">Callbacks</a></li>
+		<li><a href="#x509_and_rand_stuff">X509 and RAND stuff</a></li>
+		<li><a href="#rsa_interface">RSA interface</a></li>
+		<li><a href="#digests">Digests</a></li>
+		<li><a href="#bio_interface">BIO interface</a></li>
+		<li><a href="#low_level_api">Low level API</a></li>
+		<li><a href="#http__without_s__api">HTTP (without S) API</a></li>
+	</ul>
+
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#known_bugs_and_caveats">KNOWN BUGS AND CAVEATS</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#bugs_and_support">BUGS AND SUPPORT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::SSLeay - Perl extension for using OpenSSL</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Net::SSLeay</span> <span class="string">qw(get_https post_https sslcat make_headers make_form)</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">);</span>                 <span class="comment"># 1</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">%reply_headers</span><span class="operator">)</span>
+         <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">,</span>                   <span class="comment"># 2</span>
+                <span class="variable">make_headers</span><span class="operator">(</span><span class="variable">User</span><span class="operator">-</span><span class="string">Agent</span> <span class="operator">=&gt;</span> <span class="string">'Cryptozilla/5.0b1'</span><span class="operator">,</span>
+                             <span class="string">Referer</span>    <span class="operator">=&gt;</span> <span class="string">'https://www.bacus.pt'</span>
+                <span class="operator">));</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">,</span> <span class="variable">%headers</span><span class="operator">)</span> <span class="operator">=</span>                                   <span class="comment"># 2b</span>
+         <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/protected.html'</span><span class="operator">,</span>
+              <span class="variable">make_headers</span><span class="operator">(</span><span class="string">Authorization</span> <span class="operator">=&gt;</span>
+                           <span class="string">'Basic '</span> <span class="operator">.</span> <span class="variable">MIME::Base64::encode</span><span class="operator">(</span><span class="string">"</span><span class="variable">$user</span><span class="string">:</span><span class="variable">$pass</span><span class="string">"</span><span class="operator">,</span><span class="string">''</span><span class="operator">))</span>
+              <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">%reply_headers</span><span class="operator">)</span>
+         <span class="operator">=</span> <span class="variable">post_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/foo.cgi'</span><span class="operator">,</span> <span class="string">''</span><span class="operator">,</span>       <span class="comment"># 3</span>
+                <span class="variable">make_form</span><span class="operator">(</span><span class="string">OK</span>   <span class="operator">=&gt;</span> <span class="string">'1'</span><span class="operator">,</span>
+                          <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Sampo'</span>
+                <span class="operator">));</span>
+</pre>
+<pre>
+  <span class="variable">$reply</span> <span class="operator">=</span> <span class="variable">sslcat</span><span class="operator">(</span><span class="variable">$host</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$request</span><span class="operator">);</span>                       <span class="comment"># 4</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$reply</span><span class="operator">,</span> <span class="variable">$err</span><span class="operator">,</span> <span class="variable">$server_cert</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">sslcat</span><span class="operator">(</span><span class="variable">$host</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$request</span><span class="operator">);</span> <span class="comment"># 5</span>
+</pre>
+<pre>
+  <span class="variable">$Net::SSLeay::trace</span> <span class="operator">=</span> <span class="number">2</span><span class="operator">;</span>  <span class="comment"># 0=no debugging, 1=ciphers, 2=trace, 3=dump data</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>There is a related module called <code>Net::SSLeay::Handle</code> included in this
+distribution that you might want to use instead. It has its own pod
+documentation.</p>
+<p>This module offers some high level convenience functions for accessing
+web pages on SSL servers (for symmetry, the same API is offered for
+accessing http servers, too), an <code>sslcat()</code> function for writing your own
+clients, and finally access to the SSL api of the SSLeay/OpenSSL package
+so you can write servers or clients for more complicated applications.</p>
+<p>For high level functions it is most convenient to import them into your
+main namespace as indicated in the synopsis.</p>
+<p>Case 1 demonstrates the typical invocation of <code>get_https()</code> to fetch an HTML
+page from secure server. The first argument provides the hostname or IP
+in dotted decimal notation of the remote server to contact. The second
+argument is the TCP port at the remote end (your own port is picked
+arbitrarily from high numbered ports as usual for TCP). The third
+argument is the URL of the page without the host name part. If in
+doubt consult the HTTP specifications at <a href="http://www.w3c.org">http://www.w3c.org</a>.</p>
+<p>Case 2 demonstrates full fledged use of <code>get_https()</code>. As can be seen,
+<code>get_https()</code> parses the response and response headers and returns them as
+a list, which can be captured in a hash for later reference. Also a
+fourth argument to <code>get_https()</code> is used to insert some additional headers
+in the request. <code>make_headers()</code> is a function that will convert a list or
+hash to such headers. By default <code>get_https()</code> supplies <code>Host</code> (to make
+virtual hosting easy) and <code>Accept</code> (reportedly needed by IIS) headers.</p>
+<p>Case 2b demonstrates how to get a password protected page. Refer to
+the HTTP protocol specifications for further details (e.g. RFC-2617).</p>
+<p>Case 3 invokes <code>post_https()</code> to submit a HTML/CGI form to a secure
+server. The first four arguments are equal to <code>get_https()</code> (note that 
+the empty string (<code>''</code>) is passed as header argument).
+The fifth argument is the
+contents of the form formatted according to CGI specification. In this
+case the helper function <code>make_https()</code> is used to do the formatting,
+but you could pass any string. <code>post_https()</code> automatically adds
+<code>Content-Type</code> and <code>Content-Length</code> headers to the request.</p>
+<p>Case 4 shows the fundamental <code>sslcat()</code> function (inspired in spirit by
+the <code>netcat</code> utility :-). It's your swiss army knife that allows you to
+easily contact servers, send some data, and then get the response. You
+are responsible for formatting the data and parsing the response -
+<code>sslcat()</code> is just a transport.</p>
+<p>Case 5 is a full invocation of <code>sslcat()</code> which allows the return of errors
+as well as the server (peer) certificate.</p>
+<p>The <code>$trace</code> global variable can be used to control the verbosity of the 
+high level functions. Level 0 guarantees silence, level 1 (the default)
+only emits error messages.</p>
+<p>
+</p>
+<h2><a name="alternate_versions_of_the_api">Alternate versions of the API</a></h2>
+<p>The above mentioned functions actually return the response headers as
+a list, which only gets converted to hash upon assignment (this
+assignment looses information if the same header occurs twice, as may
+be the case with cookies). There are also other variants of the
+functions that return unprocessed headers and that return a reference
+to a hash.</p>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">@headers</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">);</span>
+  <span class="keyword">for</span> <span class="operator">(</span><span class="variable">$i</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span> <span class="variable">$i</span> <span class="operator">&lt;</span> <span class="variable">$#headers</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">+=</span><span class="number">2</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"</span><span class="variable">$headers</span><span class="string">[</span><span class="variable">$i</span><span class="string">] = "</span> <span class="operator">.</span> <span class="variable">$headers</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">+</span><span class="number">1</span><span class="operator">]</span> <span class="operator">.</span> <span class="string">"\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">$headers</span><span class="operator">,</span> <span class="variable">$server_cert</span><span class="operator">)</span>
+    <span class="operator">=</span> <span class="variable">get_https3</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">);</span>
+  <span class="keyword">print</span> <span class="string">"</span><span class="variable">$headers</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">%headers_ref</span><span class="operator">,</span> <span class="variable">$server_cert</span><span class="operator">)</span>
+    <span class="operator">=</span> <span class="variable">get_https4</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">);</span>
+  <span class="keyword">for</span> <span class="variable">$k</span> <span class="operator">(</span><span class="keyword">sort</span> <span class="keyword">keys</span> <span class="variable">%</span><span class="operator">{</span><span class="string">headers_ref</span><span class="operator">}</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">for</span> <span class="variable">$v</span> <span class="operator">(</span><span class="variable">@</span><span class="operator">{</span><span class="variable">$headers_ref</span><span class="operator">{</span><span class="variable">$k</span><span class="operator">}}</span><span class="operator">)</span> <span class="operator">{</span>
+          <span class="keyword">print</span> <span class="string">"</span><span class="variable">$k</span><span class="string"> = </span><span class="variable">$v</span><span class="string">\n"</span><span class="operator">;</span>
+      <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>All of the above code fragments accomplish the same thing: display all
+values of all headers. The API functions ending in &quot;3&quot; return the
+headers simply as a scalar string and it is up to the application to
+split them up. The functions ending in &quot;4&quot; return a reference to
+a hash of arrays (see <a href="../../lib/pods/perlref.html">the perlref manpage</a> and <a href="../../lib/pods/perllol.html">the perllol manpage</a> if you are
+not familiar with complex perl data structures). To access a single value
+of such a header hash you would do something like</p>
+<pre>
+  <span class="keyword">print</span> <span class="variable">$headers_ref</span><span class="operator">{</span><span class="string">COOKIE</span><span class="operator">}[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>Variants 3 and 4 also allow you to discover the server certificate
+in case you would like to store or display it, e.g.</p>
+<pre>
+  <span class="operator">(</span><span class="variable">$p</span><span class="operator">,</span> <span class="variable">$resp</span><span class="operator">,</span> <span class="variable">$hdrs</span><span class="operator">,</span> <span class="variable">$server_cert</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">get_https3</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">);</span>
+  <span class="keyword">if</span> <span class="operator">(!</span><span class="keyword">defined</span><span class="operator">(</span><span class="variable">$server_cert</span><span class="operator">)</span> <span class="operator">||</span> <span class="operator">(</span><span class="variable">$server_cert</span> <span class="operator">==</span> <span class="number">0</span><span class="operator">))</span> <span class="operator">{</span>
+      <span class="keyword">warn</span> <span class="string">"Subject Name: undefined, Issuer  Name: undefined"</span><span class="operator">;</span>
+  <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+      <span class="keyword">warn</span> <span class="string">'Subject Name: '</span>
+          <span class="operator">.</span> <span class="variable">Net::SSLeay::X509_NAME_oneline</span><span class="operator">(</span>
+                 <span class="variable">Net::SSLeay::X509_get_subject_name</span><span class="operator">(</span><span class="variable">$server_cert</span><span class="operator">))</span>
+              <span class="operator">.</span> <span class="string">'Issuer  Name: '</span>
+                  <span class="operator">.</span> <span class="variable">Net::SSLeay::X509_NAME_oneline</span><span class="operator">(</span>
+                         <span class="variable">Net::SSLeay::X509_get_issuer_name</span><span class="operator">(</span><span class="variable">$server_cert</span><span class="operator">));</span>
+  <span class="operator">}</span>
+</pre>
+<p>Beware that this method only allows after the fact verification of
+the certificate: by the time <code>get_https3()</code> has returned the https
+request has already been sent to the server, whether you decide to
+trust it or not. To do the verification correctly you must either
+employ the OpenSSL certificate verification framework or use
+the lower level API to first connect and verify the certificate
+and only then send the http data. See the implementation of <code>ds_https3()</code>
+for guidance on how to do this.</p>
+<p>
+</p>
+<h2><a name="using_client_certificates">Using client certificates</a></h2>
+<p>Secure web communications are encrypted using symmetric crypto keys
+exchanged using encryption based on the certificate of the
+server. Therefore in all SSL connections the server must have a
+certificate. This serves both to authenticate the server to the
+clients and to perform the key exchange.</p>
+<p>Sometimes it is necessary to authenticate the client as well. Two
+options are available: HTTP basic authentication and a client side
+certificate. The basic authentication over HTTPS is actually quite
+safe because HTTPS guarantees that the password will not travel in
+the clear. Never-the-less, problems like easily guessable passwords
+remain. The client certificate method involves authentication of the
+client at the SSL level using a certificate. For this to work, both the
+client and the server have certificates (which typically are
+different) and private keys.</p>
+<p>The API functions outlined above accept additional arguments that
+allow one to supply the client side certificate and key files. The
+format of these files is the same as used for server certificates and
+the caveat about encrypting private keys applies.</p>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">,</span> <span class="variable">%headers</span><span class="operator">)</span> <span class="operator">=</span>                                   <span class="comment"># 2c</span>
+         <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/protected.html'</span><span class="operator">,</span>
+              <span class="variable">make_headers</span><span class="operator">(</span><span class="string">Authorization</span> <span class="operator">=&gt;</span>
+                           <span class="string">'Basic '</span> <span class="operator">.</span> <span class="variable">MIME::Base64::encode</span><span class="operator">(</span><span class="string">"</span><span class="variable">$user</span><span class="string">:</span><span class="variable">$pass</span><span class="string">"</span><span class="operator">,</span><span class="string">''</span><span class="operator">)),</span>
+              <span class="string">''</span><span class="operator">,</span> <span class="variable">$mime_type6</span><span class="operator">,</span> <span class="variable">$path_to_crt7</span><span class="operator">,</span> <span class="variable">$path_to_key8</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">%reply_headers</span><span class="operator">)</span>
+         <span class="operator">=</span> <span class="variable">post_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/foo.cgi'</span><span class="operator">,</span>           <span class="comment"># 3b</span>
+              <span class="variable">make_headers</span><span class="operator">(</span><span class="string">'Authorization'</span> <span class="operator">=&gt;</span>
+                           <span class="string">'Basic '</span> <span class="operator">.</span> <span class="variable">MIME::Base64::encode</span><span class="operator">(</span><span class="string">"</span><span class="variable">$user</span><span class="string">:</span><span class="variable">$pass</span><span class="string">"</span><span class="operator">,</span><span class="string">''</span><span class="operator">)),</span>
+              <span class="variable">make_form</span><span class="operator">(</span><span class="string">OK</span>   <span class="operator">=&gt;</span> <span class="string">'1'</span><span class="operator">,</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Sampo'</span><span class="operator">),</span>
+              <span class="variable">$mime_type6</span><span class="operator">,</span> <span class="variable">$path_to_crt7</span><span class="operator">,</span> <span class="variable">$path_to_key8</span><span class="operator">);</span>
+</pre>
+<p>Case 2c demonstrates getting a password protected page that also requires
+a client certificate, i.e. it is possible to use both authentication
+methods simultaneously.</p>
+<p>Case 3b is a full blown POST to a secure server that requires both password
+authentication and a client certificate, just like in case 2c.</p>
+<p>Note: The client will not send a certificate unless the server requests one.
+This is typically achieved by setting the verify mode to <code>VERIFY_PEER</code> on the
+server:</p>
+<pre>
+  <span class="variable">Net::SSLeay::set_verify</span><span class="operator">(</span><span class="variable">ssl</span><span class="operator">,</span> <span class="variable">Net::SSLeay::VERIFY_PEER</span><span class="operator">,</span> <span class="number">0</span><span class="operator">);</span>
+</pre>
+<p>See <code>perldoc ~openssl/doc/ssl/SSL_CTX_set_verify.pod</code> for a full description.</p>
+<p>
+</p>
+<h2><a name="working_through_a_web_proxy">Working through a web proxy</a></h2>
+<p><code>Net::SSLeay</code> can use a web proxy to make its connections. You need to
+first set the proxy host and port using <code>set_proxy()</code> and then just
+use the normal API functions, e.g:</p>
+<pre>
+  <span class="variable">Net::SSLeay::set_proxy</span><span class="operator">(</span><span class="string">'gateway.myorg.com'</span><span class="operator">,</span> <span class="number">8080</span><span class="operator">);</span>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/'</span><span class="operator">);</span>
+</pre>
+<p>If your proxy requires authentication, you can supply a username and
+password as well</p>
+<pre>
+  <span class="variable">Net::SSLeay::set_proxy</span><span class="operator">(</span><span class="string">'gateway.myorg.com'</span><span class="operator">,</span> <span class="number">8080</span><span class="operator">,</span> <span class="string">'joe'</span><span class="operator">,</span> <span class="string">'salainen'</span><span class="operator">);</span>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">,</span> <span class="variable">%headers</span><span class="operator">)</span> <span class="operator">=</span>
+         <span class="operator">=</span> <span class="variable">get_https</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/protected.html'</span><span class="operator">,</span>
+              <span class="variable">make_headers</span><span class="operator">(</span><span class="string">Authorization</span> <span class="operator">=&gt;</span>
+                           <span class="string">'Basic '</span> <span class="operator">.</span> <span class="variable">MIME::Base64::encode</span><span class="operator">(</span><span class="string">"susie:pass"</span><span class="operator">,</span><span class="string">''</span><span class="operator">))</span>
+              <span class="operator">);</span>
+</pre>
+<p>This example demonstrates the case where we authenticate to the proxy as
+<code>&quot;joe&quot;</code> and to the final web server as <code>&quot;susie&quot;</code>. Proxy authentication
+requires the <code>MIME::Base64</code> module to work.</p>
+<p>
+</p>
+<h2><a name="certificate_verification_and_certificate_revoocation_lists__crls_">Certificate verification and Certificate Revoocation Lists (CRLs)</a></h2>
+<p>OpenSSL supports the ability to verify peer certificates. It can also
+optionally check the peer certificate against a Certificate Revocation
+List (CRL) from the certificates issuer. A CRL is a file, created by
+the certificate issuer that lists all the certificates that it
+previously signed, but which it now revokes. CRLs are in PEM format.</p>
+<p>You can enable <code>Net::SSLeay CRL</code> checking like this:</p>
+<pre>
+            <span class="operator">&amp;</span><span class="variable">Net::SSLeay::X509_STORE_CTX_set_flags</span>
+                <span class="operator">(&amp;</span><span class="variable">Net::SSLeay::CTX_get_cert_store</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">),</span> 
+                 <span class="operator">&amp;</span><span class="variable">Net::SSLeay::X509_V_FLAG_CRL_CHECK</span><span class="operator">);</span>
+</pre>
+<p>After setting this flag, if OpenSSL checks a peer's certificate, then
+it will attempt to find a CRL for the issuer. It does this by looking
+for a specially named file in the search directory specified by
+CTX_load_verify_locations.  CRL files are named with the hash of the
+issuer's subject name, followed by <code>.r0</code>, <code>.r1</code> etc.  For example
+<code>ab1331b2.r0</code>, <code>ab1331b2.r1</code>. It will read all the .r files for the
+issuer, and then check for a revocation of the peer cerificate in all
+of them.  (You can also force it to look in a specific named CRL
+file., see below).  You can find out the hash of the issuer subject
+name in a CRL with</p>
+<pre>
+        openssl crl -in crl.pem -hash -noout</pre>
+<p>If the peer certificate does not pass the revocation list, or if no
+CRL is found, then the handshaking fails with an error.</p>
+<p>You can also force OpenSSL to look for CRLs in one or more arbitrarily
+named files.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$bio</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_new_file</span><span class="operator">(</span><span class="variable">$crlfilename</span><span class="operator">,</span> <span class="string">'r'</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$crl</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::PEM_read_bio_X509_CRL</span><span class="operator">(</span><span class="variable">$bio</span><span class="operator">);</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$crl</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">Net::SSLeay::X509_STORE_add_crl</span><span class="operator">(</span><span class="variable">Net::SSLeay::CTX_get_cert_store</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">$crl</span><span class="operator">);</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="variable">error</span> <span class="variable">reading</span> <span class="variable">CRL</span><span class="operator">....</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="convenience_routines">Convenience routines</a></h2>
+<p>To be used with Low level API</p>
+<pre>
+    <span class="variable">Net::SSLeay::randomize</span><span class="operator">(</span><span class="variable">$rn_seed_file</span><span class="operator">,</span><span class="variable">$additional_seed</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::set_cert_and_key</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="variable">$cert_path</span><span class="operator">,</span> <span class="variable">$key_path</span><span class="operator">);</span>
+    <span class="variable">$cert</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::dump_peer_certificate</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::ssl_write_all</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"ssl write failure"</span><span class="operator">;</span>
+    <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::ssl_read_all</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"ssl read failure"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::ssl_read_CRLF</span><span class="operator">(</span><span class="variable">$ssl</span> <span class="operator">[</span><span class="operator">,</span> <span class="variable">$max_length</span><span class="operator">]</span><span class="operator">);</span>
+    <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::ssl_read_until</span><span class="operator">(</span><span class="variable">$ssl</span> <span class="operator">[</span><span class="operator">,</span> <span class="variable">$delimit</span> <span class="operator">[</span><span class="operator">,</span> <span class="variable">$max_length</span><span class="operator">]]</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::ssl_write_CRLF</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">);</span>
+</pre>
+<p><code>randomize()</code> seeds the openssl PRNG with <code>/dev/urandom</code> (see the top of <code>SSLeay.pm</code>
+for how to change or configure this) and optionally with user provided
+data. It is very important to properly seed your random numbers, so
+do not forget to call this. The high level API functions automatically
+call <code>randomize()</code> so it is not needed with them. See also caveats.</p>
+<p><code>set_cert_and_key()</code> takes two file names as arguments and sets
+the certificate and private key to those. This can be used to
+set either cerver certificates or client certificates.</p>
+<p><code>dump_peer_certificate()</code> allows you to get a plaintext description of the
+certificate the peer (usually the server) presented to us.</p>
+<p><code>ssl_read_all()</code> and <code>ssl_write_all()</code> provide true blocking semantics for
+these operations (see limitation, below, for explanation). These are
+much preferred to the low level API equivalents (which implement BSD
+blocking semantics). The message argument to <code>ssl_write_all()</code> can be
+a reference. This is helpful to avoid unnecessary copying when writing
+something big, e.g:</p>
+<pre>
+    <span class="variable">$data</span> <span class="operator">=</span> <span class="string">'A'</span> <span class="operator">x</span> <span class="number">1000000000</span><span class="operator">;</span>
+    <span class="variable">Net::SSLeay::ssl_write_all</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$data</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"ssl write failed"</span><span class="operator">;</span>
+</pre>
+<p><code>ssl_read_CRLF()</code> uses <code>ssl_read_all()</code> to read in a line terminated with a
+carriage return followed by a linefeed (CRLF).  The CRLF is included in
+the returned scalar.</p>
+<p><code>ssl_read_until()</code> uses <code>ssl_read_all()</code> to read from the SSL input
+stream until it encounters a programmer specified delimiter.
+If the delimiter is undefined, <a href="../../lib/pods/perlvar.html#__"><code>$/</code></a> is used.  If <a href="../../lib/pods/perlvar.html#__"><code>$/</code></a> is undefined,
+<a href="../../lib/pods/perlrun.html#n"><code>\n</code></a> is used.  One can optionally set a maximum length of bytes to read
+from the SSL input stream.</p>
+<p><code>ssl_write_CRLF()</code> writes <code>$message</code> and appends CRLF to the SSL output stream.</p>
+<p>
+</p>
+<h2><a name="low_level_api">Low level API</a></h2>
+<p>In addition to the high level functions outlined above, this module
+contains straight-forward access to SSL part of OpenSSL C api. Only the SSL
+subpart of OpenSSL is implemented (if anyone wants to implement other
+parts, feel free to submit patches).</p>
+<p>See the <code>ssl.h</code> header from OpenSSL C distribution for a list of low level
+SSLeay functions to call (check SSLeay.xs to see if some function has been
+implemented). The module strips the initial <code>&quot;SSL_&quot;</code> off of the SSLeay names. Generally you should use <code>Net::SSLeay::</code> in its
+place. For example:</p>
+<p>In C:</p>
+<pre>
+        <span class="comment">#include &lt;ssl.h&gt;</span>
+</pre>
+<pre>
+        <span class="variable">err</span> <span class="operator">=</span> <span class="variable">SSL_set_verify</span> <span class="operator">(</span><span class="variable">ssl</span><span class="operator">,</span> <span class="variable">SSL_VERIFY_CLIENT_ONCE</span><span class="operator">,</span>
+                                   <span class="operator">&amp;</span><span class="variable">your_call_back_here</span><span class="operator">);</span>
+</pre>
+<p>In Perl:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Net::SSLeay</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$err</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::set_verify</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span>
+                                        <span class="variable">Net::SSLeay::VERIFY_CLIENT_ONCE</span><span class="operator">,</span>
+                                        <span class="operator">\&amp;</span><span class="variable">your_call_back_here</span><span class="operator">);</span>
+</pre>
+<p>If the function does not start with <code>SSL_</code> you should use the full
+function name, e.g.:</p>
+<pre>
+        <span class="variable">$err</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::ERR_get_error</span><span class="operator">;</span>
+</pre>
+<p>The following new functions behave in perlish way:</p>
+<pre>
+        <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::read</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+                                    <span class="comment"># Performs SSL_read, but returns $got</span>
+                                    <span class="comment"># resized according to data received.</span>
+                                    <span class="comment"># Returns undef on failure.</span>
+</pre>
+<pre>
+        <span class="variable">Net::SSLeay::write</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">$foo</span><span class="operator">)</span> <span class="operator">||</span> <span class="keyword">die</span><span class="operator">;</span>
+                                    <span class="comment"># Performs SSL_write, but automatically</span>
+                                    <span class="comment"># figures out the size of $foo</span>
+</pre>
+<p>In order to use the low level API you should start your programs with
+the following incantation:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Net::SSLeay</span> <span class="string">qw(die_now die_if_ssl_error)</span><span class="operator">;</span>
+        <span class="variable">Net::SSLeay::load_error_strings</span><span class="operator">();</span>
+        <span class="variable">Net::SSLeay::SSLeay_add_ssl_algorithms</span><span class="operator">();</span>    <span class="comment"># Important!</span>
+        <span class="variable">Net::SSLeay::ENGINE_load_builtin_engines</span><span class="operator">();</span>  <span class="comment"># If you want built-in engines</span>
+        <span class="variable">Net::SSLeay::ENGINE_register_all_complete</span><span class="operator">();</span> <span class="comment"># If you want built-in engines</span>
+        <span class="variable">Net::SSLeay::randomize</span><span class="operator">();</span>
+</pre>
+<p><code>die_now()</code> and <code>die_if_ssl_error()</code> are used to conveniently print the SSLeay error stack when something goes wrong, thusly:</p>
+<pre>
+        <span class="variable">Net::SSLeay::connect</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="keyword">or</span> <span class="variable">die_now</span><span class="operator">(</span><span class="string">"Failed SSL connect ($!)"</span><span class="operator">);</span>
+        <span class="variable">Net::SSLeay::write</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="string">"foo"</span><span class="operator">)</span> <span class="keyword">or</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"SSL write ($!)"</span><span class="operator">);</span>
+</pre>
+<p>You can also use <code>Net::SSLeay::print_errs()</code> to dump the error stack without
+exiting the program. As can be seen, your code becomes much more readable
+if you import the error reporting functions into your main name space.</p>
+<p>I can not emphasize the need to check for error enough. Use these
+functions even in the most simple programs, they will reduce debugging
+time greatly. Do not ask questions on the mailing list without having
+first sprinkled these in your code.</p>
+<p>
+</p>
+<h2><a name="sockets">Sockets</a></h2>
+<p>Perl uses file handles for all I/O. While SSLeay has a quite flexible BIO
+mechanism and perl has an evolved PerlIO mechanism, this module still
+sticks to using file descriptors. Thus to attach SSLeay to a socket you
+should use <a href="../../lib/pods/perlfunc.html#fileno"><code>fileno()</code></a> to extract the underlying file descriptor:</p>
+<pre>
+    <span class="variable">Net::SSLeay::set_fd</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">S</span><span class="operator">));</span>   <span class="comment"># Must use fileno</span>
+</pre>
+<p>You should also set <a href="../../lib/pods/perlvar.html#__"><code>$|</code></a> to 1 to eliminate STDIO buffering so you do not
+get confused if you use perl I/O functions to manipulate your socket
+handle.</p>
+<p>If you need to <a href="../../lib/pods/perlfunc.html#select"><code>select(2)</code></a> on the socket, go right ahead, but be warned
+that OpenSSL does some internal buffering so SSL_read does not always
+return data even if the socket selected for reading (just keep on
+selecting and trying to read). <code>Net::SSLeay</code> is no different from the
+C language OpenSSL in this respect.</p>
+<p>
+</p>
+<h2><a name="callbacks">Callbacks</a></h2>
+<p>You can establish a per-context verify callback function something like this:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> verify </span><span class="operator">{</span>
+            <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$ok</span><span class="operator">,</span> <span class="variable">$x509_store_ctx</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+            <span class="keyword">print</span> <span class="string">"Verifying certificate...\n"</span><span class="operator">;</span>
+                <span class="operator">...</span>
+            <span class="keyword">return</span> <span class="variable">$ok</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>It is used like this:</p>
+<pre>
+        <span class="variable">Net::SSLeay::set_verify</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">Net::SSLeay::VERIFY_PEER</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">verify</span><span class="operator">);</span>
+</pre>
+<p>Per-context callbacks for decrypting private keys are implemented.</p>
+<pre>
+        <span class="variable">Net::SSLeay::CTX_set_default_passwd_cb</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">"top-secret"</span> <span class="operator">});</span>
+        <span class="variable">Net::SSLeay::CTX_use_PrivateKey_file</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="string">"key.pem"</span><span class="operator">,</span>
+                                             <span class="variable">Net::SSLeay::FILETYPE_PEM</span><span class="operator">)</span>
+            <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Error reading private key"</span><span class="operator">;</span>
+        <span class="variable">Net::SSLeay::CTX_set_default_passwd_cb</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">);</span>
+</pre>
+<p>If Hello Extensions are supported by your OpenSSL, 
+a session secret callback can be set up to be called when a session secret is set
+by openssl.</p>
+<p>Establish it like this:
+    Net::SSLeay::set_session_secret_cb($ssl, \&amp;session_secret_cb, $somedata);</p>
+<p>It will be called like this:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> session_secret_cb
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$secret</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@cipherlist</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$preferredcipher</span><span class="operator">,</span> <span class="variable">$somedata</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>No other callbacks are implemented. You do not need to use any
+callback for simple (i.e. normal) cases where the SSLeay built-in
+verify mechanism satisfies your needs.</p>
+<p>It is required to reset these callbacks to undef immediately after use to prevent 
+memory leaks, thread safety problems and crashes on exit that 
+can occur if different threads set different callbacks.</p>
+<p>If you want to use callback stuff, see examples/callback.pl! Its the
+only one I am able to make work reliably.</p>
+<p>
+</p>
+<h2><a name="x509_and_rand_stuff">X509 and RAND stuff</a></h2>
+<p>This module largely lacks interface to the X509 and RAND routines, but
+as I was lazy and needed them, the following kludges are implemented:</p>
+<pre>
+    <span class="variable">$x509_name</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::X509_get_subject_name</span><span class="operator">(</span><span class="variable">$x509_cert</span><span class="operator">);</span>
+    <span class="variable">$x509_name</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::X509_get_issuer_name</span><span class="operator">(</span><span class="variable">$x509_cert</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">Net::SSLeay::X509_NAME_oneline</span><span class="operator">(</span><span class="variable">$x509_name</span><span class="operator">);</span>
+    <span class="variable">$text</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::X509_NAME_get_text_by_NID</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">,</span> <span class="variable">$nid</span><span class="operator">);</span>
+</pre>
+<pre>
+    ($type1, $subject1, $type2, $subject2, ...) =
+       Net::SSLeay::X509_get_subjectAltNames($x509_cert)</pre>
+<pre>
+    subjectAltName types as per x509v3.h GEN_*, for example
+    GEN_DNS or GEN_IPADD which can be imported.</pre>
+<pre>
+    <span class="variable">Net::SSLeay::RAND_seed</span><span class="operator">(</span><span class="variable">$buf</span><span class="operator">);</span>   <span class="comment"># Perlishly figures out buf size</span>
+    <span class="variable">Net::SSLeay::RAND_bytes</span><span class="operator">(</span><span class="variable">$buf</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_pseudo_bytes</span><span class="operator">(</span><span class="variable">$buf</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_add</span><span class="operator">(</span><span class="variable">$buf</span><span class="operator">,</span> <span class="variable">$num</span><span class="operator">,</span> <span class="variable">$entropy</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_poll</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::RAND_status</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::RAND_cleanup</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::RAND_file_name</span><span class="operator">(</span><span class="variable">$num</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_load_file</span><span class="operator">(</span><span class="variable">$file_name</span><span class="operator">,</span> <span class="variable">$how_many_bytes</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_write_file</span><span class="operator">(</span><span class="variable">$file_name</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_egd</span><span class="operator">(</span><span class="variable">$path</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RAND_egd_bytes</span><span class="operator">(</span><span class="variable">$path</span><span class="operator">,</span> <span class="variable">$bytes</span><span class="operator">);</span>
+</pre>
+<p>Actually you should consider using the following helper functions:</p>
+<pre>
+    <span class="keyword">print</span> <span class="variable">Net::SSLeay::dump_peer_certificate</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::randomize</span><span class="operator">();</span>
+</pre>
+<p>
+</p>
+<h2><a name="rsa_interface">RSA interface</a></h2>
+<p>Some RSA functions are available:</p>
+<pre>
+    <span class="variable">$rsakey</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::RSA_generate_key</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::CTX_set_tmp_rsa</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="variable">$rsakey</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::RSA_free</span><span class="operator">(</span><span class="variable">$rsakey</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="digests">Digests</a></h2>
+<p>Some Digest functions are available if supported by the underlying
+library.  These may include MD2, MD4, MD5, and RIPEMD160:</p>
+<pre>
+    <span class="variable">$hash</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::MD5</span><span class="operator">(</span><span class="variable">$foo</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'H*'</span><span class="operator">,</span> <span class="variable">$hash</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="bio_interface">BIO interface</a></h2>
+<p>Some BIO functions are available:</p>
+<pre>
+    <span class="variable">Net::SSLeay::BIO_s_mem</span><span class="operator">();</span>
+    <span class="variable">$bio</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_new</span><span class="operator">(</span><span class="variable">BIO_s_mem</span><span class="operator">())</span>
+    <span class="variable">$bio</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_new_file</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">,</span> <span class="variable">$mode</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::BIO_free</span><span class="operator">(</span><span class="variable">$bio</span><span class="operator">)</span>
+    <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_write</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">);</span>
+    <span class="variable">$data</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_read</span><span class="operator">(</span><span class="variable">$bio</span><span class="operator">);</span>
+    <span class="variable">$data</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_read</span><span class="operator">(</span><span class="variable">$bio</span><span class="operator">,</span> <span class="variable">$maxbytes</span><span class="operator">);</span>
+    <span class="variable">$is_eof</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_eof</span><span class="operator">(</span><span class="variable">$bio</span><span class="operator">);</span>
+    <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_pending</span><span class="operator">(</span><span class="variable">$bio</span><span class="operator">);</span>
+    <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::BIO_wpending</span> <span class="operator">(</span><span class="variable">$bio</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="low_level_api">Low level API</a></h2>
+<p>Some very low level API functions are available:</p>
+<pre>
+    <span class="variable">$client_random</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::get_client_random</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+    <span class="variable">$server_random</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::get_server_random</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+    <span class="variable">$session</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::get_session</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+    <span class="variable">$master_key</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::SESSION_get_master_key</span><span class="operator">(</span><span class="variable">$session</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::SESSION_set_master_key</span><span class="operator">(</span><span class="variable">$session</span><span class="operator">,</span> <span class="variable">$master_secret</span><span class="operator">);</span>
+    <span class="variable">$keyblocksize</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::get_keyblock_size</span><span class="operator">(</span><span class="variable">$session</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="http__without_s__api">HTTP (without S) API</a></h2>
+<p>Over the years it has become clear that it would be convenient to use
+the light-weight flavour API of <code>Net::SSLeay</code> for normal HTTP as well (see
+<code>LWP</code> for the heavy-weight object-oriented approach). In fact it would be
+nice to be able to flip https on and off on the fly. Thus regular HTTP
+support was evolved.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Net::SSLeay</span> <span class="string">qw(get_http post_http tcpcat
+                      get_httpx post_httpx tcpxcat
+                      make_headers make_form)</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">,</span> <span class="variable">%headers</span><span class="operator">)</span> <span class="operator">=</span>
+         <span class="operator">=</span> <span class="variable">get_http</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/protected.html'</span><span class="operator">,</span>
+              <span class="variable">make_headers</span><span class="operator">(</span><span class="string">Authorization</span> <span class="operator">=&gt;</span>
+                           <span class="string">'Basic '</span> <span class="operator">.</span> <span class="variable">MIME::Base64::encode</span><span class="operator">(</span><span class="string">"</span><span class="variable">$user</span><span class="string">:</span><span class="variable">$pass</span><span class="string">"</span><span class="operator">,</span><span class="string">''</span><span class="operator">))</span>
+              <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">%reply_headers</span><span class="operator">)</span>
+         <span class="operator">=</span> <span class="variable">post_http</span><span class="operator">(</span><span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/foo.cgi'</span><span class="operator">,</span> <span class="string">''</span><span class="operator">,</span>
+                <span class="variable">make_form</span><span class="operator">(</span><span class="string">OK</span>   <span class="operator">=&gt;</span> <span class="string">'1'</span><span class="operator">,</span>
+                          <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Sampo'</span>
+                <span class="operator">));</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$reply</span><span class="operator">,</span> <span class="variable">$err</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">tcpcat</span><span class="operator">(</span><span class="variable">$host</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$request</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">,</span> <span class="variable">%headers</span><span class="operator">)</span> <span class="operator">=</span>
+         <span class="operator">=</span> <span class="variable">get_httpx</span><span class="operator">(</span><span class="variable">$usessl</span><span class="operator">,</span> <span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/protected.html'</span><span class="operator">,</span>
+              <span class="variable">make_headers</span><span class="operator">(</span><span class="string">Authorization</span> <span class="operator">=&gt;</span>
+                           <span class="string">'Basic '</span> <span class="operator">.</span> <span class="variable">MIME::Base64::encode</span><span class="operator">(</span><span class="string">"</span><span class="variable">$user</span><span class="string">:</span><span class="variable">$pass</span><span class="string">"</span><span class="operator">,</span><span class="string">''</span><span class="operator">))</span>
+              <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$page</span><span class="operator">,</span> <span class="variable">$response</span><span class="operator">,</span> <span class="variable">%reply_headers</span><span class="operator">)</span>
+         <span class="operator">=</span> <span class="variable">post_httpx</span><span class="operator">(</span><span class="variable">$usessl</span><span class="operator">,</span> <span class="string">'www.bacus.pt'</span><span class="operator">,</span> <span class="number">443</span><span class="operator">,</span> <span class="string">'/foo.cgi'</span><span class="operator">,</span> <span class="string">''</span><span class="operator">,</span>
+                <span class="variable">make_form</span><span class="operator">(</span><span class="string">OK</span>   <span class="operator">=&gt;</span> <span class="string">'1'</span><span class="operator">,</span>  <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Sampo'</span> <span class="operator">));</span>
+</pre>
+<pre>
+  <span class="operator">(</span><span class="variable">$reply</span><span class="operator">,</span> <span class="variable">$err</span><span class="operator">,</span> <span class="variable">$server_cert</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">tcpxcat</span><span class="operator">(</span><span class="variable">$usessl</span><span class="operator">,</span> <span class="variable">$host</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$request</span><span class="operator">);</span>
+</pre>
+<p>As can be seen, the <a href="../../lib/pods/perlrun.html#x"><code>&quot;x&quot;</code></a> family of APIs takes as the first argument a flag
+which indicates whether SSL is used or not.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>One very good example to look at is the implementation of <code>sslcat()</code> in the
+<code>SSLeay.pm</code> file.</p>
+<p>The following is a simple SSLeay client (with too little error checking :-(</p>
+<pre>
+    <span class="comment">#!/usr/local/bin/perl</span>
+    <span class="keyword">use</span> <span class="variable">Socket</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Net::SSLeay</span> <span class="string">qw(die_now die_if_ssl_error)</span> <span class="operator">;</span>
+    <span class="variable">Net::SSLeay::load_error_strings</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::SSLeay_add_ssl_algorithms</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::randomize</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="operator">(</span><span class="variable">$dest_serv</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$msg</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@ARGV</span><span class="operator">;</span>      <span class="comment"># Read command line</span>
+    <span class="variable">$port</span> <span class="operator">=</span> <span class="keyword">getservbyname</span> <span class="operator">(</span><span class="variable">$port</span><span class="operator">,</span> <span class="string">'tcp'</span><span class="operator">)</span> <span class="keyword">unless</span> <span class="variable">$port</span> <span class="operator">=~</span> <span class="regex">/^\d+$/</span><span class="operator">;</span>
+    <span class="variable">$dest_ip</span> <span class="operator">=</span> <span class="keyword">gethostbyname</span> <span class="operator">(</span><span class="variable">$dest_serv</span><span class="operator">);</span>
+    <span class="variable">$dest_serv_params</span>  <span class="operator">=</span> <span class="variable">sockaddr_in</span><span class="operator">(</span><span class="variable">$port</span><span class="operator">,</span> <span class="variable">$dest_ip</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">socket</span>  <span class="operator">(</span><span class="variable">S</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">AF_INET</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">SOCK_STREAM</span><span class="operator">,</span> <span class="number">0</span><span class="operator">)</span>  <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"socket: $!"</span><span class="operator">;</span>
+    <span class="keyword">connect</span> <span class="operator">(</span><span class="variable">S</span><span class="operator">,</span> <span class="variable">$dest_serv_params</span><span class="operator">)</span>          <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"connect: $!"</span><span class="operator">;</span>
+    <span class="keyword">select</span>  <span class="operator">(</span><span class="variable">S</span><span class="operator">);</span> <span class="variable">$|</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="keyword">select</span> <span class="operator">(</span><span class="variable">STDOUT</span><span class="operator">);</span>   <span class="comment"># Eliminate STDIO buffering</span>
+</pre>
+<pre>
+    <span class="comment"># The network connection is now open, lets fire up SSL</span>
+</pre>
+<pre>
+    <span class="variable">$ctx</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::CTX_new</span><span class="operator">()</span> <span class="keyword">or</span> <span class="variable">die_now</span><span class="operator">(</span><span class="string">"Failed to create SSL_CTX $!"</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::CTX_set_options</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">Net::SSLeay::OP_ALL</span><span class="operator">)</span>
+         <span class="keyword">and</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl ctx set options"</span><span class="operator">);</span>
+    <span class="variable">$ssl</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::new</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">)</span> <span class="keyword">or</span> <span class="variable">die_now</span><span class="operator">(</span><span class="string">"Failed to create SSL $!"</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::set_fd</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">S</span><span class="operator">));</span>   <span class="comment"># Must use fileno</span>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::connect</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="keyword">and</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl connect"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"Cipher `"</span> <span class="operator">.</span> <span class="variable">Net::SSLeay::get_cipher</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">"'\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># Exchange data</span>
+</pre>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::write</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">$msg</span><span class="operator">);</span>  <span class="comment"># Perl knows how long $msg is</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl write"</span><span class="operator">);</span>
+    <span class="variable">CORE::shutdown</span> <span class="variable">S</span><span class="operator">,</span> <span class="number">1</span><span class="operator">;</span>  <span class="comment"># Half close --&gt; No more output, sends EOF to server</span>
+    <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::read</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>         <span class="comment"># Perl returns undef on failure</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl read"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$got</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">Net::SSLeay::free</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>               <span class="comment"># Tear down connection</span>
+    <span class="variable">Net::SSLeay::CTX_free</span> <span class="operator">(</span><span class="variable">$ctx</span><span class="operator">);</span>
+    <span class="keyword">close</span> <span class="variable">S</span><span class="operator">;</span>
+</pre>
+<p>The following is a simple SSLeay echo server (non forking):</p>
+<pre>
+    <span class="comment">#!/usr/local/bin/perl -w</span>
+    <span class="keyword">use</span> <span class="variable">Socket</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Net::SSLeay</span> <span class="string">qw(die_now die_if_ssl_error)</span><span class="operator">;</span>
+    <span class="variable">Net::SSLeay::load_error_strings</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::SSLeay_add_ssl_algorithms</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::randomize</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="variable">$our_ip</span> <span class="operator">=</span> <span class="string">"\0\0\0\0"</span><span class="operator">;</span> <span class="comment"># Bind to all interfaces</span>
+    <span class="variable">$port</span> <span class="operator">=</span> <span class="number">1235</span><span class="operator">;</span>                                                        
+    <span class="variable">$sockaddr_template</span> <span class="operator">=</span> <span class="string">'S n a4 x8'</span><span class="operator">;</span>
+    <span class="variable">$our_serv_params</span> <span class="operator">=</span> <span class="keyword">pack</span> <span class="operator">(</span><span class="variable">$sockaddr_template</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">AF_INET</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$our_ip</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">socket</span> <span class="operator">(</span><span class="variable">S</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">AF_INET</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">SOCK_STREAM</span><span class="operator">,</span> <span class="number">0</span><span class="operator">)</span>  <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"socket: $!"</span><span class="operator">;</span>
+    <span class="keyword">bind</span> <span class="operator">(</span><span class="variable">S</span><span class="operator">,</span> <span class="variable">$our_serv_params</span><span class="operator">)</span>             <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"bind:   $!"</span><span class="operator">;</span>
+    <span class="keyword">listen</span> <span class="operator">(</span><span class="variable">S</span><span class="operator">,</span> <span class="number">5</span><span class="operator">)</span>                          <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"listen: $!"</span><span class="operator">;</span>
+    <span class="variable">$ctx</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::CTX_new</span> <span class="operator">()</span>         <span class="keyword">or</span> <span class="variable">die_now</span><span class="operator">(</span><span class="string">"CTX_new (</span><span class="variable">$ctx</span><span class="string">): $!"</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::CTX_set_options</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">Net::SSLeay::OP_ALL</span><span class="operator">)</span>
+         <span class="keyword">and</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl ctx set options"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># Following will ask password unless private key is not encrypted</span>
+    <span class="variable">Net::SSLeay::CTX_use_RSAPrivateKey_file</span> <span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="string">'plain-rsa.pem'</span><span class="operator">,</span>
+                                             <span class="operator">&amp;</span><span class="variable">Net::SSLeay::FILETYPE_PEM</span><span class="operator">);</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"private key"</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::CTX_use_certificate_file</span> <span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="string">'plain-cert.pem'</span><span class="operator">,</span>
+                                           <span class="operator">&amp;</span><span class="variable">Net::SSLeay::FILETYPE_PEM</span><span class="operator">);</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"certificate"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="number">1</span><span class="operator">)</span> <span class="operator">{</span>    
+        <span class="keyword">print</span> <span class="string">"Accepting connections...\n"</span><span class="operator">;</span>
+        <span class="operator">(</span><span class="variable">$addr</span> <span class="operator">=</span> <span class="keyword">accept</span> <span class="operator">(</span><span class="variable">NS</span><span class="operator">,</span> <span class="variable">S</span><span class="operator">))</span>           <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"accept: $!"</span><span class="operator">;</span>
+        <span class="keyword">select</span> <span class="operator">(</span><span class="variable">NS</span><span class="operator">);</span> <span class="variable">$|</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="keyword">select</span> <span class="operator">(</span><span class="variable">STDOUT</span><span class="operator">);</span>  <span class="comment"># Piping hot!</span>
+</pre>
+<pre>
+        <span class="operator">(</span><span class="variable">$af</span><span class="operator">,</span><span class="variable">$client_port</span><span class="operator">,</span><span class="variable">$client_ip</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="variable">$sockaddr_template</span><span class="operator">,</span><span class="variable">$addr</span><span class="operator">);</span>
+        <span class="variable">@inetaddr</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'C4'</span><span class="operator">,</span><span class="variable">$client_ip</span><span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$af</span><span class="string"> connection from "</span> <span class="operator">.</span>
+        <span class="keyword">join</span> <span class="operator">(</span><span class="string">'.'</span><span class="operator">,</span> <span class="variable">@inetaddr</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">":</span><span class="variable">$client_port</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># We now have a network connection, lets fire up SSLeay...</span>
+</pre>
+<pre>
+        <span class="variable">$ssl</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::new</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">)</span>      <span class="keyword">or</span> <span class="variable">die_now</span><span class="operator">(</span><span class="string">"SSL_new (</span><span class="variable">$ssl</span><span class="string">): $!"</span><span class="operator">);</span>
+        <span class="variable">Net::SSLeay::set_fd</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">NS</span><span class="operator">));</span>
+</pre>
+<pre>
+        <span class="variable">$err</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::accept</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="keyword">and</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">'ssl accept'</span><span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"Cipher `"</span> <span class="operator">.</span> <span class="variable">Net::SSLeay::get_cipher</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">"'\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Connected. Exchange some data.</span>
+</pre>
+<pre>
+        <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::read</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>     <span class="comment"># Returns undef on fail</span>
+        <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl read"</span><span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"Got `</span><span class="variable">$got</span><span class="string">' ("</span> <span class="operator">.</span> <span class="keyword">length</span> <span class="operator">(</span><span class="variable">$got</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">" chars)\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">Net::SSLeay::write</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">uc</span> <span class="operator">(</span><span class="variable">$got</span><span class="operator">))</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"write: $!"</span><span class="operator">;</span>
+        <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl write"</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="variable">Net::SSLeay::free</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>           <span class="comment"># Tear down connection</span>
+        <span class="keyword">close</span> <span class="variable">NS</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<p>Yet another echo server. This one runs from <code>/etc/inetd.conf</code> so it avoids
+all the socket code overhead. Only caveat is opening an rsa key file -
+it had better be without any encryption or else it will not know where
+to ask for the password. Note how <code>STDIN</code> and <code>STDOUT</code> are wired to SSL.</p>
+<pre>
+    <span class="comment">#!/usr/local/bin/perl</span>
+    <span class="comment"># /etc/inetd.conf</span>
+    <span class="comment">#    ssltst stream tcp nowait root /path/to/server.pl server.pl</span>
+    <span class="comment"># /etc/services</span>
+    <span class="comment">#    ssltst         1234/tcp</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Net::SSLeay</span> <span class="string">qw(die_now die_if_ssl_error)</span><span class="operator">;</span>
+    <span class="variable">Net::SSLeay::load_error_strings</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::SSLeay_add_ssl_algorithms</span><span class="operator">();</span>
+    <span class="variable">Net::SSLeay::randomize</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="keyword">chdir</span> <span class="string">'/key/dir'</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"chdir: $!"</span><span class="operator">;</span>
+    <span class="variable">$|</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>  <span class="comment"># Piping hot!</span>
+    <span class="keyword">open</span> <span class="variable">LOG</span><span class="operator">,</span> <span class="string">"&gt;&gt;/dev/console"</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Can't open log file $!"</span><span class="operator">;</span>
+    <span class="keyword">select</span> <span class="variable">LOG</span><span class="operator">;</span> <span class="keyword">print</span> <span class="string">"server.pl started\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$ctx</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::CTX_new</span><span class="operator">()</span>     <span class="keyword">or</span> <span class="variable">die_now</span> <span class="string">"CTX_new (</span><span class="variable">$ctx</span><span class="string">) ($!)"</span><span class="operator">;</span>
+    <span class="variable">$ssl</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::new</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">)</span>     <span class="keyword">or</span> <span class="variable">die_now</span> <span class="string">"new (</span><span class="variable">$ssl</span><span class="string">) ($!)"</span><span class="operator">;</span>
+    <span class="variable">Net::SSLeay::set_options</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">Net::SSLeay::OP_ALL</span><span class="operator">)</span>
+         <span class="keyword">and</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl set options"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># We get already open network connection from inetd, now we just</span>
+    <span class="comment"># need to attach SSLeay to STDIN and STDOUT</span>
+    <span class="variable">Net::SSLeay::set_rfd</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">STDIN</span><span class="operator">));</span>
+    <span class="variable">Net::SSLeay::set_wfd</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">STDOUT</span><span class="operator">));</span>
+</pre>
+<pre>
+    <span class="variable">Net::SSLeay::use_RSAPrivateKey_file</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="string">'plain-rsa.pem'</span><span class="operator">,</span>
+                                         <span class="variable">Net::SSLeay::FILETYPE_PEM</span><span class="operator">);</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"private key"</span><span class="operator">);</span>
+    <span class="variable">Net::SSLeay::use_certificate_file</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="string">'plain-cert.pem'</span><span class="operator">,</span>
+                                       <span class="variable">Net::SSLeay::FILETYPE_PEM</span><span class="operator">);</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"certificate"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">Net::SSLeay::accept</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="keyword">and</span> <span class="variable">die_if_ssl_err</span><span class="operator">(</span><span class="string">"ssl accept: $!"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"Cipher `"</span> <span class="operator">.</span> <span class="variable">Net::SSLeay::get_cipher</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">"'\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::read</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl read"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"Got `</span><span class="variable">$got</span><span class="string">' ("</span> <span class="operator">.</span> <span class="keyword">length</span> <span class="operator">(</span><span class="variable">$got</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">" chars)\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">Net::SSLeay::write</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">uc</span><span class="operator">(</span><span class="variable">$got</span><span class="operator">))</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"write: $!"</span><span class="operator">;</span>
+    <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl write"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">Net::SSLeay::free</span> <span class="operator">(</span><span class="variable">$ssl</span><span class="operator">);</span>         <span class="comment"># Tear down the connection</span>
+    <span class="variable">Net::SSLeay::CTX_free</span> <span class="operator">(</span><span class="variable">$ctx</span><span class="operator">);</span>
+    <span class="keyword">close</span> <span class="variable">LOG</span><span class="operator">;</span>
+</pre>
+<p>There are also a number of example/test programs in the examples directory:</p>
+<pre>
+    sslecho.pl   -  A simple server, not unlike the one above
+    minicli.pl   -  Implements a client using low level SSLeay routines
+    sslcat.pl    -  Demonstrates using high level sslcat utility function
+    get_page.pl  -  Is a utility for getting html pages from secure servers
+    callback.pl  -  Demonstrates certificate verification and callback usage
+    stdio_bulk.pl       - Does SSL over Unix pipes
+    ssl-inetd-serv.pl   - SSL server that can be invoked from inetd.conf
+    httpd-proxy-snif.pl - Utility that allows you to see how a browser
+                          sends https request to given server and what reply
+                          it gets back (very educative :-)
+    makecert.pl  -  Creates a self signed cert (does not use this module)</pre>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p><a href="../../lib/pods/perlfunc.html#read"><code>Net::SSLeay::read()</code></a> uses an internal buffer of 32KB, thus no single read
+will return more. In practice one read returns much less, usually
+as much as fits in one network packet. To work around this,
+you should use a loop like this:</p>
+<pre>
+    <span class="variable">$reply</span> <span class="operator">=</span> <span class="string">''</span><span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::read</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="keyword">last</span> <span class="keyword">if</span> <span class="variable">print_errs</span><span class="operator">(</span><span class="string">'SSL_read'</span><span class="operator">);</span>
+        <span class="variable">$reply</span> <span class="operator">.=</span> <span class="variable">$got</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Although there is no built-in limit in <a href="../../lib/pods/perlfunc.html#write"><code>Net::SSLeay::write()</code></a>, the network
+packet size limitation applies here as well, thus use:</p>
+<pre>
+    <span class="variable">$written</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">$written</span> <span class="operator">&lt;</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">$message</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="variable">$written</span> <span class="operator">+=</span> <span class="variable">Net::SSLeay::write</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="keyword">substr</span><span class="operator">(</span><span class="variable">$message</span><span class="operator">,</span> <span class="variable">$written</span><span class="operator">));</span>
+        <span class="keyword">last</span> <span class="keyword">if</span> <span class="variable">print_errs</span><span class="operator">(</span><span class="string">'SSL_write'</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<p>Or alternatively you can just use the following convenience functions:</p>
+<pre>
+    <span class="variable">Net::SSLeay::ssl_write_all</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"ssl write failure"</span><span class="operator">;</span>
+    <span class="variable">$got</span> <span class="operator">=</span> <span class="variable">Net::SSLeay::ssl_read_all</span><span class="operator">(</span><span class="variable">$ssl</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"ssl read failure"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="known_bugs_and_caveats">KNOWN BUGS AND CAVEATS</a></h1>
+<p>Autoloader emits a</p>
+<pre>
+    Argument &quot;xxx&quot; isn't numeric in entersub at blib/lib/Net/SSLeay.pm'</pre>
+<p>warning if die_if_ssl_error is made autoloadable. If you figure out why,
+drop me a line.</p>
+<p>Callback set using <code>SSL_set_verify()</code> does not appear to work. This may
+well be an openssl problem (e.g. see <code>ssl/ssl_lib.c</code> line 1029). Try using
+<code>SSL_CTX_set_verify()</code> instead and do not be surprised if even this stops
+working in future versions.</p>
+<p>Callback and certificate verification stuff is generally too little tested.</p>
+<p>Random numbers are not initialized randomly enough, especially if you
+do not have <code>/dev/random</code> and/or <code>/dev/urandom</code> (such as in Solaris
+platforms - but I've been suggested that cryptorand daemon from the SUNski
+package solves this). In this case you should investigate third party
+software that can emulate these devices, e.g. by way of a named pipe
+to some program.</p>
+<p>Another gotcha with random number initialization is randomness
+depletion. This phenomenon, which has been extensively discussed in
+OpenSSL, Apache-SSL, and Apache-mod_ssl forums, can cause your
+script to block if you use <code>/dev/random</code> or to operate insecurely
+if you use <code>/dev/urandom</code>. What happens is that when too much
+randomness is drawn from the operating system's randomness pool
+then randomness can temporarily be unavailable. <code>/dev/random</code> solves
+this problem by waiting until enough randomness can be gathered - and
+this can take a long time since blocking reduces activity in the
+machine and less activity provides less random events: a vicious circle.
+<code>/dev/urandom</code> solves this dilemma more pragmatically by simply returning
+predictable &quot;random&quot; numbers. Some<code> /dev/urandom</code> emulation software
+however actually seems to implement <code>/dev/random</code> semantics. Caveat emptor.</p>
+<p>I've been pointed to two such daemons by Mik Firestone &lt;mik@@speed.stdio._com&gt;
+who has used them on Solaris 8:</p>
+<ol>
+<li>
+<p>Entropy Gathering Daemon (EGD) at <a href="http://www.lothar.com/tech/crypto/">http://www.lothar.com/tech/crypto/</a></p>
+</li>
+<li>
+<p>Pseudo-random number generating daemon (PRNGD) at
+<a href="http://www.aet.tu-cottbus.de/personen/jaenicke/postfix_tls/prngd.html">http://www.aet.tu-cottbus.de/personen/jaenicke/postfix_tls/prngd.html</a></p>
+</li>
+</ol>
+<p>If you are using the low level API functions to communicate with other
+SSL implementations, you would do well to call</p>
+<pre>
+    <span class="variable">Net::SSLeay::CTX_set_options</span><span class="operator">(</span><span class="variable">$ctx</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">Net::SSLeay::OP_ALL</span><span class="operator">)</span>
+         <span class="keyword">and</span> <span class="variable">die_if_ssl_error</span><span class="operator">(</span><span class="string">"ssl ctx set options"</span><span class="operator">);</span>
+</pre>
+<p>to cope with some well know bugs in some other SSL
+implementations. The high level API functions always set all known
+compatibility options.</p>
+<p>Sometimes <code>sslcat()</code> (and the high level HTTPS functions that build on it)
+is too fast in signaling the EOF to legacy HTTPS servers. This causes
+the server to return empty page. To work around this problem you can
+set the global variable</p>
+<pre>
+    <span class="variable">$Net::SSLeay::slowly</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>   <span class="comment"># Add sleep so broken servers can keep up</span>
+</pre>
+<p>HTTP/1.1 is not supported. Specifically this module does not know to
+issue or serve multiple http requests per connection. This is a serious
+shortcoming, but using the SSL session cache on your server helps to
+alleviate the CPU load somewhat.</p>
+<p>As of version 1.09 many newer OpenSSL auxiliary functions were
+added (from <code>REM_AUTOMATICALLY_GENERATED_1_09</code> onwards in <code>SSLeay.xs</code>).
+Unfortunately I have not had any opportunity to test these. Some of
+them are trivial enough that I believe they &quot;just work&quot;, but others
+have rather complex interfaces with function pointers and all. In these
+cases you should proceed wit great caution.</p>
+<p>This module defaults to using OpenSSL automatic protocol negotiation
+code for automatically detecting the version of the SSL protocol
+that the other end talks. With most web servers this works just
+fine, but once in a while I get complaints from people that the module
+does not work with some web servers. Usually this can be solved
+by explicitly setting the protocol version, e.g.</p>
+<pre>
+   <span class="variable">$Net::SSLeay::ssl_version</span> <span class="operator">=</span> <span class="number">2</span><span class="operator">;</span>  <span class="comment"># Insist on SSLv2</span>
+   <span class="variable">$Net::SSLeay::ssl_version</span> <span class="operator">=</span> <span class="number">3</span><span class="operator">;</span>  <span class="comment"># Insist on SSLv3</span>
+   <span class="variable">$Net::SSLeay::ssl_version</span> <span class="operator">=</span> <span class="number">10</span><span class="operator">;</span> <span class="comment"># Insist on TLSv1</span>
+</pre>
+<p>Although the autonegotiation is nice to have, the SSL standards
+do not formally specify any such mechanism. Most of the world has
+accepted the SSLeay/OpenSSL way of doing it as the de facto standard. But
+for the few that think differently, you have to explicitly speak
+the correct version. This is not really a bug, but rather a deficiency
+in the standards. If a site refuses to respond or sends back some
+nonsensical error codes (at the SSL handshake level), try this option
+before mailing me.</p>
+<p>The high level API returns the certificate of the peer, thus allowing
+one to check what certificate was supplied. However, you will only be
+able to check the certificate after the fact, i.e. you already sent
+your form data by the time you find out that you did not trust them,
+oops.</p>
+<p>So, while being able to know the certificate after the fact is surely
+useful, the security minded would still choose to do the connection
+and certificate verification first and only then exchange data
+with the site. Currently none of the high level API functions do
+this, thus you would have to program it using the low level API. A
+good place to start is to see how the <code>Net::SSLeay::http_cat()</code> function
+is implemented.</p>
+<p>The high level API functions use a global file handle <code>SSLCAT_S</code>
+internally. This really should not be a problem because there is no
+way to interleave the high level API functions, unless you use threads
+(but threads are not very well supported in perl anyway (as of version
+5.6.1). However, you may run into problems if you call undocumented
+internal functions in an interleaved fashion.</p>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="random_number_generator_not_seeded" class="item">Random number generator not seeded!!!</a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> This warning indicates that <code>randomize()</code> was not able to read
+<code>/dev/random</code> or <code>/dev/urandom</code>, possibly because your system does not
+have them or they are differently named. You can still use SSL, but
+the encryption will not be as strong.</p>
+</dd>
+<dt><strong><a name="open_tcp_connection_destination_host_not_found_server_port_123" class="item">open_tcp_connection: destination host not found:`server' (port 123) ($!)</a></strong></dt>
+
+<dd>
+<p>Name lookup for host named <code>server</code> failed.</p>
+</dd>
+<dt><strong><a name="123" class="item">open_tcp_connection: failed `server', 123 ($!)</a></strong></dt>
+
+<dd>
+<p>The name was resolved, but establising the TCP connection failed.</p>
+</dd>
+<dt><strong><a name="msg_123_1_error_140770f8_ssl_routines_ssl23_get_server_hello_unknown_proto" class="item">msg 123: 1 - error:140770F8:SSL routines:SSL23_GET_SERVER_HELLO:unknown proto</a></strong></dt>
+
+<dd>
+<p>SSLeay error string. The first number (123) is the PID, the second number
+(1) indicates the position of the error message in SSLeay error stack.
+You often see a pile of these messages as errors cascade.</p>
+</dd>
+<dt><strong><a name="lib" class="item">msg 123: 1 - error:02001002::lib(2) :func(1) :reason(2)</a></strong></dt>
+
+<dd>
+<p>The same as above, but you didn't call <code>load_error_strings()</code> so SSLeay
+couldn't verbosely explain the error. You can still find out what it
+means with this command:</p>
+<pre>
+    /usr/local/ssl/bin/ssleay errstr 02001002</pre>
+</dd>
+<dt><strong><a name="password_is_being_asked_for_private_key" class="item">Password is being asked for private key</a></strong></dt>
+
+<dd>
+<p>This is normal behaviour if your private key is encrypted. Either
+you have to supply the password or you have to use an unencrypted
+private key. Scan OpenSSL.org for the FAQ that explains how to
+do this (or just study examples/makecert.pl which is used
+during <code>make test</code> to do just that).</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs_and_support">BUGS AND SUPPORT</a></h1>
+<p>Please report any bugs or feature requests to
+<code>bug-Net-SSLeay at rt.cpan.org</code>, or through the web interface at
+<a href="http://rt.cpan.org/Public/Dist/Display.html?Name=Net-SSLeay">http://rt.cpan.org/Public/Dist/Display.html</a>.
+I will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.</p>
+<p>Subversion access to the latest source code etc can be obtained at
+<a href="http://alioth.debian.org/projects/net-ssleay">http://alioth.debian.org/projects/net-ssleay</a></p>
+<p>The developer mailing list (for people interested in contributing
+to the source code) can be found at
+<a href="http://lists.alioth.debian.org/mailman/listinfo/net-ssleay-devel">http://lists.alioth.debian.org/mailman/listinfo/net-ssleay-devel</a></p>
+<p>You can find documentation for this module with the <code>perldoc</code> command.</p>
+<pre>
+    <a href="../../lib/pods/perldoc.html">perldoc</a> Net::SSLeay</pre>
+<p>You can also look for information at:</p>
+<ul>
+<li><strong><a name="annocpan_annotated_cpan_documentation7" class="item">AnnoCPAN: Annotated CPAN documentation</a></strong>
+
+<p><a href="http://annocpan.org/dist/Net-SSLeay">http://annocpan.org/dist/Net-SSLeay</a></p>
+</li>
+<li><strong><a name="cpan_ratings7" class="item">CPAN Ratings</a></strong>
+
+<p><a href="http://cpanratings.perl.org/d/Net-SSLeay">http://cpanratings.perl.org/d/Net-SSLeay</a></p>
+</li>
+<li><strong><a name="search_cpan7" class="item">Search CPAN</a></strong>
+
+<p><a href="http://search.cpan.org/dist/Net-SSLeay">http://search.cpan.org/dist/Net-SSLeay</a></p>
+</li>
+</ul>
+<p>Commercial support for Net::SSLeay may be obtained from</p>
+<pre>
+   Symlabs (netssleay@symlabs.com)
+   Tel: +351-214.222.630
+   Fax: +351-214.222.637</pre>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Maintained by Mike McCauley and Florian Ragwitz since November 2005</p>
+<p>Originally written by Sampo Kellomäki &lt;<a href="mailto:sampo@symlabs.com">sampo@symlabs.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 1996-2003 Sampo Kellomäki &lt;<a href="mailto:sampo@symlabs.com">sampo@symlabs.com</a>&gt;</p>
+<p>Copyright (C) 2005-2006 Florian Ragwitz &lt;<a href="mailto:rafl@debian.org">rafl@debian.org</a>&gt;</p>
+<p>Copyright (C) 2005 Mike McCauley &lt;<a href="mailto:mikem@open.com.au">mikem@open.com.au</a>&gt;</p>
+<p>All Rights Reserved.</p>
+<p>Distribution and use of this module is under the same terms as the
+OpenSSL package itself (i.e. free, but mandatory attribution; NO
+WARRANTY). Please consult LICENSE file in the root of the OpenSSL
+distribution.</p>
+<p>While the source distribution of this perl module does not contain
+Eric's or OpenSSL's code, if you use this module you will use OpenSSL
+library. Please give Eric and OpenSSL team credit (as required by
+their licenses).</p>
+<p>And remember, you, and nobody else but you, are responsible for
+auditing this module and OpenSSL library for security problems,
+backdoors, and general suitability for your application.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<pre>
+  Net::SSLeay::Handle                      - File handle interface
+  ./examples                               - Example servers and a clients
+  &lt;<a href="http://www.openssl.org/&gt">http://www.openssl.org/&gt</a>;                - OpenSSL source, documentation, etc
+  openssl-users-request@openssl.org        - General OpenSSL mailing list
+  &lt;<a href="http://www.ietf.org/rfc/rfc2246.txt&gt">http://www.ietf.org/rfc/rfc2246.txt&gt</a>;    - TLS 1.0 specification
+  &lt;<a href="http://www.w3c.org&gt">http://www.w3c.org&gt</a>;                     - HTTP specifications
+  &lt;<a href="http://www.ietf.org/rfc/rfc2617.txt&gt">http://www.ietf.org/rfc/rfc2617.txt&gt</a>;    - How to send password
+  &lt;<a href="http://www.lothar.com/tech/crypto/&gt">http://www.lothar.com/tech/crypto/&gt</a>;     - Entropy Gathering Daemon (EGD)
+  &lt;<a href="http://www.aet.tu-cottbus.de/personen/jaenicke/postfix_tls/prngd.html&gt">http://www.aet.tu-cottbus.de/personen/jaenicke/postfix_tls/prngd.html&gt</a>;
+                           - pseudo-random number generating daemon (PRNGD)
+  perl(1)
+  <a href="../../lib/pods/perlref.html">perlref</a>(1)
+  <a href="../../lib/pods/perllol.html">perllol</a>(1)
+  <a href="../../lib/pods/perldoc.html">perldoc</a> ~openssl/doc/ssl/SSL_CTX_set_verify.pod</pre>
+
+</body>
+
+</html>

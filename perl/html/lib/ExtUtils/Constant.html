@@ -1,0 +1,268 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>ExtUtils::Constant - generate XS code to import C header constants</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>ExtUtils::Constant - generate XS code to import C header constants</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>ExtUtils::Constant - generate XS code to import C header constants</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">ExtUtils::Constant</span> <span class="string">qw (WriteConstants)</span><span class="operator">;</span>
+    <span class="variable">WriteConstants</span><span class="operator">(</span>
+        <span class="string">NAME</span> <span class="operator">=&gt;</span> <span class="string">'Foo'</span><span class="operator">,</span>
+        <span class="string">NAMES</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw(FOO BAR BAZ)</span><span class="operator">]</span><span class="operator">,</span>
+    <span class="operator">);</span>
+    <span class="comment"># Generates wrapper code to make the values of the constants FOO BAR BAZ</span>
+    <span class="comment">#  available to perl</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>ExtUtils::Constant facilitates generating C and XS wrapper code to allow
+perl modules to AUTOLOAD constants defined in C library header files.
+It is principally used by the <code>h2xs</code> utility, on which this code is based.
+It doesn't contain the routines to scan header files to extract these
+constants.</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>Generally one only needs to call the <code>WriteConstants</code> function, and then</p>
+<pre>
+    <span class="comment">#include "const-c.inc"</span>
+</pre>
+<p>in the C section of <code>Foo.xs</code></p>
+<pre>
+    INCLUDE: const-xs.inc</pre>
+<p>in the XS section of <code>Foo.xs</code>.</p>
+<p>For greater flexibility use <a href="#constant_types"><code>constant_types()</code></a>, <code>C_constant</code> and
+<code>XS_constant</code>, with which <code>WriteConstants</code> is implemented.</p>
+<p>Currently this module understands the following types. h2xs may only know
+a subset. The sizes of the numeric types are chosen by the <code>Configure</code>
+script at compile time.</p>
+<dl>
+<dt><strong><a name="iv2" class="item">IV</a></strong></dt>
+
+<dd>
+<p>signed integer, at least 32 bits.</p>
+</dd>
+<dt><strong><a name="uv" class="item">UV</a></strong></dt>
+
+<dd>
+<p>unsigned integer, the same size as <em>IV</em></p>
+</dd>
+<dt><strong><a name="nv2" class="item">NV</a></strong></dt>
+
+<dd>
+<p>floating point type, probably <code>double</code>, possibly <code>long double</code></p>
+</dd>
+<dt><strong><a name="pv2" class="item">PV</a></strong></dt>
+
+<dd>
+<p>NUL terminated string, length will be determined with <code>strlen</code></p>
+</dd>
+<dt><strong><a name="pvn" class="item">PVN</a></strong></dt>
+
+<dd>
+<p>A fixed length thing, given as a [pointer, length] pair. If you know the
+length of a string at compile time you may use this instead of <em>PV</em></p>
+</dd>
+<dt><strong><a name="sv2" class="item">SV</a></strong></dt>
+
+<dd>
+<p>A <strong>mortal</strong> SV.</p>
+</dd>
+<dt><strong><a name="yes" class="item">YES</a></strong></dt>
+
+<dd>
+<p>Truth.  (<code>PL_sv_yes</code>)  The value is not needed (and ignored).</p>
+</dd>
+<dt><strong><a name="no" class="item">NO</a></strong></dt>
+
+<dd>
+<p>Defined Falsehood.  (<code>PL_sv_no</code>)  The value is not needed (and ignored).</p>
+</dd>
+<dt><strong><a name="undef" class="item">UNDEF</a></strong></dt>
+
+<dd>
+<p><a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.  The value of the macro is not needed.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<dl>
+<dt><strong><a name="constant_types" class="item">constant_types</a></strong></dt>
+
+<dd>
+<p>A function returning a single scalar with <code>#define</code> definitions for the
+constants used internally between the generated C and XS functions.</p>
+</dd>
+<dt><strong><a name="xs_constant_package_types_xs_subname_c_subname" class="item">XS_constant PACKAGE, TYPES, XS_SUBNAME, C_SUBNAME</a></strong></dt>
+
+<dd>
+<p>A function to generate the XS code to implement the perl subroutine
+<em>PACKAGE</em>::constant used by <em>PACKAGE</em>::AUTOLOAD to load constants.
+This XS code is a wrapper around a C subroutine usually generated by
+<code>C_constant</code>, and usually named <code>constant</code>.</p>
+<p><em>TYPES</em> should be given either as a comma separated list of types that the
+C subroutine <code>constant</code> will generate or as a reference to a hash. It should
+be the same list of types as <code>C_constant</code> was given.
+[Otherwise <code>XS_constant</code> and <code>C_constant</code> may have different ideas about
+the number of parameters passed to the C function <code>constant</code>]</p>
+<p>You can call the perl visible subroutine something other than <code>constant</code> if
+you give the parameter <em>XS_SUBNAME</em>. The C subroutine it calls defaults to
+the name of the perl visible subroutine, unless you give the parameter
+<em>C_SUBNAME</em>.</p>
+</dd>
+<dt><strong><a name="autoload" class="item">autoload PACKAGE, VERSION, AUTOLOADER</a></strong></dt>
+
+<dd>
+<p>A function to generate the AUTOLOAD subroutine for the module <em>PACKAGE</em>
+<em>VERSION</em> is the perl version the code should be backwards compatible with.
+It defaults to the version of perl running the subroutine.  If <em>AUTOLOADER</em>
+is true, the AUTOLOAD subroutine falls back on AutoLoader::AUTOLOAD for all
+names that the <code>constant()</code> routine doesn't recognise.</p>
+</dd>
+<dt><strong><a name="writemakefilesnippet" class="item">WriteMakefileSnippet</a></strong></dt>
+
+<dd>
+<p>WriteMakefileSnippet ATTRIBUTE =&gt; VALUE [, ...]</p>
+<p>A function to generate perl code for Makefile.PL that will regenerate
+the constant subroutines.  Parameters are named as passed to <code>WriteConstants</code>,
+with the addition of <code>INDENT</code> to specify the number of leading spaces
+(default 2).</p>
+<p>Currently only <code>INDENT</code>, <a href="#name"><code>NAME</code></a>, <a href="#default_type"><code>DEFAULT_TYPE</code></a>, <a href="#names"><code>NAMES</code></a>, <a href="#c_file"><code>C_FILE</code></a> and
+<a href="#xs_file"><code>XS_FILE</code></a> are recognised.</p>
+</dd>
+<dt><strong><a name="writeconstants_attribute_value" class="item">WriteConstants ATTRIBUTE =&gt; VALUE [, ...]</a></strong></dt>
+
+<dd>
+<p>Writes a file of C code and a file of XS code which you should <code>#include</code>
+and <code>INCLUDE</code> in the C and XS sections respectively of your module's XS
+code.  You probably want to do this in your <code>Makefile.PL</code>, so that you can
+easily edit the list of constants without touching the rest of your module.
+The attributes supported are</p>
+<dl>
+<dt><strong><a name="name5" class="item">NAME</a></strong></dt>
+
+<dd>
+<p>Name of the module.  This must be specified</p>
+</dd>
+<dt><strong><a name="default_type" class="item">DEFAULT_TYPE</a></strong></dt>
+
+<dd>
+<p>The default type for the constants.  If not specified <a href="#iv"><code>IV</code></a> is assumed.</p>
+</dd>
+<dt><strong><a name="breakout_at" class="item">BREAKOUT_AT</a></strong></dt>
+
+<dd>
+<p>The names of the constants are grouped by length.  Generate child subroutines
+for each group with this number or more names in.</p>
+</dd>
+<dt><strong><a name="names" class="item">NAMES</a></strong></dt>
+
+<dd>
+<p>An array of constants' names, either scalars containing names, or hashrefs
+as detailed in <a href="#c_constant">C_constant</a>.</p>
+</dd>
+<dt><strong><a name="proxysubs" class="item">PROXYSUBS</a></strong></dt>
+
+<dd>
+<p>If true, uses proxy subs. See <a href="../../lib/ExtUtils/Constant/ProxySubs.html">the ExtUtils::Constant::ProxySubs manpage</a>.</p>
+</dd>
+<dt><strong><a name="c_fh" class="item">C_FH</a></strong></dt>
+
+<dd>
+<p>A filehandle to write the C code to.  If not given, then <em>C_FILE</em> is opened
+for writing.</p>
+</dd>
+<dt><strong><a name="c_file" class="item">C_FILE</a></strong></dt>
+
+<dd>
+<p>The name of the file to write containing the C code.  The default is
+<code>const-c.inc</code>.  The <code>-</code> in the name ensures that the file can't be
+mistaken for anything related to a legitimate perl package name, and
+not naming the file <a href="../../lib/pods/perlrun.html#c"><code>.c</code></a> avoids having to override Makefile.PL's
+<code>.xs</code> to <a href="../../lib/pods/perlrun.html#c"><code>.c</code></a> rules.</p>
+</dd>
+<dt><strong><a name="xs_fh" class="item">XS_FH</a></strong></dt>
+
+<dd>
+<p>A filehandle to write the XS code to.  If not given, then <em>XS_FILE</em> is opened
+for writing.</p>
+</dd>
+<dt><strong><a name="xs_file" class="item">XS_FILE</a></strong></dt>
+
+<dd>
+<p>The name of the file to write containing the XS code.  The default is
+<code>const-xs.inc</code>.</p>
+</dd>
+<dt><strong><a name="xs_subname" class="item">XS_SUBNAME</a></strong></dt>
+
+<dd>
+<p>The perl visible name of the XS subroutine generated which will return the
+constants. The default is <code>constant</code>.</p>
+</dd>
+<dt><strong><a name="c_subname" class="item">C_SUBNAME</a></strong></dt>
+
+<dd>
+<p>The name of the C subroutine generated which will return the constants.
+The default is <em>XS_SUBNAME</em>.  Child subroutines have <code>_</code> and the name
+length appended, so constants with 10 character names would be in
+<code>constant_10</code> with the default <em>XS_SUBNAME</em>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Nicholas Clark &lt;<a href="mailto:nick@ccl4.org">nick@ccl4.org</a>&gt; based on the code in <code>h2xs</code> by Larry Wall and
+others</p>
+
+</body>
+
+</html>

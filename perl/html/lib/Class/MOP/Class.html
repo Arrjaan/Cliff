@@ -1,0 +1,743 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Class::MOP::Class - Class Meta Object</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Class::MOP::Class - Class Meta Object</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#inheritance">INHERITANCE</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#class_construction">Class construction</a></li>
+		<li><a href="#object_instance_construction_and_cloning">Object instance construction and cloning</a></li>
+		<li><a href="#informational_predicates">Informational predicates</a></li>
+		<li><a href="#inheritance_relationships">Inheritance Relationships</a></li>
+		<li><a href="#method_introspection_and_creation">Method introspection and creation</a></li>
+		<li><a href="#attribute_introspection_and_creation">Attribute introspection and creation</a></li>
+		<li><a href="#class_immutability">Class Immutability</a></li>
+		<li><a href="#method_modifiers">Method Modifiers</a></li>
+		<ul>
+
+			<li><a href="#how_method_modifiers_work">How method modifiers work?</a></li>
+			<li><a href="#what_is_the_performance_impact">What is the performance impact?</a></li>
+		</ul>
+
+		<li><a href="#introspection">Introspection</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Class::MOP::Class - Class Meta Object</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="comment"># assuming that class Foo</span>
+  <span class="comment"># has been defined, you can</span>
+</pre>
+<pre>
+  <span class="comment"># use this for introspection ...</span>
+</pre>
+<pre>
+  <span class="comment"># add a method to Foo ...</span>
+  <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">-&gt;</span><span class="variable">add_method</span><span class="operator">(</span> <span class="string">'bar'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{...}</span> <span class="operator">)</span>
+</pre>
+<pre>
+  # get a list of all the classes searched
+  # the method dispatcher in the correct order
+  Foo-&gt;meta-&gt;class_precedence_list()</pre>
+<pre>
+  <span class="comment"># remove a method from Foo</span>
+  <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">-&gt;</span><span class="variable">remove_method</span><span class="operator">(</span><span class="string">'bar'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment"># or use this to actually create classes ...</span>
+</pre>
+<pre>
+  <span class="variable">Class::MOP::Class</span><span class="operator">-&gt;</span><span class="variable">create</span><span class="operator">(</span>
+      <span class="string">'Bar'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+          <span class="string">version</span>      <span class="operator">=&gt;</span> <span class="string">'0.01'</span><span class="operator">,</span>
+          <span class="string">superclasses</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'Foo'</span><span class="operator">]</span><span class="operator">,</span>
+          <span class="string">attributes</span>   <span class="operator">=&gt;</span> <span class="operator">[</span>
+              <span class="variable">Class::MOP::Attribute</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'$bar'</span><span class="operator">),</span>
+              <span class="variable">Class::MOP::Attribute</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'$baz'</span><span class="operator">),</span>
+          <span class="operator">]</span><span class="operator">,</span>
+          <span class="string">methods</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+              <span class="string">calculate_bar</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{...},</span>
+              <span class="string">construct_baz</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{...}</span>
+          <span class="operator">}</span>
+      <span class="operator">)</span>
+  <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The Class Protocol is the largest and most complex part of the
+Class::MOP meta-object protocol. It controls the introspection and
+manipulation of Perl 5 classes, and it can create them as well. The
+best way to understand what this module can do is to read the
+documentation for each of its methods.</p>
+<p>
+</p>
+<hr />
+<h1><a name="inheritance">INHERITANCE</a></h1>
+<p><code>Class::MOP::Class</code> is a subclass of <a href="../../../lib/Class/MOP/Module.html">the Class::MOP::Module manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="class_construction">Class construction</a></h2>
+<p>These methods all create new <code>Class::MOP::Class</code> objects. These
+objects can represent existing classes or they can be used to create
+new classes from scratch.</p>
+<p>The metaclass object for a given class is a singleton. If you attempt
+to create a metaclass for the same class twice, you will just get the
+existing object.</p>
+<dl>
+<dt><strong><a name="create" class="item"><strong>Class::MOP::Class-</strong>create($package_name, %options) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method creates a new <code>Class::MOP::Class</code> object with the given
+package name. It accepts a number of options:</p>
+<ul>
+<li><strong><a name="version" class="item">version</a></strong>
+
+<p>An optional version number for the newly created package.</p>
+</li>
+<li><strong><a name="authority" class="item">authority</a></strong>
+
+<p>An optional authority for the newly created package.</p>
+</li>
+<li><strong><a name="superclasses" class="item">superclasses</a></strong>
+
+<p>An optional array reference of superclass names.</p>
+</li>
+<li><strong><a name="methods" class="item">methods</a></strong>
+
+<p>An optional hash reference of methods for the class. The keys of the
+hash reference are method names and values are subroutine references.</p>
+</li>
+<li><strong><a name="attributes" class="item">attributes</a></strong>
+
+<p>An optional array reference of <a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a> objects.</p>
+</li>
+<li><strong><a name="meta_name" class="item">meta_name</a></strong>
+
+<p>Specifies the name to install the <a href="#meta"><code>meta</code></a> method for this class under.
+If it is not passed, <a href="#meta"><code>meta</code></a> is assumed, and if <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is explicitly
+given, no meta method will be installed.</p>
+</li>
+<li><strong><a name="weaken" class="item">weaken</a></strong>
+
+<p>If true, the metaclass that is stored in the global cache will be a
+weak reference.</p>
+<p>Classes created in this way are destroyed once the metaclass they are
+attached to goes out of scope, and will be removed from Perl's internal
+symbol table.</p>
+<p>All instances of a class with a weakened metaclass keep a special
+reference to the metaclass object, which prevents the metaclass from
+going out of scope while any instances exist.</p>
+<p>This only works if the instance is based on a hash reference, however.</p>
+</li>
+</ul>
+</dd>
+<dt><strong><a name="create_anon_class" class="item"><strong>Class::MOP::Class-</strong><code>create_anon_class(%options)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method works just like <a href="#create"><code>Class::MOP::Class-&gt;create</code></a> but it
+creates an &quot;anonymous&quot; class. In fact, the class does have a name, but
+that name is a unique name generated internally by this module.</p>
+<p>It accepts the same <a href="#superclasses"><code>superclasses</code></a>, <a href="#methods"><code>methods</code></a>, and <a href="#attributes"><code>attributes</code></a>
+parameters that <a href="#create"><code>create</code></a> accepts.</p>
+<p>Anonymous classes default to <code>weaken =&gt; 1</code>, although this can be
+overridden.</p>
+</dd>
+<dt><strong><a name="initialize" class="item"><strong>Class::MOP::Class-</strong>initialize($package_name, %options) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method will initialize a <code>Class::MOP::Class</code> object for the
+named package. Unlike <a href="#create"><code>create</code></a>, this method <em>will not</em> create a new
+class.</p>
+<p>The purpose of this method is to retrieve a <code>Class::MOP::Class</code>
+object for introspecting an existing class.</p>
+<p>If an existing <code>Class::MOP::Class</code> object exists for the named
+package, it will be returned, and any options provided will be
+ignored!</p>
+<p>If the object does not yet exist, it will be created.</p>
+<p>The valid options that can be passed to this method are
+<a href="#attribute_metaclass"><code>attribute_metaclass</code></a>, <a href="#method_metaclass"><code>method_metaclass</code></a>,
+<a href="#wrapped_method_metaclass"><code>wrapped_method_metaclass</code></a>, and <a href="#instance_metaclass"><code>instance_metaclass</code></a>. These are all
+optional, and default to the appropriate class in the <code>Class::MOP</code>
+distribution.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="object_instance_construction_and_cloning">Object instance construction and cloning</a></h2>
+<p>These methods are all related to creating and/or cloning object
+instances.</p>
+<dl>
+<dt><strong><a name="clone_object" class="item"><strong>$metaclass-</strong>clone_object($instance, %params) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method clones an existing object instance. Any parameters you
+provide are will override existing attribute values in the object.</p>
+<p>This is a convenience method for cloning an object instance, then
+blessing it into the appropriate package.</p>
+<p>You could implement a clone method in your class, using this method:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> clone </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">%params</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">-&gt;</span><span class="variable">clone_object</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">%params</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="rebless_instance" class="item"><strong>$metaclass-</strong>rebless_instance($instance, %params) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method changes the class of <code>$instance</code> to the metaclass's class.</p>
+<p>You can only rebless an instance into a subclass of its current
+class. If you pass any additional parameters, these will be treated
+like constructor parameters and used to initialize the object's
+attributes. Any existing attributes that are already set will be
+overwritten.</p>
+<p>Before reblessing the instance, this method will call
+<code>rebless_instance_away</code> on the instance's current metaclass. This method
+will be passed the instance, the new metaclass, and any parameters
+specified to <a href="#rebless_instance"><code>rebless_instance</code></a>. By default, <code>rebless_instance_away</code>
+does nothing; it is merely a hook.</p>
+</dd>
+<dt><strong><a name="rebless_instance_back" class="item"><strong>$metaclass-</strong><code>rebless_instance_back($instance)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Does the same thing as <a href="#rebless_instance"><code>rebless_instance</code></a>, except that you can only
+rebless an instance into one of its superclasses. Any attributes that
+do not exist in the superclass will be deinitialized.</p>
+<p>This is a much more dangerous operation than <a href="#rebless_instance"><code>rebless_instance</code></a>,
+especially when multiple inheritance is involved, so use this carefully!</p>
+</dd>
+<dt><strong><a name="new_object" class="item"><strong>$metaclass-</strong><code>new_object(%params)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method is used to create a new object of the metaclass's
+class. Any parameters you provide are used to initialize the
+instance's attributes. A special <code>__INSTANCE__</code> key can be passed to
+provide an already generated instance, rather than having Class::MOP
+generate it for you. This is mostly useful for using Class::MOP with
+foreign classes which generate instances using their own constructors.</p>
+</dd>
+<dt><strong><a name="instance_metaclass" class="item"><strong>$metaclass-</strong>instance_metaclass &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns the class name of the instance metaclass. See
+<a href="../../../lib/Class/MOP/Instance.html">the Class::MOP::Instance manpage</a> for more information on the instance
+metaclass.</p>
+</dd>
+<dt><strong><a name="get_meta_instance" class="item"><strong>$metaclass-</strong>get_meta_instance &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns an instance of the <a href="#instance_metaclass"><code>instance_metaclass</code></a> to be used in the
+construction of a new instance of the class.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="informational_predicates">Informational predicates</a></h2>
+<p>These are a few predicate methods for asking information about the
+class itself.</p>
+<dl>
+<dt><strong><a name="is_anon_class" class="item"><strong>$metaclass-</strong>is_anon_class &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns true if the class was created by calling <code>&lt;
+Class::MOP::Class-</code>create_anon_class &gt;&gt;.</p>
+</dd>
+<dt><strong><a name="is_mutable" class="item"><strong>$metaclass-</strong>is_mutable &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns true if the class is still mutable.</p>
+</dd>
+<dt><strong><a name="is_immutable" class="item"><strong>$metaclass-</strong>is_immutable &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns true if the class has been made immutable.</p>
+</dd>
+<dt><strong><a name="is_pristine" class="item"><strong>$metaclass-</strong>is_pristine &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>A class is <em>not</em> pristine if it has non-inherited attributes or if it
+has any generated methods.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="inheritance_relationships">Inheritance Relationships</a></h2>
+<dl>
+<dt><strong><strong>$metaclass-</strong><code>superclasses(@superclasses)</code> &gt;&gt;</strong></dt>
+
+<dd>
+<p>This is a read-write accessor which represents the superclass
+relationships of the metaclass's class.</p>
+<p>This is basically sugar around getting and setting <code>@ISA</code>.</p>
+</dd>
+<dt><strong><a name="class_precedence_list" class="item"><strong>$metaclass-</strong>class_precedence_list &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns a list of all of the class's ancestor classes. The
+classes are returned in method dispatch order.</p>
+</dd>
+<dt><strong><a name="linearized_isa" class="item"><strong>$metaclass-</strong>linearized_isa &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns a list based on <a href="#class_precedence_list"><code>class_precedence_list</code></a> but with all
+duplicates removed.</p>
+</dd>
+<dt><strong><a name="subclasses" class="item"><strong>$metaclass-</strong>subclasses &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns a list of all subclasses for this class, even indirect
+subclasses.</p>
+</dd>
+<dt><strong><a name="direct_subclasses" class="item"><strong>$metaclass-</strong>direct_subclasses &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This returns a list of immediate subclasses for this class, which does not
+include indirect subclasses.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="method_introspection_and_creation">Method introspection and creation</a></h2>
+<p>These methods allow you to introspect a class's methods, as well as
+add, remove, or change methods.</p>
+<p>Determining what is truly a method in a Perl 5 class requires some
+heuristics (aka guessing).</p>
+<p>Methods defined outside the package with a fully qualified name (<code>sub
+Package::name { ... }</code>) will be included. Similarly, methods named
+with a fully qualified name using <a href="../../../lib/Sub/Name.html">the Sub::Name manpage</a> are also included.</p>
+<p>However, we attempt to ignore imported functions.</p>
+<p>Ultimately, we are using heuristics to determine what truly is a
+method in a class, and these heuristics may get the wrong answer in
+some edge cases. However, for most &quot;normal&quot; cases the heuristics work
+correctly.</p>
+<dl>
+<dt><strong><a name="get_method" class="item"><strong>$metaclass-</strong><code>get_method($method_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a <a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a> for the specified
+<code>$method_name</code>. If the class does not have the specified method, it
+returns <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a></p>
+</dd>
+<dt><strong><a name="has_method" class="item"><strong>$metaclass-</strong><code>has_method($method_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns a boolean indicating whether or not the class defines the
+named method. It does not include methods inherited from parent
+classes.</p>
+</dd>
+<dt><strong><a name="get_method_list" class="item"><strong>$metaclass-</strong>get_method_list &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a list of method <em>names</em> for all methods defined in
+this class.</p>
+</dd>
+<dt><strong><a name="add_method" class="item"><strong>$metaclass-</strong>add_method($method_name, $method) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method takes a method name and a subroutine reference, and adds
+the method to the class.</p>
+<p>The subroutine reference can be a <a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a>, and you are
+strongly encouraged to pass a meta method object instead of a code
+reference. If you do so, that object gets stored as part of the
+class's method map directly. If not, the meta information will have to
+be recreated later, and may be incorrect.</p>
+<p>If you provide a method object, this method will clone that object if
+the object's package name does not match the class name. This lets us
+track the original source of any methods added from other classes
+(notably Moose roles).</p>
+</dd>
+<dt><strong><a name="remove_method" class="item"><strong>$metaclass-</strong><code>remove_method($method_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Remove the named method from the class. This method returns the
+<a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a> object for the method.</p>
+</dd>
+<dt><strong><a name="method_metaclass" class="item"><strong>$metaclass-</strong>method_metaclass &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns the class name of the method metaclass, see
+<a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a> for more information on the method metaclass.</p>
+</dd>
+<dt><strong><a name="wrapped_method_metaclass" class="item"><strong>$metaclass-</strong>wrapped_method_metaclass &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns the class name of the wrapped method metaclass, see
+<a href="../../../lib/Class/MOP/Method/Wrapped.html">the Class::MOP::Method::Wrapped manpage</a> for more information on the wrapped
+method metaclass.</p>
+</dd>
+<dt><strong><a name="get_all_methods" class="item"><strong>$metaclass-</strong>get_all_methods &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will traverse the inheritance hierarchy and return a list of all
+the <a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a> objects for this class and its parents.</p>
+</dd>
+<dt><strong><a name="find_method_by_name" class="item"><strong>$metaclass-</strong><code>find_method_by_name($method_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a <a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a> for the specified
+<code>$method_name</code>. If the class does not have the specified method, it
+returns <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a></p>
+<p>Unlike <a href="#get_method"><code>get_method</code></a>, this method <em>will</em> look for the named method in
+superclasses.</p>
+</dd>
+<dt><strong><a name="get_all_method_names" class="item"><strong>$metaclass-</strong>get_all_method_names &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a list of method <em>names</em> for all of this class's
+methods, including inherited methods.</p>
+</dd>
+<dt><strong><a name="find_all_methods_by_name" class="item"><strong>$metaclass-</strong><code>find_all_methods_by_name($method_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method looks for the named method in the class and all of its
+parents. It returns every matching method it finds in the inheritance
+tree, so it returns a list of methods.</p>
+<p>Each method is returned as a hash reference with three keys. The keys
+are <code>name</code>, <code>class</code>, and <code>code</code>. The <code>code</code> key has a
+<a href="../../../lib/Class/MOP/Method.html">the Class::MOP::Method manpage</a> object as its value.</p>
+<p>The list of methods is distinct.</p>
+</dd>
+<dt><strong><a name="find_next_method_by_name" class="item"><strong>$metaclass-</strong><code>find_next_method_by_name($method_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method returns the first method in any superclass matching the
+given name. It is effectively the method that <code>SUPER::$method_name</code>
+would dispatch to.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="attribute_introspection_and_creation">Attribute introspection and creation</a></h2>
+<p>Because Perl 5 does not have a core concept of attributes in classes,
+we can only return information about attributes which have been added
+via this class's methods. We cannot discover information about
+attributes which are defined in terms of &quot;regular&quot; Perl 5 methods.</p>
+<dl>
+<dt><strong><a name="get_attribute" class="item"><strong>$metaclass-</strong><code>get_attribute($attribute_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a <a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a> for the specified
+<code>$attribute_name</code>. If the class does not have the specified
+attribute, it returns <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>NOTE that get_attribute does not search superclasses, for that you
+need to use <a href="#find_attribute_by_name"><code>find_attribute_by_name</code></a>.</p>
+</dd>
+<dt><strong><a name="has_attribute" class="item"><strong>$metaclass-</strong><code>has_attribute($attribute_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns a boolean indicating whether or not the class defines the
+named attribute. It does not include attributes inherited from parent
+classes.</p>
+</dd>
+<dt><strong><a name="get_attribute_list" class="item"><strong>$metaclass-</strong>get_attribute_list &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a list of attributes <em>names</em> for all attributes
+defined in this class.  Note that this operates on the current class
+only, it does not traverse the inheritance hierarchy.</p>
+</dd>
+<dt><strong><a name="get_all_attributes" class="item"><strong>$metaclass-</strong>get_all_attributes &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will traverse the inheritance hierarchy and return a list of all
+the <a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a> objects for this class and its parents.</p>
+</dd>
+<dt><strong><a name="find_attribute_by_name" class="item"><strong>$metaclass-</strong><code>find_attribute_by_name($attribute_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a <a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a> for the specified
+<code>$attribute_name</code>. If the class does not have the specified
+attribute, it returns <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>Unlike <a href="#get_attribute"><code>get_attribute</code></a>, this attribute <em>will</em> look for the named
+attribute in superclasses.</p>
+</dd>
+<dt><strong><a name="add_attribute" class="item"><strong>$metaclass-</strong>add_attribute(...) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method accepts either an existing <a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a>
+object or parameters suitable for passing to that class's <code>new</code>
+method.</p>
+<p>The attribute provided will be added to the class.</p>
+<p>Any accessor methods defined by the attribute will be added to the
+class when the attribute is added.</p>
+<p>If an attribute of the same name already exists, the old attribute
+will be removed first.</p>
+</dd>
+<dt><strong><a name="remove_attribute" class="item"><strong>$metaclass-</strong><code>remove_attribute($attribute_name)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will remove the named attribute from the class, and
+<a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a> object.</p>
+<p>Removing an attribute also removes any accessor methods defined by the
+attribute.</p>
+<p>However, note that removing an attribute will only affect <em>future</em>
+object instances created for this class, not existing instances.</p>
+</dd>
+<dt><strong><a name="attribute_metaclass" class="item"><strong>$metaclass-</strong>attribute_metaclass &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns the class name of the attribute metaclass for this class. By
+default, this is <a href="../../../lib/Class/MOP/Attribute.html">the Class::MOP::Attribute manpage</a>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="class_immutability">Class Immutability</a></h2>
+<p>Making a class immutable &quot;freezes&quot; the class definition. You can no
+longer call methods which alter the class, such as adding or removing
+methods or attributes.</p>
+<p>Making a class immutable lets us optimize the class by inlining some
+methods, and also allows us to optimize some methods on the metaclass
+object itself.</p>
+<p>After immutabilization, the metaclass object will cache most informational
+methods that returns information about methods or attributes. Methods which
+would alter the class, such as <a href="#add_attribute"><code>add_attribute</code></a> and <a href="#add_method"><code>add_method</code></a>, will
+throw an error on an immutable metaclass object.</p>
+<p>The immutabilization system in <a href="../../../lib/Moose.html">the Moose manpage</a> takes much greater advantage
+of the inlining features than Class::MOP itself does.</p>
+<dl>
+<dt><strong><a name="make_immutable" class="item"><strong>$metaclass-</strong><code>make_immutable(%options)</code> &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This method will create an immutable transformer and use it to make
+the class and its metaclass object immutable.</p>
+<p>This method accepts the following options:</p>
+<ul>
+<li><strong><a name="inline_accessors" class="item">inline_accessors</a></strong>
+
+</li>
+<li><strong><a name="inline_constructor" class="item">inline_constructor</a></strong>
+
+</li>
+<li><strong><a name="inline_destructor" class="item">inline_destructor</a></strong>
+
+<p>These are all booleans indicating whether the specified method(s)
+should be inlined.</p>
+<p>By default, accessors and the constructor are inlined, but not the
+destructor.</p>
+</li>
+<li><strong><a name="immutable_trait" class="item">immutable_trait</a></strong>
+
+<p>The name of a class which will be used as a parent class for the
+metaclass object being made immutable. This &quot;trait&quot; implements the
+post-immutability functionality of the metaclass (but not the
+transformation itself).</p>
+<p>This defaults to <a href="../../../lib/Class/MOP/Class/Immutable/Trait.html">the Class::MOP::Class::Immutable::Trait manpage</a>.</p>
+</li>
+<li><strong><a name="constructor_name" class="item">constructor_name</a></strong>
+
+<p>This is the constructor method name. This defaults to &quot;new&quot;.</p>
+</li>
+<li><strong><a name="constructor_class" class="item">constructor_class</a></strong>
+
+<p>The name of the method metaclass for constructors. It will be used to
+generate the inlined constructor. This defaults to
+&quot;Class::MOP::Method::Constructor&quot;.</p>
+</li>
+<li><strong><a name="replace_constructor" class="item">replace_constructor</a></strong>
+
+<p>This is a boolean indicating whether an existing constructor should be
+replaced when inlining a constructor. This defaults to false.</p>
+</li>
+<li><strong><a name="destructor_class" class="item">destructor_class</a></strong>
+
+<p>The name of the method metaclass for destructors. It will be used to
+generate the inlined destructor. This defaults to
+&quot;Class::MOP::Method::Denstructor&quot;.</p>
+</li>
+<li><strong><a name="replace_destructor" class="item">replace_destructor</a></strong>
+
+<p>This is a boolean indicating whether an existing destructor should be
+replaced when inlining a destructor. This defaults to false.</p>
+</li>
+</ul>
+</dd>
+<dt><strong><a name="immutable_options" class="item"><strong>$metaclass-</strong>immutable_options &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns a hash of the options used when making the class immutable, including
+both defaults and anything supplied by the user in the call to <code>&lt;
+$metaclass-</code>make_immutable &gt;&gt;. This is useful if you need to temporarily make
+a class mutable and then restore immutability as it was before.</p>
+</dd>
+<dt><strong><a name="make_mutable" class="item"><strong>$metaclass-</strong>make_mutable &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Calling this method reverse the immutabilization transformation.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="method_modifiers">Method Modifiers</a></h2>
+<p>Method modifiers are hooks which allow a method to be wrapped with
+<em>before</em>, <em>after</em> and <em>around</em> method modifiers. Every time a
+method is called, its modifiers are also called.</p>
+<p>A class can modify its own methods, as well as methods defined in
+parent classes.</p>
+<p>
+</p>
+<h3><a name="how_method_modifiers_work">How method modifiers work?</a></h3>
+<p>Method modifiers work by wrapping the original method and then
+replacing it in the class's symbol table. The wrappers will handle
+calling all the modifiers in the appropriate order and preserving the
+calling context for the original method.</p>
+<p>The return values of <code>before</code> and <code>after</code> modifiers are
+ignored. This is because their purpose is <strong>not</strong> to filter the input
+and output of the primary method (this is done with an <em>around</em>
+modifier).</p>
+<p>This may seem like an odd restriction to some, but doing this allows
+for simple code to be added at the beginning or end of a method call
+without altering the function of the wrapped method or placing any
+extra responsibility on the code of the modifier.</p>
+<p>Of course if you have more complex needs, you can use the <code>around</code>
+modifier which allows you to change both the parameters passed to the
+wrapped method, as well as its return value.</p>
+<p>Before and around modifiers are called in last-defined-first-called
+order, while after modifiers are called in first-defined-first-called
+order. So the call tree might looks something like this:</p>
+<pre>
+  before 2
+   before 1
+    around 2
+     around 1
+      primary
+     around 1
+    around 2
+   after 1
+  after 2</pre>
+<p>
+</p>
+<h3><a name="what_is_the_performance_impact">What is the performance impact?</a></h3>
+<p>Of course there is a performance cost associated with method
+modifiers, but we have made every effort to make that cost directly
+proportional to the number of modifier features you use.</p>
+<p>The wrapping method does its best to <strong>only</strong> do as much work as it
+absolutely needs to. In order to do this we have moved some of the
+performance costs to set-up time, where they are easier to amortize.</p>
+<p>All this said, our benchmarks have indicated the following:</p>
+<pre>
+  simple wrapper with no modifiers             100% slower
+  simple wrapper with simple before modifier   400% slower
+  simple wrapper with simple after modifier    450% slower
+  simple wrapper with simple around modifier   500-550% slower
+  simple wrapper with all 3 modifiers          1100% slower</pre>
+<p>These numbers may seem daunting, but you must remember, every feature
+comes with some cost. To put things in perspective, just doing a
+simple <code>AUTOLOAD</code> which does nothing but extract the name of the
+method called and return it costs about 400% over a normal method
+call.</p>
+<dl>
+<dt><strong><a name="add_before_method_modifier" class="item"><strong>$metaclass-</strong>add_before_method_modifier($method_name, $code) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This wraps the specified method with the supplied subroutine
+reference. The modifier will be called as a method itself, and will
+receive the same arguments as are passed to the method.</p>
+<p>When the modifier exits, the wrapped method will be called.</p>
+<p>The return value of the modifier will be ignored.</p>
+</dd>
+<dt><strong><a name="add_after_method_modifier" class="item"><strong>$metaclass-</strong>add_after_method_modifier($method_name, $code) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This wraps the specified method with the supplied subroutine
+reference. The modifier will be called as a method itself, and will
+receive the same arguments as are passed to the method.</p>
+<p>When the wrapped methods exits, the modifier will be called.</p>
+<p>The return value of the modifier will be ignored.</p>
+</dd>
+<dt><strong><a name="add_around_method_modifier" class="item"><strong>$metaclass-</strong>add_around_method_modifier($method_name, $code) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This wraps the specified method with the supplied subroutine
+reference.</p>
+<p>The first argument passed to the modifier will be a subroutine
+reference to the wrapped method. The second argument is the object,
+and after that come any arguments passed when the method is called.</p>
+<p>The around modifier can choose to call the original method, as well as
+what arguments to pass if it does so.</p>
+<p>The return value of the modifier is what will be seen by the caller.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="introspection">Introspection</a></h2>
+<dl>
+<dt><strong><a name="meta" class="item"><strong>Class::MOP::Class-</strong>meta &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>This will return a <a href="../../../lib/Class/MOP/Class.html">the Class::MOP::Class manpage</a> instance for this class.</p>
+<p>It should also be noted that <a href="../../../lib/Class/MOP.html">the Class::MOP manpage</a> will actually bootstrap
+this module by installing a number of attribute meta-objects into its
+metaclass.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,223 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>DBI::ProfileDumper - profile DBI usage and output data to a file</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>DBI::ProfileDumper - profile DBI usage and output data to a file</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#flush_to_disk">flush_to_disk</a></li>
+		<li><a href="#empty">empty</a></li>
+		<li><a href="#filename">filename</a></li>
+	</ul>
+
+	<li><a href="#data_format">DATA FORMAT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>DBI::ProfileDumper - profile DBI usage and output data to a file</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>To profile an existing program using DBI::ProfileDumper, set the
+DBI_PROFILE environment variable and run your program as usual.  For
+example, using bash:</p>
+<pre>
+  DBI_PROFILE=2/DBI::ProfileDumper program.pl</pre>
+<p>Then analyze the generated file (<em class="file">dbi.prof</em>) with <a href="../../bin/dbiprof.html">dbiprof</a>:</p>
+<pre>
+  dbiprof</pre>
+<p>You can also activate DBI::ProfileDumper from within your code:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">DBI</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment"># profile with default path (2) and output file (dbi.prof)</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"!Statement/DBI::ProfileDumper"</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment"># same thing, spelled out</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"!Statement/DBI::ProfileDumper/File:dbi.prof"</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment"># another way to say it</span>
+  <span class="keyword">use</span> <span class="variable">DBI::ProfileDumper</span><span class="operator">;</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">DBI::ProfileDumper</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+                        <span class="string">Path</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'!Statement'</span> <span class="operator">]</span>
+                        <span class="string">File</span> <span class="operator">=&gt;</span> <span class="string">'dbi.prof'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment"># using a custom path</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">DBI::ProfileDumper</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+      <span class="string">Path</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">"foo"</span><span class="operator">,</span> <span class="string">"bar"</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="string">File</span> <span class="operator">=&gt;</span> <span class="string">'dbi.prof'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>DBI::ProfileDumper is a subclass of <a href="../../lib/DBI/Profile.html">DBI::Profile</a> which
+dumps profile data to disk instead of printing a summary to your
+screen.  You can then use <a href="../../bin/dbiprof.html">dbiprof</a> to analyze the data in
+a number of interesting ways, or you can roll your own analysis using
+<a href="../../lib/DBI/ProfileData.html">DBI::ProfileData</a>.</p>
+<p><strong>NOTE:</strong> For Apache/mod_perl applications, use
+<a href="../../lib/DBI/ProfileDumper/Apache.html">DBI::ProfileDumper::Apache</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>One way to use this module is just to enable it in your <code>$dbh</code>:</p>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"1/DBI::ProfileDumper"</span><span class="operator">;</span>
+</pre>
+<p>This will write out profile data by statement into a file called
+<em class="file">dbi.prof</em>.  If you want to modify either of these properties, you
+can construct the DBI::ProfileDumper object yourself:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">DBI::ProfileDumper</span><span class="operator">;</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">DBI::ProfileDumper</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+      <span class="string">Path</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'!Statement'</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="string">File</span> <span class="operator">=&gt;</span> <span class="string">'dbi.prof'</span>
+  <span class="operator">);</span>
+</pre>
+<p>The <code>Path</code> option takes the same values as in
+<a href="../../lib/DBI/Profile.html">the DBI::Profile manpage</a>.  The <code>File</code> option gives the name of the
+file where results will be collected.  If it already exists it will be
+overwritten.</p>
+<p>You can also activate this module by setting the DBI_PROFILE
+environment variable:</p>
+<pre>
+  <span class="variable">$ENV</span><span class="operator">{</span><span class="string">DBI_PROFILE</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"!Statement/DBI::ProfileDumper"</span><span class="operator">;</span>
+</pre>
+<p>This will cause all DBI handles to share the same profiling object.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>The following methods are available to be called using the profile
+object.  You can get access to the profile object from the Profile key
+in any DBI handle:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$profile</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Profile</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="flush_to_disk">flush_to_disk</a></h2>
+<pre>
+  $profile-&gt;flush_to_disk()</pre>
+<p>Flushes all collected profile data to disk and empties the Data hash.  Returns
+the filename writen to.  If no profile data has been collected then the file is
+not written and <code>flush_to_disk()</code> returns undef.</p>
+<p>The file is locked while it's being written. A process 'consuming' the files
+while they're being written to, should rename the file first, then lock it,
+then read it, then close and delete it. The <code>DeleteFiles</code> option to
+<a href="../../lib/DBI/ProfileData.html">the DBI::ProfileData manpage</a> does the right thing.</p>
+<p>This method may be called multiple times during a program run.</p>
+<p>
+</p>
+<h2><a name="empty">empty</a></h2>
+<pre>
+  $profile-&gt;empty()</pre>
+<p>Clears the Data hash without writing to disk.</p>
+<p>
+</p>
+<h2><a name="filename">filename</a></h2>
+<pre>
+  <span class="variable">$filename</span> <span class="operator">=</span> <span class="variable">$profile</span><span class="operator">-&gt;</span><span class="variable">filename</span><span class="operator">();</span>
+</pre>
+<p>Get or set the filename.</p>
+<p>The filename can be specified as a CODE reference, in which case the referenced
+code should return the filename to be used. The code will be called with the
+profile object as its first argument.</p>
+<p>
+</p>
+<hr />
+<h1><a name="data_format">DATA FORMAT</a></h1>
+<p>The data format written by DBI::ProfileDumper starts with a header
+containing the version number of the module used to generate it.  Then
+a block of variable declarations describes the profile.  After two
+newlines, the profile data forms the body of the file.  For example:</p>
+<pre>
+  DBI::ProfileDumper 2.003762
+  Path = [ '!Statement', '!MethodName' ]
+  Program = t/42profile_data.t</pre>
+<pre>
+  + 1 SELECT name FROM users WHERE id = ?
+  + 2 prepare
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 2 execute
+  1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 2 fetchrow_hashref
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 1 UPDATE users SET name = ? WHERE id = ?
+  + 2 prepare
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 2 execute
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576</pre>
+<p>The lines beginning with <code>+</code> signs signify keys.  The number after
+the <code>+</code> sign shows the nesting level of the key.  Lines beginning
+with <code>=</code> are the actual profile data, in the same order as
+in DBI::Profile.</p>
+<p>Note that the same path may be present multiple times in the data file
+since <a href="../../lib/pods/perlfunc.html#format"><code>format()</code></a> may be called more than once.  When read by
+DBI::ProfileData the data points will be merged to produce a single
+data set for each distinct path.</p>
+<p>The key strings are transformed in three ways.  First, all backslashes
+are doubled.  Then all newlines and carriage-returns are transformed
+into <a href="../../lib/pods/perlrun.html#n"><code>\n</code></a> and <a href="../../lib/pods/perlguts.html#r"><code>\r</code></a> respectively.  Finally, any NULL bytes (<code>\0</code>)
+are entirely removed.  When DBI::ProfileData reads the file the first
+two transformations will be reversed, but NULL bytes will not be
+restored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Sam Tregar &lt;<a href="mailto:sam@tregar.com">sam@tregar.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>Copyright (C) 2002 Sam Tregar</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl 5 itself.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,223 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Dist::CheckConflicts - declare version conflicts for your dist</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Dist::CheckConflicts - declare version conflicts for your dist</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#conflicts">conflicts</a></li>
+		<li><a href="#dist">dist</a></li>
+		<li><a href="#check_conflicts">check_conflicts</a></li>
+		<li><a href="#calculate_conflicts">calculate_conflicts</a></li>
+	</ul>
+
+	<li><a href="#todo">TODO</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Dist::CheckConflicts - declare version conflicts for your dist</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 0.02</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Dist::CheckConflicts</span>
+        <span class="operator">-</span><span class="string">dist</span> <span class="operator">=&gt;</span> <span class="string">'Class-MOP'</span><span class="operator">,</span>
+        <span class="string">-conflicts</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+            <span class="string">'Moose'</span>                <span class="operator">=&gt;</span> <span class="string">'1.14'</span><span class="operator">,</span>
+            <span class="string">'namespace::autoclean'</span> <span class="operator">=&gt;</span> <span class="string">'0.08'</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+        <span class="string">-also</span> <span class="operator">=&gt;</span> <span class="operator">[</span>
+            <span class="string">'Package::Stash::Conflicts'</span><span class="operator">,</span>
+        <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">__PACKAGE__</span><span class="operator">-&gt;</span><span class="variable">check_conflicts</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>One shortcoming of the CPAN clients that currently exist is that they have no
+way of specifying conflicting downstream dependencies of modules. This module
+attempts to work around this issue by allowing you to specify conflicting
+versions of modules separately, and deal with them after the module is done
+installing.</p>
+<p>For instance, say you have a module <code>Foo</code>, and some other module <code>Bar</code> uses
+<code>Foo</code>. If <code>Foo</code> were to change its API in a non-backwards-compatible way,
+this would cause <code>Bar</code> to break until it is updated to use the new API. <code>Foo</code>
+can't just depend on the fixed version of <code>Bar</code>, because this will cause a
+circular dependency (because <code>Bar</code> is already depending on <code>Foo</code>), and this
+doesn't express intent properly anyway - <code>Foo</code> doesn't use <code>Bar</code> at all. The
+ideal solution would be for there to be a way to specify conflicting versions
+of modules in a way that would let CPAN clients update conflicting modules
+automatically after an existing module is upgraded, but until that happens,
+this module will allow users to do this manually.</p>
+<p>This module accepts a hash of options passed to its <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> statement, with
+these keys being valid:</p>
+<dl>
+<dt><strong><a name="conflicts" class="item">-conflicts</a></strong></dt>
+
+<dd>
+<p>A hashref of conflict specifications, where keys are module names, and values
+are the last broken version - any version greater than the specified version
+should work.</p>
+</dd>
+<dt><strong><a name="also" class="item">-also</a></strong></dt>
+
+<dd>
+<p>Additional modules to get conflicts from (potentially recursively). This should
+generally be a list of modules which use Dist::CheckConflicts, which correspond
+to the dists that your dist depends on. (In an ideal world, this would be
+intuited directly from your dependency list, but the dependency list isn't
+available outside of build time).</p>
+</dd>
+<dt><strong><a name="dist" class="item">-dist</a></strong></dt>
+
+<dd>
+<p>The name of the distribution, to make the error message from check_conflicts
+more user-friendly.</p>
+</dd>
+</dl>
+<p>The methods listed below are exported by this module into the module that uses
+it, so you should call these methods on your module, not Dist::CheckConflicts.</p>
+<p>As an example, this command line can be used to update your modules, after
+installing the <code>Foo</code> dist (assuming that <code>Foo::Conflicts</code> is the module in
+the <code>Foo</code> dist which uses Dist::CheckConflicts):</p>
+<pre>
+    <span class="variable">perl</span> <span class="operator">-</span><span class="variable">MFoo::Conflicts</span> <span class="keyword">-e</span><span class="string">'print "$_\n"
+        for map { $_-&gt;{package} } Foo::Conflicts-&gt;calculate_conflicts'</span> <span class="operator">|</span> <span class="variable">cpanm</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="conflicts">conflicts</a></h2>
+<p>Returns the conflict specification (the <a href="#conflicts"><code>-conflicts</code></a> parameter to
+<a href="../../lib/pods/perlfunc.html#import"><code>import()</code></a>), as a hash.</p>
+<p>
+</p>
+<h2><a name="dist">dist</a></h2>
+<p>Returns the dist name (either as specified by the <a href="#dist"><code>-dist</code></a> parameter to
+<a href="../../lib/pods/perlfunc.html#import"><code>import()</code></a>, or the package name which <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a>d this module).</p>
+<p>
+</p>
+<h2><a name="check_conflicts">check_conflicts</a></h2>
+<p>Examine the modules that are currently installed, and throw an exception with
+useful information if any modules are at versions which conflict with the dist.</p>
+<p>
+</p>
+<h2><a name="calculate_conflicts">calculate_conflicts</a></h2>
+<p>Examine the modules that are currently installed, and return a list of modules
+which conflict with the dist. The modules will be returned as a list of
+hashrefs, each containing <a href="../../lib/pods/perlfunc.html#package"><code>package</code></a>, <code>installed</code>, and <code>required</code> keys.</p>
+<p>
+</p>
+<hr />
+<h1><a name="todo">TODO</a></h1>
+<p>Provide a way to insert a hook into <a href="../../lib/pods/perlvar.html#_inc"><code>@INC</code></a> which warns if a conflicting module
+is loaded (would this be reasonable?)</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>No known bugs.</p>
+<p>Please report any bugs through RT: email
+<code>bug-dist-checkconflicts at rt.cpan.org</code>, or browse to
+<a href="http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Dist-CheckConflicts">http://rt.cpan.org/NoAuth/ReportBug.html</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<ul>
+<li><strong><a name="module_install_checkconflicts" class="item"><a href="../../Module/Install/CheckConflicts.html">the Module::Install::CheckConflicts manpage</a></a></strong>
+
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>You can find this documentation for this module with the perldoc command.</p>
+<pre>
+    <a href="../../lib/pods/perldoc.html">perldoc</a> Dist::CheckConflicts</pre>
+<p>You can also look for information at:</p>
+<ul>
+<li><strong><a name="annocpan_annotated_cpan_documentation3" class="item">AnnoCPAN: Annotated CPAN documentation</a></strong>
+
+<p><a href="http://annocpan.org/dist/Dist-CheckConflicts">http://annocpan.org/dist/Dist-CheckConflicts</a></p>
+</li>
+<li><strong><a name="cpan_ratings3" class="item">CPAN Ratings</a></strong>
+
+<p><a href="http://cpanratings.perl.org/d/Dist-CheckConflicts">http://cpanratings.perl.org/d/Dist-CheckConflicts</a></p>
+</li>
+<li><strong><a name="rt_cpan_s_request_tracker3" class="item">RT: CPAN's request tracker</a></strong>
+
+<p><a href="http://rt.cpan.org/NoAuth/Bugs.html?Dist=Dist-CheckConflicts">http://rt.cpan.org/NoAuth/Bugs.html</a></p>
+</li>
+<li><strong><a name="search_cpan3" class="item">Search CPAN</a></strong>
+
+<p><a href="http://search.cpan.org/dist/Dist-CheckConflicts">http://search.cpan.org/dist/Dist-CheckConflicts</a></p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Jesse Luehrs &lt;doy at tozt dot net&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Jesse Luehrs.</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

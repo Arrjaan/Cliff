@@ -1,0 +1,142 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::RegularExpressions::ProhibitEscapedMetacharacters - Use character classes for literal meta-characters instead of escapes.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::RegularExpressions::ProhibitEscapedMetacharacters - Use character classes for literal meta-characters instead of escapes.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::RegularExpressions::ProhibitEscapedMetacharacters - Use character classes for literal meta-characters instead of escapes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Ever heard of leaning toothpick syndrome?  That comes from writing
+regular expressions that match on characters that are significant in
+regular expressions.  For example, the expression to match four
+forward slashes looks like:</p>
+<pre>
+    <span class="regex">m/\/\/\/\//</span><span class="operator">;</span>
+</pre>
+<p>Well, this policy doesn't solve that problem (write it as <a href="../../../../../lib/pods/perlguts.html#m"><code>m{////}</code></a>
+instead!) but solves a related one.  As seen above, the escapes make
+the expression hard to parse visually.  One solution is to use
+character classes.  You see, inside of character classes, the only
+characters that are special are <code>\</code>, <code>]</code>, <code>^</code> and <code>-</code>, so you
+don't need to escape the others.  So instead of the following loose
+IPv4 address matcher:</p>
+<pre>
+    <span class="regex">m/ \d+ \. \d+ \. \d+ \. \d+ /x</span><span class="operator">;</span>
+</pre>
+<p>You could write:</p>
+<pre>
+    <span class="regex">m/ \d+ [.] \d+ [.] \d+ [.] \d+ /x</span><span class="operator">;</span>
+</pre>
+<p>which is certainly more readable, if less recognizable prior the
+publication of Perl Best Practices.  (Of course, you should really use
+<a href="../../../../../Regexp/Common/net.html">Regexp::Common::net</a> to match IPv4 addresses!)</p>
+<p>Specifically, this policy forbids backslashes immediately prior to the
+following characters:</p>
+<pre>
+    { } ( ) . * + ? | #</pre>
+<p>We make special exception for <code>$</code> because <code>/[$]/</code> turns into
+<code>/[5.008006/</code> for Perl 5.8.6.  We also make an exception for <code>^</code>
+because it has special meaning (negation) in a character class.
+Finally, <code>[</code> and <code>]</code> are exempt, of course, because they are awkward
+to represent in character classes.</p>
+<p>Note that this policy does not forbid unnecessary escaping.  So go
+ahead and (pointlessly) escape <code>!</code> characters.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This Policy is not configurable except for the standard options.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Perl treats <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m/[#]/x</code></a> in unexpected ways.
+I think it's a bug in Perl itself, but am not 100% sure that I have
+not simply misunderstood...</p>
+<p>This part makes sense:</p>
+<pre>
+    <span class="string">"#f"</span> <span class="operator">=~</span> <span class="regex">m/[#]f/x</span><span class="operator">;</span>     <span class="comment"># match</span>
+    <span class="string">"#f"</span> <span class="operator">=~</span> <span class="regex">m/[#]a/x</span><span class="operator">;</span>     <span class="comment"># no match</span>
+</pre>
+<p>This doesn't:</p>
+<pre>
+    <span class="variable">$qr</span>  <span class="operator">=</span> <span class="string">qr/f/</span><span class="operator">;</span>
+    <span class="string">"#f"</span> <span class="operator">=~</span> <span class="regex">m/[#]</span><span class="variable">$qr</span><span class="regex">/x</span><span class="operator">;</span> <span class="comment"># no match</span>
+</pre>
+<p>Neither does this:</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">qr/[#]</span><span class="variable">$qr</span><span class="string">/x</span><span class="operator">;</span>  <span class="comment"># yields '(?x-ism:[#]$qr</span>
+                                <span class="operator">)</span><span class="string">'
+    </span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Initial development of this policy was supported by a grant from the
+Perl Foundation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2007-2011 Chris Dolan.  Many rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module</p>
+
+</body>
+
+</html>

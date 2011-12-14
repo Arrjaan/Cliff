@@ -1,0 +1,147 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Extending::Recipe3 - Providing an alternate base object class</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Extending::Recipe3 - Providing an alternate base object class</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#using_myapp__usemybase">USING MyApp::UseMyBase</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Extending::Recipe3 - Providing an alternate base object class</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Base</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">extends</span> <span class="string">'Moose::Object'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">before</span> <span class="string">'new'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">warn</span> <span class="string">"Making a new "</span> <span class="operator">.</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="keyword">no</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::UseMyBase</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span> <span class="string">also</span> <span class="operator">=&gt;</span> <span class="string">'Moose'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init_meta </span><span class="operator">{</span>
+      <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">Moose</span><span class="operator">-&gt;</span><span class="variable">init_meta</span><span class="operator">(</span> <span class="variable">@_</span><span class="operator">,</span> <span class="string">base_class</span> <span class="operator">=&gt;</span> <span class="string">'MyApp::Base'</span> <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A common extension is to provide an alternate base class. One way to
+do that is to make a <code>MyApp::base</code> and add <code>extends
+'MyApp::Base'</code> to every class in your application. That's pretty
+tedious. Instead, you can create a Moose-alike module that sets the
+base object class to <code>MyApp::Base</code> for you.</p>
+<p>Then, instead of writing <code>use Moose</code> you can write <code>use
+MyApp::UseMyBase</code>.</p>
+<p>In this particular example, our base class issues some debugging
+output every time a new object is created, but you can think of some
+more interesting things to do with your own base class.</p>
+<p>This uses the magic of <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>. When we call <code>&lt;
+Moose::Exporter-</code>setup_import_methods( also =&gt; 'Moose' ) &gt;&gt; it builds
+<a href="../../../../lib/pods/perlfunc.html#import"><code>import</code></a> and <code>unimport</code> methods for you. The <code>also =&gt; 'Moose'</code>
+bit says that we want to export everything that Moose does.</p>
+<p>The <a href="../../../../lib/pods/perlfunc.html#import"><code>import</code></a> method that gets created will call our <code>init_meta</code>
+method, passing it <code>for_caller =&gt; $caller</code> as its
+arguments. The <code>$caller</code> is set to the class that actually imported
+us in the first place.</p>
+<p>See the <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> docs for more details on its API.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_myapp__usemybase">USING MyApp::UseMyBase</a></h1>
+<p>To actually use our new base class, we simply use <code>MyApp::UseMyBase</code>
+<em>instead</em> of <code>Moose</code>. We get all the Moose sugar plus our new base
+class.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MyApp::UseMyBase</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">no</span> <span class="variable">MyApp::UseMyBase</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>This is an awful lot of magic for a simple base class. You will often
+want to combine a metaclass trait with a base class extension, and
+that's when this technique is useful.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

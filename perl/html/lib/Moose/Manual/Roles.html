@@ -1,0 +1,436 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Manual::Roles - Roles, an alternative to deep hierarchies and base classes</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Manual::Roles - Roles, an alternative to deep hierarchies and base classes</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#what_is_a_role">WHAT IS A ROLE?</a></li>
+	<li><a href="#a_simple_role">A SIMPLE ROLE</a></li>
+	<li><a href="#required_methods">REQUIRED METHODS</a></li>
+	<ul>
+
+		<li><a href="#roles_versus_abstract_base_classes">Roles Versus Abstract Base Classes</a></li>
+		<li><a href="#required_attributes">Required Attributes</a></li>
+	</ul>
+
+	<li><a href="#using_method_modifiers">USING METHOD MODIFIERS</a></li>
+	<li><a href="#method_conflicts">METHOD CONFLICTS</a></li>
+	<li><a href="#method_exclusion_and_aliasing">METHOD EXCLUSION AND ALIASING</a></li>
+	<li><a href="#role_exclusion">ROLE EXCLUSION</a></li>
+	<li><a href="#adding_a_role_to_an_object_instance">ADDING A ROLE TO AN OBJECT INSTANCE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Manual::Roles - Roles, an alternative to deep hierarchies and base classes</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="what_is_a_role">WHAT IS A ROLE?</a></h1>
+<p>A role encapsulates some piece of behavior or state that can be shared between
+classes. It is something that classes <em>do</em>. It is important to understand that
+<em>roles are not classes</em>. You cannot inherit from a role, and a role cannot be
+instantiated. We sometimes say that roles are <em>consumed</em>, either by classes
+or other roles.</p>
+<p>Instead, a role is <em>composed</em> into a class. In practical terms, this
+means that all of the methods, method modifiers, and attributes defined in a role are
+added directly to (we sometimes say &quot;flattened into&quot;) the class that
+consumes the role. These attributes and methods then appear as if they
+were defined in the class itself. A subclass of the consuming class
+will inherit all of these methods and attributes.</p>
+<p>Moose roles are similar to mixins or interfaces in other languages.</p>
+<p>Besides defining their own methods and attributes, roles can also
+require that the consuming class define certain methods of its
+own. You could have a role that consisted only of a list of required
+methods, in which case the role would be very much like a Java
+interface.</p>
+<p>Note that attribute accessors also count as methods for the
+purposes of satisfying the requirements of a role.</p>
+<p>
+</p>
+<hr />
+<h1><a name="a_simple_role">A SIMPLE ROLE</a></h1>
+<p>Creating a role looks a lot like creating a Moose class:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Breakable</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'is_broken'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Bool'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> break </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">print</span> <span class="string">"I broke\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">is_broken</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>Except for our use of <a href="../../../lib/Moose/Role.html">the Moose::Role manpage</a>, this looks just like a class
+definition with Moose. However, this is not a class, and it cannot be
+instantiated.</p>
+<p>Instead, its attributes and methods will be composed into classes
+which use the role:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Car</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'engine'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Engine'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>The <code>with</code> function composes roles into a class. Once that is done,
+the <code>Car</code> class has an <code>is_broken</code> attribute and a <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a>
+method. The <code>Car</code> class also <code>does('Breakable')</code>:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$car</span> <span class="operator">=</span> <span class="variable">Car</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">engine</span> <span class="operator">=&gt;</span> <span class="variable">Engine</span><span class="operator">-&gt;</span><span class="variable">new</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">print</span> <span class="variable">$car</span><span class="operator">-&gt;</span><span class="variable">is_broken</span> <span class="operator">?</span> <span class="string">'Busted'</span> <span class="operator">:</span> <span class="string">'Still working'</span><span class="operator">;</span>
+  <span class="variable">$car</span><span class="operator">-&gt;</span><span class="variable">break</span><span class="operator">;</span>
+  <span class="keyword">print</span> <span class="variable">$car</span><span class="operator">-&gt;</span><span class="variable">is_broken</span> <span class="operator">?</span> <span class="string">'Busted'</span> <span class="operator">:</span> <span class="string">'Still working'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">$car</span><span class="operator">-&gt;</span><span class="variable">does</span><span class="operator">(</span><span class="string">'Breakable'</span><span class="operator">);</span> <span class="comment"># true</span>
+</pre>
+<p>This prints:</p>
+<pre>
+  Still working
+  I broke
+  Busted</pre>
+<p>We could use this same role in a <code>Bone</code> class:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Bone</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'marrow'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Marrow'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>See also <a href="../../../lib/Moose/Cookbook/Roles/Recipe1.html">the Moose::Cookbook::Roles::Recipe1 manpage</a> for an example.</p>
+<p>
+</p>
+<hr />
+<h1><a name="required_methods">REQUIRED METHODS</a></h1>
+<p>As mentioned previously, a role can require that consuming classes
+provide one or more methods. Using our <code>Breakable</code> example, let's
+make it require that consuming classes implement their own <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a>
+methods:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Breakable</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">requires</span> <span class="string">'break'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'is_broken'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Bool'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">after</span> <span class="string">'break'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">is_broken</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+        <span class="operator">};</span>
+</pre>
+<p>If we try to consume this role in a class that does not have a
+<a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a> method, we will get an exception.</p>
+<p>You can see that we added a method modifier on <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a>. We want
+classes that consume this role to implement their own logic for
+breaking, but we make sure that the <code>is_broken</code> attribute is always
+set to true when <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a> is called.</p>
+<pre>
+  package Car</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'engine'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Engine'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> break </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">is_moving</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">stop</span><span class="operator">;</span>
+      <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="roles_versus_abstract_base_classes">Roles Versus Abstract Base Classes</a></h2>
+<p>If you are familiar with the concept of abstract base classes in other
+languages, you may be tempted to use roles in the same way.</p>
+<p>You <em>can</em> define an &quot;interface-only&quot; role, one that contains <em>just</em>
+a list of required methods.</p>
+<p>However, any class which consumes this role must implement all of the
+required methods, either directly or through inheritance from a
+parent. You cannot delay the method requirement check so that they can
+be implemented by future subclasses.</p>
+<p>Because the role defines the required methods directly, adding a base
+class to the mix would not achieve anything. We recommend that you
+simply consume the interface role in each class which implements that
+interface.</p>
+<p>
+</p>
+<h2><a name="required_attributes">Required Attributes</a></h2>
+<p>As mentioned before, a role's required method may also be satisfied by an
+attribute accessor. However, the call to <code>has</code> which defines an attribute
+happens at runtime. This means that you must define the attribute <em>before</em>
+consuming the role, or else the role will not see the generated accessor.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Breakable</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">requires</span> <span class="string">'stress'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Car</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'stress'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Int'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="using_method_modifiers">USING METHOD MODIFIERS</a></h1>
+<p>Method modifiers and roles are a very powerful combination.  Often, a
+role will combine method modifiers and required methods. We already
+saw one example with our <code>Breakable</code> example.</p>
+<p>Method modifiers increase the complexity of roles, because they make
+the role application order relevant. If a class uses multiple roles,
+each of which modify the same method, those modifiers will be applied
+in the same order as the roles are used:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MovieCar</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">extends</span> <span class="string">'Car'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span><span class="operator">,</span> <span class="string">'ExplodesOnBreakage'</span><span class="operator">;</span>
+</pre>
+<p>Assuming that the new <code>ExplodesOnBreakage</code> method <em>also</em> has an
+<code>after</code> modifier on <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a>, the <code>after</code> modifiers will run one
+after the other. The modifier from <code>Breakable</code> will run first, then
+the one from <code>ExplodesOnBreakage</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="method_conflicts">METHOD CONFLICTS</a></h1>
+<p>If a class composes multiple roles, and those roles have methods of
+the same name, we will have a conflict. In that case, the composing
+class is required to provide its <em>own</em> method of the same name.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Breakdancer</span><span class="operator">;</span>
+</pre>
+<pre>
+  use Moose::Role</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> break </span><span class="operator">{</span>
+</pre>
+<pre>
+  }</pre>
+<p>If we compose both <code>Breakable</code> and <code>Breakdancer</code> in a class, we must
+provide our own <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a> method:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">FragileDancer</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span><span class="operator">,</span> <span class="string">'Breakdancer'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> break </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>A role can be a collection of other roles:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Break::Bundle</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="operator">(</span><span class="string">'Breakable'</span><span class="operator">,</span> <span class="string">'Breakdancer'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="method_exclusion_and_aliasing">METHOD EXCLUSION AND ALIASING</a></h1>
+<p>If we want our <code>FragileDancer</code> class to be able to call the methods
+from both its roles, we can alias the methods:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">FragileDancer</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span>   <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-alias</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">break</span> <span class="operator">=&gt;</span> <span class="string">'break_bone'</span> <span class="operator">}</span> <span class="operator">}</span><span class="operator">,</span>
+       <span class="string">'Breakdancer'</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-alias</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">break</span> <span class="operator">=&gt;</span> <span class="string">'break_dance'</span> <span class="operator">}</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>However, aliasing a method simply makes a <em>copy</em> of the method with
+the new name. We also need to exclude the original name:</p>
+<pre>
+  <span class="variable">with</span> <span class="string">'Breakable'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">-alias</span>    <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">break</span> <span class="operator">=&gt;</span> <span class="string">'break_bone'</span> <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">-excludes</span> <span class="operator">=&gt;</span> <span class="string">'break'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">'Breakdancer'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">-alias</span>    <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">break</span> <span class="operator">=&gt;</span> <span class="string">'break_dance'</span> <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">-excludes</span> <span class="operator">=&gt;</span> <span class="string">'break'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>The excludes parameter prevents the <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a> method from being composed
+into the <code>FragileDancer</code> class, so we don't have a conflict. This
+means that <code>FragileDancer</code> does not need to implement its own
+<a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a> method.</p>
+<p>This is useful, but it's worth noting that this breaks the contract
+implicit in consuming a role. Our <code>FragileDancer</code> class does both the
+<code>Breakable</code> and <code>BreakDancer</code>, but does not provide a <a href="../../../lib/pods/perlfunc.html#break"><code>break</code></a>
+method. If some API expects an object that does one of those roles, it
+probably expects it to implement that method.</p>
+<p>In some use cases we might alias and exclude methods from roles, but
+then provide a method of the same name in the class itself.</p>
+<p>Also see <a href="../../../lib/Moose/Cookbook/Roles/Recipe2.html">the Moose::Cookbook::Roles::Recipe2 manpage</a> for an example.</p>
+<p>
+</p>
+<hr />
+<h1><a name="role_exclusion">ROLE EXCLUSION</a></h1>
+<p>A role can say that it cannot be combined with some other role. This
+should be used with great caution, since it limits the re-usability of
+the role.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Breakable</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">excludes</span> <span class="string">'BreakDancer'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="adding_a_role_to_an_object_instance">ADDING A ROLE TO AN OBJECT INSTANCE</a></h1>
+<p>You may want to add a role to an object instance, rather than to a class. For
+example, you may want to add debug tracing to one instance of an object while
+debugging a particular bug. Another use case might be to dynamically change
+objects based on a user's configuration, as a plugin system.</p>
+<p>The best way to do this is to use the <code>apply_all_roles()</code> function from
+<a href="../../../lib/Moose/Util.html">the Moose::Util manpage</a>:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Util</span> <span class="string">qw( apply_all_roles )</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$car</span> <span class="operator">=</span> <span class="variable">Car</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+  <span class="variable">apply_all_roles</span><span class="operator">(</span> <span class="variable">$car</span><span class="operator">,</span> <span class="string">'Breakable'</span> <span class="operator">);</span>
+</pre>
+<p>This function can apply more than one role at a time, and will do so using the
+normal Moose role combination system. We recommend using this function to
+apply roles to an object. This is what Moose uses internally when you call
+<code>with</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

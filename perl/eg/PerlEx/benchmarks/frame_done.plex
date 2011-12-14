@@ -1,0 +1,46 @@
+
+use CGI;
+
+my $cgi = new CGI;
+
+
+	my $time = time;
+	my $ticks = Win32::GetTickCount;
+
+	my $timing_data = $cgi->cookie('timing_data');
+	my %timing_data = split /:/,$timing_data;
+	my $plex_time = $timing_data{'plex_time'}; 
+	my $plex_ticks = $timing_data{'plex_ticks'};
+	my $perl_time = $timing_data{'perl_time'}; 
+	my $perl_ticks = $timing_data{'perl_ticks'};
+
+	$perl_time = $time - $perl_time;
+	$perl_ticks = $ticks - $perl_ticks;
+
+	my $processor_ticks = $perl_ticks + $plex_ticks;
+
+	my $cookie_data = join ':',
+					'perl_time',$perl_time,'perl_ticks',$perl_ticks,
+					'plex_time',$plex_time,'plex_ticks',$plex_ticks;
+	my $cookie = $cgi->cookie(-name=>'timing_data',
+	                                  -value=>"$cookie_data",
+                                 );
+	my $runs  = $cgi->param('runs');
+	
+print $cgi->header(-cookie=>$cookie);
+print <<EOF;
+
+<HTML>
+	<HEAD>
+		<TITLE>PerlEx Performance Meter</TITLE>
+	<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+</HEAD>
+<FRAMESET FRAMESPACING="0"  marginheight="0" MARGINWIDTH=0  rows="50%,*" title="default">
+	<FRAME frameborder="0" NAME="right" SRC="final.plex?runs=$runs&title=CGI%20Perl&elapsed_time=$perl_time&elapsed_ticks=$perl_ticks&processor_ticks=$processor_ticks" MARGINHEIGHT=0 MARGINWIDTH=0 SCROLLING = "auto">
+	<FRAME frameborder="0" NAME="back" SRC="summary.plex" MARGINHEIGHT=0 MARGINWIDTH=0 SCROLLING = "auto">
+</FRAMESET>
+</HTML>
+
+
+EOF
+

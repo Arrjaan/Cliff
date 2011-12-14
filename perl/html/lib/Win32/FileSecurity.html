@@ -1,0 +1,248 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Win32::FileSecurity - Manage FileSecurity Discretionary Access Control Lists in Perl</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Win32::FileSecurity - Manage FileSecurity Discretionary Access Control Lists in Perl</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#constants">CONSTANTS</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#_permisshash">%permisshash</a></li>
+	</ul>
+
+	<li><a href="#example1">EXAMPLE1</a></li>
+	<li><a href="#example2">EXAMPLE2</a></li>
+	<li><a href="#common_masks_from_cacls_and_winfile">COMMON MASKS FROM CACLS AND WINFILE</a></li>
+	<ul>
+
+		<li><a href="#read">READ</a></li>
+		<li><a href="#change">CHANGE</a></li>
+		<li><a href="#add___read">ADD &amp; READ</a></li>
+		<li><a href="#full">FULL</a></li>
+	</ul>
+
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#known_issues___bugs">KNOWN ISSUES / BUGS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Win32::FileSecurity - Manage FileSecurity Discretionary Access Control Lists in Perl</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::FileSecurity</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module offers control over the administration of system
+FileSecurity DACLs.  You may want to use Get and EnumerateRights to
+get an idea of what mask values correspond to what rights as viewed
+from File Manager.</p>
+<p>
+</p>
+<hr />
+<h1><a name="constants">CONSTANTS</a></h1>
+<pre>
+  DELETE, READ_CONTROL, WRITE_DAC, WRITE_OWNER,
+  SYNCHRONIZE, STANDARD_RIGHTS_REQUIRED,
+  STANDARD_RIGHTS_READ, STANDARD_RIGHTS_WRITE,
+  STANDARD_RIGHTS_EXECUTE, STANDARD_RIGHTS_ALL,
+  SPECIFIC_RIGHTS_ALL, ACCESS_SYSTEM_SECURITY,
+  MAXIMUM_ALLOWED, GENERIC_READ, GENERIC_WRITE,
+  GENERIC_EXECUTE, GENERIC_ALL, F, FULL, R, READ,
+  C, CHANGE</pre>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<dl>
+<dt><strong><a name="constant" class="item">constant( $name, $set )</a></strong></dt>
+
+<dd>
+<p>Stores the value of named constant $name into $set.
+Same as <code>$set = Win32::FileSecurity::NAME_OF_CONSTANT();</code>.</p>
+</dd>
+<dt><strong><a name="get" class="item">Get( $filename, \%permisshash )</a></strong></dt>
+
+<dd>
+<p>Gets the DACLs of a file or directory.</p>
+</dd>
+<dt><strong><a name="set" class="item">Set( $filename, \%permisshash )</a></strong></dt>
+
+<dd>
+<p>Sets the DACL for a file or directory.</p>
+</dd>
+<dt><strong><a name="enumeraterights" class="item">EnumerateRights( $mask, \@rightslist )</a></strong></dt>
+
+<dd>
+<p>Turns the bitmask in $mask into a list of strings in @rightslist.</p>
+</dd>
+<dt><strong><a name="makemask" class="item">MakeMask( qw( DELETE READ_CONTROL ) )</a></strong></dt>
+
+<dd>
+<p>Takes a list of strings representing constants and returns a bitmasked
+integer value.</p>
+</dd>
+</dl>
+<p>Note: All of the functions return false if they fail, unless otherwise
+noted.  Errors returned via $! containing both Win32 <code>GetLastError()</code>
+and a text message indicating Win32 function that failed.</p>
+<p>
+</p>
+<h2><a name="_permisshash">%permisshash</a></h2>
+<p>Entries take the form $permisshash{USERNAME} = $mask ;</p>
+<p><a href="#get"><code>Get()</code></a> may return a SID or the string &quot;&lt;Unknown&gt;&quot; when the account
+name cannot be determined.</p>
+<p>
+</p>
+<hr />
+<h1><a name="example1">EXAMPLE1</a></h1>
+<pre>
+    <span class="comment"># Gets the rights for all files listed on the command line.</span>
+    <span class="keyword">use</span> <span class="variable">Win32::FileSecurity</span> <span class="string">qw(Get EnumerateRights)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">foreach</span><span class="operator">(</span> <span class="variable">@ARGV</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">next</span> <span class="keyword">unless</span> <span class="keyword">-e</span> <span class="variable">$_</span> <span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">Get</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%hash</span> <span class="operator">)</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">while</span><span class="operator">(</span> <span class="operator">(</span><span class="variable">$name</span><span class="operator">,</span> <span class="variable">$mask</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">each</span> <span class="variable">%hash</span> <span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"</span><span class="variable">$name</span><span class="string">:\n\t"</span><span class="operator">;</span>
+                <span class="variable">EnumerateRights</span><span class="operator">(</span> <span class="variable">$mask</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@happy</span> <span class="operator">)</span> <span class="operator">;</span>
+                <span class="keyword">print</span> <span class="keyword">join</span><span class="operator">(</span> <span class="string">"\n\t"</span><span class="operator">,</span> <span class="variable">@happy</span> <span class="operator">),</span> <span class="string">"\n"</span><span class="operator">;</span>
+            <span class="operator">}</span>
+        <span class="operator">}</span>
+        <span class="keyword">else</span> <span class="operator">{</span>
+            <span class="keyword">print</span><span class="operator">(</span> <span class="string">"Error #"</span><span class="operator">,</span> <span class="keyword">int</span><span class="operator">(</span> <span class="variable">$!</span> <span class="operator">),</span> <span class="string">": $!"</span> <span class="operator">)</span> <span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="example2">EXAMPLE2</a></h1>
+<pre>
+    <span class="comment"># Gets existing DACL and modifies Administrator rights</span>
+    <span class="keyword">use</span> <span class="variable">Win32::FileSecurity</span> <span class="string">qw(MakeMask Get Set)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># These masks show up as Full Control in File Manager</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( FULL )</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$dir</span> <span class="operator">=</span> <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw(
+        FULL
+        GENERIC_ALL
+    )</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">foreach</span><span class="operator">(</span> <span class="variable">@ARGV</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="regex">s/\\$//</span><span class="operator">;</span>
+        <span class="keyword">next</span> <span class="keyword">unless</span> <span class="keyword">-e</span><span class="operator">;</span>
+        <span class="variable">Get</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%hash</span> <span class="operator">)</span> <span class="operator">;</span>
+        <span class="variable">$hash</span><span class="operator">{</span><span class="string">Administrator</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">(</span> <span class="keyword">-d</span> <span class="operator">)</span> <span class="operator">?</span> <span class="variable">$dir</span> <span class="operator">:</span> <span class="variable">$file</span> <span class="operator">;</span>
+        <span class="variable">Set</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%hash</span> <span class="operator">)</span> <span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="common_masks_from_cacls_and_winfile">COMMON MASKS FROM CACLS AND WINFILE</a></h1>
+<p>
+</p>
+<h2><a name="read">READ</a></h2>
+<pre>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( FULL )</span> <span class="operator">);</span> <span class="comment"># for files</span>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( READ GENERIC_READ GENERIC_EXECUTE )</span> <span class="operator">);</span> <span class="comment"># for directories</span>
+</pre>
+<p>
+</p>
+<h2><a name="change">CHANGE</a></h2>
+<pre>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( CHANGE )</span> <span class="operator">);</span> <span class="comment"># for files</span>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( CHANGE GENERIC_WRITE GENERIC_READ GENERIC_EXECUTE )</span> <span class="operator">);</span> <span class="comment"># for directories</span>
+</pre>
+<p>
+</p>
+<h2><a name="add___read">ADD &amp; READ</a></h2>
+<pre>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( ADD GENERIC_READ GENERIC_EXECUTE )</span> <span class="operator">);</span> <span class="comment"># for directories only!</span>
+</pre>
+<p>
+</p>
+<h2><a name="full">FULL</a></h2>
+<pre>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( FULL )</span> <span class="operator">);</span> <span class="comment"># for files</span>
+    <span class="variable">MakeMask</span><span class="operator">(</span> <span class="string">qw( FULL  GENERIC_ALL )</span> <span class="operator">);</span> <span class="comment"># for directories</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<ul>
+<li>
+<p>The module currently only supports ALLOW ACLs; DENY ACLs are not being
+reported by <a href="#get"><code>Get()</code></a> and cannot be <a href="#set"><code>Set()</code></a> either.</p>
+</li>
+<li>
+<p>The <a href="#get"><code>Get()</code></a> function may return an SID when the account cannot be found,
+but the <a href="#set"><code>Set()</code></a> function doesn't allow the use of SIDs for setting ACLs.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="known_issues___bugs">KNOWN ISSUES / BUGS</a></h1>
+<ul>
+<li>
+<p>May not work on remote drives.</p>
+</li>
+<li>
+<p>Errors croak, don't return via $! as documented.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

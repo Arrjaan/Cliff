@@ -1,0 +1,486 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Archive::Extract - A generic archive extracting mechanism</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Archive::Extract - A generic archive extracting mechanism</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#_ae___archive__extract__new_archive______path_to_archive___type____type__">$ae = Archive::Extract-&gt;new(archive =&gt; '/path/to/archive',[type =&gt; TYPE])</a></li>
+		<li><a href="#_ae__extract___to______output_path____">$ae-&gt;extract( [to =&gt; '/output/path'] )</a></li>
+	</ul>
+
+	<li><a href="#accessors">ACCESSORS</a></li>
+	<ul>
+
+		<li><a href="#_ae__error__bool__">$ae-&gt;error([BOOL])</a></li>
+		<li><a href="#_ae__extract_path">$ae-&gt;extract_path</a></li>
+		<li><a href="#_ae__files">$ae-&gt;files</a></li>
+		<li><a href="#_ae__archive">$ae-&gt;archive</a></li>
+		<li><a href="#_ae__type">$ae-&gt;type</a></li>
+		<li><a href="#_ae__types">$ae-&gt;types</a></li>
+		<li><a href="#_ae__is_tgz">$ae-&gt;is_tgz</a></li>
+		<li><a href="#_ae__is_tar">$ae-&gt;is_tar</a></li>
+		<li><a href="#_ae__is_gz">$ae-&gt;is_gz</a></li>
+		<li><a href="#_ae__is_z">$ae-&gt;is_Z</a></li>
+		<li><a href="#_ae__is_zip">$ae-&gt;is_zip</a></li>
+		<li><a href="#_ae__is_lzma">$ae-&gt;is_lzma</a></li>
+		<li><a href="#_ae__is_xz">$ae-&gt;is_xz</a></li>
+		<li><a href="#_ae__bin_tar">$ae-&gt;bin_tar</a></li>
+		<li><a href="#_ae__bin_gzip">$ae-&gt;bin_gzip</a></li>
+		<li><a href="#_ae__bin_unzip">$ae-&gt;bin_unzip</a></li>
+		<li><a href="#_ae__bin_unlzma">$ae-&gt;bin_unlzma</a></li>
+		<li><a href="#_ae__bin_unxz">$ae-&gt;bin_unxz</a></li>
+		<li><a href="#_bool____ae__have_old_bunzip2">$bool = $ae-&gt;have_old_bunzip2</a></li>
+		<li><a href="#debug__message__">debug( MESSAGE )</a></li>
+	</ul>
+
+	<li><a href="#how_it_works">HOW IT WORKS</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<ul>
+
+		<li><a href="#file_extensions">File Extensions</a></li>
+		<li><a href="#supporting_very_large_files">Supporting Very Large Files</a></li>
+		<li><a href="#bunzip2_support_of_arbitrary_extensions_">Bunzip2 support of arbitrary extensions.</a></li>
+	</ul>
+
+	<li><a href="#global_variables">GLOBAL VARIABLES</a></li>
+	<ul>
+
+		<li><a href="#_archive__extract__debug">$Archive::Extract::DEBUG</a></li>
+		<li><a href="#_archive__extract__warn">$Archive::Extract::WARN</a></li>
+		<li><a href="#_archive__extract__prefer_bin">$Archive::Extract::PREFER_BIN</a></li>
+	</ul>
+
+	<li><a href="#todo___caveats">TODO / CAVEATS</a></li>
+	<li><a href="#bug_reports">BUG REPORTS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Archive::Extract - A generic archive extracting mechanism</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Archive::Extract</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">### build an Archive::Extract object ###</span>
+    <span class="keyword">my</span> <span class="variable">$ae</span> <span class="operator">=</span> <span class="variable">Archive::Extract</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">archive</span> <span class="operator">=&gt;</span> <span class="string">'foo.tgz'</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment">### extract to cwd() ###</span>
+    <span class="keyword">my</span> <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">### extract to /tmp ###</span>
+    <span class="keyword">my</span> <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">extract</span><span class="operator">(</span> <span class="string">to</span> <span class="operator">=&gt;</span> <span class="string">'/tmp'</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment">### what if something went wrong?</span>
+    <span class="keyword">my</span> <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">extract</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">error</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">### files from the archive ###</span>
+    <span class="keyword">my</span> <span class="variable">$files</span>   <span class="operator">=</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">files</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">### dir that was extracted to ###</span>
+    <span class="keyword">my</span> <span class="variable">$outdir</span>  <span class="operator">=</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">extract_path</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">### quick check methods ###</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_tar</span>     <span class="comment"># is it a .tar file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_tgz</span>     <span class="comment"># is it a .tar.gz or .tgz file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_gz</span><span class="operator">;</span>     <span class="comment"># is it a .gz file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_zip</span><span class="operator">;</span>    <span class="comment"># is it a .zip file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_bz2</span><span class="operator">;</span>    <span class="comment"># is it a .bz2 file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_tbz</span><span class="operator">;</span>    <span class="comment"># is it a .tar.bz2 or .tbz file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_lzma</span><span class="operator">;</span>   <span class="comment"># is it a .lzma file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_xz</span><span class="operator">;</span>     <span class="comment"># is it a .xz file?</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">is_txz</span><span class="operator">;</span>    <span class="comment"># is it a .tar.xz or .txz file?</span>
+</pre>
+<pre>
+    <span class="comment">### absolute path to the archive you provided ###</span>
+    <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">archive</span><span class="operator">;</span>
+</pre>
+<pre>
+    ### commandline tools, if found ###
+    $ae-&gt;bin_tar     # path to /bin/tar, if found
+    $ae-&gt;bin_gzip    # path to /bin/gzip, if found
+    $ae-&gt;bin_unzip   # path to /bin/unzip, if found
+    $ae-&gt;bin_bunzip2 # path to /bin/bunzip2 if found
+    $ae-&gt;bin_unlzma  # path to /bin/unlzma if found
+    $ae-&gt;bin_unxz    # path to /bin/unxz if found</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Archive::Extract is a generic archive extraction mechanism.</p>
+<p>It allows you to extract any archive file of the type .tar, .tar.gz,
+.gz, .Z, tar.bz2, .tbz, .bz2, .zip, .xz,, .txz, .tar.xz or .lzma
+without having to worry how it
+does so, or use different interfaces for each type by using either
+perl modules, or commandline tools on your system.</p>
+<p>See the <code>HOW IT WORKS</code> section further down for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="_ae___archive__extract__new_archive______path_to_archive___type____type__">$ae = Archive::Extract-&gt;new(archive =&gt; '/path/to/archive',[type =&gt; TYPE])</a></h2>
+<p>Creates a new <code>Archive::Extract</code> object based on the archive file you
+passed it. Automatically determines the type of archive based on the
+extension, but you can override that by explicitly providing the
+<code>type</code> argument.</p>
+<p>Valid values for <code>type</code> are:</p>
+<dl>
+<dt><strong><a name="tar" class="item">tar</a></strong></dt>
+
+<dd>
+<p>Standard tar files, as produced by, for example, <code>/bin/tar</code>.
+Corresponds to a <a href="#tar"><code>.tar</code></a> suffix.</p>
+</dd>
+<dt><strong><a name="tgz" class="item">tgz</a></strong></dt>
+
+<dd>
+<p>Gzip compressed tar files, as produced by, for example <code>/bin/tar -z</code>.
+Corresponds to a <a href="#tgz"><code>.tgz</code></a> or <code>.tar.gz</code> suffix.</p>
+</dd>
+<dt><strong><a name="gz" class="item">gz</a></strong></dt>
+
+<dd>
+<p>Gzip compressed file, as produced by, for example <code>/bin/gzip</code>.
+Corresponds to a <a href="#gz"><code>.gz</code></a> suffix.</p>
+</dd>
+<dt><strong><a name="z" class="item">Z</a></strong></dt>
+
+<dd>
+<p>Lempel-Ziv compressed file, as produced by, for example <code>/bin/compress</code>.
+Corresponds to a <a href="#z"><code>.Z</code></a> suffix.</p>
+</dd>
+<dt><strong><a name="zip" class="item">zip</a></strong></dt>
+
+<dd>
+<p>Zip compressed file, as produced by, for example <code>/bin/zip</code>.
+Corresponds to a <a href="#zip"><code>.zip</code></a>, <code>.jar</code> or <code>.par</code> suffix.</p>
+</dd>
+<dt><strong><a name="bz2" class="item">bz2</a></strong></dt>
+
+<dd>
+<p>Bzip2 compressed file, as produced by, for example, <code>/bin/bzip2</code>.
+Corresponds to a <a href="#bz2"><code>.bz2</code></a> suffix.</p>
+</dd>
+<dt><strong><a name="tbz" class="item">tbz</a></strong></dt>
+
+<dd>
+<p>Bzip2 compressed tar file, as produced by, for example <code>/bin/tar -j</code>.
+Corresponds to a <a href="#tbz"><code>.tbz</code></a> or <code>.tar.bz2</code> suffix.</p>
+</dd>
+<dt><strong><a name="lzma" class="item">lzma</a></strong></dt>
+
+<dd>
+<p>Lzma compressed file, as produced by <code>/bin/lzma</code>.
+Corresponds to a <a href="#lzma"><code>.lzma</code></a> suffix.</p>
+</dd>
+<dt><strong><a name="xz" class="item">xz</a></strong></dt>
+
+<dd>
+<p>Xz compressed file, as produced by <code>/bin/xz</code>.
+Corresponds to a <a href="#xz"><code>.xz</code></a> suffix.</p>
+</dd>
+<dt><strong><a name="txz" class="item">txz</a></strong></dt>
+
+<dd>
+<p>Xz compressed tar file, as produced by, for example <code>/bin/tar -J</code>.
+Corresponds to a <a href="#txz"><code>.txz</code></a> or <code>.tar.xz</code> suffix.</p>
+</dd>
+</dl>
+<p>Returns a <code>Archive::Extract</code> object on success, or false on failure.</p>
+<p>
+</p>
+<h2><a name="_ae__extract___to______output_path____">$ae-&gt;extract( [to =&gt; '/output/path'] )</a></h2>
+<p>Extracts the archive represented by the <code>Archive::Extract</code> object to
+the path of your choice as specified by the <code>to</code> argument. Defaults to
+<code>cwd()</code>.</p>
+<p>Since <a href="#gz"><code>.gz</code></a> files never hold a directory, but only a single file; if
+the <code>to</code> argument is an existing directory, the file is extracted
+there, with its <a href="#gz"><code>.gz</code></a> suffix stripped.
+If the <code>to</code> argument is not an existing directory, the <code>to</code> argument
+is understood to be a filename, if the archive type is <a href="#gz"><code>gz</code></a>.
+In the case that you did not specify a <code>to</code> argument, the output
+file will be the name of the archive file, stripped from its <a href="#gz"><code>.gz</code></a>
+suffix, in the current working directory.</p>
+<p><code>extract</code> will try a pure perl solution first, and then fall back to
+commandline tools if they are available. See the <code>GLOBAL VARIABLES</code>
+section below on how to alter this behaviour.</p>
+<p>It will return true on success, and false on failure.</p>
+<p>On success, it will also set the follow attributes in the object:</p>
+<dl>
+<dt><strong><a name="extract_path" class="item">$ae-&gt;extract_path</a></strong></dt>
+
+<dd>
+<p>This is the directory that the files where extracted to.</p>
+</dd>
+<dt><strong><a name="files" class="item">$ae-&gt;files</a></strong></dt>
+
+<dd>
+<p>This is an array ref with the paths of all the files in the archive,
+relative to the <code>to</code> argument you specified.
+To get the full path to an extracted file, you would use:</p>
+<pre>
+    <span class="variable">File::Spec</span><span class="operator">-&gt;</span><span class="variable">catfile</span><span class="operator">(</span> <span class="variable">$to</span><span class="operator">,</span> <span class="variable">$ae</span><span class="operator">-&gt;</span><span class="variable">files</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">);</span>
+</pre>
+<p>Note that all files from a tar archive will be in unix format, as per
+the tar specification.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="accessors">ACCESSORS</a></h1>
+<p>
+</p>
+<h2><a name="_ae__error__bool__">$ae-&gt;error([BOOL])</a></h2>
+<p>Returns the last encountered error as string.
+Pass it a true value to get the <code>Carp::longmess()</code> output instead.</p>
+<p>
+</p>
+<h2><a name="_ae__extract_path">$ae-&gt;extract_path</a></h2>
+<p>This is the directory the archive got extracted to.
+See <code>extract()</code> for details.</p>
+<p>
+</p>
+<h2><a name="_ae__files">$ae-&gt;files</a></h2>
+<p>This is an array ref holding all the paths from the archive.
+See <code>extract()</code> for details.</p>
+<p>
+</p>
+<h2><a name="_ae__archive">$ae-&gt;archive</a></h2>
+<p>This is the full path to the archive file represented by this
+<code>Archive::Extract</code> object.</p>
+<p>
+</p>
+<h2><a name="_ae__type">$ae-&gt;type</a></h2>
+<p>This is the type of archive represented by this <code>Archive::Extract</code>
+object. See accessors below for an easier way to use this.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__types">$ae-&gt;types</a></h2>
+<p>Returns a list of all known <code>types</code> for <code>Archive::Extract</code>'s
+<code>new</code> method.</p>
+<p>
+</p>
+<h2><a name="_ae__is_tgz">$ae-&gt;is_tgz</a></h2>
+<p>Returns true if the file is of type <code>.tar.gz</code>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__is_tar">$ae-&gt;is_tar</a></h2>
+<p>Returns true if the file is of type <a href="#tar"><code>.tar</code></a>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__is_gz">$ae-&gt;is_gz</a></h2>
+<p>Returns true if the file is of type <a href="#gz"><code>.gz</code></a>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__is_z">$ae-&gt;is_Z</a></h2>
+<p>Returns true if the file is of type <a href="#z"><code>.Z</code></a>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__is_zip">$ae-&gt;is_zip</a></h2>
+<p>Returns true if the file is of type <a href="#zip"><code>.zip</code></a>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__is_lzma">$ae-&gt;is_lzma</a></h2>
+<p>Returns true if the file is of type <a href="#lzma"><code>.lzma</code></a>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__is_xz">$ae-&gt;is_xz</a></h2>
+<p>Returns true if the file is of type <a href="#xz"><code>.xz</code></a>.
+See the <code>new()</code> method for details.</p>
+<p>
+</p>
+<h2><a name="_ae__bin_tar">$ae-&gt;bin_tar</a></h2>
+<p>Returns the full path to your tar binary, if found.</p>
+<p>
+</p>
+<h2><a name="_ae__bin_gzip">$ae-&gt;bin_gzip</a></h2>
+<p>Returns the full path to your gzip binary, if found</p>
+<p>
+</p>
+<h2><a name="_ae__bin_unzip">$ae-&gt;bin_unzip</a></h2>
+<p>Returns the full path to your unzip binary, if found</p>
+<p>
+</p>
+<h2><a name="_ae__bin_unlzma">$ae-&gt;bin_unlzma</a></h2>
+<p>Returns the full path to your unlzma binary, if found</p>
+<p>
+</p>
+<h2><a name="_ae__bin_unxz">$ae-&gt;bin_unxz</a></h2>
+<p>Returns the full path to your unxz binary, if found</p>
+<p>
+</p>
+<h2><a name="_bool____ae__have_old_bunzip2">$bool = $ae-&gt;have_old_bunzip2</a></h2>
+<p>Older versions of <code>/bin/bunzip2</code>, from before the <code>bunzip2 1.0</code> release,
+require all archive names to end in <a href="#bz2"><code>.bz2</code></a> or it will not extract
+them. This method checks if you have a recent version of <code>bunzip2</code>
+that allows any extension, or an older one that doesn't.</p>
+<p>
+</p>
+<h2><a name="debug__message__">debug( MESSAGE )</a></h2>
+<p>This method outputs MESSAGE to the default filehandle if <code>$DEBUG</code> is
+true. It's a small method, but it's here if you'd like to subclass it
+so you can so something else with any debugging output.</p>
+<p>
+</p>
+<hr />
+<h1><a name="how_it_works">HOW IT WORKS</a></h1>
+<p><code>Archive::Extract</code> tries first to determine what type of archive you
+are passing it, by inspecting its suffix. It does not do this by using
+Mime magic, or something related. See <code>CAVEATS</code> below.</p>
+<p>Once it has determined the file type, it knows which extraction methods
+it can use on the archive. It will try a perl solution first, then fall
+back to a commandline tool if that fails. If that also fails, it will
+return false, indicating it was unable to extract the archive.
+See the section on <code>GLOBAL VARIABLES</code> to see how to alter this order.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>
+</p>
+<h2><a name="file_extensions">File Extensions</a></h2>
+<p><code>Archive::Extract</code> trusts on the extension of the archive to determine
+what type it is, and what extractor methods therefore can be used. If
+your archives do not have any of the extensions as described in the
+<code>new()</code> method, you will have to specify the type explicitly, or
+<code>Archive::Extract</code> will not be able to extract the archive for you.</p>
+<p>
+</p>
+<h2><a name="supporting_very_large_files">Supporting Very Large Files</a></h2>
+<p><code>Archive::Extract</code> can use either pure perl modules or command line
+programs under the hood. Some of the pure perl modules (like
+<code>Archive::Tar</code> and Compress::unLZMA) take the entire contents of the archive into memory,
+which may not be feasible on your system. Consider setting the global
+variable <code>$Archive::Extract::PREFER_BIN</code> to <code>1</code>, which will prefer
+the use of command line programs and won't consume so much memory.</p>
+<p>See the <code>GLOBAL VARIABLES</code> section below for details.</p>
+<p>
+</p>
+<h2><a name="bunzip2_support_of_arbitrary_extensions_">Bunzip2 support of arbitrary extensions.</a></h2>
+<p>Older versions of <code>/bin/bunzip2</code> do not support arbitrary file
+extensions and insist on a <a href="#bz2"><code>.bz2</code></a> suffix. Although we do our best
+to guard against this, if you experience a bunzip2 error, it may
+be related to this. For details, please see the <code>have_old_bunzip2</code>
+method.</p>
+<p>
+</p>
+<hr />
+<h1><a name="global_variables">GLOBAL VARIABLES</a></h1>
+<p>
+</p>
+<h2><a name="_archive__extract__debug">$Archive::Extract::DEBUG</a></h2>
+<p>Set this variable to <code>true</code> to have all calls to command line tools
+be printed out, including all their output.
+This also enables <code>Carp::longmess</code> errors, instead of the regular
+<code>carp</code> errors.</p>
+<p>Good for tracking down why things don't work with your particular
+setup.</p>
+<p>Defaults to <code>false</code>.</p>
+<p>
+</p>
+<h2><a name="_archive__extract__warn">$Archive::Extract::WARN</a></h2>
+<p>This variable controls whether errors encountered internally by
+<code>Archive::Extract</code> should be <code>carp</code>'d or not.</p>
+<p>Set to false to silence warnings. Inspect the output of the <code>error()</code>
+method manually to see what went wrong.</p>
+<p>Defaults to <code>true</code>.</p>
+<p>
+</p>
+<h2><a name="_archive__extract__prefer_bin">$Archive::Extract::PREFER_BIN</a></h2>
+<p>This variables controls whether <code>Archive::Extract</code> should prefer the
+use of perl modules, or commandline tools to extract archives.</p>
+<p>Set to <code>true</code> to have <code>Archive::Extract</code> prefer commandline tools.</p>
+<p>Defaults to <code>false</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="todo___caveats">TODO / CAVEATS</a></h1>
+<dl>
+<dt><strong><a name="mime_magic_support" class="item">Mime magic support</a></strong></dt>
+
+<dd>
+<p>Maybe this module should use something like <code>File::Type</code> to determine
+the type, rather than blindly trust the suffix.</p>
+</dd>
+<dt><strong><a name="thread_safety" class="item">Thread safety</a></strong></dt>
+
+<dd>
+<p>Currently, <code>Archive::Extract</code> does a <a href="../../lib/pods/perlfunc.html#chdir"><code>chdir</code></a> to the extraction dir before
+extraction, and a <a href="../../lib/pods/perlfunc.html#chdir"><code>chdir</code></a> back again after. This is not necessarily
+thread safe. See <code>rt.cpan.org</code> bug <code>#45671</code> for details.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bug_reports">BUG REPORTS</a></h1>
+<p>Please report bugs or other issues to &lt;<a href="mailto:bug-archive-extract@rt.cpan.org<gt>">bug-archive-extract@rt.cpan.org<gt></a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This module by Jos Boumans &lt;<a href="mailto:kane@cpan.org">kane@cpan.org</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>This library is free software; you may redistribute and/or modify it
+under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

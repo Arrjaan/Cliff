@@ -1,0 +1,825 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>DBD::CSV - DBI driver for CSV files</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>DBD::CSV - DBI driver for CSV files</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#prerequisites">Prerequisites</a></li>
+		<li><a href="#installation">Installation</a></li>
+		<li><a href="#supported_sql_syntax">Supported SQL Syntax</a></li>
+	</ul>
+
+	<li><a href="#using_dbd__csv_with_dbi">Using DBD::CSV with DBI</a></li>
+	<ul>
+
+		<li><a href="#creating_a_database_handle__connect_">Creating a database handle (connect)</a></li>
+		<li><a href="#creating_and_dropping_tables">Creating and dropping tables</a></li>
+		<li><a href="#inserting__fetching_and_modifying_data">Inserting, fetching and modifying data</a></li>
+		<li><a href="#error_handling">Error handling</a></li>
+	</ul>
+
+	<li><a href="#dbi_database_handle_attributes">DBI database handle attributes</a></li>
+	<ul>
+
+		<li><a href="#metadata">Metadata</a></li>
+	</ul>
+
+	<li><a href="#dbd_csv_specific_database_handle_attributes">DBD-CSV specific database handle attributes</a></li>
+	<ul>
+
+		<li><a href="#driver_private_methods">Driver private methods</a></li>
+	</ul>
+
+	<li><a href="#known_issues">KNOWN ISSUES</a></li>
+	<li><a href="#todo">TODO</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#authors_and_maintainers">AUTHORS and MAINTAINERS</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>DBD::CSV - DBI driver for CSV files</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DBI</span><span class="operator">;</span>
+    <span class="comment"># See "Creating database handle" below</span>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">)</span> <span class="keyword">or</span>
+        <span class="keyword">die</span> <span class="string">"Cannot connect: </span><span class="variable">$DBI</span><span class="string">::errstr"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># Simple statements</span>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"CREATE TABLE a (id INTEGER, name CHAR (10))"</span><span class="operator">)</span> <span class="keyword">or</span>
+        <span class="keyword">die</span> <span class="string">"Cannot prepare: "</span> <span class="operator">.</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">errstr</span> <span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># Selecting</span>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">RaiseError</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"select * from foo"</span><span class="operator">);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">@row</span> <span class="operator">=</span> <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">fetchrow_array</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"id: </span><span class="variable">$row</span><span class="string">[0], name: </span><span class="variable">$row</span><span class="string">[1]\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># Updates</span>
+    <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"UPDATE a SET name = ? WHERE id = ?"</span><span class="operator">);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span> <span class="operator">(</span><span class="string">"DBI rocks!"</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">finish</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">disconnect</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The DBD::CSV module is yet another driver for the DBI (Database independent
+interface for Perl). This one is based on the SQL &quot;engine&quot; SQL::Statement
+and the abstract DBI driver DBD::File and implements access to so-called
+CSV files (Comma Separated Values). Such files are often used for exporting
+MS Access and MS Excel data.</p>
+<p>See <a href="../../lib/DBI.html">the DBI manpage</a> for details on DBI, <a href="../../lib/SQL/Statement.html">the SQL::Statement manpage</a> for details on
+SQL::Statement and <a href="../../lib/DBD/File.html">the DBD::File manpage</a> for details on the base class DBD::File.</p>
+<p>
+</p>
+<h2><a name="prerequisites">Prerequisites</a></h2>
+<p>The only system dependent feature that DBD::File uses, is the <a href="../../lib/pods/perlfunc.html#flock"><code>flock ()</code></a>
+function. Thus the module should run (in theory) on any system with
+a working <a href="../../lib/pods/perlfunc.html#flock"><code>flock ()</code></a>, in particular on all Unix machines and on Windows
+NT. Under Windows 95 and MacOS the use of <a href="../../lib/pods/perlfunc.html#flock"><code>flock ()</code></a> is disabled, thus
+the module should still be usable.</p>
+<p>Unlike other DBI drivers, you don't need an external SQL engine or a
+running server. All you need are the following Perl modules, available
+from any CPAN mirror, for example</p>
+<pre>
+  <a href="http://search.cpan.org/">http://search.cpan.org/</a></pre>
+<dl>
+<dt><strong><a name="dbi" class="item">DBI</a></strong></dt>
+
+<dd>
+<p>The DBI (Database independent interface for Perl), version 1.00 or
+a later release</p>
+</dd>
+<dt><strong><a name="dbd_file" class="item">DBD::File</a></strong></dt>
+
+<dd>
+<p>This is the base class for DBD::CSV, and it is part of the DBI
+distribution. As DBD::CSV requires version 0.38 or newer for DBD::File
+it effectively requires DBI version 1.611 or newer.</p>
+</dd>
+<dt><strong><a name="sql_statement" class="item">SQL::Statement</a></strong></dt>
+
+<dd>
+<p>A simple SQL engine. This module defines all of the SQL syntax for
+DBD::CSV, new SQL support is added with each release so you should
+look for updates to SQL::Statement regularly.</p>
+<p>It is possible to run <code>DBD::CSV</code> without this module if you define
+the environment variable <code>$DBI_SQL_NANO</code> to 1. This will reduce the
+SQL support a lot though. See <a href="../../lib/DBI/SQL/Nano.html">the DBI::SQL::Nano manpage</a> for more details. Note
+that the test suite does not test in this mode!</p>
+</dd>
+<dt><strong><a name="text_csv_xs" class="item">Text::CSV_XS</a></strong></dt>
+
+<dd>
+<p>This module is used for writing rows to or reading rows from CSV files.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="installation">Installation</a></h2>
+<p>Installing this module (and the prerequisites from above) is quite simple.
+The simplest way is to install the bundle:</p>
+<pre>
+    $ cpan Bundle::CSV</pre>
+<p>Alternatively, you can name them all</p>
+<pre>
+    $ cpan Text::CSV_XS DBI DBD::CSV</pre>
+<p>or even trust <code>cpan</code> to resolve all dependencies for you:</p>
+<pre>
+    $ cpan DBD::CSV</pre>
+<p>If you cannot, for whatever reason, use cpan, fetch all modules from
+CPAN, and build with a sequence like:</p>
+<pre>
+    gzip -d &lt; DBD-CSV-0.28.tgz | tar xf -</pre>
+<p>(this is for Unix users, Windows users would prefer WinZip or something
+similar) and then enter the following:</p>
+<pre>
+    cd DBD-CSV-0.28
+    perl Makefile.PL
+    make test</pre>
+<p>If any tests fail, let us know. Otherwise go on with</p>
+<pre>
+    make install UNINST=1</pre>
+<p>Note that you almost definitely need root or administrator permissions.
+If you don't have them, read the ExtUtils::MakeMaker man page for details
+on installing in your own directories. <a href="../../lib/ExtUtils/MakeMaker.html">the ExtUtils::MakeMaker manpage</a>.</p>
+<p>
+</p>
+<h2><a name="supported_sql_syntax">Supported SQL Syntax</a></h2>
+<p>All SQL processing for DBD::CSV is done by the <a href="../../lib/SQL/Statement.html">the SQL::Statement manpage</a> module.
+Features include joins, aliases, built-in and user-defined functions,
+and more.  See <a href="../../lib/SQL/Statement/Syntax.html">the SQL::Statement::Syntax manpage</a> for a description of the SQL
+syntax supported in DBD::CSV.</p>
+<p>Table names are case insensitive unless quoted.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_dbd__csv_with_dbi">Using DBD::CSV with DBI</a></h1>
+<p>For most things, DBD-CSV operates the same as any DBI driver.
+See <a href="../../lib/DBI.html">the DBI manpage</a> for detailed usage.</p>
+<p>
+</p>
+<h2><a name="creating_a_database_handle__connect_">Creating a database handle (connect)</a></h2>
+<p>Creating a database handle usually implies connecting to a database server.
+Thus this command reads</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DBI</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="operator">{</span>
+        <span class="string">f_dir</span> <span class="operator">=&gt;</span> <span class="string">"/home/user/folder"</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>The directory tells the driver where it should create or open tables (a.k.a.
+files). It defaults to the current directory, so the following are equivalent:</p>
+<pre>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">);</span>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">f_dir</span> <span class="operator">=&gt;</span> <span class="string">"."</span> <span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:f_dir=."</span><span class="operator">);</span>
+</pre>
+<p>We were told, that VMS might - for whatever reason - require:</p>
+<pre>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:f_dir="</span><span class="operator">);</span>
+</pre>
+<p>The preferred way of passing the arguments is by driver attributes:</p>
+<pre>
+    <span class="comment"># specify most possible flags via driver flags</span>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="operator">{</span>
+        <span class="string">f_schema</span>         <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+        <span class="string">f_dir</span>            <span class="operator">=&gt;</span> <span class="string">"data"</span><span class="operator">,</span>
+        <span class="string">f_ext</span>            <span class="operator">=&gt;</span> <span class="string">".csv/r"</span><span class="operator">,</span>
+        <span class="string">f_lock</span>           <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">,</span>
+        <span class="string">f_encoding</span>       <span class="operator">=&gt;</span> <span class="string">"utf8"</span><span class="operator">,</span>
+</pre>
+<pre>
+        <span class="string">csv_eol</span>          <span class="operator">=&gt;</span> <span class="string">"\r\n"</span><span class="operator">,</span>
+        <span class="string">csv_sep_char</span>     <span class="operator">=&gt;</span> <span class="string">","</span><span class="operator">,</span>
+        <span class="string">csv_quote_char</span>   <span class="operator">=&gt;</span> <span class="string">'"'</span><span class="operator">,</span>
+        <span class="string">csv_escape_char</span>  <span class="operator">=&gt;</span> <span class="string">'"'</span><span class="operator">,</span>
+        <span class="string">csv_class</span>        <span class="operator">=&gt;</span> <span class="string">"Text::CSV_XS"</span><span class="operator">,</span>
+        <span class="string">csv_null</span>         <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+        <span class="string">csv_tables</span>       <span class="operator">=&gt;</span> <span class="operator">{</span>
+            <span class="string">info</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">file</span> <span class="operator">=&gt;</span> <span class="string">"info.csv"</span> <span class="operator">}</span>
+            <span class="operator">}</span><span class="operator">,</span>
+</pre>
+<pre>
+        <span class="string">RaiseError</span>       <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+        <span class="string">PrintError</span>       <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+        <span class="string">FetchHashKeyName</span> <span class="operator">=&gt;</span> <span class="string">"NAME_lc"</span><span class="operator">,</span>
+        <span class="operator">})</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="variable">$DBI::errstr</span><span class="operator">;</span>
+</pre>
+<p>but you may set these attributes in the DSN as well, separated by semicolons.
+Pay attention to the semi-colon for <a href="#csv_sep_char"><code>csv_sep_char</code></a> (as seen in many CSV
+exports from MS Excel) is being escaped in below example, as is would
+otherwise be seen as attribute separator:</p>
+<pre>
+    <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span>
+        <span class="string">"dbi:CSV:f_dir=</span><span class="variable">$ENV</span><span class="string">{HOME}/csvdb;f_ext=.csv;f_lock=2;"</span> <span class="operator">.</span>
+        <span class="string">"f_encoding=utf8;csv_eol=\n;csv_sep_char=\\;;"</span> <span class="operator">.</span>
+        <span class="string">"csv_quote_char=\";csv_escape_char=\\;csv_class=Text::CSV_XS;"</span> <span class="operator">.</span>
+        <span class="string">"csv_null=1"</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="variable">$DBI::errstr</span><span class="operator">;</span>
+</pre>
+<p>Using attributes in the DSN is easier to use when the DSN is derived from an
+outside source (environment variable, database entry, or configure file),
+whereas using all entries in the attribute hash is easier to read and to
+maintain.</p>
+<p>
+</p>
+<h2><a name="creating_and_dropping_tables">Creating and dropping tables</a></h2>
+<p>You can create and drop tables with commands like the following:</p>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"CREATE TABLE </span><span class="variable">$table</span><span class="string"> (id INTEGER, name CHAR (64))"</span><span class="operator">);</span>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"DROP TABLE </span><span class="variable">$table</span><span class="string">"</span><span class="operator">);</span>
+</pre>
+<p>Note that currently only the column names will be stored and no other data.
+Thus all other information including column type (INTEGER or CHAR (x), for
+example), column attributes (NOT NULL, PRIMARY KEY, ...) will silently be
+discarded. This may change in a later release.</p>
+<p>A drop just removes the file without any warning.</p>
+<p>See <a href="../../lib/DBI.html">the DBI manpage</a> for more details.</p>
+<p>Table names cannot be arbitrary, due to restrictions of the SQL syntax.
+I recommend that table names are valid SQL identifiers: The first
+character is alphabetic, followed by an arbitrary number of alphanumeric
+characters. If you want to use other files, the file names must start
+with &quot;/&quot;, &quot;./&quot; or &quot;../&quot; and they must not contain white space.</p>
+<p>
+</p>
+<h2><a name="inserting__fetching_and_modifying_data">Inserting, fetching and modifying data</a></h2>
+<p>The following examples insert some data in a table and fetch it back:
+First all data in the string:</p>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"INSERT INTO </span><span class="variable">$table</span><span class="string"> VALUES (1, "</span><span class="operator">.</span>
+               <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">quote</span> <span class="operator">(</span><span class="string">"foobar"</span><span class="operator">)</span> <span class="operator">.</span> <span class="string">")"</span><span class="operator">);</span>
+</pre>
+<p>Note the use of the quote method for escaping the word &quot;foobar&quot;. Any
+string must be escaped, even if it does not contain binary data.</p>
+<p>Next an example using parameters:</p>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"INSERT INTO </span><span class="variable">$table</span><span class="string"> VALUES (?, ?)"</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="number">2</span><span class="operator">,</span>
+              <span class="string">"It's a string!"</span><span class="operator">);</span>
+</pre>
+<p>Note that you don't need to use the quote method here, this is done
+automatically for you. This version is particularly well designed for
+loops. Whenever performance is an issue, I recommend using this method.</p>
+<p>You might wonder about the <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>. Don't wonder, just take it as it
+is. :-) It's an attribute argument that I have never ever used and
+will be parsed to the prepare method as a second argument.</p>
+<p>To retrieve data, you can use the following:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="string">"SELECT * FROM </span><span class="variable">$table</span><span class="string"> WHERE id &gt; 1 ORDER BY id"</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$sth</span>   <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="variable">$query</span><span class="operator">);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span> <span class="operator">();</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$row</span> <span class="operator">=</span> <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">fetchrow_hashref</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"Found result row: id = "</span><span class="operator">,</span> <span class="variable">$row</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">id</span><span class="operator">}</span><span class="operator">,</span>
+              <span class="string">", name = "</span><span class="operator">,</span> <span class="variable">$row</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">finish</span> <span class="operator">();</span>
+</pre>
+<p>Again, column binding works: The same example again.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">qq;
+        SELECT * FROM </span><span class="variable">$table</span><span class="string"> WHERE id &gt; 1 ORDER BY id;</span>
+        <span class="operator">;);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$id</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">bind_columns</span> <span class="operator">(</span><span class="keyword">undef</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$id</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$name</span><span class="operator">);</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"Found result row: id = </span><span class="variable">$id</span><span class="string">, name = </span><span class="variable">$name</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">finish</span><span class="operator">;</span>
+</pre>
+<p>Of course you can even use input parameters. Here's the same example
+for the third time:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"SELECT * FROM </span><span class="variable">$table</span><span class="string"> WHERE id = ?"</span><span class="operator">);</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">bind_columns</span> <span class="operator">(</span><span class="keyword">undef</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$id</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$name</span><span class="operator">);</span>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="variable">$i</span> <span class="operator">&lt;=</span> <span class="number">2</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">++)</span> <span class="operator">{</span>
+        <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span> <span class="operator">(</span><span class="variable">$id</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">print</span> <span class="string">"Found result row: id = </span><span class="variable">$id</span><span class="string">, name = </span><span class="variable">$name</span><span class="string">\n"</span><span class="operator">;</span>
+            <span class="operator">}</span>
+        <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">finish</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>See <a href="../../lib/DBI.html">the DBI manpage</a> for details on these methods. See <a href="../../lib/SQL/Statement.html">the SQL::Statement manpage</a> for
+details on the WHERE clause.</p>
+<p>Data rows are modified with the UPDATE statement:</p>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"UPDATE </span><span class="variable">$table</span><span class="string"> SET id = 3 WHERE id = 1"</span><span class="operator">);</span>
+</pre>
+<p>Likewise you use the DELETE statement for removing rows:</p>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"DELETE FROM </span><span class="variable">$table</span><span class="string"> WHERE id &gt; 1"</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="error_handling">Error handling</a></h2>
+<p>In the above examples we have never cared about return codes. Of course,
+this cannot be recommended. Instead we should have written (for example):</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"SELECT * FROM </span><span class="variable">$table</span><span class="string"> WHERE id = ?"</span><span class="operator">)</span> <span class="keyword">or</span>
+        <span class="keyword">die</span> <span class="string">"prepare: "</span> <span class="operator">.</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">errstr</span> <span class="operator">();</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">bind_columns</span> <span class="operator">(</span><span class="keyword">undef</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$id</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$name</span><span class="operator">)</span> <span class="keyword">or</span>
+        <span class="keyword">die</span> <span class="string">"bind_columns: "</span> <span class="operator">.</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">errstr</span> <span class="operator">();</span>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="variable">$i</span> <span class="operator">&lt;=</span> <span class="number">2</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">++)</span> <span class="operator">{</span>
+        <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span> <span class="operator">(</span><span class="variable">$id</span><span class="operator">)</span> <span class="keyword">or</span>
+            <span class="keyword">die</span> <span class="string">"execute: "</span> <span class="operator">.</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">errstr</span> <span class="operator">();</span>
+        <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">fetch</span> <span class="keyword">and</span>
+            <span class="keyword">print</span> <span class="string">"Found result row: id = </span><span class="variable">$id</span><span class="string">, name = </span><span class="variable">$name</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">finish</span> <span class="operator">(</span><span class="variable">$id</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"finish: "</span> <span class="operator">.</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">errstr</span> <span class="operator">();</span>
+</pre>
+<p>Obviously this is tedious. Fortunately we have DBI's <em>RaiseError</em>
+attribute:</p>
+<pre>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">RaiseError</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="variable">$@</span> <span class="operator">=</span> <span class="string">""</span><span class="operator">;</span>
+    <span class="keyword">eval</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"SELECT * FROM </span><span class="variable">$table</span><span class="string"> WHERE id = ?"</span><span class="operator">);</span>
+        <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">bind_columns</span> <span class="operator">(</span><span class="keyword">undef</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$id</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$name</span><span class="operator">);</span>
+        <span class="keyword">for</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="variable">$i</span> <span class="operator">&lt;=</span> <span class="number">2</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">++)</span> <span class="operator">{</span>
+            <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span> <span class="operator">(</span><span class="variable">$id</span><span class="operator">);</span>
+            <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">fetch</span> <span class="keyword">and</span>
+                <span class="keyword">print</span> <span class="string">"Found result row: id = </span><span class="variable">$id</span><span class="string">, name = </span><span class="variable">$name</span><span class="string">\n"</span><span class="operator">;</span>
+            <span class="operator">}</span>
+        <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">finish</span> <span class="operator">(</span><span class="variable">$id</span><span class="operator">);</span>
+        <span class="operator">};</span>
+    <span class="variable">$@</span> <span class="keyword">and</span> <span class="keyword">die</span> <span class="string">"SQL database error: $@"</span><span class="operator">;</span>
+</pre>
+<p>This is not only shorter, it even works when using DBI methods within
+subroutines.</p>
+<p>
+</p>
+<hr />
+<h1><a name="dbi_database_handle_attributes">DBI database handle attributes</a></h1>
+<p>
+</p>
+<h2><a name="metadata">Metadata</a></h2>
+<p>The following attributes are handled by DBI itself and not by DBD::File,
+thus they all work as expected:</p>
+<pre>
+    Active
+    ActiveKids
+    CachedKids
+    CompatMode             (Not used)
+    InactiveDestroy
+    Kids
+    PrintError
+    RaiseError
+    Warn                   (Not used)</pre>
+<p>The following DBI attributes are handled by DBD::File:</p>
+<dl>
+<dt><strong><a name="autocommit" class="item">AutoCommit</a></strong></dt>
+
+<dd>
+<p>Always on</p>
+</dd>
+<dt><strong><a name="chopblanks" class="item">ChopBlanks</a></strong></dt>
+
+<dd>
+<p>Works</p>
+</dd>
+<dt><strong><a name="num_of_fields" class="item">NUM_OF_FIELDS</a></strong></dt>
+
+<dd>
+<p>Valid after <code>$sth-&gt;execute</code></p>
+</dd>
+<dt><strong><a name="num_of_params" class="item">NUM_OF_PARAMS</a></strong></dt>
+
+<dd>
+<p>Valid after <code>$sth-&gt;prepare</code></p>
+</dd>
+<dt><strong><a name="name4" class="item">NAME</a></strong></dt>
+
+<dt><strong><a name="name_lc" class="item">NAME_lc</a></strong></dt>
+
+<dt><strong><a name="name_uc" class="item">NAME_uc</a></strong></dt>
+
+<dd>
+<p>Valid after <code>$sth-&gt;execute</code>; undef for Non-Select statements.</p>
+</dd>
+<dt><strong><a name="nullable" class="item">NULLABLE</a></strong></dt>
+
+<dd>
+<p>Not really working. Always returns an array ref of one's, as DBD::CSV
+does not verify input data. Valid after <code>$sth-&gt;execute</code>; undef for
+non-Select statements.</p>
+</dd>
+</dl>
+<p>These attributes and methods are not supported:</p>
+<pre>
+    bind_param_inout
+    CursorName
+    LongReadLen
+    LongTruncOk</pre>
+<p>
+</p>
+<hr />
+<h1><a name="dbd_csv_specific_database_handle_attributes">DBD-CSV specific database handle attributes</a></h1>
+<p>In addition to the DBI attributes, you can use the following dbh
+attributes:</p>
+<dl>
+<dt><strong><a name="f_dir" class="item">f_dir</a></strong></dt>
+
+<dd>
+<p>This attribute is used for setting the directory where CSV files are
+opened. Usually you set it in the dbh, it defaults to the current
+directory (&quot;.&quot;). However, it is overwritable in the statement handles.</p>
+</dd>
+<dt><strong><a name="f_ext" class="item">f_ext</a></strong></dt>
+
+<dd>
+<p>This attribute is used for setting the file extension.</p>
+</dd>
+<dt><strong><a name="f_schema" class="item">f_schema</a></strong></dt>
+
+<dd>
+<p>This attribute allows you to set the database schema name. The default is
+to use the owner of <a href="#f_dir"><code>f_dir</code></a>. <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is allowed, but not in the DSN part.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="operator">{</span>
+        <span class="string">f_schema</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+        <span class="string">f_dir</span>    <span class="operator">=&gt;</span> <span class="string">"data"</span><span class="operator">,</span>
+        <span class="string">f_ext</span>    <span class="operator">=&gt;</span> <span class="string">".csv/r"</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="variable">$DBI::errstr</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="f_encoding" class="item">f_encoding</a></strong></dt>
+
+<dd>
+<p>This attribute allows you to set the encoding of the data. With CSV, it is
+not possible to set (and remember) the encoding on a per-field basis, but
+DBD::File now allows to set the encoding of the underlying file. If this
+attribute is not set, or undef is passed, the file will be seen as binary.</p>
+</dd>
+<dt><strong><a name="f_lock" class="item">f_lock</a></strong></dt>
+
+<dd>
+<p>With this attribute, you can force locking mode (if locking is supported
+at all) for opening tables. By default, tables are opened with a shared
+lock for reading, and with an exclusive lock for writing. The supported
+modes are:</p>
+<ol>
+<li>
+<p>Force no locking at all.</p>
+</li>
+<li>
+<p>Only shared locks will be used.</p>
+</li>
+<li>
+<p>Only exclusive locks will be used.</p>
+</li>
+</ol>
+<p>But see <a href="../../lib/DBD/File.html#known_bugs">KNOWN BUGS in the DBD::File manpage</a>.</p>
+</dd>
+<dt><strong><a name="csv_eol" class="item">csv_eol</a></strong></dt>
+
+<dt><strong><a name="csv_sep_char" class="item">csv_sep_char</a></strong></dt>
+
+<dt><strong><a name="csv_quote_char" class="item">csv_quote_char</a></strong></dt>
+
+<dt><strong><a name="csv_escape_char" class="item">csv_escape_char</a></strong></dt>
+
+<dt><strong><a name="csv_class" class="item">csv_class</a></strong></dt>
+
+<dt><strong><a name="csv_csv" class="item">csv_csv</a></strong></dt>
+
+<dd>
+<p>The attributes <em>csv_eol</em>, <em>csv_sep_char</em>, <em>csv_quote_char</em> and
+<em>csv_escape_char</em> are corresponding to the respective attributes of the
+Text::CSV_XS object. You want to set these attributes if you have unusual
+CSV files like <em class="file">/etc/passwd</em> or MS Excel generated CSV files with a semicolon
+as separator. Defaults are &quot;\015\012&quot;, ';', '&quot;' and '&quot;', respectively.</p>
+<p>The <em>csv_eol</em> attribute defines the end-of-line pattern, which is better
+known as a record separator pattern since it separates records.  The default
+is windows-style end-of-lines &quot;\015\012&quot; for output (writing) and unset for
+input (reading), so if on unix you may want to set this to newline (&quot;\n&quot;)
+like this:</p>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_eol</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>It is also possible to use multi-character patterns as record separators.
+For example this file uses newlines as field separators (sep_char) and
+the pattern &quot;\n__ENDREC__\n&quot; as the record separators (eol):</p>
+<pre>
+  name
+  city
+  __ENDREC__
+  joe
+  seattle
+  __ENDREC__
+  sue
+  portland
+  __ENDREC__</pre>
+<p>To handle this file, you'd do this:</p>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">eol</span><span class="operator">}</span>      <span class="operator">=</span> <span class="string">"\n__ENDREC__\n"</span> <span class="operator">,</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">sep_char</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"\n"</span>
+</pre>
+<p>The attributes are used to create an instance of the class <em>csv_class</em>,
+by default Text::CSV_XS. Alternatively you may pass an instance as
+<em>csv_csv</em>, the latter takes precedence. Note that the <em>binary</em>
+attribute <em>must</em> be set to a true value in that case.</p>
+<p>Additionally you may overwrite these attributes on a per-table base in
+the <em>csv_tables</em> attribute.</p>
+</dd>
+<dt><strong><a name="csv_null" class="item">csv_null</a></strong></dt>
+
+<dd>
+<p>With this option set, all new statement handles will set <code>always_quote</code>
+and <code>blank_is_undef</code> in the CSV parser and writer, so it knows how to
+distinguish between the empty string and <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or <code>NULL</code>. You cannot
+reset it with a false value. You can pass it to connect, or set it later:</p>
+<pre>
+  <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="operator">{</span> <span class="string">csv_null</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_null</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="csv_tables" class="item">csv_tables</a></strong></dt>
+
+<dd>
+<p>This hash ref is used for storing table dependent metadata. For any
+table it contains an element with the table name as key and another
+hash ref with the following attributes:</p>
+</dd>
+<dt><strong><a name="csv" class="item">csv_*</a></strong></dt>
+
+<dd>
+<p>All other attributes that start with <code>csv_</code> and are not described above
+will be passed to <a href="#text_csv_xs"><code>Text::CSV_XS</code></a> (without the <code>csv_</code> prefix). these
+extra options are most likely to be only useful for reading (select)
+handles. Examples:</p>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_allow_whitespace</span><span class="operator">}</span>    <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_allow_loose_quotes</span><span class="operator">}</span>  <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_allow_loose_escapes</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>See the <a href="#text_csv_xs"><code>Text::CSV_XS</code></a> documentation for the full list and the documentation.</p>
+<dl>
+<dt><strong><a name="file" class="item">file</a></strong></dt>
+
+<dd>
+<p>The tables file name; defaults to</p>
+<pre>
+    <span class="string">"</span><span class="variable">$dbh</span><span class="string">-&gt;{f_dir}/</span><span class="variable">$table</span><span class="string">"</span>
+</pre>
+</dd>
+<dt><strong><a name="eol" class="item">eol</a></strong></dt>
+
+<dt><strong><a name="sep_char" class="item">sep_char</a></strong></dt>
+
+<dt><strong><a name="quote_char" class="item">quote_char</a></strong></dt>
+
+<dt><strong><a name="escape_char" class="item">escape_char</a></strong></dt>
+
+<dt><strong><a name="class" class="item">class</a></strong></dt>
+
+<dt><strong>csv</strong></dt>
+
+<dd>
+<p>These correspond to the attributes <em>csv_eol</em>, <em>csv_sep_char</em>,
+<em>csv_quote_char</em>, <em>csv_escape_char</em>, <em>csv_class</em> and <em>csv_csv</em>.
+The difference is that they work on a per-table base.</p>
+</dd>
+<dt><strong><a name="col_names" class="item">col_names</a></strong></dt>
+
+<dt><strong><a name="skip_first_row" class="item">skip_first_row</a></strong></dt>
+
+<dd>
+<p>By default DBD::CSV assumes that column names are stored in the first row
+of the CSV file and sanitizes them (see <a href="#raw_header"><code>raw_header</code></a> below). If this is
+not the case, you can supply an array ref of table names with the
+<em>col_names</em> attribute. In that case the attribute <em>skip_first_row</em> will
+be set to FALSE.</p>
+<p>If you supply an empty array ref, the driver will read the first row
+for you, count the number of columns and create column names like
+<code>col0</code>, <code>col1</code>, ...</p>
+</dd>
+<dt><strong><a name="raw_header" class="item">raw_header</a></strong></dt>
+
+<dd>
+<p>Due to the SQL standard, field names cannot contain special characters
+like a dot (<code>.</code>). Following the approach of mdb_tools, all these tokens
+are translated to an underscore (<code>_</code>) when reading the first line of the
+CSV file, so all field names are `sanitized'. If you do not want this to
+happen, set <a href="#raw_header"><code>raw_header</code></a> to a true value. DBD::CSV cannot guarantee that
+any part in the toolchain will work if field names have those characters,
+and the chances are high that the SQL statements will fail.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>It's strongly recommended to check the attributes supported by
+<a href="../../lib/DBD/File.html#metadata">Metadata in the DBD::File manpage</a>.</p>
+<p>Example: Suggest you want to use <em class="file">/etc/passwd</em> as a CSV file. :-)
+There simplest way is:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DBI</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="operator">{</span>
+        <span class="string">f_dir</span>           <span class="operator">=&gt;</span> <span class="string">"/etc"</span><span class="operator">,</span>
+        <span class="string">csv_sep_char</span>    <span class="operator">=&gt;</span> <span class="string">":"</span><span class="operator">,</span>
+        <span class="string">csv_quote_char</span>  <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+        <span class="string">csv_escape_char</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_tables</span><span class="operator">}{</span><span class="string">passwd</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">{</span>
+        <span class="string">col_names</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw( login password uid gid realname
+                          directory shell )</span><span class="operator">]</span><span class="operator">;</span>
+        <span class="operator">}</span><span class="operator">;</span>
+    <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"SELECT * FROM passwd"</span><span class="operator">);</span>
+</pre>
+<p>Another possibility where you leave all the defaults as they are and
+overwrite them on a per table base:</p>
+<pre>
+    <span class="keyword">require</span> <span class="variable">DBI</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:"</span><span class="operator">);</span>
+    <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">csv_tables</span><span class="operator">}{</span><span class="string">passwd</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">{</span>
+        <span class="string">eol</span>         <span class="operator">=&gt;</span> <span class="string">"\n"</span><span class="operator">,</span>
+        <span class="string">sep_char</span>    <span class="operator">=&gt;</span> <span class="string">":"</span><span class="operator">,</span>
+        <span class="string">quote_char</span>  <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+        <span class="string">escape_char</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+        <span class="string">file</span>        <span class="operator">=&gt;</span> <span class="string">"/etc/passwd"</span><span class="operator">,</span>
+        <span class="string">col_names</span>   <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">qw( login password uid gid
+                            realname directory shell )</span><span class="operator">]</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">;</span>
+    <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span> <span class="operator">(</span><span class="string">"SELECT * FROM passwd"</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="driver_private_methods">Driver private methods</a></h2>
+<p>These methods are inherited from DBD::File:</p>
+<dl>
+<dt><strong><a name="data_sources" class="item">data_sources</a></strong></dt>
+
+<dd>
+<p>The <a href="#data_sources"><code>data_sources</code></a> method returns a list of sub-directories of the current
+directory in the form &quot;dbi:CSV:directory=$dirname&quot;.</p>
+<p>If you want to read the sub-directories of another directory, use</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$drh</span>  <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">install_driver</span> <span class="operator">(</span><span class="string">"CSV"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">$drh</span><span class="operator">-&gt;</span><span class="variable">data_sources</span> <span class="operator">(</span><span class="string">f_dir</span> <span class="operator">=&gt;</span> <span class="string">"/usr/local/csv_data"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="list_tables" class="item">list_tables</a></strong></dt>
+
+<dd>
+<p>This method returns a list of file names inside $dbh-&gt;{directory}.
+Example:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$dbh</span>  <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span> <span class="operator">(</span><span class="string">"dbi:CSV:directory=/usr/local/csv_data"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">func</span> <span class="operator">(</span><span class="string">"list_tables"</span><span class="operator">);</span>
+</pre>
+<p>Note that the list includes all files contained in the directory, even
+those that have non-valid table names, from the view of SQL. See
+<a href="#creating_and_dropping_tables">Creating and dropping tables</a> above.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="known_issues">KNOWN ISSUES</a></h1>
+<ul>
+<li>
+<p>The module is using flock () internally. However, this function is not
+available on platforms. Using flock () is disabled on MacOS and Windows
+95: There's no locking at all (perhaps not so important on these
+operating systems, as they are for single users anyways).</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="todo">TODO</a></h1>
+<dl>
+<dt><strong><a name="tests" class="item">Tests</a></strong></dt>
+
+<dd>
+<p>Aim for a full 100% code coverage</p>
+<pre>
+ <span class="operator">-</span> <span class="variable">eol</span>      <span class="variable">Make</span> <span class="variable">tests</span> <span class="keyword">for</span> <span class="variable">different</span> <span class="variable">record</span> <span class="variable">separators</span><span class="operator">.</span>
+ <span class="operator">-</span> <span class="variable">csv_xs</span>   <span class="variable">Test</span> <span class="variable">with</span> <span class="variable">a</span> <span class="variable">variety</span> <span class="variable">of</span> <span class="variable">combinations</span> <span class="keyword">for</span>
+            <span class="variable">sep_char</span><span class="operator">,</span> <span class="variable">quote_char</span><span class="operator">,</span> <span class="keyword">and</span> <span class="variable">escape_char</span> <span class="variable">testing</span>
+ <span class="operator">-</span> <span class="variable">quoting</span>  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span> <span class="operator">(</span><span class="string">"drop table </span><span class="variable">$_</span><span class="string">"</span><span class="operator">)</span> <span class="keyword">for</span> <span class="variable">DBI</span><span class="operator">-</span><span class="variable">tables</span> <span class="operator">();</span>
+ <span class="operator">-</span> <span class="variable">errors</span>   <span class="variable">Make</span> <span class="variable">sure</span> <span class="variable">that</span> <span class="variable">all</span> <span class="variable">documented</span> <span class="variable">exceptions</span> <span class="variable">are</span> <span class="variable">tested</span><span class="operator">.</span>
+            <span class="operator">.</span> <span class="keyword">write</span> <span class="variable">to</span> <span class="keyword">write</span><span class="operator">-</span><span class="variable">protected</span> <span class="variable">file</span>
+            <span class="operator">.</span> <span class="keyword">read</span> <span class="variable">from</span> <span class="variable">badly</span> <span class="variable">formatted</span> <span class="variable">csv</span>
+            <span class="operator">.</span> <span class="variable">pass</span> <span class="variable">bad</span> <span class="variable">arguments</span> <span class="variable">to</span> <span class="variable">csv</span> <span class="variable">parser</span> <span class="keyword">while</span> <span class="variable">fetching</span>
+</pre>
+<p>Add tests that specifically test DBD::File functionality where
+that is useful.</p>
+</dd>
+<dt><strong><a name="rt" class="item">RT</a></strong></dt>
+
+<dd>
+<p>Attack all open DBD::CSV bugs in RT</p>
+</dd>
+<dt><strong><a name="cpan_forum" class="item">CPAN::Forum</a></strong></dt>
+
+<dd>
+<p>Attack all items in <a href="http://www.cpanforum.com/dist/DBD-CSV">http://www.cpanforum.com/dist/DBD-CSV</a></p>
+</dd>
+<dt><strong><a name="documentation" class="item">Documentation</a></strong></dt>
+
+<dd>
+<p>Expand on error-handling, and document all possible errors.
+Use Text::CSV_XS::error_diag () wherever possible.</p>
+</dd>
+<dt><strong><a name="debugging" class="item">Debugging</a></strong></dt>
+
+<dd>
+<p>Implement and document dbd_verbose.</p>
+</dd>
+<dt><strong><a name="data_dictionary" class="item">Data dictionary</a></strong></dt>
+
+<dd>
+<p>Investigate the possibility to store the data dictionary in a file like
+.sys$columns that can store the field attributes (type, key, nullable).</p>
+</dd>
+<dt><strong><a name="examples" class="item">Examples</a></strong></dt>
+
+<dd>
+<p>Make more real-life examples from the docs in examples/</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/DBI.html">the DBI manpage</a>, <a href="../../lib/Text/CSV_XS.html">the Text::CSV_XS manpage</a>, <a href="../../lib/SQL/Statement.html">the SQL::Statement manpage</a>, <a href="../../lib/DBI/SQL/Nano.html">the DBI::SQL::Nano manpage</a></p>
+<p>For help on the use of DBD::CSV, see the DBI users mailing list:</p>
+<pre>
+  <a href="http://lists.cpan.org/showlist.cgi?name=dbi-users">http://lists.cpan.org/showlist.cgi?name=dbi-users</a></pre>
+<p>For general information on DBI see</p>
+<pre>
+  <a href="http://dbi.perl.org/">http://dbi.perl.org/</a> and <a href="http://faq.dbi-support.com/">http://faq.dbi-support.com/</a></pre>
+<p>
+</p>
+<hr />
+<h1><a name="authors_and_maintainers">AUTHORS and MAINTAINERS</a></h1>
+<p>This module is currently maintained by</p>
+<pre>
+    H.Merijn Brand &lt;h.m.brand@xs4all.nl&gt;</pre>
+<p>in close cooperation with and help from</p>
+<pre>
+    Jens Rehsack &lt;sno@NetBSD.org&gt;</pre>
+<p>The original author is Jochen Wiedmann.
+Previous maintainer was Jeff Zucker</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>Copyright (C) 2009-2011 by H.Merijn Brand
+Copyright (C) 2004-2009 by Jeff Zucker
+Copyright (C) 1998-2004 by Jochen Wiedmann</p>
+<p>All rights reserved.</p>
+<p>You may distribute this module under the terms of either the GNU
+General Public License or the Artistic License, as specified in
+the Perl README file.</p>
+
+</body>
+
+</html>

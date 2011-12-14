@@ -1,0 +1,779 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Attribute::Handlers - Simpler definition of attribute handlers</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Attribute::Handlers - Simpler definition of attribute handlers</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#typed_lexicals">Typed lexicals</a></li>
+		<li><a href="#type_specific_attribute_handlers">Type-specific attribute handlers</a></li>
+		<li><a href="#non_interpretive_attribute_handlers">Non-interpretive attribute handlers</a></li>
+		<li><a href="#phase_specific_attribute_handlers">Phase-specific attribute handlers</a></li>
+		<li><a href="#attributes_as_tie_interfaces">Attributes as <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> interfaces</a></li>
+		<ul>
+
+			<li><a href="#passing_the_tied_object_to_tie">Passing the tied object to <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a></a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#utility_functions">UTILITY FUNCTIONS</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Attribute::Handlers - Simpler definition of attribute handlers</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>This document describes version 0.91 of Attribute::Handlers,
+released May 20, 2011.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+        <span class="keyword">package</span> <span class="variable">MyClass</span><span class="operator">;</span>
+        <span class="keyword">require</span> <span class="number">5.006</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span><span class="operator">;</span>
+        <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">'redefine'</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Good : ATTR</span><span class="operator">(</span>SCALAR<span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$package</span><span class="operator">,</span> <span class="variable">$symbol</span><span class="operator">,</span> <span class="variable">$referent</span><span class="operator">,</span> <span class="variable">$attr</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="comment"># Invoked for any scalar variable with a :Good attribute,</span>
+                <span class="comment"># provided the variable was declared in MyClass (or</span>
+                <span class="comment"># a derived class) or typed to MyClass.</span>
+</pre>
+<pre>
+                # Do whatever to $referent here (executed in CHECK phase).
+                ...
+        }</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Bad : ATTR</span><span class="operator">(</span>SCALAR<span class="operator">)</span> <span class="operator">{</span>
+                <span class="comment"># Invoked for any scalar variable with a :Bad attribute,</span>
+                <span class="comment"># provided the variable was declared in MyClass (or</span>
+                <span class="comment"># a derived class) or typed to MyClass.</span>
+                <span class="operator">...</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Good : ATTR</span><span class="operator">(</span>ARRAY<span class="operator">)</span> <span class="operator">{</span>
+                <span class="comment"># Invoked for any array variable with a :Good attribute,</span>
+                <span class="comment"># provided the variable was declared in MyClass (or</span>
+                <span class="comment"># a derived class) or typed to MyClass.</span>
+                <span class="operator">...</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Good : ATTR</span><span class="operator">(</span>HASH<span class="operator">)</span> <span class="operator">{</span>
+                <span class="comment"># Invoked for any hash variable with a :Good attribute,</span>
+                <span class="comment"># provided the variable was declared in MyClass (or</span>
+                <span class="comment"># a derived class) or typed to MyClass.</span>
+                <span class="operator">...</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Ugly : ATTR</span><span class="operator">(</span>CODE<span class="operator">)</span> <span class="operator">{</span>
+                <span class="comment"># Invoked for any subroutine declared in MyClass (or a </span>
+                <span class="comment"># derived class) with an :Ugly attribute.</span>
+                <span class="operator">...</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Omni : ATTR </span><span class="operator">{</span>
+                <span class="comment"># Invoked for any scalar, array, hash, or subroutine</span>
+                <span class="comment"># with an :Omni attribute, provided the variable or</span>
+                <span class="comment"># subroutine was declared in MyClass (or a derived class)</span>
+                <span class="comment"># or the variable was typed to MyClass.</span>
+                <span class="comment"># Use ref($_[2]) to determine what kind of referent it was.</span>
+                <span class="operator">...</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span> <span class="string">autotie</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Cycle</span> <span class="operator">=&gt;</span> <span class="variable">Tie::Cycle</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$next</span> <span class="operator">:</span> <span class="variable">Cycle</span><span class="operator">(</span><span class="operator">[</span><span class="string">'A'</span><span class="operator">..</span><span class="string">'Z'</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module, when inherited by a package, allows that package's class to
+define attribute handler subroutines for specific attributes. Variables
+and subroutines subsequently defined in that package, or in packages
+derived from that package may be given attributes with the same names as
+the attribute handler subroutines, which will then be called in one of
+the compilation phases (i.e. in a <code>BEGIN</code>, <a href="../../lib/pods/perlvar.html#check"><code>CHECK</code></a>, <a href="../../lib/pods/perlvar.html#init"><code>INIT</code></a>, or <a href="../../lib/pods/perlvar.html#end"><code>END</code></a>
+block). (<code>UNITCHECK</code> blocks don't correspond to a global compilation
+phase, so they can't be specified here.)</p>
+<p>To create a handler, define it as a subroutine with the same name as
+the desired attribute, and declare the subroutine itself with the  
+attribute <a href="#attr"><code>:ATTR</code></a>. For example:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Loud :ATTR </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$package</span><span class="operator">,</span> <span class="variable">$symbol</span><span class="operator">,</span> <span class="variable">$referent</span><span class="operator">,</span> <span class="variable">$attr</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">,</span> <span class="variable">$phase</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">,</span> <span class="variable">$linenum</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">STDERR</span>
+            <span class="keyword">ref</span><span class="operator">(</span><span class="variable">$referent</span><span class="operator">),</span> <span class="string">" "</span><span class="operator">,</span>
+            <span class="variable">*</span><span class="operator">{</span><span class="variable">$symbol</span><span class="operator">}{</span><span class="string">NAME</span><span class="operator">}</span><span class="operator">,</span> <span class="string">" "</span><span class="operator">,</span>
+            <span class="string">"(</span><span class="variable">$referent</span><span class="string">) "</span><span class="operator">,</span> <span class="string">"was just declared "</span><span class="operator">,</span>
+            <span class="string">"and ascribed the ${attr} attribute "</span><span class="operator">,</span>
+            <span class="string">"with data (</span><span class="variable">$data</span><span class="string">)\n"</span><span class="operator">,</span>
+            <span class="string">"in phase </span><span class="variable">$phase</span><span class="string">\n"</span><span class="operator">,</span>
+            <span class="string">"in file </span><span class="variable">$filename</span><span class="string"> at line </span><span class="variable">$linenum</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>This creates a handler for the attribute <code>:Loud</code> in the class LoudDecl.
+Thereafter, any subroutine declared with a <code>:Loud</code> attribute in the class
+LoudDecl:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> foo: Loud </span><span class="operator">{...}</span>
+</pre>
+<p>causes the above handler to be invoked, and passed:</p>
+<dl>
+<dt><strong><a name="_0_2" class="item">[0]</a></strong></dt>
+
+<dd>
+<p>the name of the package into which it was declared;</p>
+</dd>
+<dt><strong><a name="14" class="item">[1]</a></strong></dt>
+
+<dd>
+<p>a reference to the symbol table entry (typeglob) containing the subroutine;</p>
+</dd>
+<dt><strong><a name="23" class="item">[2]</a></strong></dt>
+
+<dd>
+<p>a reference to the subroutine;</p>
+</dd>
+<dt><strong><a name="33" class="item">[3]</a></strong></dt>
+
+<dd>
+<p>the name of the attribute;</p>
+</dd>
+<dt><strong><a name="4" class="item">[4]</a></strong></dt>
+
+<dd>
+<p>any data associated with that attribute;</p>
+</dd>
+<dt><strong><a name="5" class="item">[5]</a></strong></dt>
+
+<dd>
+<p>the name of the phase in which the handler is being invoked;</p>
+</dd>
+<dt><strong><a name="6" class="item">[6]</a></strong></dt>
+
+<dd>
+<p>the filename in which the handler is being invoked;</p>
+</dd>
+<dt><strong><a name="7" class="item">[7]</a></strong></dt>
+
+<dd>
+<p>the line number in this file.</p>
+</dd>
+</dl>
+<p>Likewise, declaring any variables with the <code>:Loud</code> attribute within the
+package:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$foo</span> <span class="operator">:</span><span class="variable">Loud</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">@foo</span> <span class="operator">:</span><span class="variable">Loud</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">%foo</span> <span class="operator">:</span><span class="variable">Loud</span><span class="operator">;</span>
+</pre>
+<p>will cause the handler to be called with a similar argument list (except,
+of course, that <code>$_[2]</code> will be a reference to the variable).</p>
+<p>The package name argument will typically be the name of the class into
+which the subroutine was declared, but it may also be the name of a derived
+class (since handlers are inherited).</p>
+<p>If a lexical variable is given an attribute, there is no symbol table to 
+which it belongs, so the symbol table argument (<code>$_[1]</code>) is set to the
+string <code>'LEXICAL'</code> in that case. Likewise, ascribing an attribute to
+an anonymous subroutine results in a symbol table argument of <code>'ANON'</code>.</p>
+<p>The data argument passes in the value (if any) associated with the
+attribute. For example, if <code>&amp;foo</code> had been declared:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>"turn it up to 11, man!"<span class="operator">)</span> <span class="operator">{...}</span>
+</pre>
+<p>then a reference to an array containing the string
+<code>&quot;turn it up to 11, man!&quot;</code> would be passed as the last argument.</p>
+<p>Attribute::Handlers makes strenuous efforts to convert
+the data argument (<code>$_[4]</code>) to a useable form before passing it to
+the handler (but see <a href="#non_interpretive_attribute_handlers">Non-interpretive attribute handlers</a>).
+If those efforts succeed, the interpreted data is passed in an array
+reference; if they fail, the raw data is passed as a string.
+For example, all of these:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>till=&gt;ears=&gt;are=&gt;bleeding<span class="operator">)</span> <span class="operator">{...}</span>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>qw/till ears are bleeding/<span class="operator">)</span> <span class="operator">{...}</span>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>qw/my, ears, are, bleeding/<span class="operator">)</span> <span class="operator">{...}</span>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>till,ears,are,bleeding<span class="operator">)</span> <span class="operator">{...}</span>
+</pre>
+<p>causes it to pass <code>['till','ears','are','bleeding']</code> as the handler's
+data argument. While:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>['till','ears','are','bleeding']<span class="operator">)</span> <span class="operator">{...}</span>
+</pre>
+<p>causes it to pass <code>[ ['till','ears','are','bleeding'] ]</code>; the array
+reference specified in the data being passed inside the standard
+array reference indicating successful interpretation.</p>
+<p>However, if the data can't be parsed as valid Perl, then
+it is passed as an uninterpreted string. For example:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>my,ears,are,bleeding<span class="operator">)</span> <span class="operator">{...}</span>
+    <span class="keyword">sub</span><span class="variable"> foo :Loud</span><span class="operator">(</span>qw/my ears are bleeding<span class="operator">)</span> <span class="operator">{...}</span>
+</pre>
+<p>cause the strings <code>'my,ears,are,bleeding'</code> and
+<code>'qw/my ears are bleeding'</code> respectively to be passed as the
+data argument.</p>
+<p>If no value is associated with the attribute, <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is passed.</p>
+<p>
+</p>
+<h2><a name="typed_lexicals">Typed lexicals</a></h2>
+<p>Regardless of the package in which it is declared, if a lexical variable is
+ascribed an attribute, the handler that is invoked is the one belonging to
+the package to which it is typed. For example, the following declarations:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">OtherClass</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">LoudDecl</span> <span class="variable">$loudobj</span> <span class="operator">:</span> <span class="variable">Loud</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">LoudDecl</span> <span class="variable">@loudobjs</span> <span class="operator">:</span> <span class="variable">Loud</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">LoudDecl</span> <span class="variable">%loudobjex</span> <span class="operator">:</span> <span class="variable">Loud</span><span class="operator">;</span>
+</pre>
+<p>causes the LoudDecl::Loud handler to be invoked (even if OtherClass also
+defines a handler for <code>:Loud</code> attributes).</p>
+<p>
+</p>
+<h2><a name="type_specific_attribute_handlers">Type-specific attribute handlers</a></h2>
+<p>If an attribute handler is declared and the <a href="#attr"><code>:ATTR</code></a> specifier is
+given the name of a built-in type (<code>SCALAR</code>, <code>ARRAY</code>, <code>HASH</code>, or <code>CODE</code>),
+the handler is only applied to declarations of that type. For example,
+the following definition:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> RealLoud :ATTR</span><span class="operator">(</span>SCALAR<span class="operator">)</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Yeeeeow!"</span> <span class="operator">}</span>
+</pre>
+<p>creates an attribute handler that applies only to scalars:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Painful</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">base</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$metal</span> <span class="operator">:</span> <span class="variable">RealLoud</span><span class="operator">;</span>           <span class="comment"># invokes &amp;LoudDecl::RealLoud</span>
+        <span class="keyword">my</span> <span class="variable">@metal</span> <span class="operator">:</span> <span class="variable">RealLoud</span><span class="operator">;</span>           <span class="comment"># error: unknown attribute</span>
+        <span class="keyword">my</span> <span class="variable">%metal</span> <span class="operator">:</span> <span class="variable">RealLoud</span><span class="operator">;</span>           <span class="comment"># error: unknown attribute</span>
+        <span class="keyword">sub</span><span class="variable"> metal : RealLoud </span><span class="operator">{...}</span>      <span class="comment"># error: unknown attribute</span>
+</pre>
+<p>You can, of course, declare separate handlers for these types as well
+(but you'll need to specify <code>no warnings 'redefine'</code> to do it quietly):</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span><span class="operator">;</span>
+        <span class="keyword">no</span> <span class="variable">warnings</span> <span class="string">'redefine'</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> RealLoud :ATTR</span><span class="operator">(</span>SCALAR<span class="operator">)</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Yeeeeow!"</span> <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> RealLoud :ATTR</span><span class="operator">(</span>ARRAY<span class="operator">)</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Urrrrrrrrrr!"</span> <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> RealLoud :ATTR</span><span class="operator">(</span>HASH<span class="operator">)</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Arrrrrgggghhhhhh!"</span> <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> RealLoud :ATTR</span><span class="operator">(</span>CODE<span class="operator">)</span> <span class="operator">{</span> <span class="variable">croak</span> <span class="string">"Real loud sub torpedoed"</span> <span class="operator">}</span>
+</pre>
+<p>You can also explicitly indicate that a single handler is meant to be
+used for all types of referents like so:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">LoudDecl</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> SeriousLoud :ATTR</span><span class="operator">(</span>ANY<span class="operator">)</span> <span class="operator">{</span> <span class="keyword">warn</span> <span class="string">"Hearing loss imminent"</span> <span class="operator">}</span>
+</pre>
+<p>(I.e. <a href="#attr"><code>ATTR(ANY)</code></a> is a synonym for <a href="#attr"><code>:ATTR</code></a>).</p>
+<p>
+</p>
+<h2><a name="non_interpretive_attribute_handlers">Non-interpretive attribute handlers</a></h2>
+<p>Occasionally the strenuous efforts Attribute::Handlers makes to convert
+the data argument (<code>$_[4]</code>) to a useable form before passing it to
+the handler get in the way.</p>
+<p>You can turn off that eagerness-to-help by declaring
+an attribute handler with the keyword <code>RAWDATA</code>. For example:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Raw          : ATTR</span><span class="operator">(</span>RAWDATA<span class="operator">)</span> <span class="operator">{...}</span>
+        <span class="keyword">sub</span><span class="variable"> Nekkid       : ATTR</span><span class="operator">(</span>SCALAR,RAWDATA<span class="operator">)</span> <span class="operator">{...}</span>
+        <span class="keyword">sub</span><span class="variable"> Au::Naturale : ATTR</span><span class="operator">(</span>RAWDATA,ANY<span class="operator">)</span> <span class="operator">{...}</span>
+</pre>
+<p>Then the handler makes absolutely no attempt to interpret the data it
+receives and simply passes it as a string:</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$power</span> <span class="operator">:</span> <span class="variable">Raw</span><span class="operator">(</span><span class="number">1</span><span class="operator">..</span><span class="number">100</span><span class="operator">);</span>        <span class="comment"># handlers receives "1..100"</span>
+</pre>
+<p>
+</p>
+<h2><a name="phase_specific_attribute_handlers">Phase-specific attribute handlers</a></h2>
+<p>By default, attribute handlers are called at the end of the compilation
+phase (in a <a href="../../lib/pods/perlvar.html#check"><code>CHECK</code></a> block). This seems to be optimal in most cases because
+most things that can be defined are defined by that point but nothing has
+been executed.</p>
+<p>However, it is possible to set up attribute handlers that are called at
+other points in the program's compilation or execution, by explicitly
+stating the phase (or phases) in which you wish the attribute handler to
+be called. For example:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> Early    :ATTR</span><span class="operator">(</span>SCALAR,BEGIN<span class="operator">)</span> <span class="operator">{...}</span>
+        <span class="keyword">sub</span><span class="variable"> Normal   :ATTR</span><span class="operator">(</span>SCALAR,CHECK<span class="operator">)</span> <span class="operator">{...}</span>
+        <span class="keyword">sub</span><span class="variable"> Late     :ATTR</span><span class="operator">(</span>SCALAR,INIT<span class="operator">)</span> <span class="operator">{...}</span>
+        <span class="keyword">sub</span><span class="variable"> Final    :ATTR</span><span class="operator">(</span>SCALAR,END<span class="operator">)</span> <span class="operator">{...}</span>
+        <span class="keyword">sub</span><span class="variable"> Bookends :ATTR</span><span class="operator">(</span>SCALAR,BEGIN,END<span class="operator">)</span> <span class="operator">{...}</span>
+</pre>
+<p>As the last example indicates, a handler may be set up to be (re)called in
+two or more phases. The phase name is passed as the handler's final argument.</p>
+<p>Note that attribute handlers that are scheduled for the <code>BEGIN</code> phase
+are handled as soon as the attribute is detected (i.e. before any
+subsequently defined <code>BEGIN</code> blocks are executed).</p>
+<p>
+</p>
+<h2><a name="attributes_as_tie_interfaces">Attributes as <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> interfaces</a></h2>
+<p>Attributes make an excellent and intuitive interface through which to tie
+variables. For example:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Tie::Cycle</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> UNIVERSAL::Cycle : ATTR</span><span class="operator">(</span>SCALAR<span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$package</span><span class="operator">,</span> <span class="variable">$symbol</span><span class="operator">,</span> <span class="variable">$referent</span><span class="operator">,</span> <span class="variable">$attr</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">,</span> <span class="variable">$phase</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+                <span class="variable">$data</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$data</span> <span class="operator">]</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$data</span> <span class="keyword">eq</span> <span class="string">'ARRAY'</span><span class="operator">;</span>
+                <span class="keyword">tie</span> <span class="variable">$$referent</span><span class="operator">,</span> <span class="string">'Tie::Cycle'</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># and thereafter...</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$next</span> <span class="operator">:</span> <span class="variable">Cycle</span><span class="operator">(</span><span class="string">'A'</span><span class="operator">..</span><span class="string">'Z'</span><span class="operator">);</span>     <span class="comment"># $next is now a tied variable</span>
+</pre>
+<pre>
+        <span class="keyword">while</span> <span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+                <span class="keyword">print</span> <span class="variable">$next</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>Note that, because the <code>Cycle</code> attribute receives its arguments in the
+<code>$data</code> variable, if the attribute is given a list of arguments, <code>$data</code>
+will consist of a single array reference; otherwise, it will consist of the
+single argument directly. Since Tie::Cycle requires its cycling values to
+be passed as an array reference, this means that we need to wrap
+non-array-reference arguments in an array constructor:</p>
+<pre>
+        <span class="variable">$data</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$data</span> <span class="operator">]</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$data</span> <span class="keyword">eq</span> <span class="string">'ARRAY'</span><span class="operator">;</span>
+</pre>
+<p>Typically, however, things are the other way around: the tieable class expects
+its arguments as a flattened list, so the attribute looks like:</p>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> UNIVERSAL::Cycle : ATTR</span><span class="operator">(</span>SCALAR<span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$package</span><span class="operator">,</span> <span class="variable">$symbol</span><span class="operator">,</span> <span class="variable">$referent</span><span class="operator">,</span> <span class="variable">$attr</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">,</span> <span class="variable">$phase</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">@data</span> <span class="operator">=</span> <span class="keyword">ref</span> <span class="variable">$data</span> <span class="keyword">eq</span> <span class="string">'ARRAY'</span> <span class="operator">?</span> <span class="variable">@$data</span> <span class="operator">:</span> <span class="variable">$data</span><span class="operator">;</span>
+                <span class="keyword">tie</span> <span class="variable">$$referent</span><span class="operator">,</span> <span class="string">'Tie::Whatever'</span><span class="operator">,</span> <span class="variable">@data</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>This software pattern is so widely applicable that Attribute::Handlers
+provides a way to automate it: specifying <code>'autotie'</code> in the
+<code>use Attribute::Handlers</code> statement. So, the cycling example,
+could also be written:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span> <span class="string">autotie</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Cycle</span> <span class="operator">=&gt;</span> <span class="string">'Tie::Cycle'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># and thereafter...</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$next</span> <span class="operator">:</span> <span class="variable">Cycle</span><span class="operator">(</span><span class="operator">[</span><span class="string">'A'</span><span class="operator">..</span><span class="string">'Z'</span><span class="operator">]</span><span class="operator">);</span>     <span class="comment"># $next is now a tied variable</span>
+</pre>
+<pre>
+        <span class="keyword">while</span> <span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+                <span class="keyword">print</span> <span class="variable">$next</span><span class="operator">;</span>
+</pre>
+<p>Note that we now have to pass the cycling values as an array reference,
+since the <code>autotie</code> mechanism passes <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> a list of arguments as a list
+(as in the Tie::Whatever example), <em>not</em> as an array reference (as in
+the original Tie::Cycle example at the start of this section).</p>
+<p>The argument after <code>'autotie'</code> is a reference to a hash in which each key is
+the name of an attribute to be created, and each value is the class to which
+variables ascribed that attribute should be tied.</p>
+<p>Note that there is no longer any need to import the Tie::Cycle module --
+Attribute::Handlers takes care of that automagically. You can even pass
+arguments to the module's <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine, by appending them to the
+class name. For example:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span>
+                <span class="string">autotie</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Dir</span> <span class="operator">=&gt;</span> <span class="string">'Tie::Dir qw(DIR_UNLINK)'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>If the attribute name is unqualified, the attribute is installed in the
+current package. Otherwise it is installed in the qualifier's package:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Here</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span> <span class="string">autotie</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+                <span class="variable">Other::Good</span> <span class="operator">=&gt;</span> <span class="variable">Tie::SecureHash</span><span class="operator">,</span> <span class="comment"># tie attr installed in Other::</span>
+                        <span class="string">Bad</span> <span class="operator">=&gt;</span> <span class="variable">Tie::Taxes</span><span class="operator">,</span>      <span class="comment"># tie attr installed in Here::</span>
+            <span class="variable">UNIVERSAL::Ugly</span> <span class="operator">=&gt;</span> <span class="variable">Software::Patent</span> <span class="comment"># tie attr installed everywhere</span>
+        <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Autoties are most commonly used in the module to which they actually tie, 
+and need to export their attributes to any module that calls them. To
+facilitate this, Attribute::Handlers recognizes a special &quot;pseudo-class&quot; --
+<code>__CALLER__</code>, which may be specified as the qualifier of an attribute:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Tie::Me::Kangaroo</span><span class="operator">:</span><span class="variable">Down::Sport</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span> <span class="string">autotie</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">'__CALLER__::Roo'</span> <span class="operator">=&gt;</span> <span class="keyword">__PACKAGE__</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>This causes Attribute::Handlers to define the <code>Roo</code> attribute in the package
+that imports the Tie::Me::Kangaroo:Down::Sport module.</p>
+<p>Note that it is important to quote the __CALLER__::Roo identifier because
+a bug in perl 5.8 will refuse to parse it and cause an unknown error.</p>
+<p>
+</p>
+<h3><a name="passing_the_tied_object_to_tie">Passing the tied object to <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a></a></h3>
+<p>Occasionally it is important to pass a reference to the object being tied
+to the TIESCALAR, TIEHASH, etc. that ties it.</p>
+<p>The <code>autotie</code> mechanism supports this too. The following code:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span> <span class="string">autotieref</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Selfish</span> <span class="operator">=&gt;</span> <span class="variable">Tie::Selfish</span> <span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$var</span> <span class="operator">:</span> <span class="variable">Selfish</span><span class="operator">(</span><span class="variable">@args</span><span class="operator">);</span>
+</pre>
+<p>has the same effect as:</p>
+<pre>
+        <span class="keyword">tie</span> <span class="keyword">my</span> <span class="variable">$var</span><span class="operator">,</span> <span class="string">'Tie::Selfish'</span><span class="operator">,</span> <span class="variable">@args</span><span class="operator">;</span>
+</pre>
+<p>But when <code>&quot;autotieref&quot;</code> is used instead of <code>&quot;autotie&quot;</code>:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span> <span class="string">autotieref</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">Selfish</span> <span class="operator">=&gt;</span> <span class="variable">Tie::Selfish</span> <span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$var</span> <span class="operator">:</span> <span class="variable">Selfish</span><span class="operator">(</span><span class="variable">@args</span><span class="operator">);</span>
+</pre>
+<p>the effect is to pass the <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> call an extra reference to the variable
+being tied:</p>
+<pre>
+        <span class="keyword">tie</span> <span class="keyword">my</span> <span class="variable">$var</span><span class="operator">,</span> <span class="string">'Tie::Selfish'</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">$var</span><span class="operator">,</span> <span class="variable">@args</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>If the class shown in <a href="#synopsis">SYNOPSIS</a> were placed in the MyClass.pm
+module, then the following code:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">MyClass</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">MyClass</span> <span class="variable">$slr</span> <span class="operator">:</span><span class="variable">Good</span> <span class="operator">:</span><span class="variable">Bad</span><span class="operator">(</span><span class="number">1</span><span class="operator">**</span><span class="number">1</span><span class="operator">-</span><span class="number">1</span><span class="operator">)</span> <span class="operator">:</span><span class="variable">Omni</span><span class="operator">(-</span><span class="variable">vorous</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">SomeOtherClass</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">base</span> <span class="variable">MyClass</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> tent </span><span class="operator">{</span> <span class="string">'acle'</span> <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> fn :Ugly</span><span class="operator">(</span>sister<span class="operator">)</span> <span class="operator">:</span><span class="variable">Omni</span><span class="operator">(</span><span class="string">'po'</span><span class="operator">,</span><span class="variable">tent</span><span class="operator">())</span> <span class="operator">{...}</span>
+        <span class="keyword">my</span> <span class="variable">@arr</span> <span class="operator">:</span><span class="variable">Good</span> <span class="operator">:</span><span class="variable">Omni</span><span class="operator">(</span><span class="regex">s/cie/nt/</span><span class="operator">);</span>
+        <span class="keyword">my</span> <span class="variable">%hsh</span> <span class="operator">:</span><span class="variable">Good</span><span class="operator">(</span><span class="string">q/bye/</span><span class="operator">)</span> <span class="operator">:</span><span class="variable">Omni</span><span class="operator">(</span><span class="string">q/bus/</span><span class="operator">);</span>
+</pre>
+<p>would cause the following handlers to be invoked:</p>
+<pre>
+        <span class="comment"># my MyClass $slr :Good :Bad(1**1-1) :Omni(-vorous);</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::Good</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">SCALAR</span><span class="operator">)(</span> <span class="string">'MyClass'</span><span class="operator">,</span>          <span class="comment"># class</span>
+                                    <span class="string">'LEXICAL'</span><span class="operator">,</span>          <span class="comment"># no typeglob</span>
+                                    <span class="operator">\</span><span class="variable">$slr</span><span class="operator">,</span>              <span class="comment"># referent</span>
+                                    <span class="string">'Good'</span><span class="operator">,</span>             <span class="comment"># attr name</span>
+                                    <span class="keyword">undef</span>               <span class="comment"># no attr data</span>
+                                    <span class="string">'CHECK'</span><span class="operator">,</span>            <span class="comment"># compiler phase</span>
+                                  <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::Bad</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">SCALAR</span><span class="operator">)(</span> <span class="string">'MyClass'</span><span class="operator">,</span>           <span class="comment"># class</span>
+                                   <span class="string">'LEXICAL'</span><span class="operator">,</span>           <span class="comment"># no typeglob</span>
+                                   <span class="operator">\</span><span class="variable">$slr</span><span class="operator">,</span>               <span class="comment"># referent</span>
+                                   <span class="string">'Bad'</span><span class="operator">,</span>               <span class="comment"># attr name</span>
+                                   <span class="number">0</span>                    <span class="comment"># eval'd attr data</span>
+                                   <span class="string">'CHECK'</span><span class="operator">,</span>             <span class="comment"># compiler phase</span>
+                                 <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::Omni</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">SCALAR</span><span class="operator">)(</span> <span class="string">'MyClass'</span><span class="operator">,</span>          <span class="comment"># class</span>
+                                    <span class="string">'LEXICAL'</span><span class="operator">,</span>          <span class="comment"># no typeglob</span>
+                                    <span class="operator">\</span><span class="variable">$slr</span><span class="operator">,</span>              <span class="comment"># referent</span>
+                                    <span class="string">'Omni'</span><span class="operator">,</span>             <span class="comment"># attr name</span>
+                                    <span class="string">'-vorous'</span>           <span class="comment"># eval'd attr data</span>
+                                    <span class="string">'CHECK'</span><span class="operator">,</span>            <span class="comment"># compiler phase</span>
+                                  <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># sub fn :Ugly(sister) :Omni('po',tent()) {...}</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::UGLY</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">CODE</span><span class="operator">)(</span> <span class="string">'SomeOtherClass'</span><span class="operator">,</span>     <span class="comment"># class</span>
+                                  <span class="operator">\</span><span class="variable">*SomeOtherClass::fn</span><span class="operator">,</span> <span class="comment"># typeglob</span>
+                                  <span class="operator">\&amp;</span><span class="variable">SomeOtherClass::fn</span><span class="operator">,</span> <span class="comment"># referent</span>
+                                  <span class="string">'Ugly'</span><span class="operator">,</span>               <span class="comment"># attr name</span>
+                                  <span class="string">'sister'</span>              <span class="comment"># eval'd attr data</span>
+                                  <span class="string">'CHECK'</span><span class="operator">,</span>              <span class="comment"># compiler phase</span>
+                                <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::Omni</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">CODE</span><span class="operator">)(</span> <span class="string">'SomeOtherClass'</span><span class="operator">,</span>     <span class="comment"># class</span>
+                                  <span class="operator">\</span><span class="variable">*SomeOtherClass::fn</span><span class="operator">,</span> <span class="comment"># typeglob</span>
+                                  <span class="operator">\&amp;</span><span class="variable">SomeOtherClass::fn</span><span class="operator">,</span> <span class="comment"># referent</span>
+                                  <span class="string">'Omni'</span><span class="operator">,</span>               <span class="comment"># attr name</span>
+                                  <span class="operator">[</span><span class="string">'po'</span><span class="operator">,</span><span class="string">'acle'</span><span class="operator">]</span>         <span class="comment"># eval'd attr data</span>
+                                  <span class="string">'CHECK'</span><span class="operator">,</span>              <span class="comment"># compiler phase</span>
+                                <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># my @arr :Good :Omni(s/cie/nt/);</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::Good</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">ARRAY</span><span class="operator">)(</span> <span class="string">'SomeOtherClass'</span><span class="operator">,</span>    <span class="comment"># class</span>
+                                   <span class="string">'LEXICAL'</span><span class="operator">,</span>           <span class="comment"># no typeglob</span>
+                                   <span class="operator">\</span><span class="variable">@arr</span><span class="operator">,</span>               <span class="comment"># referent</span>
+                                   <span class="string">'Good'</span><span class="operator">,</span>              <span class="comment"># attr name</span>
+                                   <span class="keyword">undef</span>                <span class="comment"># no attr data</span>
+                                   <span class="string">'CHECK'</span><span class="operator">,</span>             <span class="comment"># compiler phase</span>
+                                 <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="variable">MyClass::Omni</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">ARRAY</span><span class="operator">)(</span> <span class="string">'SomeOtherClass'</span><span class="operator">,</span>    <span class="comment"># class</span>
+                                   <span class="string">'LEXICAL'</span><span class="operator">,</span>           <span class="comment"># no typeglob</span>
+                                   <span class="operator">\</span><span class="variable">@arr</span><span class="operator">,</span>               <span class="comment"># referent</span>
+                                   <span class="string">'Omni'</span><span class="operator">,</span>              <span class="comment"># attr name</span>
+                                   <span class="string">""</span>                   <span class="comment"># eval'd attr data </span>
+                                   <span class="string">'CHECK'</span><span class="operator">,</span>             <span class="comment"># compiler phase</span>
+                                 <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="comment"># my %hsh :Good(q/bye) :Omni(q/bus/);</span>
+                                  
+        <span class="variable">MyClass::Good</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">HASH</span><span class="operator">)(</span> <span class="string">'SomeOtherClass'</span><span class="operator">,</span>     <span class="comment"># class</span>
+                                  <span class="string">'LEXICAL'</span><span class="operator">,</span>            <span class="comment"># no typeglob</span>
+                                  <span class="operator">\</span><span class="variable">%hsh</span><span class="operator">,</span>                <span class="comment"># referent</span>
+                                  <span class="string">'Good'</span><span class="operator">,</span>               <span class="comment"># attr name</span>
+                                  <span class="string">'q/bye'</span>               <span class="comment"># raw attr data</span>
+                                  <span class="string">'CHECK'</span><span class="operator">,</span>              <span class="comment"># compiler phase</span>
+                                <span class="operator">);</span>
+                        
+        <span class="variable">MyClass::Omni</span><span class="operator">:</span><span class="variable">ATTR</span><span class="operator">(</span><span class="variable">HASH</span><span class="operator">)(</span> <span class="string">'SomeOtherClass'</span><span class="operator">,</span>     <span class="comment"># class</span>
+                                  <span class="string">'LEXICAL'</span><span class="operator">,</span>            <span class="comment"># no typeglob</span>
+                                  <span class="operator">\</span><span class="variable">%hsh</span><span class="operator">,</span>                <span class="comment"># referent</span>
+                                  <span class="string">'Omni'</span><span class="operator">,</span>               <span class="comment"># attr name</span>
+                                  <span class="string">'bus'</span>                 <span class="comment"># eval'd attr data</span>
+                                  <span class="string">'CHECK'</span><span class="operator">,</span>              <span class="comment"># compiler phase</span>
+                                <span class="operator">);</span>
+</pre>
+<p>Installing handlers into UNIVERSAL, makes them...err..universal.
+For example:</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Descriptions</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Attribute::Handlers</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">%name</span><span class="operator">;</span>
+        <span class="keyword">sub</span><span class="variable"> name </span><span class="operator">{</span> <span class="keyword">return</span> <span class="variable">$name</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">[</span><span class="number">2</span><span class="operator">]}</span><span class="operator">||</span><span class="variable">*</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]}{</span><span class="string">NAME</span><span class="operator">}</span> <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> UNIVERSAL::Name :ATTR </span><span class="operator">{</span>
+                <span class="variable">$name</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">[</span><span class="number">2</span><span class="operator">]}</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> UNIVERSAL::Purpose :ATTR </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="variable">STDERR</span> <span class="string">"Purpose of "</span><span class="operator">,</span> <span class="operator">&amp;</span><span class="variable">name</span><span class="operator">,</span> <span class="string">" is </span><span class="variable">$_</span><span class="string">[4]\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> UNIVERSAL::Unit :ATTR </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="variable">STDERR</span> <span class="operator">&amp;</span><span class="variable">name</span><span class="operator">,</span> <span class="string">" measured in </span><span class="variable">$_</span><span class="string">[4]\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>Let's you write:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Descriptions</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$capacity</span> <span class="operator">:</span> <span class="variable">Name</span><span class="operator">(</span><span class="variable">capacity</span><span class="operator">)</span>
+                     <span class="operator">:</span> <span class="variable">Purpose</span><span class="operator">(</span><span class="variable">to</span> <span class="variable">store</span> <span class="variable">max</span> <span class="variable">storage</span> <span class="variable">capacity</span> <span class="keyword">for</span> <span class="variable">files</span><span class="operator">)</span>
+                     <span class="operator">:</span> <span class="variable">Unit</span><span class="operator">(</span><span class="variable">Gb</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Other</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> foo : Purpose</span><span class="operator">(</span>to foo all data before barring it<span class="operator">)</span> <span class="operator">{</span> <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># etc.</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="utility_functions">UTILITY FUNCTIONS</a></h1>
+<p>This module offers a single utility function, <a href="#findsym"><code>findsym()</code></a>.</p>
+<dl>
+<dt><strong><a name="findsym" class="item">findsym</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$symbol</span> <span class="operator">=</span> <span class="variable">Attribute::Handlers::findsym</span><span class="operator">(</span><span class="variable">$package</span><span class="operator">,</span> <span class="variable">$referent</span><span class="operator">);</span>
+</pre>
+<p>The function looks in the symbol table of <code>$package</code> for the typeglob for
+<code>$referent</code>, which is a reference to a variable or subroutine (SCALAR, ARRAY,
+HASH, or CODE). If it finds the typeglob, it returns it. Otherwise, it returns
+undef. Note that <a href="#findsym"><code>findsym</code></a> memoizes the typeglobs it has previously
+successfully found, so subsequent calls with the same arguments should be
+much faster.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="attr" class="item"><code>Bad attribute type: ATTR(%s)</code></a></strong></dt>
+
+<dd>
+<p>An attribute handler was specified with an <a href="#attr"><code>:ATTR(ref_type)</code></a>, but the
+type of referent it was defined to handle wasn't one of the five permitted:
+<code>SCALAR</code>, <code>ARRAY</code>, <code>HASH</code>, <code>CODE</code>, or <code>ANY</code>.</p>
+</dd>
+<dt><strong><a name="attribute_handler_s_doesn_t_handle_s_attributes" class="item"><code>Attribute handler %s doesn't handle %s attributes</code></a></strong></dt>
+
+<dd>
+<p>A handler for attributes of the specified name <em>was</em> defined, but not
+for the specified type of declaration. Typically encountered whe trying
+to apply a <code>VAR</code> attribute handler to a subroutine, or a <code>SCALAR</code>
+attribute handler to some other type of variable.</p>
+</dd>
+<dt><strong><a name="declaration_of_s_attribute_in_package_s_may_clash_with_future_reserved_word" class="item"><code>Declaration of %s attribute in package %s may clash with future reserved word</code></a></strong></dt>
+
+<dd>
+<p>A handler for an attributes with an all-lowercase name was declared. An
+attribute with an all-lowercase name might have a meaning to Perl
+itself some day, even though most don't yet. Use a mixed-case attribute
+name, instead.</p>
+</dd>
+<dt><strong><a name="can_t_have_two_attr_specifiers_on_one_subroutine" class="item"><code>Can't have two ATTR specifiers on one subroutine</code></a></strong></dt>
+
+<dd>
+<p>You just can't, okay?
+Instead, put all the specifications together with commas between them
+in a single <a href="#attr"><code>ATTR(specification)</code></a>.</p>
+</dd>
+<dt><strong><a name="can_t_autotie_a_s" class="item"><code>Can't autotie a %s</code></a></strong></dt>
+
+<dd>
+<p>You can only declare autoties for types <code>&quot;SCALAR&quot;</code>, <code>&quot;ARRAY&quot;</code>, and
+<code>&quot;HASH&quot;</code>. They're the only things (apart from typeglobs -- which are
+not declarable) that Perl can tie.</p>
+</dd>
+<dt><strong><a name="internal_error_s_symbol_went_missing" class="item"><code>Internal error: %s symbol went missing</code></a></strong></dt>
+
+<dd>
+<p>Something is rotten in the state of the program. An attributed
+subroutine ceased to exist between the point it was declared and the point
+at which its attribute handler(s) would have been called.</p>
+</dd>
+<dt><strong><a name="won_t_be_able_to_apply_end_handler" class="item"><code>Won't be able to apply END handler</code></a></strong></dt>
+
+<dd>
+<p>You have defined an END handler for an attribute that is being applied
+to a lexical variable.  Since the variable may not be available during END
+this won't happen.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Damian Conway (<a href="mailto:damian@conway.org">damian@conway.org</a>) The maintainer of this module is now Rafael
+Garcia-Suarez (<a href="mailto:rgarciasuarez@gmail.com">rgarciasuarez@gmail.com</a>)</p>
+<p>Maintainer of the CPAN release is Steffen Mueller (<a href="mailto:smueller@cpan.org">smueller@cpan.org</a>)
+Contact him with technical difficulties with respect to the packaging of the
+CPAN module.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>There are undoubtedly serious bugs lurking somewhere in code this funky :-)
+Bug reports and other feedback are most welcome.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<pre>
+         Copyright (c) 2001-2009, Damian Conway. All Rights Reserved.
+       This module is free software. It may be used, redistributed
+           and/or modified under the same terms as Perl itself.
+</pre>
+
+</body>
+
+</html>

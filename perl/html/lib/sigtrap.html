@@ -1,0 +1,225 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>sigtrap - Perl pragma to enable simple signal handling</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>sigtrap - Perl pragma to enable simple signal handling</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<ul>
+
+		<li><a href="#signal_handlers">SIGNAL HANDLERS</a></li>
+		<li><a href="#signal_lists">SIGNAL LISTS</a></li>
+		<li><a href="#other">OTHER</a></li>
+	</ul>
+
+	<li><a href="#examples">EXAMPLES</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>sigtrap - Perl pragma to enable simple signal handling</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(stack-trace old-interface-signals)</span><span class="operator">;</span>  <span class="comment"># equivalent</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(BUS SEGV PIPE ABRT)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die INT QUIT)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die normal-signals)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die untrapped normal-signals)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die untrapped normal-signals
+                    stack-trace any error-signals)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">'handler'</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">my_handler</span><span class="operator">,</span> <span class="string">'normal-signals'</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(handler my_handler normal-signals
+                    stack-trace error-signals)</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <strong>sigtrap</strong> pragma is a simple interface to installing signal
+handlers.  You can have it install one of two handlers supplied by
+<strong>sigtrap</strong> itself (one which provides a Perl stack trace and one which
+simply <a href="#die"><code>die()</code></a>s), or alternately you can supply your own handler for it
+to install.  It can be told only to install a handler for signals which
+are either untrapped or ignored.  It has a couple of lists of signals to
+trap, plus you can supply your own list of signals.</p>
+<p>The arguments passed to the <a href="../lib/pods/perlfunc.html#use"><code>use</code></a> statement which invokes <strong>sigtrap</strong>
+are processed in order.  When a signal name or the name of one of
+<strong>sigtrap</strong>'s signal lists is encountered a handler is immediately
+installed, when an option is encountered it affects subsequently
+installed handlers.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<p>
+</p>
+<h2><a name="signal_handlers">SIGNAL HANDLERS</a></h2>
+<p>These options affect which handler will be used for subsequently
+installed signals.</p>
+<dl>
+<dt><strong><a name="stack_trace" class="item"><strong>stack-trace</strong></a></strong></dt>
+
+<dd>
+<p>The handler used for subsequently installed signals outputs a Perl stack
+trace to STDERR and then tries to dump core.  This is the default signal
+handler.</p>
+</dd>
+<dt><strong><a name="die" class="item"><strong>die</strong></a></strong></dt>
+
+<dd>
+<p>The handler used for subsequently installed signals calls <a href="#die"><code>die</code></a>
+(actually <code>croak</code>) with a message indicating which signal was caught.</p>
+</dd>
+<dt><strong><a name="handler_your_handler" class="item"><strong>handler</strong> <em>your-handler</em></a></strong></dt>
+
+<dd>
+<p><em>your-handler</em> will be used as the handler for subsequently installed
+signals.  <em>your-handler</em> can be any value which is valid as an
+assignment to an element of <a href="../lib/pods/perlvar.html#_sig"><code>%SIG</code></a>. See <a href="../lib/pods/perlvar.html">the perlvar manpage</a> for examples of
+handler functions.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="signal_lists">SIGNAL LISTS</a></h2>
+<p><strong>sigtrap</strong> has a few built-in lists of signals to trap.  They are:</p>
+<dl>
+<dt><strong><a name="normal_signals" class="item"><strong>normal-signals</strong></a></strong></dt>
+
+<dd>
+<p>These are the signals which a program might normally expect to encounter
+and which by default cause it to terminate.  They are HUP, INT, PIPE and
+TERM.</p>
+</dd>
+<dt><strong><a name="error_signals" class="item"><strong>error-signals</strong></a></strong></dt>
+
+<dd>
+<p>These signals usually indicate a serious problem with the Perl
+interpreter or with your script.  They are ABRT, BUS, EMT, FPE, ILL,
+QUIT, SEGV, SYS and TRAP.</p>
+</dd>
+<dt><strong><a name="old_interface_signals" class="item"><strong>old-interface-signals</strong></a></strong></dt>
+
+<dd>
+<p>These are the signals which were trapped by default by the old
+<strong>sigtrap</strong> interface, they are ABRT, BUS, EMT, FPE, ILL, PIPE, QUIT,
+SEGV, SYS, TERM, and TRAP.  If no signals or signals lists are passed to
+<strong>sigtrap</strong>, this list is used.</p>
+</dd>
+</dl>
+<p>For each of these three lists, the collection of signals set to be
+trapped is checked before trapping; if your architecture does not
+implement a particular signal, it will not be trapped but rather
+silently ignored.</p>
+<p>
+</p>
+<h2><a name="other">OTHER</a></h2>
+<dl>
+<dt><strong><a name="untrapped" class="item"><strong>untrapped</strong></a></strong></dt>
+
+<dd>
+<p>This token tells <strong>sigtrap</strong> to install handlers only for subsequently
+listed signals which aren't already trapped or ignored.</p>
+</dd>
+<dt><strong><a name="any" class="item"><strong>any</strong></a></strong></dt>
+
+<dd>
+<p>This token tells <strong>sigtrap</strong> to install handlers for all subsequently
+listed signals.  This is the default behavior.</p>
+</dd>
+<dt><strong><a name="signal" class="item"><em>signal</em></a></strong></dt>
+
+<dd>
+<p>Any argument which looks like a signal name (that is,
+<code>/^[A-Z][A-Z0-9]*$/</code>) indicates that <strong>sigtrap</strong> should install a
+handler for that name.</p>
+</dd>
+<dt><strong><a name="number" class="item"><em>number</em></a></strong></dt>
+
+<dd>
+<p>Require that at least version <em>number</em> of <strong>sigtrap</strong> is being used.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>Provide a stack trace for the old-interface-signals:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span><span class="operator">;</span>
+</pre>
+<p>Ditto:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(stack-trace old-interface-signals)</span><span class="operator">;</span>
+</pre>
+<p>Provide a stack trace on the 4 listed signals only:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(BUS SEGV PIPE ABRT)</span><span class="operator">;</span>
+</pre>
+<p>Die on INT or QUIT:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die INT QUIT)</span><span class="operator">;</span>
+</pre>
+<p>Die on HUP, INT, PIPE or TERM:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die normal-signals)</span><span class="operator">;</span>
+</pre>
+<p>Die on HUP, INT, PIPE or TERM, except don't change the behavior for
+signals which are already trapped or ignored:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die untrapped normal-signals)</span><span class="operator">;</span>
+</pre>
+<p>Die on receipt one of an of the <strong>normal-signals</strong> which is currently
+<strong>untrapped</strong>, provide a stack trace on receipt of <strong>any</strong> of the
+<strong>error-signals</strong>:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(die untrapped normal-signals
+                    stack-trace any error-signals)</span><span class="operator">;</span>
+</pre>
+<p>Install <code>my_handler()</code> as the handler for the <strong>normal-signals</strong>:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">'handler'</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">my_handler</span><span class="operator">,</span> <span class="string">'normal-signals'</span><span class="operator">;</span>
+</pre>
+<p>Install <code>my_handler()</code> as the handler for the normal-signals, provide a
+Perl stack trace on receipt of one of the error-signals:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">sigtrap</span> <span class="string">qw(handler my_handler normal-signals
+                    stack-trace error-signals)</span><span class="operator">;</span>
+</pre>
+
+</body>
+
+</html>

@@ -1,0 +1,235 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>AutoSplit - split a package for autoloading</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>AutoSplit - split a package for autoloading</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#multiple_packages">Multiple packages</a></li>
+	</ul>
+
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>AutoSplit - split a package for autoloading</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="variable">autosplit</span><span class="operator">(</span><span class="variable">$file</span><span class="operator">,</span> <span class="variable">$dir</span><span class="operator">,</span> <span class="variable">$keep</span><span class="operator">,</span> <span class="variable">$check</span><span class="operator">,</span> <span class="variable">$modtime</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="variable">autosplit_lib_modules</span><span class="operator">(</span><span class="variable">@modules</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This function will split up your program into files that the AutoLoader
+module can handle. It is used by both the standard perl libraries and by
+the MakeMaker utility, to automatically configure libraries for autoloading.</p>
+<p>The <code>autosplit</code> interface splits the specified file into a hierarchy 
+rooted at the directory <code>$dir</code>. It creates directories as needed to reflect
+class hierarchy, and creates the file <em class="file">autosplit.ix</em>. This file acts as
+both forward declaration of all package routines, and as timestamp for the
+last update of the hierarchy.</p>
+<p>The remaining three arguments to <code>autosplit</code> govern other options to
+the autosplitter.</p>
+<dl>
+<dt><strong><a name="_keep" class="item">$keep</a></strong></dt>
+
+<dd>
+<p>If the third argument, <em>$keep</em>, is false, then any
+pre-existing <code>*.al</code> files in the autoload directory are removed if
+they are no longer part of the module (obsoleted functions).
+$keep defaults to 0.</p>
+</dd>
+<dt><strong><a name="_check" class="item">$check</a></strong></dt>
+
+<dd>
+<p>The
+fourth argument, <em>$check</em>, instructs <code>autosplit</code> to check the module
+currently being split to ensure that it includes a <a href="../lib/pods/perlfunc.html#use"><code>use</code></a>
+specification for the AutoLoader module, and skips the module if
+AutoLoader is not detected.
+$check defaults to 1.</p>
+</dd>
+<dt><strong><a name="_modtime" class="item">$modtime</a></strong></dt>
+
+<dd>
+<p>Lastly, the <em>$modtime</em> argument specifies
+that <code>autosplit</code> is to check the modification time of the module
+against that of the <code>autosplit.ix</code> file, and only split the module if
+it is newer.
+$modtime defaults to 1.</p>
+</dd>
+</dl>
+<p>Typical use of AutoSplit in the perl MakeMaker utility is via the command-line
+with:</p>
+<pre>
+ <span class="variable">perl</span> <span class="keyword">-e</span> <span class="string">'use AutoSplit; autosplit($ARGV[0], $ARGV[1], 0, 1, 1)'</span>
+</pre>
+<p>Defined as a Make macro, it is invoked with file and directory arguments;
+<code>autosplit</code> will split the specified file into the specified directory and
+delete obsolete <code>.al</code> files, after checking first that the module does use
+the AutoLoader, and ensuring that the module is not already currently split
+in its current form (the modtime test).</p>
+<p>The <code>autosplit_lib_modules</code> form is used in the building of perl. It takes
+as input a list of files (modules) that are assumed to reside in a directory
+<strong>lib</strong> relative to the current directory. Each file is sent to the 
+autosplitter one at a time, to be split into the directory <strong>lib/auto</strong>.</p>
+<p>In both usages of the autosplitter, only subroutines defined following the
+perl <em>__END__</em> token are split out into separate files. Some
+routines may be placed prior to this marker to force their immediate loading
+and parsing.</p>
+<p>
+</p>
+<h2><a name="multiple_packages">Multiple packages</a></h2>
+<p>As of version 1.01 of the AutoSplit module it is possible to have
+multiple packages within a single file. Both of the following cases
+are supported:</p>
+<pre>
+   <span class="keyword">package</span> <span class="variable">NAME</span><span class="operator">;</span>
+   <span class="comment">__END__
+   sub AAA { ... }
+   package NAME::option1;
+   sub BBB { ... }
+   package NAME::option2;
+   sub BBB { ... }
+   </span>
+</pre>
+<pre>
+   <span class="keyword">package</span> <span class="variable">NAME</span><span class="operator">;</span>
+   <span class="comment">__END__
+   sub AAA { ... }
+   sub NAME::option1::BBB { ... }
+   sub NAME::option2::BBB { ... }
+   </span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<p><code>AutoSplit</code> will inform the user if it is necessary to create the
+top-level directory specified in the invocation. It is preferred that
+the script or installation process that invokes <code>AutoSplit</code> have
+created the full directory path ahead of time. This warning may
+indicate that the module is being split into an incorrect path.</p>
+<p><code>AutoSplit</code> will warn the user of all subroutines whose name causes
+potential file naming conflicts on machines with drastically limited
+(8 characters or less) file name length. Since the subroutine name is
+used as the file name, these warnings can aid in portability to such
+systems.</p>
+<p>Warnings are issued and the file skipped if <code>AutoSplit</code> cannot locate
+either the <em>__END__</em> marker or a &quot;package Name;&quot;-style specification.</p>
+<p><code>AutoSplit</code> will also emit general diagnostics for inability to
+create directories or files.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p><code>AutoSplit</code> is maintained by the perl5-porters. Please direct
+any questions to the canonical mailing list. Anything that
+is applicable to the CPAN release can be sent to its maintainer,
+though.</p>
+<p>Author and Maintainer: The Perl5-Porters &lt;<a href="mailto:perl5-porters@perl.org">perl5-porters@perl.org</a>&gt;</p>
+<p>Maintainer of the CPAN release: Steffen Mueller &lt;<a href="mailto:smueller@cpan.org">smueller@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This package has been part of the perl core since the first release
+of perl5. It has been released separately to CPAN so older installations
+can benefit from bug fixes.</p>
+<p>This package has the same copyright and license as the perl core:</p>
+<pre>
+             <span class="variable">Copyright</span> <span class="operator">(</span><span class="variable">C</span><span class="operator">)</span> <span class="number">1993</span><span class="operator">,</span> <span class="number">1994</span><span class="operator">,</span> <span class="number">1995</span><span class="operator">,</span> <span class="number">1996</span><span class="operator">,</span> <span class="number">1997</span><span class="operator">,</span> <span class="number">1998</span><span class="operator">,</span> <span class="number">1999</span><span class="operator">,</span>
+                     <span class="number">2000</span><span class="operator">,</span> <span class="number">2001</span><span class="operator">,</span> <span class="number">2002</span><span class="operator">,</span> <span class="number">2003</span><span class="operator">,</span> <span class="number">2004</span><span class="operator">,</span> <span class="number">2005</span><span class="operator">,</span> <span class="number">2006</span><span class="operator">,</span> <span class="number">2007</span><span class="operator">,</span> <span class="number">2008</span>
+                     <span class="variable">by</span> <span class="variable">Larry</span> <span class="variable">Wall</span> <span class="keyword">and</span> <span class="variable">others</span>
+                 
+                            <span class="variable">All</span> <span class="variable">rights</span> <span class="variable">reserved</span><span class="operator">.</span>
+                 
+                 <span class="variable">This</span> <span class="variable">program</span> <span class="variable">is</span> <span class="variable">free</span> <span class="variable">software</span><span class="operator">;</span> <span class="variable">you</span> <span class="variable">can</span> <span class="variable">redistribute</span> <span class="variable">it</span> <span class="keyword">and</span><span class="regex">/or modify
+                 it under the terms of either:
+                 
+                     a) the GNU General Public License as published by the Free
+                     Software Foundation; either version 1, or (at your option) any
+                     later version, or
+                 
+                     b) the "Artistic License" which comes with this Kit.
+                 
+                 This program is distributed in the hope that it will be useful,
+                 but WITHOUT ANY WARRANTY; without even the implied warranty of
+                 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See either
+                 the GNU General Public License or the Artistic License for more details.
+                 
+                 You should have received a copy of the Artistic License with this
+                 Kit, in the file named "Artistic".  If not, I'll be glad to provide one.
+                 
+                 You should also have received a copy of the GNU General Public License
+                 along with this program in the file named "Copying". If not, write to the 
+                 Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+                 02111-1307, USA or visit their web page on the internet at
+                 http:/</span><span class="operator">/</span><span class="variable">www</span><span class="operator">.</span><span class="variable">gnu</span><span class="operator">.</span><span class="variable">org</span><span class="operator">/</span><span class="variable">copyleft</span><span class="operator">/</span><span class="variable">gpl</span><span class="operator">.</span><span class="variable">html</span><span class="operator">.</span>
+                 
+                 <span class="variable">For</span> <span class="variable">those</span> <span class="variable">of</span> <span class="variable">you</span> <span class="variable">that</span> <span class="variable">choose</span> <span class="variable">to</span> <span class="keyword">use</span> <span class="variable">the</span> <span class="variable">GNU</span> <span class="variable">General</span> <span class="variable">Public</span> <span class="variable">License</span><span class="operator">,</span>
+                 <span class="keyword">my</span> <span class="variable">interpretation</span> <span class="variable">of</span> <span class="variable">the</span> <span class="variable">GNU</span> <span class="variable">General</span> <span class="variable">Public</span> <span class="variable">License</span> <span class="variable">is</span> <span class="variable">that</span> <span class="keyword">no</span> <span class="variable">Perl</span>
+                 <span class="variable">script</span> <span class="variable">falls</span> <span class="variable">under</span> <span class="variable">the</span> <span class="variable">terms</span> <span class="variable">of</span> <span class="variable">the</span> <span class="variable">GPL</span> <span class="keyword">unless</span> <span class="variable">you</span> <span class="variable">explicitly</span> <span class="variable">put</span>
+                 <span class="variable">said</span> <span class="variable">script</span> <span class="variable">under</span> <span class="variable">the</span> <span class="variable">terms</span> <span class="variable">of</span> <span class="variable">the</span> <span class="variable">GPL</span> <span class="variable">yourself</span><span class="operator">.</span>  <span class="variable">Furthermore</span><span class="operator">,</span> <span class="variable">any</span>
+                 <span class="variable">object</span> <span class="variable">code</span> <span class="variable">linked</span> <span class="variable">with</span> <span class="variable">perl</span> <span class="variable">does</span> <span class="keyword">not</span> <span class="variable">automatically</span> <span class="variable">fall</span> <span class="variable">under</span> <span class="variable">the</span>
+                 <span class="variable">terms</span> <span class="variable">of</span> <span class="variable">the</span> <span class="variable">GPL</span><span class="operator">,</span> <span class="variable">provided</span> <span class="variable">such</span> <span class="variable">object</span> <span class="variable">code</span> <span class="variable">only</span> <span class="variable">adds</span> <span class="variable">definitions</span>
+                 <span class="variable">of</span> <span class="variable">subroutines</span> <span class="keyword">and</span> <span class="variable">variables</span><span class="operator">,</span> <span class="keyword">and</span> <span class="variable">does</span> <span class="keyword">not</span> <span class="variable">otherwise</span> <span class="variable">impair</span> <span class="variable">the</span>
+                 <span class="variable">resulting</span> <span class="variable">interpreter</span> <span class="variable">from</span> <span class="variable">executing</span> <span class="variable">any</span> <span class="variable">standard</span> <span class="variable">Perl</span> <span class="variable">script</span><span class="operator">.</span>  <span class="variable">I</span>
+                 <span class="variable">consider</span> <span class="variable">linking</span> <span class="variable">in</span> <span class="variable">C</span> <span class="variable">subroutines</span> <span class="variable">in</span> <span class="variable">this</span> <span class="variable">manner</span> <span class="variable">to</span> <span class="variable">be</span> <span class="variable">the</span> <span class="variable">moral</span>
+                 <span class="variable">equivalent</span> <span class="variable">of</span> <span class="variable">defining</span> <span class="variable">subroutines</span> <span class="variable">in</span> <span class="variable">the</span> <span class="variable">Perl</span> <span class="variable">language</span> <span class="variable">itself</span><span class="operator">.</span>  <span class="variable">You</span>
+                 <span class="variable">may</span> <span class="variable">sell</span> <span class="variable">such</span> <span class="variable">an</span> <span class="variable">object</span> <span class="variable">file</span> <span class="variable">as</span> <span class="variable">proprietary</span> <span class="variable">provided</span> <span class="variable">that</span> <span class="variable">you</span> <span class="variable">provide</span>
+                 <span class="keyword">or</span> <span class="variable">offer</span> <span class="variable">to</span> <span class="variable">provide</span> <span class="variable">the</span> <span class="variable">Perl</span> <span class="variable">source</span><span class="operator">,</span> <span class="variable">as</span> <span class="variable">specified</span> <span class="variable">by</span> <span class="variable">the</span> <span class="variable">GNU</span> <span class="variable">General</span>
+                 <span class="variable">Public</span> <span class="variable">License</span><span class="operator">.</span>  <span class="operator">(</span><span class="variable">This</span> <span class="variable">is</span> <span class="variable">merely</span> <span class="variable">an</span> <span class="variable">alternate</span> <span class="variable">way</span> <span class="variable">of</span> <span class="variable">specifying</span> <span class="variable">input</span>
+                 <span class="variable">to</span> <span class="variable">the</span> <span class="variable">program</span><span class="operator">.)</span>  <span class="variable">You</span> <span class="variable">may</span> <span class="variable">also</span> <span class="variable">sell</span> <span class="variable">a</span> <span class="variable">binary</span> <span class="variable">produced</span> <span class="variable">by</span> <span class="variable">the</span> <span class="variable">dumping</span> <span class="variable">of</span>
+                 <span class="variable">a</span> <span class="variable">running</span> <span class="variable">Perl</span> <span class="variable">script</span> <span class="variable">that</span> <span class="variable">belongs</span> <span class="variable">to</span> <span class="variable">you</span><span class="operator">,</span> <span class="variable">provided</span> <span class="variable">that</span> <span class="variable">you</span> <span class="variable">provide</span> <span class="keyword">or</span>
+                 <span class="variable">offer</span> <span class="variable">to</span> <span class="variable">provide</span> <span class="variable">the</span> <span class="variable">Perl</span> <span class="variable">source</span> <span class="variable">as</span> <span class="variable">specified</span> <span class="variable">by</span> <span class="variable">the</span> <span class="variable">GPL</span><span class="operator">.</span>  <span class="operator">(</span><span class="variable">The</span>
+                 <span class="variable">fact</span> <span class="variable">that</span> <span class="variable">a</span> <span class="variable">Perl</span> <span class="variable">interpreter</span> <span class="keyword">and</span> <span class="variable">your</span> <span class="variable">code</span> <span class="variable">are</span> <span class="variable">in</span> <span class="variable">the</span> <span class="variable">same</span> <span class="variable">binary</span> <span class="variable">file</span>
+                 <span class="variable">is</span><span class="operator">,</span> <span class="variable">in</span> <span class="variable">this</span> <span class="variable">case</span><span class="operator">,</span> <span class="variable">a</span> <span class="variable">form</span> <span class="variable">of</span> <span class="variable">mere</span> <span class="variable">aggregation</span><span class="operator">.)</span>  <span class="variable">This</span> <span class="variable">is</span> <span class="keyword">my</span> <span class="variable">interpretation</span>
+                 <span class="variable">of</span> <span class="variable">the</span> <span class="variable">GPL</span><span class="operator">.</span>  <span class="variable">If</span> <span class="variable">you</span> <span class="variable">still</span> <span class="variable">have</span> <span class="variable">concerns</span> <span class="keyword">or</span> <span class="variable">difficulties</span> <span class="variable">understanding</span>
+                 <span class="keyword">my</span> <span class="variable">intent</span><span class="operator">,</span> <span class="variable">feel</span> <span class="variable">free</span> <span class="variable">to</span> <span class="variable">contact</span> <span class="variable">me</span><span class="operator">.</span>  <span class="variable">Of</span> <span class="variable">course</span><span class="operator">,</span> <span class="variable">the</span> <span class="variable">Artistic</span> <span class="variable">License</span>
+                 <span class="variable">spells</span> <span class="variable">all</span> <span class="variable">this</span> <span class="variable">out</span> <span class="keyword">for</span> <span class="variable">your</span> <span class="variable">protection</span><span class="operator">,</span> <span class="variable">so</span> <span class="variable">you</span> <span class="variable">may</span> <span class="variable">prefer</span> <span class="variable">to</span> <span class="keyword">use</span> <span class="variable">that</span><span class="operator">.</span>
+</pre>
+
+</body>
+
+</html>

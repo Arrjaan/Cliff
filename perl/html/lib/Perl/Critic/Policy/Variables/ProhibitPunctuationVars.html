@@ -1,0 +1,140 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::Variables::ProhibitPunctuationVars - Write C&lt;$EVAL_ERROR&gt; instead of C&lt;$@&gt;.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::Variables::ProhibitPunctuationVars - Write C&lt;$EVAL_ERROR&gt; instead of C&lt;$@&gt;.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::Variables::ProhibitPunctuationVars - Write <a href="../../../../../lib/pods/perlvar.html#_eval_error"><code>$EVAL_ERROR</code></a> instead of <a href="../../../../../lib/pods/perlvar.html#__"><code>$@</code></a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Perl's vocabulary of punctuation variables such as <a href="../../../../../lib/pods/perlvar.html#__"><code>$!</code></a>, <a href="../../../../../lib/pods/perlvar.html#__"><code>$.</code></a>, and
+<a href="../../../../../lib/pods/perlvar.html#__"><code>$^</code></a> are perhaps the leading cause of its reputation as inscrutable
+line noise.  The simple alternative is to use the <a href="../../../../../lib/English.html">English</a>
+module to give them clear names.</p>
+<pre>
+  <span class="variable">$|</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>                      <span class="comment">#not ok</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">English</span> <span class="string">qw(-no_match_vars)</span><span class="operator">;</span>
+  <span class="keyword">local</span> <span class="variable">$OUTPUT_AUTOFLUSH</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span> <span class="comment">#ok</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>The scratch variables <a href="../../../../../lib/pods/perlvar.html#__"><code>$_</code></a> and <a href="../../../../../lib/pods/perlvar.html#__"><code>@_</code></a> are very common and are pretty
+well understood, so they are exempt from this policy.  The same goes
+for the less-frequently-used default filehandle <code>_</code> used by <a href="../../../../../lib/pods/perlfunc.html#stat"><code>stat()</code></a>.
+All the regexp capture variables (<code>$1</code>, <code>$2</code>, ...) are exempt too.
+<a href="../../../../../lib/pods/perlvar.html#__"><code>$]</code></a> is exempt because there is no <a href="../../../../../lib/English.html">English</a> equivalent and
+<a href="../../../../../lib/Module/CoreList.html">Module::CoreList</a> is based upon it.</p>
+<p>You can add more exceptions to your configuration.  In your
+perlcriticrc file, add a block like this:</p>
+<pre>
+  [Variables::ProhibitPunctuationVars]
+  allow = $@ $!</pre>
+<p>The <code>allow</code> property  should  be  a  whitespace-delimited  list  of
+punctuation variables.</p>
+<p>Other configuration options  control  the  parsing  of  interpolated
+strings in the search for forbidden variables. They have  no  effect
+on detecting punctuation variables outside of interpolated  strings.</p>
+<pre>
+  [Variables::ProhibitPunctuationVars]
+  string_mode = thorough</pre>
+<p>The option <code>string_mode</code>  controls  whether  and  how  interpolated
+strings are searched for punctuation variables. Setting
+<code>string_mode = thorough</code>, the default,  checks  for  special  cases
+that may look like punctuation variables  but  aren't,  for  example
+<code>$#foo</code>, an array index count; <code>$$bar</code>, a scalar  dereference;  or
+<code>$::baz</code>, a global symbol.</p>
+<p>Setting <code>string_mode = disable</code> causes all interpolated strings  to
+be ignored entirely.</p>
+<p>Setting <code>string_mode = simple</code> uses a simple regular expression  to
+find matches. In this mode, the magic variables <a href="../../../../../lib/pods/perlvar.html#__"><code>$$</code></a>, <a href="../../../../../lib/pods/perlvar.html#__"><code>$'</code></a>,  <a href="../../../../../lib/pods/perlvar.html#__"><code>$#</code></a>
+and <a href="../../../../../lib/pods/perlvar.html#__"><code>$:</code></a> are ignored within interpolated strings due  to  the  high
+risk of false positives. Simple mode is  retained  from  an  earlier
+draft of the interpolated- strings code. Its use is only recommended
+as a workaround if bugs appear in thorough mode.</p>
+<p>The  <code>string_mode</code>  option  will  go  away  when  the  parsing   of
+interpolated strings is implemented in PPI. See  <a href="#caveats">CAVEATS</a>  below.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Punctuation variables that confuse PPI's document parsing may not be
+detected  correctly  or  at  all,  and  may  prevent  detection   of
+subsequent ones. In particular, <a href="../../../../../lib/pods/perlvar.html#_"><code>$&quot;</code></a> is known to cause difficulties
+in interpolated strings.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>ProhibitPunctuationVars  relies   exclusively   on   PPI   to   find
+punctuation variables in code, but does all the parsing  itself  for
+interpolated strings. When, at some  point,  this  functionality  is
+transferred to PPI, ProhibitPunctuationVars  will  cease  doing  the
+interpolating  and  the  <code>string_mode</code>   option   will   go   away.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Jeffrey Ryan Thalhammer &lt;<a href="mailto:jeff@imaginative-software.com">jeff@imaginative-software.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2005-2011 Imaginative Software Systems.  All rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module.</p>
+
+</body>
+
+</html>

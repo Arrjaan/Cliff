@@ -1,0 +1,163 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>sort - perl pragma to control sort behaviour</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>sort - perl pragma to control sort behaviour</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>sort - perl pragma to control <a href="../lib/pods/perlfunc.html#sort"><code>sort()</code></a> behaviour</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">'stable'</span><span class="operator">;</span>          <span class="comment"># guarantee stability</span>
+    <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">'_quicksort'</span><span class="operator">;</span>      <span class="comment"># use a quicksort algorithm</span>
+    <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">'_mergesort'</span><span class="operator">;</span>      <span class="comment"># use a mergesort algorithm</span>
+    <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">'defaults'</span><span class="operator">;</span>        <span class="comment"># revert to default behavior</span>
+    <span class="keyword">no</span>  <span class="keyword">sort</span> <span class="string">'stable'</span><span class="operator">;</span>          <span class="comment"># stability not important</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">'_qsort'</span><span class="operator">;</span>          <span class="comment"># alias for quicksort</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$current</span><span class="operator">;</span>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="variable">$current</span> <span class="operator">=</span> <span class="variable">sort::current</span><span class="operator">();</span>     <span class="comment"># identify prevailing algorithm</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>With the <a href="../lib/pods/perlfunc.html#sort"><code>sort</code></a> pragma you can control the behaviour of the builtin
+<a href="../lib/pods/perlfunc.html#sort"><code>sort()</code></a> function.</p>
+<p>In Perl versions 5.6 and earlier the quicksort algorithm was used to
+implement <a href="../lib/pods/perlfunc.html#sort"><code>sort()</code></a>, but in Perl 5.8 a mergesort algorithm was also made
+available, mainly to guarantee worst case O(N log N) behaviour:
+the worst case of quicksort is O(N**2).  In Perl 5.8 and later,
+quicksort defends against quadratic behaviour by shuffling large
+arrays before sorting.</p>
+<p>A stable sort means that for records that compare equal, the original
+input ordering is preserved.  Mergesort is stable, quicksort is not.
+Stability will matter only if elements that compare equal can be
+distinguished in some other way.  That means that simple numerical
+and lexical sorts do not profit from stability, since equal elements
+are indistinguishable.  However, with a comparison such as</p>
+<pre>
+   <span class="operator">{</span> <span class="keyword">substr</span><span class="operator">(</span><span class="variable">$a</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">3</span><span class="operator">)</span> <span class="keyword">cmp</span> <span class="keyword">substr</span><span class="operator">(</span><span class="variable">$b</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">3</span><span class="operator">)</span> <span class="operator">}</span>
+</pre>
+<p>stability might matter because elements that compare equal on the
+first 3 characters may be distinguished based on subsequent characters.
+In Perl 5.8 and later, quicksort can be stabilized, but doing so will
+add overhead, so it should only be done if it matters.</p>
+<p>The best algorithm depends on many things.  On average, mergesort
+does fewer comparisons than quicksort, so it may be better when
+complicated comparison routines are used.  Mergesort also takes
+advantage of pre-existing order, so it would be favored for using
+<a href="../lib/pods/perlfunc.html#sort"><code>sort()</code></a> to merge several sorted arrays.  On the other hand, quicksort
+is often faster for small arrays, and on arrays of a few distinct
+values, repeated many times.  You can force the
+choice of algorithm with this pragma, but this feels heavy-handed,
+so the subpragmas beginning with a <code>_</code> may not persist beyond Perl 5.8.
+The default algorithm is mergesort, which will be stable even if
+you do not explicitly demand it.
+But the stability of the default sort is a side-effect that could
+change in later versions.  If stability is important, be sure to
+say so with a</p>
+<pre>
+  <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">'stable'</span><span class="operator">;</span>
+</pre>
+<p>The <code>no sort</code> pragma doesn't
+<em>forbid</em> what follows, it just leaves the choice open.  Thus, after</p>
+<pre>
+  <span class="keyword">no</span> <span class="keyword">sort</span> <span class="string">qw(_mergesort stable)</span><span class="operator">;</span>
+</pre>
+<p>a mergesort, which happens to be stable, will be employed anyway.
+Note that</p>
+<pre>
+  <span class="keyword">no</span> <span class="keyword">sort</span> <span class="string">"_quicksort"</span><span class="operator">;</span>
+  <span class="keyword">no</span> <span class="keyword">sort</span> <span class="string">"_mergesort"</span><span class="operator">;</span>
+</pre>
+<p>have exactly the same effect, leaving the choice of sort algorithm open.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>As of Perl 5.10, this pragma is lexically scoped and takes effect
+at compile time. In earlier versions its effect was global and took
+effect at run-time; the documentation suggested using <a href="../lib/pods/perlfunc.html#eval"><code>eval()</code></a> to
+change the behaviour:</p>
+<pre>
+  <span class="operator">{</span> <span class="keyword">eval</span> <span class="string">'use sort qw(defaults _quicksort)'</span><span class="operator">;</span> <span class="comment"># force quicksort</span>
+    <span class="keyword">eval</span> <span class="string">'no sort "stable"'</span><span class="operator">;</span>      <span class="comment"># stability not wanted</span>
+    <span class="keyword">print</span> <span class="variable">sort::current</span> <span class="operator">.</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="variable">@a</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="variable">@b</span><span class="operator">;</span>
+    <span class="keyword">eval</span> <span class="string">'use sort "defaults"'</span><span class="operator">;</span>   <span class="comment"># clean up, for others</span>
+  <span class="operator">}</span>
+  <span class="operator">{</span> <span class="keyword">eval</span> <span class="string">'use sort qw(defaults stable)'</span><span class="operator">;</span>     <span class="comment"># force stability</span>
+    <span class="keyword">print</span> <span class="variable">sort::current</span> <span class="operator">.</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="variable">@c</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="variable">@d</span><span class="operator">;</span>
+    <span class="keyword">eval</span> <span class="string">'use sort "defaults"'</span><span class="operator">;</span>   <span class="comment"># clean up, for others</span>
+  <span class="operator">}</span>
+</pre>
+<p>Such code no longer has the desired effect, for two reasons.
+Firstly, the use of <a href="../lib/pods/perlfunc.html#eval"><code>eval()</code></a> means that the sorting algorithm
+is not changed until runtime, by which time it's too late to
+have any effect. Secondly, <code>sort::current</code> is also called at
+run-time, when in fact the compile-time value of <code>sort::current</code>
+is the one that matters.</p>
+<p>So now this code would be written:</p>
+<pre>
+  <span class="operator">{</span> <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">qw(defaults _quicksort)</span><span class="operator">;</span> <span class="comment"># force quicksort</span>
+    <span class="keyword">no</span> <span class="keyword">sort</span> <span class="string">"stable"</span><span class="operator">;</span>      <span class="comment"># stability not wanted</span>
+    <span class="keyword">my</span> <span class="variable">$current</span><span class="operator">;</span>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span> <span class="variable">$current</span> <span class="operator">=</span> <span class="keyword">print</span> <span class="variable">sort::current</span><span class="operator">;</span> <span class="operator">}</span>
+    <span class="keyword">print</span> <span class="string">"</span><span class="variable">$current</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="variable">@a</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="variable">@b</span><span class="operator">;</span>
+    <span class="comment"># Pragmas go out of scope at the end of the block</span>
+  <span class="operator">}</span>
+  <span class="operator">{</span> <span class="keyword">use</span> <span class="keyword">sort</span> <span class="string">qw(defaults stable)</span><span class="operator">;</span>     <span class="comment"># force stability</span>
+    <span class="keyword">my</span> <span class="variable">$current</span><span class="operator">;</span>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span> <span class="variable">$current</span> <span class="operator">=</span> <span class="keyword">print</span> <span class="variable">sort::current</span><span class="operator">;</span> <span class="operator">}</span>
+    <span class="keyword">print</span> <span class="string">"</span><span class="variable">$current</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="variable">@c</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="variable">@d</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+
+</body>
+
+</html>

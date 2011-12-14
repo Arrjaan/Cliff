@@ -1,0 +1,55 @@
+#!perl -w
+use strict;
+use warnings;
+use CGI;
+use SOAP::Lite;
+
+our $echo2proxy;
+BEGIN {
+    $echo2proxy = SOAP::Lite
+		    ->uri("http://$ENV{SERVER_NAME}:$ENV{SERVER_PORT}/Demo")
+		    ->proxy("http://$ENV{SERVER_NAME}:$ENV{SERVER_PORT}/PerlEx/benchmarks/soapliteserver.pl");
+}
+
+my $cgi = new CGI;
+my $counter = $cgi->param('counter');
+if (!$counter or $counter < 1) { $counter = 1; }
+my $next = $counter + 1;
+
+my $url = "echo2.plex?counter=$next";
+if ($next > 100) {
+    $url = "frame_done.plex?runs=100";
+}
+
+# retrieve some info from a web service
+# SOAP::Lite must retreive and parse the wsdl in this request
+my $result = $echo2proxy->echostring("Invocation: $counter")->result;
+
+print "Content-Type: text/html\r\n\r\n";
+print <<EOF;
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<HTML>
+<HEAD>
+	<TITLE>PerlEx Performance</TITLE>
+
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<META HTTP-EQUIV="Refresh" CONTENT="0; URL=$url">
+</HEAD>
+
+<BODY bgcolor="00ff00">
+<font face="verdana, arial, helvetica size="2">
+<center>
+<H1>
+<font size="+9">$counter</font>
+<p>
+SOAP::Lite Client/Server
+<p>
+</H1>
+</center>
+</font>
+</BODY>
+</HTML>
+
+EOF
+

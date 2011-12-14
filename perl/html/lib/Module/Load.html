@@ -1,0 +1,143 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Module::Load - runtime require of both modules and files</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Module::Load - runtime require of both modules and files</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#rules">Rules</a></li>
+	<li><a href="#caveats">Caveats</a></li>
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#bug_reports">BUG REPORTS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Module::Load - runtime require of both modules and files</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+        <span class="keyword">use</span> <span class="variable">Module::Load</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$module</span> <span class="operator">=</span> <span class="string">'Data:Dumper'</span><span class="operator">;</span>
+    <span class="variable">load</span> <span class="variable">Data::Dumper</span><span class="operator">;</span>      <span class="comment"># loads that module</span>
+    <span class="variable">load</span> <span class="string">'Data::Dumper'</span><span class="operator">;</span>    <span class="comment"># ditto</span>
+    <span class="variable">load</span> <span class="variable">$module</span>            <span class="comment"># tritto</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$script</span> <span class="operator">=</span> <span class="string">'some/script.pl'</span>
+    <span class="variable">load</span> <span class="variable">$script</span><span class="operator">;</span>
+    <span class="variable">load</span> <span class="string">'some/script.pl'</span><span class="operator">;</span>      <span class="comment"># use quotes because of punctuations</span>
+</pre>
+<pre>
+    <span class="variable">load</span> <span class="variable">thing</span><span class="operator">;</span>             <span class="comment"># try 'thing' first, then 'thing.pm'</span>
+</pre>
+<pre>
+    load CGI, ':standard'   # like 'use CGI qw[:standard]'</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>load</code> eliminates the need to know whether you are trying to require
+either a file or a module.</p>
+<p>If you consult <code>perldoc -f require</code> you will see that <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> will
+behave differently when given a bareword or a string.</p>
+<p>In the case of a string, <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> assumes you are wanting to load a
+file. But in the case of a bareword, it assumes you mean a module.</p>
+<p>This gives nasty overhead when you are trying to dynamically require
+modules at runtime, since you will need to change the module notation
+(<code>Acme::Comment</code>) to a file notation fitting the particular platform
+you are on.</p>
+<p><code>load</code> eliminates the need for this overhead and will just DWYM.</p>
+<p>
+</p>
+<hr />
+<h1><a name="rules">Rules</a></h1>
+<p><code>load</code> has the following rules to decide what it thinks you want:</p>
+<ul>
+<li>
+<p>If the argument has any characters in it other than those matching
+<a href="../../lib/pods/perlrun.html#w"><code>\w</code></a>, <code>:</code> or <code>'</code>, it must be a file</p>
+</li>
+<li>
+<p>If the argument matches only <a href="../../lib/pods/perlrun.html#w"><code>[\w:']</code></a>, it must be a module</p>
+</li>
+<li>
+<p>If the argument matches only <a href="../../lib/pods/perlrun.html#w"><code>\w</code></a>, it could either be a module or a
+file. We will try to find <code>file.pm</code> first in <a href="../../lib/pods/perlvar.html#_inc"><code>@INC</code></a> and if that
+fails, we will try to find <code>file</code> in @INC.  If both fail, we die with
+the respective error messages.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">Caveats</a></h1>
+<p>Because of a bug in perl (#19213), at least in version 5.6.1, we have
+to hardcode the path separator for a require on Win32 to be <code>/</code>, like
+on Unix rather than the Win32 <code>\</code>. Otherwise perl will not read its
+own %INC accurately double load files if they are required again, or
+in the worst case, core dump.</p>
+<p><code>Module::Load</code> cannot do implicit imports, only explicit imports.
+(in other words, you always have to specify explicitly what you wish
+to import from a module, even if the functions are in that modules'
+<code>@EXPORT</code>)</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>Thanks to Jonas B. Nielsen for making explicit imports work.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bug_reports">BUG REPORTS</a></h1>
+<p>Please report bugs or other issues to &lt;<a href="mailto:bug-module-load@rt.cpan.org<gt>">bug-module-load@rt.cpan.org<gt></a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This module by Jos Boumans &lt;<a href="mailto:kane@cpan.org">kane@cpan.org</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>This library is free software; you may redistribute and/or modify it
+under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

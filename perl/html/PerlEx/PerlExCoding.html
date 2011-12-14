@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<title>ActivePerl Components</title>
+<link rel="STYLESHEET" href="../Active.css" type="text/css" media="screen">
+<title>Coding</title>
+</head>
+
+<body>
+<script>writelinks('__top__',1);</script>
+<h1>Getting your code working with PerlEx</h1>
+
+<p>Probably the most important thing to remember when rewriting code to work with
+PerlEx is data persistence. Since scripts do not &quot;exit&quot;, all data
+stays in memory. If you depend on something to be empty, or filled from the
+results of previous code, declaring <code>my $variable=&quot;&quot;;</code> in
+the early part of your code will clear up most data persistence errors.</p>
+
+<p>Remember that BEGIN blocks are executed only when the script is compiled,
+i.e., the first time you run it. This means that you can open your log files,
+and your data files / data connections and then leave them open until the
+END block is run, i.e., on server shutdown, or when the script has been run the
+number of times defined by the <a class="doc" href="RegistryEntries.html#Reload">Reload</a>
+registry entry.</p>
+
+<p>For the average user, Perl scripts should run with no changes. You will
+usually run into these issues only if the script makes assumptions about
+variables automatically becoming uninitialized when it is finished executing.</p>
+
+<h2>Exit handling</h2>
+
+<p>When executing a script that returns a non-zero exit value, PerlEx removes
+the script from its internal memory, and the script will be recompiled before it
+is next executed. A script that calls exit with the value &quot;0&quot;, or with
+no argument, will not be removed from memory.
+
+<h2>Lazy access to CGI and HTTP variables via %ENV</h2>
+
+<p>Under PerlEx, like under <i>perl.exe</i>, the environment variable hash
+%ENV is preloaded at startup with all the system environment variables.
+However, unlike <i>perl.exe</i> when it is running CGI programs, %ENV
+under PerlEx does not contain any of the HTTP and CGI variables when the
+script starts up, since doing this can be an expensive operation.</p>
+
+<p>This means that a script running under PerlEx has to individually fetch
+each HTTP or CGI variable that it is interested in explicitly.  When the
+script loads, keys(%ENV) will only return the keys from the system
+environment.  After the initial fetch, these values will be cached in
+%ENV, so a subsequent keys(%ENV) will return the system variables along
+with any cached HTTP and CGI variables.</p>
+
+<p>The following script illustrates this behavior when run under PerlEx:</p>
+
+<pre>#!/bin/perl 
+print "Content-type: text/plain\n\n";
+print "Startup environment:\n";
+print "$_=$ENV{$_}\n" for sort keys %ENV;
+print "-" x 75, "\n";
+my (@list) = qw/GATEWAY_INTERFACE
+		HTTPS
+		HTTP_ACCEPT
+		HTTP_ACCEPT_ENCODING 
+		HTTP_ACCEPT_LANGUAGE
+		HTTP_CONNECTION
+		HTTP_HOST
+		HTTP_REFERER 
+		HTTP_USER_AGENT
+		PATH
+		REMOTE_ADDR
+		REMOTE_HOST
+		REQUEST_METHOD 
+		SCRIPT_NAME
+		SERVER_NAME
+		SERVER_PORT
+		SERVER_PROTOCOL
+		SERVER_SOFTWARE 
+		SERVER_URL
+		SYSTEMROOT
+		CONTENT_LENGTH/;
+
+print "HTTP environment:\n"; 
+print "$_=$ENV{$_}\n" for sort @list;
+print "-" x 75, "\n";
+print "Cached environment:\n"; 
+print "$_=$ENV{$_}\n" for sort keys %ENV;
+</pre>
+
+<h2>PerlEx handling of %ENV, @INC and Perl special global variables</h2>
+
+<p>After a script is compiled and ready to be executed, PerlEx saves the
+script's current %ENV, @INC, and the state of some of its Perl global variables
+($@, $!, $,, $/, $\, $^W and $?). Each time the script is subsequently executed,
+PerlEx restores the state of these variables. Because the state is saved after
+the script is compiled, but before it is executed, any %ENV, @INC, or Perl
+global variable changes that take place in the BEGIN block will be in effect
+every time the script is executed.</p>
+
+</body>
+</html>

@@ -1,0 +1,291 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Net::HTTP - Low-level HTTP connection</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Net::HTTP - Low-level HTTP connection</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#subclassing">SUBCLASSING</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::HTTP - Low-level HTTP connection (client)</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">Net::HTTP</span><span class="operator">;</span>
+ <span class="keyword">my</span> <span class="variable">$s</span> <span class="operator">=</span> <span class="variable">Net::HTTP</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">Host</span> <span class="operator">=&gt;</span> <span class="string">"www.perl.com"</span><span class="operator">)</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="variable">$@</span><span class="operator">;</span>
+ <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">write_request</span><span class="operator">(</span><span class="string">GET</span> <span class="operator">=&gt;</span> <span class="string">"/"</span><span class="operator">,</span> <span class="string">'User-Agent'</span> <span class="operator">=&gt;</span> <span class="string">"Mozilla/5.0"</span><span class="operator">);</span>
+ <span class="keyword">my</span><span class="operator">(</span><span class="variable">$code</span><span class="operator">,</span> <span class="variable">$mess</span><span class="operator">,</span> <span class="variable">%h</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">read_response_headers</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="keyword">while</span> <span class="operator">(</span><span class="number">1</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$buf</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$n</span> <span class="operator">=</span> <span class="variable">$s</span><span class="operator">-&gt;</span><span class="variable">read_entity_body</span><span class="operator">(</span><span class="variable">$buf</span><span class="operator">,</span> <span class="number">1024</span><span class="operator">);</span>
+    <span class="keyword">die</span> <span class="string">"read failed: $!"</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$n</span><span class="operator">;</span>
+    <span class="keyword">last</span> <span class="keyword">unless</span> <span class="variable">$n</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$buf</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>Net::HTTP</code> class is a low-level HTTP client.  An instance of the
+<code>Net::HTTP</code> class represents a connection to an HTTP server.  The
+HTTP protocol is described in <a href="http://www.ietf.org/rfc/rfc2616.txt" class="rfc">RFC 2616</a>.  The <code>Net::HTTP</code> class
+supports <code>HTTP/1.0</code> and <code>HTTP/1.1</code>.</p>
+<p><code>Net::HTTP</code> is a sub-class of <code>IO::Socket::INET</code>.  You can mix the
+methods described below with reading and writing from the socket
+directly.  This is not necessary a good idea, unless you know what you
+are doing.</p>
+<p>The following methods are provided (in addition to those of
+<code>IO::Socket::INET</code>):</p>
+<dl>
+<dt><strong><a name="new" class="item">$s = Net::HTTP-&gt;new( %options )</a></strong></dt>
+
+<dd>
+<p>The <code>Net::HTTP</code> constructor method takes the same options as
+<code>IO::Socket::INET</code>'s as well as these:</p>
+<pre>
+  Host:            Initial host attribute value
+  KeepAlive:       Initial keep_alive attribute value
+  SendTE:          Initial send_te attribute_value
+  HTTPVersion:     Initial http_version attribute value
+  PeerHTTPVersion: Initial peer_http_version attribute value
+  MaxLineLength:   Initial max_line_length attribute value
+  MaxHeaderLines:  Initial max_header_lines attribute value</pre>
+<p>The <code>Host</code> option is also the default for <code>IO::Socket::INET</code>'s
+<code>PeerAddr</code>.  The <code>PeerPort</code> defaults to 80 if not provided.</p>
+<p>The <code>Listen</code> option provided by <code>IO::Socket::INET</code>'s constructor
+method is not allowed.</p>
+<p>If unable to connect to the given HTTP server then the constructor
+returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> and $@ contains the reason.  After a successful
+connect, a <code>Net:HTTP</code> object is returned.</p>
+</dd>
+<dt><strong><a name="host" class="item">$s-&gt;host</a></strong></dt>
+
+<dd>
+<p>Get/set the default value of the <code>Host</code> header to send.  The $host
+must not be set to an empty string (or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>) for HTTP/1.1.</p>
+</dd>
+<dt><strong><a name="keep_alive" class="item">$s-&gt;keep_alive</a></strong></dt>
+
+<dd>
+<p>Get/set the <em>keep-alive</em> value.  If this value is TRUE then the
+request will be sent with headers indicating that the server should try
+to keep the connection open so that multiple requests can be sent.</p>
+<p>The actual headers set will depend on the value of the <a href="#http_version"><code>http_version</code></a>
+and <a href="#peer_http_version"><code>peer_http_version</code></a> attributes.</p>
+</dd>
+<dt><strong><a name="send_te" class="item">$s-&gt;send_te</a></strong></dt>
+
+<dd>
+<p>Get/set the a value indicating if the request will be sent with a &quot;TE&quot;
+header to indicate the transfer encodings that the server can choose to
+use.  The list of encodings announced as accepted by this client depends
+on availability of the following modules: <code>Compress::Raw::Zlib</code> for
+<em>deflate</em>, and <code>IO::Compress::Gunzip</code> for <em>gzip</em>.</p>
+</dd>
+<dt><strong><a name="http_version" class="item">$s-&gt;http_version</a></strong></dt>
+
+<dd>
+<p>Get/set the HTTP version number that this client should announce.
+This value can only be set to &quot;1.0&quot; or &quot;1.1&quot;.  The default is &quot;1.1&quot;.</p>
+</dd>
+<dt><strong><a name="peer_http_version" class="item">$s-&gt;peer_http_version</a></strong></dt>
+
+<dd>
+<p>Get/set the protocol version number of our peer.  This value will
+initially be &quot;1.0&quot;, but will be updated by a successful
+<a href="#read_response_headers"><code>read_response_headers()</code></a> method call.</p>
+</dd>
+<dt><strong><a name="max_line_length" class="item">$s-&gt;max_line_length</a></strong></dt>
+
+<dd>
+<p>Get/set a limit on the length of response line and response header
+lines.  The default is 8192.  A value of 0 means no limit.</p>
+</dd>
+<dt><strong><a name="max_header_length" class="item">$s-&gt;max_header_length</a></strong></dt>
+
+<dd>
+<p>Get/set a limit on the number of header lines that a response can
+have.  The default is 128.  A value of 0 means no limit.</p>
+</dd>
+<dt><strong><a name="format_request" class="item">$s-&gt;format_request($method, $uri, %headers, [$content])</a></strong></dt>
+
+<dd>
+<p>Format a request message and return it as a string.  If the headers do
+not include a <code>Host</code> header, then a header is inserted with the value
+of the <a href="#host"><code>host</code></a> attribute.  Headers like <code>Connection</code> and
+<code>Keep-Alive</code> might also be added depending on the status of the
+<a href="#keep_alive"><code>keep_alive</code></a> attribute.</p>
+<p>If $content is given (and it is non-empty), then a <code>Content-Length</code>
+header is automatically added unless it was already present.</p>
+</dd>
+<dt><strong><a name="write_request" class="item">$s-&gt;write_request($method, $uri, %headers, [$content])</a></strong></dt>
+
+<dd>
+<p>Format and send a request message.  Arguments are the same as for
+<a href="#format_request"><code>format_request()</code></a>.  Returns true if successful.</p>
+</dd>
+<dt><strong><a name="format_chunk" class="item">$s-&gt;format_chunk( $data )</a></strong></dt>
+
+<dd>
+<p>Returns the string to be written for the given chunk of data.</p>
+</dd>
+<dt><strong><a name="write_chunk" class="item">$s-&gt;<code>write_chunk($data)</code></a></strong></dt>
+
+<dd>
+<p>Will write a new chunk of request entity body data.  This method
+should only be used if the <code>Transfer-Encoding</code> header with a value of
+<code>chunked</code> was sent in the request.  Note, writing zero-length data is
+a no-op.  Use the <a href="#write_chunk_eof"><code>write_chunk_eof()</code></a> method to signal end of entity
+body data.</p>
+<p>Returns true if successful.</p>
+</dd>
+<dt><strong><a name="format_chunk_eof" class="item">$s-&gt;format_chunk_eof( %trailers )</a></strong></dt>
+
+<dd>
+<p>Returns the string to be written for signaling EOF when a
+<code>Transfer-Encoding</code> of <code>chunked</code> is used.</p>
+</dd>
+<dt><strong><a name="write_chunk_eof" class="item">$s-&gt;write_chunk_eof( %trailers )</a></strong></dt>
+
+<dd>
+<p>Will write eof marker for chunked data and optional trailers.  Note
+that trailers should not really be used unless is was signaled
+with a <code>Trailer</code> header.</p>
+<p>Returns true if successful.</p>
+</dd>
+<dt><strong><a name="read_response_headers" class="item">($code, $mess, %headers) = $s-&gt;read_response_headers( %opts )</a></strong></dt>
+
+<dd>
+<p>Read response headers from server and return it.  The $code is the 3
+digit HTTP status code (see <a href="../../lib/HTTP/Status.html">the HTTP::Status manpage</a>) and $mess is the textual
+message that came with it.  Headers are then returned as key/value
+pairs.  Since key letter casing is not normalized and the same key can
+even occur multiple times, assigning these values directly to a hash
+is not wise.  Only the $code is returned if this method is called in
+scalar context.</p>
+<p>As a side effect this method updates the 'peer_http_version'
+attribute.</p>
+<p>Options might be passed in as key/value pairs.  There are currently
+only two options supported; <code>laxed</code> and <code>junk_out</code>.</p>
+<p>The <code>laxed</code> option will make <a href="#read_response_headers"><code>read_response_headers()</code></a> more forgiving
+towards servers that have not learned how to speak HTTP properly.  The
+<code>laxed</code> option is a boolean flag, and is enabled by passing in a TRUE
+value.  The <code>junk_out</code> option can be used to capture bad header lines
+when <code>laxed</code> is enabled.  The value should be an array reference.
+Bad header lines will be pushed onto the array.</p>
+<p>The <code>laxed</code> option must be specified in order to communicate with
+pre-HTTP/1.0 servers that don't describe the response outcome or the
+data they send back with a header block.  For these servers
+peer_http_version is set to &quot;0.9&quot; and this method returns (200,
+&quot;Assumed OK&quot;).</p>
+<p>The method will raise an exception (die) if the server does not speak
+proper HTTP or if the <a href="#max_line_length"><code>max_line_length</code></a> or <a href="#max_header_length"><code>max_header_length</code></a>
+limits are reached.  If the <code>laxed</code> option is turned on and
+<a href="#max_line_length"><code>max_line_length</code></a> and <a href="#max_header_length"><code>max_header_length</code></a> checks are turned off,
+then no exception will be raised and this method will always
+return a response code.</p>
+</dd>
+<dt><strong><a name="read_entity_body" class="item">$n = $s-&gt;read_entity_body($buf, $size);</a></strong></dt>
+
+<dd>
+<p>Reads chunks of the entity body content.  Basically the same interface
+as for <a href="../../lib/pods/perlfunc.html#read"><code>read()</code></a> and <a href="../../lib/pods/perlfunc.html#sysread"><code>sysread()</code></a>, but the buffer offset argument is not
+supported yet.  This method should only be called after a successful
+<a href="#read_response_headers"><code>read_response_headers()</code></a> call.</p>
+<p>The return value will be <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on read errors, 0 on EOF, -1 if no data
+could be returned this time, otherwise the number of bytes assigned
+to $buf.  The $buf is set to &quot;&quot; when the return value is -1.</p>
+<p>You normally want to retry this call if this function returns either
+-1 or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> with <a href="../../lib/pods/perlvar.html#__"><code>$!</code></a> as EINTR or EAGAIN (see <a href="../../lib/Errno.html">the Errno manpage</a>).  EINTR
+can happen if the application catches signals and EAGAIN can happen if
+you made the socket non-blocking.</p>
+<p>This method will raise exceptions (die) if the server does not speak
+proper HTTP.  This can only happen when reading chunked data.</p>
+</dd>
+<dt><strong><a name="get_trailers" class="item">%headers = $s-&gt;get_trailers</a></strong></dt>
+
+<dd>
+<p>After <a href="#read_entity_body"><code>read_entity_body()</code></a> has returned 0 to indicate end of the entity
+body, you might call this method to pick up any trailers.</p>
+</dd>
+<dt><strong><a name="_rbuf" class="item">$s-&gt;_rbuf</a></strong></dt>
+
+<dd>
+<p>Get/set the read buffer content.  The <a href="#read_response_headers"><code>read_response_headers()</code></a> and
+<a href="#read_entity_body"><code>read_entity_body()</code></a> methods use an internal buffer which they will look
+for data before they actually sysread more from the socket itself.  If
+they read too much, the remaining data will be left in this buffer.</p>
+</dd>
+<dt><strong><a name="_rbuf_length" class="item">$s-&gt;_rbuf_length</a></strong></dt>
+
+<dd>
+<p>Returns the number of bytes in the read buffer.  This should always be
+the same as:</p>
+<pre>
+    length($s-&gt;_rbuf)</pre>
+<p>but might be more efficient.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="subclassing">SUBCLASSING</a></h1>
+<p>The <a href="#read_response_headers"><code>read_response_headers()</code></a> and <a href="#read_entity_body"><code>read_entity_body()</code></a> will invoke the
+<a href="../../lib/pods/perlfunc.html#sysread"><code>sysread()</code></a> method when they need more data.  Subclasses might want to
+override this method to control how reading takes place.</p>
+<p>The object itself is a glob.  Subclasses should avoid using hash key
+names prefixed with <code>http_</code> and <code>io_</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/LWP.html">the LWP manpage</a>, <a href="../../lib/IO/Socket/INET.html">the IO::Socket::INET manpage</a>, <a href="../../lib/Net/HTTP/NB.html">the Net::HTTP::NB manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2001-2003 Gisle Aas.</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,136 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>Perl::Critic::Policy::RegularExpressions::ProhibitFixedStringMatches - Use C&lt;eq&gt; or hash instead of fixed-pattern regexps.</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>Perl::Critic::Policy::RegularExpressions::ProhibitFixedStringMatches - Use C&lt;eq&gt; or hash instead of fixed-pattern regexps.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#affiliation">AFFILIATION</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#variants">VARIANTS</a></li>
+	</ul>
+
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Policy::RegularExpressions::ProhibitFixedStringMatches - Use <code>eq</code> or hash instead of fixed-pattern regexps.</p>
+<p>
+</p>
+<hr />
+<h1><a name="affiliation">AFFILIATION</a></h1>
+<p>This Policy is part of the core <a href="../../../../../lib/Perl/Critic.html">Perl::Critic</a>
+distribution.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A regular expression that matches just a fixed set of constant strings
+is wasteful of performance and is hard on maintainers.  It is much
+more readable and often faster to use <code>eq</code> or a hash to match such
+strings.</p>
+<pre>
+    <span class="comment"># Bad</span>
+    <span class="keyword">my</span> <span class="variable">$is_file_function</span> <span class="operator">=</span> <span class="variable">$token</span> <span class="operator">=~</span> <span class="regex">m/\A (?: open | close | read ) \z/xms</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># Faster and more readable</span>
+    <span class="keyword">my</span> <span class="variable">$is_file_function</span> <span class="operator">=</span> <span class="variable">$token</span> <span class="keyword">eq</span> <span class="string">'open'</span> <span class="operator">||</span>
+                           <span class="variable">$token</span> <span class="keyword">eq</span> <span class="string">'close'</span> <span class="operator">||</span>
+                           <span class="variable">$token</span> <span class="keyword">eq</span> <span class="string">'read'</span><span class="operator">;</span>
+</pre>
+<p>For larger numbers of strings, a hash is superior:</p>
+<pre>
+    <span class="comment"># Bad</span>
+    <span class="keyword">my</span> <span class="variable">$is_perl_keyword</span> <span class="operator">=</span>
+        <span class="variable">$token</span> <span class="operator">=~</span> <span class="regex">m/\A (?: chomp | chop | chr | crypt | hex | index
+                           lc | lcfirst | length | oct | ord | ... ) \z/xms</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># Better</span>
+    <span class="variable">Readonly::Hash</span> <span class="keyword">my</span> <span class="variable">%PERL_KEYWORDS</span> <span class="operator">=&gt;</span> <span class="keyword">map</span> <span class="operator">{</span><span class="variable">$_</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">}</span> <span class="string">qw(
+        chomp chop chr crypt hex index lc lcfirst length oct ord ...
+    )</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$is_perl_keyword</span> <span class="operator">=</span> <span class="variable">$PERL_KEYWORD</span><span class="operator">{</span><span class="variable">$token</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Conway also suggests using <a href="../../../../../lib/pods/perlfunc.html#lc"><code>lc()</code></a> instead of a case-insensitive match.</p>
+<p>
+</p>
+<h2><a name="variants">VARIANTS</a></h2>
+<p>This policy detects both grouped and non-grouped strings.  The
+grouping may or may not be capturing.  The grouped body may or may not
+be alternating.  <a href="../../../../../lib/pods/perlguts.html#a"><code>\A</code></a> and <code>\z</code> are always considered anchoring which
+<code>^</code> and <code>$</code> are considered anchoring is the <a href="../../../../../lib/pods/perlguts.html#m"><code>m</code></a> regexp option is
+not in use.  Thus, all of these are violations:</p>
+<pre>
+    <span class="regex">m/^foo$/</span><span class="operator">;</span>
+    <span class="regex">m/\A foo \z/x</span><span class="operator">;</span>
+    <span class="regex">m/\A foo \z/xm</span><span class="operator">;</span>
+    <span class="regex">m/\A(foo)\z/</span><span class="operator">;</span>
+    <span class="regex">m/\A(?:foo)\z/</span><span class="operator">;</span>
+    <span class="regex">m/\A(foo|bar)\z/</span><span class="operator">;</span>
+    <span class="regex">m/\A(?:foo|bar)\z/</span><span class="operator">;</span>
+</pre>
+<p>Furthermore, this policy detects violations in <a href="../../../../../lib/pods/perlfunc.html#m_"><code>m//</code></a>, <a href="../../../../../lib/pods/perlfunc.html#s_"><code>s///</code></a> and
+<a href="../../../../../lib/pods/perlfunc.html#qr_"><code>qr//</code></a> constructs, as you would expect.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This Policy is not configurable except for the standard options.</p>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Initial development of this policy was supported by a grant from the
+Perl Foundation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2007-2011 Chris Dolan.  Many rights reserved.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module</p>
+
+</body>
+
+</html>

@@ -1,0 +1,192 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>ActiveState::Scineplex - Perl extension to access Scineplex code lexer.</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>ActiveState::Scineplex - Perl extension to access Scineplex code lexer.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>ActiveState::Scineplex - Perl extension to access Scineplex code lexer.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">ActiveState::Scineplex</span> <span class="string">qw(Annotate)</span><span class="operator">;</span>
+  <span class="variable">$color_info</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="variable">$code</span><span class="operator">,</span> <span class="variable">$lang</span><span class="operator">,</span> <span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Scineplex is a C library for heuristic parsing of source code in
+various languages.  Scineplex is based on the Scintilla sources.  The
+<code>ActiveState::Scineplex</code> module provide a Perl interface to this library.</p>
+<p>Currently this module implements an interface consisting of one function,
+Annotate, which returns a scineplex-driven colorization for one or
+more lines of source code.  It either returns a string giving the
+colorization or throws an exception.</p>
+<pre>
+    <span class="variable">$color_info</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="variable">$code</span><span class="operator">,</span> <span class="variable">$lang</span><span class="operator">,</span> <span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>The $code is one or more lines of source-code to be analyzed passed as
+a single string.  The lines are separated by any newline sequence.</p>
+<p>The $lang argument can be one of 'perl', 'python', 'ruby', 'vbscript', or 'xslt'.  The
+default is 'perl'.</p>
+<p>Additional %options can be passed as key/value pairs.  The following
+options are supported (defaults in parentheses):</p>
+<pre>
+    outputFormat =&gt; 'html' | 'json' | 'line' | 'classic' ('line')
+    parsingStartState =&gt; number (0) 
+    DumpSource =&gt; 0 | 1 (0)
+    DumpEndState =&gt; 0 | 1 (0)
+    DumpFoldLevels =&gt; 0 | 1 (0)
+    StopAfterDataSectionLine1 =&gt; 0 | 1 (0)</pre>
+<p>The <code>outputFormat</code> is the most important option.  In <code>classic</code> mode,
+<code>Annotate</code> echos back each character on the start of a line, followed
+by separating white-space and its style value:</p>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="string">'$abc = 3;'</span><span class="operator">,</span> <span class="string">'perl'</span><span class="operator">,</span> <span class="string">outputFormat</span> <span class="operator">=&gt;</span> <span class="string">'classic'</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="operator">$ </span>      <span class="number">12</span>
+    <span class="variable">a</span>       <span class="number">12</span>
+    <span class="variable">b</span>       <span class="number">12</span>
+    <span class="variable">c</span>       <span class="number">12</span>
+    <span class="keyword">chr</span><span class="operator">(</span><span class="number">32</span><span class="operator">)</span> <span class="number">0</span>
+    <span class="operator">=</span>       <span class="number">10</span>
+    <span class="keyword">chr</span><span class="operator">(</span><span class="number">32</span><span class="operator">)</span> <span class="number">0</span>
+    <span class="number">3</span>       <span class="number">4</span>
+    <span class="operator">;</span>       <span class="number">10</span>
+    <span class="keyword">chr</span><span class="operator">(</span><span class="number">10</span><span class="operator">)</span> <span class="number">0</span>
+</pre>
+<p>Symbolic names for the numeric style values can be looked up in the
+%SCE_TOKEN hash (exportable).  For example $SCE_TOKEN{perl}{12} is the
+string &quot;SCE_PL_SCALAR&quot;.</p>
+<p>Setting <code>outputFormat</code> to <code>line</code> gives a terser output, and
+represents each numeric style with the character corresponding to the
+style added to the ASCII value of character '0':</p>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="string">'$abc = 3;'</span><span class="operator">,</span> <span class="string">'perl'</span><span class="operator">,</span> <span class="string">outputFormat</span> <span class="operator">=&gt;</span> <span class="string">'line'</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">;</span>
+</pre>
+<pre>
+    &lt;&lt;&lt;&lt;0:04:</pre>
+<p>Setting <code>outputFormat</code> to <code>html</code> returns an HTML-encoded string
+containing the original code wrapped in <code>span</code> tags with generic
+classes with names like &quot;variable&quot;, &quot;operator&quot;, etc.  This kind of
+output is designed to be wrapped in <code>pre</code> tags, and styled with a CSS
+file of that contains rules like</p>
+<pre>
+    <span class="variable">pre</span> <span class="variable">span</span><span class="operator">.</span><span class="variable">comments</span> <span class="operator">{</span>
+      <span class="variable">color</span><span class="operator">:</span> <span class="number">0x696969</span><span class="operator">;</span>
+      <span class="variable">font</span><span class="operator">-</span><span class="variable">style</span><span class="operator">:</span> <span class="variable">italic</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Default text is not placed in a span tag.</p>
+<p>Setting <code>outputFormat</code> to <code>json</code> returns a JSON array of arrays.
+Each one of the inner arrays contains a generic style label together
+with the span in positions; [$tag, $line, $col, $len].  The returned
+JSON array will also be valid Perl code and can be converted to a Perl
+array using Perl's builtin <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a> function.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="string">'$abc = 3;'</span><span class="operator">,</span> <span class="string">'perl'</span><span class="operator">,</span> <span class="string">outputFormat</span> <span class="operator">=&gt;</span> <span class="string">'json'</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">;</span>
+    <span class="variable">$array</span> <span class="operator">=</span> <span class="keyword">eval</span> <span class="variable">$res</span><span class="operator">;</span>
+</pre>
+<pre>
+    [
+     [&quot;variable&quot;,1,0,4],
+     [&quot;operator&quot;,1,5,1],
+     [&quot;number&quot;,1,7,1],
+     [&quot;operator&quot;,1,8,1]
+    ]</pre>
+<p>The <code>parsingStartState</code> setting should be used only when you know
+that the code starts with a given style, such as lines 3-5 of a
+multi-line string.</p>
+<p>The <code>DumpSource</code> flag is used only with <code>line</code> output.  It is
+intended mostly for human consumption, and produces output like the
+following:</p>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="string">'$abc = 3;'</span><span class="operator">,</span> <span class="string">'perl'</span><span class="operator">,</span> <span class="string">DumpSource</span><span class="operator">=&gt;</span><span class="number">1</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$abc</span> <span class="operator">=</span> <span class="number">3</span><span class="operator">;</span>
+    <span class="operator">&lt;&lt;&lt;&lt;</span><span class="number">0</span><span class="operator">:</span><span class="number">04</span><span class="operator">:</span>
+</pre>
+<p>The <code>DumpEndState</code> is used only in <code>line</code> mode, and gives the styles
+for whichever characters constitute the line-end sequence:</p>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="string">qq(</span><span class="variable">$abc</span><span class="string"> = 3;\r\n)</span><span class="operator">,</span> <span class="string">'perl'</span><span class="operator">,</span> <span class="string">DumpSource</span><span class="operator">=&gt;</span><span class="number">1</span><span class="operator">,</span> <span class="string">DumpEndState</span><span class="operator">=&gt;</span><span class="number">1</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$abc</span> <span class="operator">=</span> <span class="number">3</span><span class="operator">;</span>
+    <span class="operator">&lt;&lt;&lt;&lt;</span><span class="number">0</span><span class="operator">:</span><span class="number">04</span><span class="operator">:</span><span class="number">00</span>
+</pre>
+<p>The <code>DumpFoldLevels</code> is used only in <code>line</code> mode, and gives the fold
+levels as a 4-hex-digit sequence in a leading column.</p>
+<pre>
+    <span class="variable">$res</span> <span class="operator">=</span> <span class="variable">Annotate</span><span class="operator">(</span><span class="string">qq(if(1) {\n</span><span class="variable">$abc</span><span class="string"> = 3;\n}\n)</span><span class="operator">,</span> <span class="string">'perl'</span><span class="operator">,</span> <span class="string">DumpSource</span><span class="operator">=&gt;</span><span class="number">1</span><span class="operator">,</span> <span class="string">DumpEndState</span><span class="operator">=&gt;</span><span class="number">1</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$res</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="number">2400</span> <span class="keyword">if</span><span class="operator">(</span><span class="number">1</span><span class="operator">)</span> <span class="operator">{</span>
+         <span class="number">55</span><span class="operator">:</span><span class="number">4</span><span class="operator">:</span><span class="number">0</span><span class="operator">:</span>
+    <span class="number">0401</span> <span class="variable">$abc</span> <span class="operator">=</span> <span class="number">3</span>
+         <span class="operator">&lt;&lt;&lt;&lt;</span><span class="number">0</span><span class="operator">:</span><span class="number">04</span>
+    <span class="number">0401</span> <span class="operator">}</span>
+         <span class="operator">:</span>
+</pre>
+<p>The <code>StopAfterDataSectionLine1</code> is used only for Perl code in <code>line</code>
+mode.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Info on scintilla available at <a href="http://www.scintilla.org.">http://www.scintilla.org.</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (C) 2005 by ActiveState Software Inc.</p>
+
+</body>
+
+</html>

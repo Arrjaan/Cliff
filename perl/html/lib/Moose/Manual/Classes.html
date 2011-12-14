@@ -1,0 +1,207 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Manual::Classes - Making your classes use Moose</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Manual::Classes - Making your classes use Moose</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#using_moose">USING MOOSE</a></li>
+	<li><a href="#subclassing">SUBCLASSING</a></li>
+	<li><a href="#cleaning_up_moose_droppings">CLEANING UP MOOSE DROPPINGS</a></li>
+	<li><a href="#making_it_faster">MAKING IT FASTER</a></li>
+	<ul>
+
+		<li><a href="#immutabilization_and_new__">Immutabilization and <code>new()</code></a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Manual::Classes - Making your classes use Moose (and subclassing)</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_moose">USING MOOSE</a></h1>
+<p>Using Moose is very simple, you just <code>use Moose</code>:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<p>That's it, you've made a class with Moose!</p>
+<p>There's actually a lot going on here under the hood, so let's step
+through it.</p>
+<p>When you load <a href="../../../lib/Moose.html">the Moose manpage</a>, a bunch of sugar functions are exported into your
+class, such as <code>extends</code>, <code>has</code>, <code>with</code>, and more. These functions are what
+you use to define your class. For example, you might define an attribute ...</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'ssn'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span> <span class="operator">);</span>
+</pre>
+<p>Attributes are described in the <a href="../../../lib/Moose/Manual/Attributes.html">the Moose::Manual::Attributes manpage</a>
+documentation.</p>
+<p>Loading Moose also enables the <code>strict</code> and <code>warnings</code> pragmas in your
+class.</p>
+<p>When you load Moose, your class will become a subclass of
+<a href="../../../lib/Moose/Object.html">the Moose::Object manpage</a>. The <a href="../../../lib/Moose/Object.html">the Moose::Object manpage</a> class provides a default
+constructor and destructor, as well as object construction helper
+methods. You can read more about this in the
+<a href="../../../lib/Moose/Manual/Construction.html">the Moose::Manual::Construction manpage</a> document.</p>
+<p>As a convenience, Moose creates a new class type for your class. See
+the <a href="../../../lib/Moose/Manual/Types.html">the Moose::Manual::Types manpage</a> document to learn more about types.</p>
+<p>It also creates a <a href="../../../lib/Moose/Meta/Class.html">the Moose::Meta::Class manpage</a> object for your class. This
+metaclass object is now available by calling a <code>meta</code> method on your
+class, for example <code>Person-&gt;meta</code>.</p>
+<p>The metaclass object provides an introspection API for your class. It
+is also used by Moose itself under the hood to add attributes, define
+parent classes, and so on. In fact, all of Moose's sugar does the real
+work by calling methods on this metaclass object (and other meta API
+objects).</p>
+<p>
+</p>
+<hr />
+<h1><a name="subclassing">SUBCLASSING</a></h1>
+<p>Moose provides a simple sugar function for declaring your parent
+classes, <code>extends</code>:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">User</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">extends</span> <span class="string">'Person'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'username'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span> <span class="operator">);</span>
+</pre>
+<p>Note that each call to <code>extends</code> will <em>reset</em> your parents. For
+multiple inheritance you must provide all the parents at once,
+<code>extends 'Foo', 'Bar'</code>.</p>
+<p>You can use Moose to extend a non-Moose parent. However, when you do
+this, you will inherit the parent class's constructor (assuming it is
+also called <code>new</code>). In that case, you will have to take care of
+initializing attributes manually, either in the parent's constructor,
+or in your subclass, and you will lose a lot of Moose magic.</p>
+<p>See the <a href="../../../MooseX/NonMoose.html">the MooseX::NonMoose manpage</a> module on CPAN if you're interested in extending
+non-Moose parent classes with Moose child classes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="cleaning_up_moose_droppings">CLEANING UP MOOSE DROPPINGS</a></h1>
+<p>Moose exports a number of functions into your class. It's a good idea to
+remove these sugar functions from your class's namespace, so that <code>&lt;
+Person-</code>can('has') &gt;&gt; will no longer return true.</p>
+<p>There are several ways to do this. We recommend using <a href="../../../namespace/autoclean.html">the namespace::autoclean manpage</a>,
+a CPAN module. Not only will it remove Moose exports, it will also remove
+any other exports.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">namespace::autoclean</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<p>If you absolutely can't use a CPAN module (but can use Moose?), you can write
+<code>no Moose</code> at the end of your class. This will remove any Moose exports in
+your class.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'ssn'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">no</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="making_it_faster">MAKING IT FASTER</a></h1>
+<p>Moose has a feature called &quot;immutabilization&quot; that you can use to
+greatly speed up your classes at runtime. However, using it incurs
+a cost when your class is first being loaded. When you make your class
+immutable you tell Moose that you will not be changing it in the
+future. You will not be adding any more attributes, methods, roles, etc.</p>
+<p>This allows Moose to generate code specific to your class. In
+particular, it creates an &quot;inline&quot; constructor, making object
+construction much faster.</p>
+<p>To make your class immutable you simply call <code>make_immutable</code> on your
+class's metaclass object.</p>
+<pre>
+  <span class="keyword">__PACKAGE__</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">-&gt;</span><span class="variable">make_immutable</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="immutabilization_and_new__">Immutabilization and <code>new()</code></a></h2>
+<p>If you override <code>new()</code> in your class, then the immutabilization code
+will not be able to provide an optimized constructor for your
+class. Instead, you should use a <code>BUILD()</code> method, which will be
+called from the inlined constructor.</p>
+<p>Alternately, if you really need to provide a different <code>new()</code>, you
+can also provide your own immutabilization method. Doing so requires
+extending the Moose metaclasses, and is well beyond the scope of this
+manual.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

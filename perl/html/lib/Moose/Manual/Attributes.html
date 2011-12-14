@@ -1,0 +1,712 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Manual::Attributes - Object attributes with Moose</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Manual::Attributes - Object attributes with Moose</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#introduction">INTRODUCTION</a></li>
+	<li><a href="#attribute_options">ATTRIBUTE OPTIONS</a></li>
+	<ul>
+
+		<li><a href="#read_write_vs__read_only">Read-write vs. read-only</a></li>
+		<li><a href="#accessor_methods">Accessor methods</a></li>
+		<li><a href="#predicate_and_clearer_methods">Predicate and clearer methods</a></li>
+		<li><a href="#required_or_not">Required or not?</a></li>
+		<li><a href="#default_and_builder_methods">Default and builder methods</a></li>
+		<ul>
+
+			<li><a href="#builders_allow_subclassing">Builders allow subclassing</a></li>
+			<li><a href="#builders_work_well_with_roles">Builders work well with roles</a></li>
+		</ul>
+
+		<li><a href="#laziness">Laziness</a></li>
+		<li><a href="#constructor_parameters__init_arg_">Constructor parameters (<code>init_arg</code>)</a></li>
+		<li><a href="#weak_references">Weak references</a></li>
+		<li><a href="#triggers">Triggers</a></li>
+		<li><a href="#attribute_types">Attribute types</a></li>
+		<li><a href="#delegation">Delegation</a></li>
+		<li><a href="#attribute_traits_and_metaclasses">Attribute traits and metaclasses</a></li>
+		<li><a href="#native_delegations">Native Delegations</a></li>
+	</ul>
+
+	<li><a href="#attribute_inheritance">ATTRIBUTE INHERITANCE</a></li>
+	<li><a href="#multiple_attribute_shortcuts">MULTIPLE ATTRIBUTE SHORTCUTS</a></li>
+	<li><a href="#more_on_attributes">MORE ON ATTRIBUTES</a></li>
+	<li><a href="#a_few_more_options">A FEW MORE OPTIONS</a></li>
+	<ul>
+
+		<li><a href="#the_documentation_option">The <code>documentation</code> option</a></li>
+		<li><a href="#the_auto_deref_option">The <code>auto_deref</code> option</a></li>
+		<li><a href="#initializer">Initializer</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Manual::Attributes - Object attributes with Moose</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="introduction">INTRODUCTION</a></h1>
+<p>Moose attributes have many properties, and attributes are probably the
+single most powerful and flexible part of Moose. You can create a
+powerful class simply by declaring attributes. In fact, it's possible
+to have classes that consist solely of attribute declarations.</p>
+<p>An attribute is a property that every member of a class has. For
+example, we might say that &quot;every <code>Person</code> object has a first name and
+last name&quot;. Attributes can be optional, so that we can say &quot;some <code>Person</code>
+objects have a social security number (and some don't)&quot;.</p>
+<p>At its simplest, an attribute can be thought of as a named value (as
+in a hash) that can be read and set. However, attributes can also have
+defaults, type constraints, delegation and much more.</p>
+<p>In other languages, attributes are also referred to as slots or
+properties.</p>
+<p>
+</p>
+<hr />
+<h1><a name="attribute_options">ATTRIBUTE OPTIONS</a></h1>
+<p>Use the <code>has</code> function to declare an attribute:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'first_name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span> <span class="operator">);</span>
+</pre>
+<p>This says that all <code>Person</code> objects have an optional read-write
+&quot;first_name&quot; attribute.</p>
+<p>
+</p>
+<h2><a name="read_write_vs__read_only">Read-write vs. read-only</a></h2>
+<p>The options passed to <code>has</code> define the properties of the attribute. There are
+many options, but in the simplest form you just need to set <code>is</code>, which can
+be either <code>ro</code> (read-only) or <code>rw</code> (read-write). When an attribute is <code>rw</code>,
+you can change it by passing a value to its accessor. When an attribute is
+<code>ro</code>, you may only read the current value of the attribute.</p>
+<p>In fact, you could even omit <code>is</code>, but that gives you an attribute
+that has no accessor. This can be useful with other attribute options,
+such as <code>handles</code>. However, if your attribute generates <em>no</em>
+accessors, Moose will issue a warning, because that usually means the
+programmer forgot to say the attribute is read-only or read-write. If
+you really mean to have no accessors, you can silence this warning by
+setting <code>is</code> to <code>bare</code>.</p>
+<p>
+</p>
+<h2><a name="accessor_methods">Accessor methods</a></h2>
+<p>Each attribute has one or more accessor methods. An accessor lets you
+read and write the value of that attribute for an object.</p>
+<p>By default, the accessor method has the same name as the attribute. If
+you declared your attribute as <code>ro</code> then your accessor will be
+read-only. If you declared it read-write, you get a read-write
+accessor. Simple.</p>
+<p>Given our <code>Person</code> example above, we now have a single <code>first_name</code>
+accessor that can read or write a <code>Person</code> object's <code>first_name</code>
+attribute's value.</p>
+<p>If you want, you can also explicitly specify the method names to be
+used for reading and writing an attribute's value. This is
+particularly handy when you'd like an attribute to be publicly
+readable, but only privately settable. For example:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'weight'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">writer</span> <span class="operator">=&gt;</span> <span class="string">'_set_weight'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This might be useful if weight is calculated based on other methods.
+For example, every time the <code>eat</code> method is called, we might adjust
+weight. This lets us hide the implementation details of weight
+changes, but still provide the weight value to users of the class.</p>
+<p>Some people might prefer to have distinct methods for reading and
+writing. In <em>Perl Best Practices</em>, Damian Conway recommends that
+reader methods start with &quot;get_&quot; and writer methods start with &quot;set_&quot;.</p>
+<p>We can do exactly that by providing names for both the <code>reader</code> and
+<code>writer</code> methods:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'weight'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">reader</span> <span class="operator">=&gt;</span> <span class="string">'get_weight'</span><span class="operator">,</span>
+      <span class="string">writer</span> <span class="operator">=&gt;</span> <span class="string">'set_weight'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>If you're thinking that doing this over and over would be insanely
+tedious, you're right! Fortunately, Moose provides a powerful
+extension system that lets you override the default naming
+conventions. See <a href="../../../lib/Moose/Manual/MooseX.html">the Moose::Manual::MooseX manpage</a> for more details.</p>
+<p>
+</p>
+<h2><a name="predicate_and_clearer_methods">Predicate and clearer methods</a></h2>
+<p>Moose allows you to explicitly distinguish between a false or
+undefined attribute value and an attribute which has not been set. If
+you want to access this information, you must define clearer and
+predicate methods for an attribute.</p>
+<p>A predicate method tells you whether or not a given attribute is
+currently set. Note that an attribute can be explicitly set to
+<a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or some other false value, but the predicate will return
+true.</p>
+<p>The clearer method unsets the attribute. This is <em>not</em> the
+same as setting the value to <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, but you can only distinguish
+between them if you define a predicate method!</p>
+<p>Here's some code to illustrate the relationship between an accessor,
+predicate, and clearer method.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'ssn'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">clearer</span>   <span class="operator">=&gt;</span> <span class="string">'clear_ssn'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_ssn'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  ...</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$person</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">has_ssn</span><span class="operator">;</span> <span class="comment"># false</span>
+</pre>
+<pre>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">ssn</span><span class="operator">(</span><span class="keyword">undef</span><span class="operator">);</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">ssn</span><span class="operator">;</span> <span class="comment"># returns undef</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">has_ssn</span><span class="operator">;</span> <span class="comment"># true</span>
+</pre>
+<pre>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">clear_ssn</span><span class="operator">;</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">ssn</span><span class="operator">;</span> <span class="comment"># returns undef</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">has_ssn</span><span class="operator">;</span> <span class="comment"># false</span>
+</pre>
+<pre>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">ssn</span><span class="operator">(</span><span class="string">'123-45-6789'</span><span class="operator">);</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">ssn</span><span class="operator">;</span> <span class="comment"># returns '123-45-6789'</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">has_ssn</span><span class="operator">;</span> <span class="comment"># true</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$person2</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">'111-22-3333'</span><span class="operator">);</span>
+  <span class="variable">$person2</span><span class="operator">-&gt;</span><span class="variable">has_ssn</span><span class="operator">;</span> <span class="comment"># true</span>
+</pre>
+<p>By default, Moose does not make a predicate or clearer for you. You must
+explicitly provide names for them, and then Moose will create the methods
+for you.</p>
+<p>
+</p>
+<h2><a name="required_or_not">Required or not?</a></h2>
+<p>By default, all attributes are optional, and do not need to be
+provided at object construction time. If you want to make an attribute
+required, simply set the <code>required</code> option to true:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>       <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>There are a couple caveats worth mentioning in regards to what
+&quot;required&quot; actually means.</p>
+<p>Basically, all it says is that this attribute (<code>name</code>) must be provided to
+the constructor, or be lazy with either a default or a builder. It does not
+say anything about its value, so it could be <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>If you define a clearer method on a required attribute, the clearer
+<em>will</em> work, so even a required attribute can be unset after object
+construction.</p>
+<p>This means that if you do make an attribute required, providing a
+clearer doesn't make much sense. In some cases, it might be handy to
+have a <em>private</em> <code>clearer</code> and <code>predicate</code> for a required
+attribute.</p>
+<p>
+</p>
+<h2><a name="default_and_builder_methods">Default and builder methods</a></h2>
+<p>Attributes can have default values, and Moose provides two ways to
+specify that default.</p>
+<p>In the simplest form, you simply provide a non-reference scalar value
+for the <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> option:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">default</span>   <span class="operator">=&gt;</span> <span class="string">'medium'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_size'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>If the size attribute is not provided to the constructor, then it ends
+up being set to <code>medium</code>:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$person</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">size</span><span class="operator">;</span> <span class="comment"># medium</span>
+  <span class="variable">$person</span><span class="operator">-&gt;</span><span class="variable">has_size</span><span class="operator">;</span> <span class="comment"># true</span>
+</pre>
+<p>You can also provide a subroutine reference for <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a>. This
+reference will be called as a method on the object.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span>
+          <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">(</span> <span class="string">'small'</span><span class="operator">,</span> <span class="string">'medium'</span><span class="operator">,</span> <span class="string">'large'</span> <span class="operator">)</span><span class="operator">[</span> <span class="keyword">int</span><span class="operator">(</span> <span class="keyword">rand</span> <span class="number">3</span> <span class="operator">)</span> <span class="operator">]</span> <span class="operator">},</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_size'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This is a trivial example, but it illustrates the point that the subroutine
+will be called for every new object created.</p>
+<p>When you provide a <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> subroutine reference, it is called as a
+method on the object, with no additional parameters:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+          <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+          <span class="keyword">return</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">height</span> <span class="operator">&gt;</span> <span class="number">200</span> <span class="operator">?</span> <span class="string">'large'</span> <span class="operator">:</span> <span class="string">'average'</span><span class="operator">;</span>
+                <span class="operator">},</span>
+            <span class="operator">);</span>
+</pre>
+<p>When the <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> is called during object construction, it may be
+called before other attributes have been set. If your default is
+dependent on other parts of the object's state, you can make the
+attribute <code>lazy</code>. Laziness is covered in the next section.</p>
+<p>If you want to use a reference of any sort as the default value, you
+must return it from a subroutine.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'mapping'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">{}</span> <span class="operator">},</span>
+  <span class="operator">);</span>
+</pre>
+<p>This is necessary because otherwise Perl would instantiate the reference
+exactly once, and it would be shared by all objects:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'mapping'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="operator">{}</span><span class="operator">,</span> <span class="comment"># wrong!</span>
+  <span class="operator">);</span>
+</pre>
+<p>Moose will throw an error if you pass a bare non-subroutine reference
+as the default.</p>
+<p>If Moose allowed this then the default mapping attribute could easily
+end up shared across many objects. Instead, wrap it in a subroutine
+reference as we saw above.</p>
+<p>This is a bit awkward, but it's just the way Perl works.</p>
+<p>As an alternative to using a subroutine reference, you can supply a <code>builder</code>
+method for your attribute:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>        <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">builder</span>   <span class="operator">=&gt;</span> <span class="string">'_build_size'</span><span class="operator">,</span>
+      <span class="string">predicate</span> <span class="operator">=&gt;</span> <span class="string">'has_size'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _build_size </span><span class="operator">{</span>
+      <span class="keyword">return</span> <span class="operator">(</span> <span class="string">'small'</span><span class="operator">,</span> <span class="string">'medium'</span><span class="operator">,</span> <span class="string">'large'</span> <span class="operator">)</span><span class="operator">[</span> <span class="keyword">int</span><span class="operator">(</span> <span class="keyword">rand</span> <span class="number">3</span> <span class="operator">)</span> <span class="operator">]</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>This has several advantages. First, it moves a chunk of code to its own named
+method, which improves readability and code organization. Second, because this
+is a <em>named</em> method, it can be subclassed or provided by a role.</p>
+<p>We strongly recommend that you use a <code>builder</code> instead of a
+<a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> for anything beyond the most trivial default.</p>
+<p>A <code>builder</code>, just like a <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a>, is called as a method on the
+object with no additional parameters.</p>
+<p>
+</p>
+<h3><a name="builders_allow_subclassing">Builders allow subclassing</a></h3>
+<p>Because the <code>builder</code> is called <em>by name</em>, it goes through Perl's
+method resolution. This means that builder methods are both
+inheritable and overridable.</p>
+<p>If we subclass our <code>Person</code> class, we can override <code>_build_size</code>:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Lilliputian</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="variable">extends</span> <span class="string">'Person'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _build_size </span><span class="operator">{</span> <span class="keyword">return</span> <span class="string">'small'</span> <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h3><a name="builders_work_well_with_roles">Builders work well with roles</a></h3>
+<p>Because builders are called by name, they work well with roles. For
+example, a role could provide an attribute but require that the
+consuming class provide the <code>builder</code>:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">HasSize</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">requires</span> <span class="string">'_build_size'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">lazy</span>    <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">builder</span> <span class="operator">=&gt;</span> <span class="string">'_build_size'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Lilliputian</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'HasSize'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _build_size </span><span class="operator">{</span> <span class="keyword">return</span> <span class="string">'small'</span> <span class="operator">}</span>
+</pre>
+<p>Roles are covered in <a href="../../../lib/Moose/Manual/Roles.html">the Moose::Manual::Roles manpage</a>.</p>
+<p>
+</p>
+<h2><a name="laziness">Laziness</a></h2>
+<p>Moose lets you defer attribute population by making an attribute
+<code>lazy</code>:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">lazy</span>    <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">builder</span> <span class="operator">=&gt;</span> <span class="string">'_build_size'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>When <code>lazy</code> is true, the default is not generated until the reader
+method is called, rather than at object construction time. There are
+several reasons you might choose to do this.</p>
+<p>First, if the default value for this attribute depends on some other
+attributes, then the attribute <em>must</em> be <code>lazy</code>. During object
+construction, defaults are not generated in a predictable order, so
+you cannot count on some other attribute being populated when
+generating a default.</p>
+<p>Second, there's often no reason to calculate a default before it's
+needed. Making an attribute <code>lazy</code> lets you defer the cost until the
+attribute is needed. If the attribute is <em>never</em> needed, you save
+some CPU time.</p>
+<p>We recommend that you make any attribute with a builder or non-trivial
+default <code>lazy</code> as a matter of course.</p>
+<p>
+</p>
+<h2><a name="constructor_parameters__init_arg_">Constructor parameters (<code>init_arg</code>)</a></h2>
+<p>By default, each attribute can be passed by name to the class's
+constructor. On occasion, you may want to use a different name for
+the constructor parameter. You may also want to make an attribute
+unsettable via the constructor.</p>
+<p>You can do either of these things with the <code>init_arg</code> option:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'bigness'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>       <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">init_arg</span> <span class="operator">=&gt;</span> <span class="string">'size'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Now we have an attribute named &quot;bigness&quot;, but we pass <a href="../../../lib/pods/perlfunc.html#size"><code>size</code></a> to the
+constructor.</p>
+<p>Even more useful is the ability to disable setting an attribute via
+the constructor. This is particularly handy for private attributes:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'_genetic_code'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>       <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">lazy</span>     <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">builder</span>  <span class="operator">=&gt;</span> <span class="string">'_build_genetic_code'</span><span class="operator">,</span>
+      <span class="string">init_arg</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>By setting the <code>init_arg</code> to <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, we make it impossible to set
+this attribute when creating a new object.</p>
+<p>
+</p>
+<h2><a name="weak_references">Weak references</a></h2>
+<p>Moose has built-in support for weak references. If you set the
+<code>weak_ref</code> option to a true value, then it will call
+<code>Scalar::Util::weaken</code> whenever the attribute is set:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'parent'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>       <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">weak_ref</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">$node</span><span class="operator">-&gt;</span><span class="variable">parent</span><span class="operator">(</span><span class="variable">$parent_node</span><span class="operator">);</span>
+</pre>
+<p>This is very useful when you're building objects that may contain
+circular references.</p>
+<p>When the object in a weak references goes out of scope, the attribute's value
+will become <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> &quot;behind the scenes&quot;. This is done by the Perl interpreter
+directly, so Moose does not see this change. This means that triggers don't
+fire, coercions aren't applied, etc.</p>
+<p>The attribute is not cleared, so a predicate method for that attribute will
+still return true. Similarly, when the attribute is next accessed, a default
+value will not be generated.</p>
+<p>
+</p>
+<h2><a name="triggers">Triggers</a></h2>
+<p>A <code>trigger</code> is a subroutine that is called whenever the attribute is
+set:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">trigger</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_size_set</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _size_set </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$size</span><span class="operator">,</span> <span class="variable">$old_size</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$msg</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">@_</span> <span class="operator">&gt;</span> <span class="number">2</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$msg</span> <span class="operator">.=</span> <span class="string">" - old size was </span><span class="variable">$old_size</span><span class="string">"</span><span class="operator">;</span>
+      <span class="operator">}</span>
+</pre>
+<pre>
+      <span class="variable">$msg</span> <span class="operator">.=</span> <span class="string">" - size is now </span><span class="variable">$size</span><span class="string">"</span><span class="operator">;</span>
+      <span class="keyword">warn</span> <span class="variable">$msg</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>The trigger is called <em>after</em> an attribute's value is set. It is
+called as a method on the object, and receives the new and old values as
+its arguments. If the attribute had not previously been set at all,
+then only the new value is passed. This lets you distinguish between
+the case where the attribute had no value versus when the old value was <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>This differs from an <code>after</code> method modifier in two ways. First, a
+trigger is only called when the attribute is set, as opposed to
+whenever the accessor method is called (for reading or
+writing). Second, it is also called when an attribute's value is
+passed to the constructor.</p>
+<p>However, triggers are <em>not</em> called when an attribute is populated
+from a <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> or <code>builder</code>.</p>
+<p>
+</p>
+<h2><a name="attribute_types">Attribute types</a></h2>
+<p>Attributes can be restricted to only accept certain types:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'first_name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This says that the <code>first_name</code> attribute must be a string.</p>
+<p>Moose also provides a shortcut for specifying that an attribute only
+accepts objects that do a certain role:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'weapon'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>   <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">does</span> <span class="operator">=&gt;</span> <span class="string">'MyApp::Weapon'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>See the <a href="../../../lib/Moose/Manual/Types.html">the Moose::Manual::Types manpage</a> documentation for a complete
+discussion of Moose's type system.</p>
+<p>
+</p>
+<h2><a name="delegation">Delegation</a></h2>
+<p>An attribute can define methods which simply delegate to its value:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'hair_color'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'Graphics::Color::RGB'</span><span class="operator">,</span>
+      <span class="string">handles</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">hair_color_hex</span> <span class="operator">=&gt;</span> <span class="string">'as_hex_string'</span> <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This adds a new method, <code>hair_color_hex</code>. When someone calls
+<code>hair_color_hex</code>, internally, the object just calls <code>&lt;
+$self-</code>hair_color-&gt;as_hex_string &gt;&gt;.</p>
+<p>See <a href="../../../lib/Moose/Manual/Delegation.html">the Moose::Manual::Delegation manpage</a> for documentation on how to set up
+delegation methods.</p>
+<p>
+</p>
+<h2><a name="attribute_traits_and_metaclasses">Attribute traits and metaclasses</a></h2>
+<p>One of Moose's best features is that it can be extended in all sorts of ways
+through the use of metaclass traits and custom metaclasses.</p>
+<p>You can apply one or more traits to an attribute:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MooseX::MetaDescription</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>          <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">traits</span>      <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MooseX::MetaDescription::Meta::Trait'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">description</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">html_widget</span>  <span class="operator">=&gt;</span> <span class="string">'text_input'</span><span class="operator">,</span>
+          <span class="string">serialize_as</span> <span class="operator">=&gt;</span> <span class="string">'element'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>The advantage of traits is that you can mix more than one of them
+together easily (in fact, a trait is just a role under the hood).</p>
+<p>There are a number of MooseX modules on CPAN which provide useful
+attribute metaclasses and traits. See <a href="../../../lib/Moose/Manual/MooseX.html">the Moose::Manual::MooseX manpage</a> for
+some examples. You can also write your own metaclasses and traits. See
+the &quot;Meta&quot; and &quot;Extending&quot; recipes in <a href="../../../lib/Moose/Cookbook.html">the Moose::Cookbook manpage</a> for examples.</p>
+<p>
+</p>
+<h2><a name="native_delegations">Native Delegations</a></h2>
+<p>Native delegations allow you to delegate to standard Perl data structures as
+if they were objects.</p>
+<p>For example, we can pretend that an array reference has methods like
+<a href="../../../lib/pods/perlfunc.html#push"><code>push()</code></a>, <a href="../../../lib/pods/perlfunc.html#shift"><code>shift()</code></a>, <a href="../../../lib/pods/perlfunc.html#map"><code>map()</code></a>, <code>count()</code>, and more.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'options'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">traits</span>  <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'Array'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'ArrayRef[Str]'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="operator">[]</span> <span class="operator">},</span>
+      <span class="string">handles</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">all_options</span>    <span class="operator">=&gt;</span> <span class="string">'elements'</span><span class="operator">,</span>
+          <span class="string">add_option</span>     <span class="operator">=&gt;</span> <span class="string">'push'</span><span class="operator">,</span>
+          <span class="string">map_options</span>    <span class="operator">=&gt;</span> <span class="string">'map'</span><span class="operator">,</span>
+          <span class="string">option_count</span>   <span class="operator">=&gt;</span> <span class="string">'count'</span><span class="operator">,</span>
+          <span class="string">sorted_options</span> <span class="operator">=&gt;</span> <span class="string">'sort'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>See <a href="../../../lib/Moose/Manual/Delegation.html">the Moose::Manual::Delegation manpage</a> for more details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="attribute_inheritance">ATTRIBUTE INHERITANCE</a></h1>
+<p>By default, a child inherits all of its parent class(es)' attributes
+as-is. However, you can change most aspects of the inherited attribute in the
+child class. You cannot change any of its associated method names (reader,
+writer, predicate, etc).</p>
+<p>To override an attribute, you simply prepend its name with a plus sign
+(<code>+</code>):</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">LazyPerson</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">extends</span> <span class="string">'Person'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'+first_name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">lazy</span>    <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="string">'Bill'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Now the <code>first_name</code> attribute in <code>LazyPerson</code> is lazy, and defaults
+to <code>'Bill'</code>.</p>
+<p>We recommend that you exercise caution when changing the type (<code>isa</code>)
+of an inherited attribute.</p>
+<p>
+</p>
+<hr />
+<h1><a name="multiple_attribute_shortcuts">MULTIPLE ATTRIBUTE SHORTCUTS</a></h1>
+<p>If you have a number of attributes that differ only by name, you can declare
+them all at once:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Point</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="operator">[</span> <span class="string">'x'</span><span class="operator">,</span> <span class="string">'y'</span> <span class="operator">]</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Int'</span> <span class="operator">);</span>
+</pre>
+<p>Also, because <code>has</code> is just a function call, you can call it in a loop:</p>
+<pre>
+  <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$name</span> <span class="operator">(</span> <span class="string">qw( x y )</span> <span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$builder</span> <span class="operator">=</span> <span class="string">'_build_'</span> <span class="operator">.</span> <span class="variable">$name</span><span class="operator">;</span>
+      <span class="variable">has</span> <span class="variable">$name</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Int'</span><span class="operator">,</span> <span class="string">builder</span> <span class="operator">=&gt;</span> <span class="variable">$builder</span> <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="more_on_attributes">MORE ON ATTRIBUTES</a></h1>
+<p>Moose attributes are a big topic, and this document glosses over a few
+aspects. We recommend that you read the <a href="../../../lib/Moose/Manual/Delegation.html">the Moose::Manual::Delegation manpage</a>
+and <a href="../../../lib/Moose/Manual/Types.html">the Moose::Manual::Types manpage</a> documents to get a more complete
+understanding of attribute features.</p>
+<p>
+</p>
+<hr />
+<h1><a name="a_few_more_options">A FEW MORE OPTIONS</a></h1>
+<p>Moose has lots of attribute options. The ones listed below are
+superseded by some more modern features, but are covered for the sake
+of completeness.</p>
+<p>
+</p>
+<h2><a name="the_documentation_option">The <code>documentation</code> option</a></h2>
+<p>You can provide a piece of documentation as a string for an attribute:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'first_name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>            <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">documentation</span> <span class="operator">=&gt;</span> <span class="string">q{The person's first (personal) name}</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Moose does absolutely nothing with this information other than store
+it.</p>
+<p>
+</p>
+<h2><a name="the_auto_deref_option">The <code>auto_deref</code> option</a></h2>
+<p>If your attribute is an array reference or hash reference, the
+<code>auto_deref</code> option will make Moose dereference the value when it is
+returned from the reader method:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">%map</span> <span class="operator">=</span> <span class="variable">$object</span><span class="operator">-&gt;</span><span class="variable">mapping</span><span class="operator">;</span>
+</pre>
+<p>This option only works if your attribute is explicitly typed as an
+<code>ArrayRef</code> or <code>HashRef</code>.</p>
+<p>However, we recommend that you use <a href="../../../lib/Moose/Meta/Attribute/Native.html">the Moose::Meta::Attribute::Native manpage</a> traits
+for these types of attributes, which gives you much more control over how
+they are accessed and manipulated.</p>
+<p>
+</p>
+<h2><a name="initializer">Initializer</a></h2>
+<p>Moose provides an attribute option called <code>initializer</code>. This is called when
+the attribute's value is being set in the constructor, and lets you change the
+value before it is set.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

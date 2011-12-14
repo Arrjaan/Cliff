@@ -1,0 +1,186 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>Fatal - Replace functions with equivalents which succeed or die</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>Fatal - Replace functions with equivalents which succeed or die</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#best_practice">BEST PRACTICE</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Fatal - Replace functions with equivalents which succeed or die</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Fatal</span> <span class="string">qw(open close)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">"&lt;"</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">);</span>  <span class="comment"># No need to check errors!</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">File::Copy</span> <span class="string">qw(move)</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Fatal</span> <span class="string">qw(move)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">move</span><span class="operator">(</span><span class="variable">$file1</span><span class="operator">,</span> <span class="variable">$file2</span><span class="operator">);</span> <span class="comment"># No need to check errors!</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> juggle </span><span class="operator">{</span> <span class="operator">.</span> <span class="operator">.</span> <span class="operator">.</span> <span class="operator">}</span>
+    <span class="variable">Fatal</span><span class="operator">-&gt;</span><span class="variable">import</span><span class="operator">(</span><span class="string">'juggle'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="best_practice">BEST PRACTICE</a></h1>
+<p><strong>Fatal has been obsoleted by the new <a href="../lib/autodie.html">the autodie manpage</a> pragma.</strong> Please use
+<a href="../lib/autodie.html">the autodie manpage</a> in preference to <code>Fatal</code>.  <a href="../lib/autodie.html">the autodie manpage</a> supports lexical scoping,
+throws real exception objects, and provides much nicer error messages.</p>
+<p>The use of <code>:void</code> with Fatal is discouraged.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>Fatal</code> provides a way to conveniently replace
+functions which normally return a false value when they fail with
+equivalents which raise exceptions if they are not successful.  This
+lets you use these functions without having to test their return
+values explicitly on each call.  Exceptions can be caught using
+<a href="../lib/pods/perlfunc.html#eval"><code>eval{}</code></a>.  See <a href="../lib/pods/perlfunc.html">the perlfunc manpage</a> and <a href="../lib/pods/perlvar.html">the perlvar manpage</a> for details.</p>
+<p>The do-or-die equivalents are set up simply by calling Fatal's
+<a href="../lib/pods/perlfunc.html#import"><code>import</code></a> routine, passing it the names of the functions to be
+replaced.  You may wrap both user-defined functions and overridable
+CORE operators (except <a href="../lib/pods/perlfunc.html#exec"><code>exec</code></a>, <a href="../lib/pods/perlfunc.html#system"><code>system</code></a>, <a href="../lib/pods/perlfunc.html#print"><code>print</code></a>, or any other
+built-in that cannot be expressed via prototypes) in this way.</p>
+<p>If the symbol <code>:void</code> appears in the import list, then functions
+named later in that import list raise an exception only when
+these are called in void context--that is, when their return
+values are ignored.  For example</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Fatal</span> <span class="string">qw/:void open close/</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># properly checked, so no exception raised on error</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">not</span> <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="string">'/bogotic'</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">warn</span> <span class="string">"Can't open /bogotic: $!"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># not checked, so error raises an exception</span>
+    <span class="keyword">close</span> <span class="variable">FH</span><span class="operator">;</span>
+</pre>
+<p>The use of <code>:void</code> is discouraged, as it can result in exceptions
+not being thrown if you <em>accidentally</em> call a method without
+void context.  Use <a href="../lib/autodie.html">the autodie manpage</a> instead if you need to be able to
+disable autodying/Fatal behaviour for a small block of code.</p>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="bad_subroutine_name_for_fatal_s" class="item">Bad subroutine name for Fatal: %s</a></strong></dt>
+
+<dd>
+<p>You've called <code>Fatal</code> with an argument that doesn't look like
+a subroutine name, nor a switch that this version of Fatal
+understands.</p>
+</dd>
+<dt><strong><a name="_s" class="item">%s is not a Perl subroutine</a></strong></dt>
+
+<dd>
+<p>You've asked <code>Fatal</code> to try and replace a subroutine which does not
+exist, or has not yet been defined.</p>
+</dd>
+<dt><strong>%s is neither a builtin, nor a Perl subroutine</strong></dt>
+
+<dd>
+<p>You've asked <code>Fatal</code> to replace a subroutine, but it's not a Perl
+built-in, and <code>Fatal</code> couldn't find it as a regular subroutine.
+It either doesn't exist or has not yet been defined.</p>
+</dd>
+<dt><strong><a name="cannot_make_the_non_overridable_s_fatal" class="item">Cannot make the non-overridable %s fatal</a></strong></dt>
+
+<dd>
+<p>You've tried to use <code>Fatal</code> on a Perl built-in that can't be
+overridden, such as <a href="../lib/pods/perlfunc.html#print"><code>print</code></a> or <a href="../lib/pods/perlfunc.html#system"><code>system</code></a>, which means that
+<code>Fatal</code> can't help you, although some other modules might.
+See the <a href="#see_also">SEE ALSO</a> section of this documentation.</p>
+</dd>
+<dt><strong><a name="internal_error_s" class="item">Internal error: %s</a></strong></dt>
+
+<dd>
+<p>You've found a bug in <code>Fatal</code>.  Please report it using
+the <code>perlbug</code> command.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p><code>Fatal</code> clobbers the context in which a function is called and always
+makes it a scalar context, except when the <code>:void</code> tag is used.
+This problem does not exist in <a href="../lib/autodie.html">the autodie manpage</a>.</p>
+<p>&quot;Used only once&quot; warnings can be generated when <code>autodie</code> or <code>Fatal</code>
+is used with package filehandles (eg, <code>FILE</code>).  It's strongly recommended
+you use scalar filehandles instead.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Original module by Lionel Cons (CERN).</p>
+<p>Prototype updates by Ilya Zakharevich &lt;<a href="mailto:ilya@math.ohio-state.edu">ilya@math.ohio-state.edu</a>&gt;.</p>
+<p><a href="../lib/autodie.html">the autodie manpage</a> support, bugfixes, extended diagnostics, <a href="../lib/pods/perlfunc.html#system"><code>system</code></a>
+support, and major overhauling by Paul Fenwick &lt;<a href="mailto:pjf@perltraining.com.au">pjf@perltraining.com.au</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This module is free software, you may distribute it under the
+same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/autodie.html">the autodie manpage</a> for a nicer way to use lexical Fatal.</p>
+<p><a href="../IPC/System/Simple.html">the IPC::System::Simple manpage</a> for a similar idea for calls to <a href="../lib/pods/perlfunc.html#system"><code>system()</code></a>
+and backticks.</p>
+
+</body>
+
+</html>

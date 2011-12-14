@@ -1,0 +1,1282 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Locale::Maketext - framework for localization</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Locale::Maketext - framework for localization</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#quick_overview">QUICK OVERVIEW</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#construction_methods">Construction Methods</a></li>
+		<li><a href="#the_maketext_method">The &quot;maketext&quot; Method</a></li>
+		<li><a href="#utility_methods">Utility Methods</a></li>
+		<li><a href="#language_handle_attributes_and_internals">Language Handle Attributes and Internals</a></li>
+	</ul>
+
+	<li><a href="#language_class_hierarchies">LANGUAGE CLASS HIERARCHIES</a></li>
+	<li><a href="#entries_in_each_lexicon">ENTRIES IN EACH LEXICON</a></li>
+	<li><a href="#bracket_notation">BRACKET NOTATION</a></li>
+	<li><a href="#auto_lexicons">AUTO LEXICONS</a></li>
+	<li><a href="#readonly_lexicons">READONLY LEXICONS</a></li>
+	<li><a href="#controlling_lookup_failure">CONTROLLING LOOKUP FAILURE</a></li>
+	<li><a href="#how_to_use_maketext">HOW TO USE MAKETEXT</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright_and_disclaimer">COPYRIGHT AND DISCLAIMER</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Locale::Maketext - framework for localization</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyProgram</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MyProgram::L10N</span><span class="operator">;</span>
+   <span class="comment"># ...which inherits from Locale::Maketext</span>
+  <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">MyProgram::L10N</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">()</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"What language?"</span><span class="operator">;</span>
+  <span class="operator">...</span>
+  <span class="comment"># And then any messages your program emits, like:</span>
+  <span class="keyword">warn</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span> <span class="string">"Can't open file [_1]: [_2]\n"</span><span class="operator">,</span> <span class="variable">$f</span><span class="operator">,</span> <span class="variable">$!</span> <span class="operator">);</span>
+  <span class="operator">...</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>It is a common feature of applications (whether run directly,
+or via the Web) for them to be &quot;localized&quot; -- i.e., for them
+to a present an English interface to an English-speaker, a German
+interface to a German-speaker, and so on for all languages it's
+programmed with.  Locale::Maketext
+is a framework for software localization; it provides you with the
+tools for organizing and accessing the bits of text and text-processing
+code that you need for producing localized applications.</p>
+<p>In order to make sense of Maketext and how all its
+components fit together, you should probably
+go read <a href="../../lib/Locale/Maketext/TPJ13.html">Locale::Maketext::TPJ13</a>, and
+<em>then</em> read the following documentation.</p>
+<p>You may also want to read over the source for <code>File::Findgrep</code>
+and its constituent modules -- they are a complete (if small)
+example application that uses Maketext.</p>
+<p>
+</p>
+<hr />
+<h1><a name="quick_overview">QUICK OVERVIEW</a></h1>
+<p>The basic design of Locale::Maketext is object-oriented, and
+Locale::Maketext is an abstract base class, from which you
+derive a &quot;project class&quot;.
+The project class (with a name like &quot;TkBocciBall::Localize&quot;,
+which you then use in your module) is in turn the base class
+for all the &quot;language classes&quot; for your project
+(with names &quot;TkBocciBall::Localize::it&quot;, 
+&quot;TkBocciBall::Localize::en&quot;,
+&quot;TkBocciBall::Localize::fr&quot;, etc.).</p>
+<p>A language class is
+a class containing a lexicon of phrases as class data,
+and possibly also some methods that are of use in interpreting
+phrases in the lexicon, or otherwise dealing with text in that
+language.</p>
+<p>An object belonging to a language class is called a &quot;language
+handle&quot;; it's typically a flyweight object.</p>
+<p>The normal course of action is to call:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">TkBocciBall::Localize</span><span class="operator">;</span>  <span class="comment"># the localization project class</span>
+  <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">TkBocciBall::Localize</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">();</span>
+   <span class="comment"># Depending on the user's locale, etc., this will</span>
+   <span class="comment"># make a language handle from among the classes available,</span>
+   <span class="comment"># and any defaults that you declare.</span>
+  <span class="keyword">die</span> <span class="string">"Couldn't make a language handle??"</span> <span class="keyword">unless</span> <span class="variable">$lh</span><span class="operator">;</span>
+</pre>
+<p>From then on, you use the <code>maketext</code> function to access
+entries in whatever lexicon(s) belong to the language handle
+you got.  So, this:</p>
+<pre>
+  <span class="keyword">print</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">"You won!"</span><span class="operator">),</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>...emits the right text for this language.  If the object
+in <code>$lh</code> belongs to class &quot;TkBocciBall::Localize::fr&quot; and
+%TkBocciBall::Localize::fr::Lexicon contains <code>(&quot;You won!&quot;
+=&gt; &quot;Tu as gagn!&quot;)</code>, then the above
+code happily tells the user &quot;Tu as gagn&eacute;!&quot;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>Locale::Maketext offers a variety of methods, which fall
+into three categories:</p>
+<ul>
+<li>
+<p>Methods to do with constructing language handles.</p>
+</li>
+<li>
+<p><code>maketext</code> and other methods to do with accessing %Lexicon data
+for a given language handle.</p>
+</li>
+<li>
+<p>Methods that you may find it handy to use, from routines of
+yours that you put in %Lexicon entries.</p>
+</li>
+</ul>
+<p>These are covered in the following section.</p>
+<p>
+</p>
+<h2><a name="construction_methods">Construction Methods</a></h2>
+<p>These are to do with constructing a language handle:</p>
+<ul>
+<li>
+<p>$lh = YourProjClass-&gt;get_handle( ...langtags... ) || die &quot;lg-handle?&quot;;</p>
+<p>This tries loading classes based on the language-tags you give (like
+<code>(&quot;en-US&quot;, &quot;sk&quot;, &quot;kon&quot;, &quot;es-MX&quot;, &quot;ja&quot;, &quot;i-klingon&quot;)</code>, and for the first class
+that succeeds, returns YourProjClass::<em>language</em>-&gt;<code>new()</code>.</p>
+<p>If it runs thru the entire given list of language-tags, and finds no classes
+for those exact terms, it then tries &quot;superordinate&quot; language classes.
+So if no &quot;en-US&quot; class (i.e., YourProjClass::en_us)
+was found, nor classes for anything else in that list, we then try
+its superordinate, &quot;en&quot; (i.e., YourProjClass::en), and so on thru 
+the other language-tags in the given list: &quot;es&quot;.
+(The other language-tags in our example list: 
+happen to have no superordinates.)</p>
+<p>If none of those language-tags leads to loadable classes, we then
+try classes derived from YourProjClass-&gt;<code>fallback_languages()</code> and
+then if nothing comes of that, we use classes named by
+YourProjClass-&gt;<code>fallback_language_classes()</code>.  Then in the (probably
+quite unlikely) event that that fails, we just return undef.</p>
+</li>
+<li>
+<p>$lh = YourProjClass-&gt;get_handle<strong>()</strong> || die &quot;lg-handle?&quot;;</p>
+<p>When <code>get_handle</code> is called with an empty parameter list, magic happens:</p>
+<p>If <code>get_handle</code> senses that it's running in program that was
+invoked as a CGI, then it tries to get language-tags out of the
+environment variable &quot;HTTP_ACCEPT_LANGUAGE&quot;, and it pretends that
+those were the languages passed as parameters to <code>get_handle</code>.</p>
+<p>Otherwise (i.e., if not a CGI), this tries various OS-specific ways
+to get the language-tags for the current locale/language, and then
+pretends that those were the value(s) passed to <code>get_handle</code>.</p>
+<p>Currently this OS-specific stuff consists of looking in the environment
+variables &quot;LANG&quot; and &quot;LANGUAGE&quot;; and on MSWin machines (where those
+variables are typically unused), this also tries using
+the module Win32::Locale to get a language-tag for whatever language/locale
+is currently selected in the &quot;Regional Settings&quot; (or &quot;International&quot;?)
+Control Panel.  I welcome further
+suggestions for making this do the Right Thing under other operating
+systems that support localization.</p>
+<p>If you're using localization in an application that keeps a configuration
+file, you might consider something like this in your project class:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> get_handle_via_config </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$chosen_language</span> <span class="operator">=</span> <span class="variable">$Config_settings</span><span class="operator">{</span><span class="string">'language'</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$lh</span><span class="operator">;</span>
+    <span class="keyword">if</span><span class="operator">(</span><span class="variable">$chosen_language</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$class</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">(</span><span class="variable">$chosen_language</span><span class="operator">)</span>
+       <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"No language handle for \"</span><span class="variable">$chosen_language</span><span class="string">\" or the like"</span><span class="operator">;</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+      <span class="comment"># Config file missing, maybe?</span>
+      <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$class</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">()</span>
+       <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Can't get a language handle"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">return</span> <span class="variable">$lh</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+</li>
+<li>
+<p>$lh = YourProjClass::langname-&gt;<code>new()</code>;</p>
+<p>This constructs a language handle.  You usually <strong>don't</strong> call this
+directly, but instead let <code>get_handle</code> find a language class to <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a>
+and to then call -&gt;new on.</p>
+</li>
+<li>
+<p>$lh-&gt;<code>init()</code>;</p>
+<p>This is called by -&gt;new to initialize newly-constructed language handles.
+If you define an init method in your class, remember that it's usually
+considered a good idea to call $lh-&gt;SUPER::init in it (presumably at the
+beginning), so that all classes get a chance to initialize a new object
+however they see fit.</p>
+</li>
+<li>
+<p>YourProjClass-&gt;<code>fallback_languages()</code></p>
+<p><code>get_handle</code> appends the return value of this to the end of
+whatever list of languages you pass <code>get_handle</code>.  Unless
+you override this method, your project class
+will inherit Locale::Maketext's <code>fallback_languages</code>, which
+currently returns <code>('i-default', 'en', 'en-US')</code>.
+(&quot;i-default&quot; is defined in <a href="http://www.ietf.org/rfc/rfc2277.txt" class="rfc">RFC 2277</a>).</p>
+<p>This method (by having it return the name
+of a language-tag that has an existing language class)
+can be used for making sure that
+<code>get_handle</code> will always manage to construct a language
+handle (assuming your language classes are in an appropriate
+@INC directory).  Or you can use the next method:</p>
+</li>
+<li>
+<p>YourProjClass-&gt;<code>fallback_language_classes()</code></p>
+<p><code>get_handle</code> appends the return value of this to the end
+of the list of classes it will try using.  Unless
+you override this method, your project class
+will inherit Locale::Maketext's <code>fallback_language_classes</code>,
+which currently returns an empty list, <code>()</code>.
+By setting this to some value (namely, the name of a loadable
+language class), you can be sure that
+<code>get_handle</code> will always manage to construct a language
+handle.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="the_maketext_method">The &quot;maketext&quot; Method</a></h2>
+<p>This is the most important method in Locale::Maketext:</p>
+<pre>
+    <span class="variable">$text</span> <span class="operator">=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="variable">I</span><span class="operator">&lt;</span><span class="variable">key</span><span class="operator">&gt;,</span> <span class="operator">...</span><span class="variable">parameters</span> <span class="keyword">for</span> <span class="variable">this</span> <span class="variable">phrase</span><span class="operator">...);</span>
+</pre>
+<p>This looks in the %Lexicon of the language handle
+$lh and all its superclasses, looking
+for an entry whose key is the string <em>key</em>.  Assuming such
+an entry is found, various things then happen, depending on the
+value found:</p>
+<p>If the value is a scalarref, the scalar is dereferenced and returned
+(and any parameters are ignored).</p>
+<p>If the value is a coderef, we return &amp;$value($lh, ...parameters...).</p>
+<p>If the value is a string that <em>doesn't</em> look like it's in Bracket Notation,
+we return it (after replacing it with a scalarref, in its %Lexicon).</p>
+<p>If the value <em>does</em> look like it's in Bracket Notation, then we compile
+it into a sub, replace the string in the %Lexicon with the new coderef,
+and then we return &amp;$new_sub($lh, ...parameters...).</p>
+<p>Bracket Notation is discussed in a later section.  Note
+that trying to compile a string into Bracket Notation can throw
+an exception if the string is not syntactically valid (say, by not
+balancing brackets right.)</p>
+<p>Also, calling &amp;$coderef($lh, ...parameters...) can throw any sort of
+exception (if, say, code in that sub tries to divide by zero).  But
+a very common exception occurs when you have Bracket
+Notation text that says to call a method &quot;foo&quot;, but there is no such
+method.  (E.g., &quot;You have [qua<strong>tn</strong>,_1,ball].&quot; will throw an exception
+on trying to call $lh-&gt;qua<strong>tn</strong>($_[1],'ball') -- you presumably meant
+&quot;quant&quot;.)  <code>maketext</code> catches these exceptions, but only to make the
+error message more readable, at which point it rethrows the exception.</p>
+<p>An exception <em>may</em> be thrown if <em>key</em> is not found in any
+of $lh's %Lexicon hashes.  What happens if a key is not found,
+is discussed in a later section, &quot;Controlling Lookup Failure&quot;.</p>
+<p>Note that you might find it useful in some cases to override
+the <code>maketext</code> method with an &quot;after method&quot;, if you want to
+translate encodings, or even scripts:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">YrProj::zh_cn</span><span class="operator">;</span> <span class="comment"># Chinese with PRC-style glyphs</span>
+    <span class="keyword">use</span> <span class="variable">base</span> <span class="operator">(</span><span class="string">'YrProj::zh_tw'</span><span class="operator">);</span>  <span class="comment"># Taiwan-style</span>
+    <span class="keyword">sub</span><span class="variable"> maketext </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+      <span class="keyword">my</span> <span class="variable">$value</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+      <span class="keyword">return</span> <span class="variable">Chineeze::taiwan2mainland</span><span class="operator">(</span><span class="variable">$value</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<p>Or you may want to override it with something that traps
+any exceptions, if that's critical to your program:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> maketext </span><span class="operator">{</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$lh</span><span class="operator">,</span> <span class="variable">@stuff</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$out</span><span class="operator">;</span>
+    <span class="keyword">eval</span> <span class="operator">{</span> <span class="variable">$out</span> <span class="operator">=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">SUPER::maketext</span><span class="operator">(</span><span class="variable">@stuff</span><span class="operator">)</span> <span class="operator">};</span>
+    <span class="keyword">return</span> <span class="variable">$out</span> <span class="keyword">unless</span> <span class="variable">$@</span><span class="operator">;</span>
+    <span class="operator">...</span><span class="variable">otherwise</span> <span class="variable">deal</span> <span class="variable">with</span> <span class="variable">the</span> <span class="variable">exception</span><span class="operator">...</span>
+  <span class="operator">}</span>
+</pre>
+<p>Other than those two situations, I don't imagine that
+it's useful to override the <code>maketext</code> method.  (If
+you run into a situation where it is useful, I'd be
+interested in hearing about it.)</p>
+<dl>
+<dt><strong><a name="fail_with" class="item">$lh-&gt;fail_with <em>or</em> $lh-&gt;fail_with(<em>PARAM</em>)</a></strong></dt>
+
+<dt><strong><a name="failure_handler_auto" class="item">$lh-&gt;failure_handler_auto</a></strong></dt>
+
+<dd>
+<p>These two methods are discussed in the section &quot;Controlling
+Lookup Failure&quot;.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="utility_methods">Utility Methods</a></h2>
+<p>These are methods that you may find it handy to use, generally
+from %Lexicon routines of yours (whether expressed as
+Bracket Notation or not).</p>
+<dl>
+<dt><strong><a name="quant" class="item">$language-&gt;quant($number, $singular)</a></strong></dt>
+
+<dt><strong>$language-&gt;quant($number, $singular, $plural)</strong></dt>
+
+<dt><strong>$language-&gt;quant($number, $singular, $plural, $negative)</strong></dt>
+
+<dd>
+<p>This is generally meant to be called from inside Bracket Notation
+(which is discussed later), as in</p>
+<pre>
+     &quot;Your search matched [quant,_1,document]!&quot;</pre>
+<p>It's for <em>quantifying</em> a noun (i.e., saying how much of it there is,
+while giving the correct form of it).  The behavior of this method is
+handy for English and a few other Western European languages, and you
+should override it for languages where it's not suitable.  You can feel
+free to read the source, but the current implementation is basically
+as this pseudocode describes:</p>
+<pre>
+     <span class="keyword">if</span> <span class="variable">$number</span> <span class="variable">is</span> <span class="number">0</span> <span class="keyword">and</span> <span class="variable">there's</span> <span class="variable">a</span> <span class="variable">$negative</span><span class="operator">,</span>
+        <span class="keyword">return</span> <span class="variable">$negative</span><span class="operator">;</span>
+     <span class="keyword">elsif</span> <span class="variable">$number</span> <span class="variable">is</span> <span class="number">1</span><span class="operator">,</span>
+        <span class="keyword">return</span> <span class="string">"1 </span><span class="variable">$singular</span><span class="string">"</span><span class="operator">;</span>
+     <span class="keyword">elsif</span> <span class="variable">there's</span> <span class="variable">a</span> <span class="variable">$plural</span><span class="operator">,</span>
+        <span class="keyword">return</span> <span class="string">"</span><span class="variable">$number</span><span class="string"> </span><span class="variable">$plural</span><span class="string">"</span><span class="operator">;</span>
+     <span class="keyword">else</span>
+        <span class="keyword">return</span> <span class="string">"</span><span class="variable">$number</span><span class="string"> "</span> <span class="operator">.</span> <span class="variable">$singular</span> <span class="operator">.</span> <span class="string">"s"</span><span class="operator">;</span>
+     <span class="comment">#</span>
+     <span class="comment"># ...except that we actually call numf to</span>
+     <span class="comment">#  stringify $number before returning it.</span>
+</pre>
+<p>So for English (with Bracket Notation)
+<code>&quot;...[quant,_1,file]...&quot;</code> is fine (for 0 it returns &quot;0 files&quot;,
+for 1 it returns &quot;1 file&quot;, and for more it returns &quot;2 files&quot;, etc.)</p>
+<p>But for &quot;directory&quot;, you'd want <code>&quot;[quant,_1,directory,directories]&quot;</code>
+so that our elementary <a href="#quant"><code>quant</code></a> method doesn't think that the
+plural of &quot;directory&quot; is &quot;directorys&quot;.  And you might find that the
+output may sound better if you specify a negative form, as in:</p>
+<pre>
+     &quot;[quant,_1,file,files,No files] matched your query.\n&quot;</pre>
+<p>Remember to keep in mind verb agreement (or adjectives too, in
+other languages), as in:</p>
+<pre>
+     &quot;[quant,_1,document] were matched.\n&quot;</pre>
+<p>Because if _1 is one, you get &quot;1 document <strong>were</strong> matched&quot;.
+An acceptable hack here is to do something like this:</p>
+<pre>
+     &quot;[quant,_1,document was, documents were] matched.\n&quot;</pre>
+</dd>
+<dt><strong><a name="numf" class="item">$language-&gt;<code>numf($number)</code></a></strong></dt>
+
+<dd>
+<p>This returns the given number formatted nicely according to
+this language's conventions.  Maketext's default method is
+mostly to just take the normal string form of the number
+(applying sprintf &quot;%G&quot; for only very large numbers), and then
+to add commas as necessary.  (Except that
+we apply <a href="../../lib/pods/perlfunc.html#tr_"><code>tr/,./.,/</code></a> if $language-&gt;{'numf_comma'} is true;
+that's a bit of a hack that's useful for languages that express
+two million as &quot;2.000.000&quot; and not as &quot;2,000,000&quot;).</p>
+<p>If you want anything fancier, consider overriding this with something
+that uses <a href="../../Number/Format.html">Number::Format</a>, or does something else
+entirely.</p>
+<p>Note that numf is called by quant for stringifying all quantifying
+numbers.</p>
+</dd>
+<dt><strong><a name="sprintf" class="item">$language-&gt;sprintf($format, @items)</a></strong></dt>
+
+<dd>
+<p>This is just a wrapper around Perl's normal <a href="#sprintf"><code>sprintf</code></a> function.
+It's provided so that you can use &quot;sprintf&quot; in Bracket Notation:</p>
+<pre>
+     &quot;Couldn't access datanode [sprintf,%10x=~[%s~],_1,_2]!\n&quot;</pre>
+<p>returning...</p>
+<pre>
+     Couldn't access datanode      Stuff=[thangamabob]!</pre>
+</dd>
+<dt><strong><a name="language_tag" class="item">$language-&gt;<code>language_tag()</code></a></strong></dt>
+
+<dd>
+<p>Currently this just takes the last bit of <a href="../../lib/pods/perlfunc.html#ref"><code>ref($language)</code></a>, turns
+underscores to dashes, and returns it.  So if $language is
+an object of class Hee::HOO::Haw::en_us, $language-&gt;<a href="#language_tag"><code>language_tag()</code></a>
+returns &quot;en-us&quot;.  (Yes, the usual representation for that language
+tag is &quot;en-US&quot;, but case is <em>never</em> considered meaningful in
+language-tag comparison.)</p>
+<p>You may override this as you like; Maketext doesn't use it for
+anything.</p>
+</dd>
+<dt><strong><a name="encoding" class="item">$language-&gt;<code>encoding()</code></a></strong></dt>
+
+<dd>
+<p>Currently this isn't used for anything, but it's provided
+(with default value of
+<a href="../../lib/pods/perlfunc.html#ref"><code>(ref($language) &amp;&amp; $language-&gt;{'encoding'})) or &quot;iso-8859-1&quot;</code></a>
+) as a sort of suggestion that it may be useful/necessary to
+associate encodings with your language handles (whether on a
+per-class or even per-handle basis.)</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="language_handle_attributes_and_internals">Language Handle Attributes and Internals</a></h2>
+<p>A language handle is a flyweight object -- i.e., it doesn't (necessarily)
+carry any data of interest, other than just being a member of
+whatever class it belongs to.</p>
+<p>A language handle is implemented as a blessed hash.  Subclasses of yours
+can store whatever data you want in the hash.  Currently the only hash
+entry used by any crucial Maketext method is &quot;fail&quot;, so feel free to
+use anything else as you like.</p>
+<p><strong>Remember: Don't be afraid to read the Maketext source if there's
+any point on which this documentation is unclear.</strong>  This documentation
+is vastly longer than the module source itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="language_class_hierarchies">LANGUAGE CLASS HIERARCHIES</a></h1>
+<p>These are Locale::Maketext's assumptions about the class
+hierarchy formed by all your language classes:</p>
+<ul>
+<li>
+<p>You must have a project base class, which you load, and
+which you then use as the first argument in
+the call to YourProjClass-&gt;get_handle(...).  It should derive
+(whether directly or indirectly) from Locale::Maketext.
+It <strong>doesn't matter</strong> how you name this class, although assuming this
+is the localization component of your Super Mega Program,
+good names for your project class might be
+SuperMegaProgram::Localization, SuperMegaProgram::L10N,
+SuperMegaProgram::I18N, SuperMegaProgram::International,
+or even SuperMegaProgram::Languages or SuperMegaProgram::Messages.</p>
+</li>
+<li>
+<p>Language classes are what YourProjClass-&gt;get_handle will try to load.
+It will look for them by taking each language-tag (<strong>skipping</strong> it
+if it doesn't look like a language-tag or locale-tag!), turning it to
+all lowercase, turning dashes to underscores, and appending it
+to YourProjClass . &quot;::&quot;.  So this:</p>
+<pre>
+  <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">YourProjClass</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">(</span>
+    <span class="string">'en-US'</span><span class="operator">,</span> <span class="string">'fr'</span><span class="operator">,</span> <span class="string">'kon'</span><span class="operator">,</span> <span class="string">'i-klingon'</span><span class="operator">,</span> <span class="string">'i-klingon-romanized'</span>
+  <span class="operator">);</span>
+</pre>
+<p>will try loading the classes 
+YourProjClass::en_us (note lowercase!), YourProjClass::fr, 
+YourProjClass::kon,
+YourProjClass::i_klingon
+and YourProjClass::i_klingon_romanized.  (And it'll stop at the
+first one that actually loads.)</p>
+</li>
+<li>
+<p>I assume that each language class derives (directly or indirectly)
+from your project class, and also defines its @ISA, its %Lexicon,
+or both.  But I anticipate no dire consequences if these assumptions
+do not hold.</p>
+</li>
+<li>
+<p>Language classes may derive from other language classes (although they
+should have &quot;use <em>Thatclassname</em>&quot; or &quot;use base qw(<em>...classes...</em>)&quot;).
+They may derive from the project
+class.  They may derive from some other class altogether.  Or via
+multiple inheritance, it may derive from any mixture of these.</p>
+</li>
+<li>
+<p>I foresee no problems with having multiple inheritance in
+your hierarchy of language classes.  (As usual, however, Perl will
+complain bitterly if you have a cycle in the hierarchy: i.e., if
+any class is its own ancestor.)</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="entries_in_each_lexicon">ENTRIES IN EACH LEXICON</a></h1>
+<p>A typical %Lexicon entry is meant to signify a phrase,
+taking some number (0 or more) of parameters.  An entry
+is meant to be accessed by via
+a string <em>key</em> in $lh-&gt;maketext(<em>key</em>, ...parameters...),
+which should return a string that is generally meant for
+be used for &quot;output&quot; to the user -- regardless of whether
+this actually means printing to STDOUT, writing to a file,
+or putting into a GUI widget.</p>
+<p>While the key must be a string value (since that's a basic
+restriction that Perl places on hash keys), the value in
+the lexicon can currently be of several types:
+a defined scalar, scalarref, or coderef.  The use of these is
+explained above, in the section 'The &quot;maketext&quot; Method', and
+Bracket Notation for strings is discussed in the next section.</p>
+<p>While you can use arbitrary unique IDs for lexicon keys
+(like &quot;_min_larger_max_error&quot;), it is often
+useful for if an entry's key is itself a valid value, like
+this example error message:</p>
+<pre>
+  &quot;Minimum ([_1]) is larger than maximum ([_2])!\n&quot;,</pre>
+<p>Compare this code that uses an arbitrary ID...</p>
+<pre>
+  <span class="keyword">die</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span> <span class="string">"_min_larger_max_error"</span><span class="operator">,</span> <span class="variable">$min</span><span class="operator">,</span> <span class="variable">$max</span> <span class="operator">)</span>
+   <span class="keyword">if</span> <span class="variable">$min</span> <span class="operator">&gt;</span> <span class="variable">$max</span><span class="operator">;</span>
+</pre>
+<p>...to this code that uses a key-as-value:</p>
+<pre>
+  <span class="keyword">die</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span>
+   <span class="string">"Minimum ([_1]) is larger than maximum ([_2])!\n"</span><span class="operator">,</span>
+   <span class="variable">$min</span><span class="operator">,</span> <span class="variable">$max</span>
+  <span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$min</span> <span class="operator">&gt;</span> <span class="variable">$max</span><span class="operator">;</span>
+</pre>
+<p>The second is, in short, more readable.  In particular, it's obvious
+that the number of parameters you're feeding to that phrase (two) is
+the number of parameters that it <em>wants</em> to be fed.  (Since you see
+_1 and a _2 being used in the key there.)</p>
+<p>Also, once a project is otherwise
+complete and you start to localize it, you can scrape together
+all the various keys you use, and pass it to a translator; and then
+the translator's work will go faster if what he's presented is this:</p>
+<pre>
+ &quot;Minimum ([_1]) is larger than maximum ([_2])!\n&quot;,
+  =&gt; &quot;&quot;,   # fill in something here, Jacques!</pre>
+<p>rather than this more cryptic mess:</p>
+<pre>
+ &quot;_min_larger_max_error&quot;
+  =&gt; &quot;&quot;,   # fill in something here, Jacques</pre>
+<p>I think that keys as lexicon values makes the completed lexicon
+entries more readable:</p>
+<pre>
+ &quot;Minimum ([_1]) is larger than maximum ([_2])!\n&quot;,
+  =&gt; &quot;Le minimum ([_1]) est plus grand que le maximum ([_2])!\n&quot;,</pre>
+<p>Also, having valid values as keys becomes very useful if you set
+up an _AUTO lexicon.  _AUTO lexicons are discussed in a later
+section.</p>
+<p>I almost always use keys that are themselves
+valid lexicon values.  One notable exception is when the value is
+quite long.  For example, to get the screenful of data that
+a command-line program might return when given an unknown switch,
+I often just use a brief, self-explanatory key such as &quot;_USAGE_MESSAGE&quot;.  At that point I then go
+and immediately to define that lexicon entry in the
+ProjectClass::L10N::en lexicon (since English is always my &quot;project
+language&quot;):</p>
+<pre>
+  '_USAGE_MESSAGE' =&gt; &lt;&lt;'EOSTUFF',
+  ...long long message...
+  EOSTUFF</pre>
+<p>and then I can use it as:</p>
+<pre>
+  <span class="variable">getopt</span><span class="operator">(</span><span class="string">'oDI'</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%opts</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">'_USAGE_MESSAGE'</span><span class="operator">);</span>
+</pre>
+<p>Incidentally,
+note that each class's <code>%Lexicon</code> inherits-and-extends
+the lexicons in its superclasses.  This is not because these are
+special hashes <em>per se</em>, but because you access them via the
+<code>maketext</code> method, which looks for entries across all the
+<code>%Lexicon</code> hashes in a language class <em>and</em> all its ancestor classes.
+(This is because the idea of &quot;class data&quot; isn't directly implemented
+in Perl, but is instead left to individual class-systems to implement
+as they see fit..)</p>
+<p>Note that you may have things stored in a lexicon
+besides just phrases for output:  for example, if your program
+takes input from the keyboard, asking a &quot;(Y/N)&quot; question,
+you probably need to know what the equivalent of &quot;Y[es]/N[o]&quot; is
+in whatever language.  You probably also need to know what
+the equivalents of the answers &quot;y&quot; and &quot;n&quot; are.  You can
+store that information in the lexicon (say, under the keys
+&quot;~answer_y&quot; and &quot;~answer_n&quot;, and the long forms as
+&quot;~answer_yes&quot; and &quot;~answer_no&quot;, where &quot;~&quot; is just an ad-hoc
+character meant to indicate to programmers/translators that
+these are not phrases for output).</p>
+<p>Or instead of storing this in the language class's lexicon,
+you can (and, in some cases, really should) represent the same bit
+of knowledge as code in a method in the language class.  (That
+leaves a tidy distinction between the lexicon as the things we
+know how to <em>say</em>, and the rest of the things in the lexicon class
+as things that we know how to <em>do</em>.)  Consider
+this example of a processor for responses to French &quot;oui/non&quot;
+questions:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> y_or_n </span><span class="operator">{</span>
+    <span class="keyword">return</span> <span class="keyword">undef</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="keyword">and</span> <span class="keyword">length</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$answer</span> <span class="operator">=</span> <span class="keyword">lc</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">;</span>  <span class="comment"># smash case</span>
+    <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">if</span> <span class="variable">$answer</span> <span class="keyword">eq</span> <span class="string">'o'</span> <span class="keyword">or</span> <span class="variable">$answer</span> <span class="keyword">eq</span> <span class="string">'oui'</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="number">0</span> <span class="keyword">if</span> <span class="variable">$answer</span> <span class="keyword">eq</span> <span class="string">'n'</span> <span class="keyword">or</span> <span class="variable">$answer</span> <span class="keyword">eq</span> <span class="string">'non'</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="keyword">undef</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>...which you'd then call in a construct like this:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$response</span><span class="operator">;</span>
+  <span class="keyword">until</span><span class="operator">(</span><span class="keyword">defined</span> <span class="variable">$response</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">print</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">"Open the pod bay door (y/n)? "</span><span class="operator">);</span>
+    <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">y_or_n</span><span class="operator">(</span> <span class="variable">get_input_from_keyboard_somehow</span><span class="operator">()</span> <span class="operator">);</span>
+  <span class="operator">}</span>
+  <span class="keyword">if</span><span class="operator">(</span><span class="variable">$response</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$pod_bay_door</span><span class="operator">-&gt;</span><span class="variable">open</span><span class="operator">()</span>         <span class="operator">}</span>
+  <span class="keyword">else</span>          <span class="operator">{</span> <span class="variable">$pod_bay_door</span><span class="operator">-&gt;</span><span class="variable">leave_closed</span><span class="operator">()</span> <span class="operator">}</span>
+</pre>
+<p>Other data worth storing in a lexicon might be things like
+filenames for language-targetted resources:</p>
+<pre>
+  ...
+  &quot;_main_splash_png&quot;
+    =&gt; &quot;/styles/en_us/main_splash.png&quot;,
+  &quot;_main_splash_imagemap&quot;
+    =&gt; &quot;/styles/en_us/main_splash.incl&quot;,
+  &quot;_general_graphics_path&quot;
+    =&gt; &quot;/styles/en_us/&quot;,
+  &quot;_alert_sound&quot;
+    =&gt; &quot;/styles/en_us/hey_there.wav&quot;,
+  &quot;_forward_icon&quot;
+   =&gt; &quot;left_arrow.png&quot;,
+  &quot;_backward_icon&quot;
+   =&gt; &quot;right_arrow.png&quot;,
+  # In some other languages, left equals
+  #  BACKwards, and right is FOREwards.
+  ...</pre>
+<p>You might want to do the same thing for expressing key bindings
+or the like (since hardwiring &quot;q&quot; as the binding for the function
+that quits a screen/menu/program is useful only if your language
+happens to associate &quot;q&quot; with &quot;quit&quot;!)</p>
+<p>
+</p>
+<hr />
+<h1><a name="bracket_notation">BRACKET NOTATION</a></h1>
+<p>Bracket Notation is a crucial feature of Locale::Maketext.  I mean
+Bracket Notation to provide a replacement for the use of sprintf formatting.
+Everything you do with Bracket Notation could be done with a sub block,
+but bracket notation is meant to be much more concise.</p>
+<p>Bracket Notation is a like a miniature &quot;template&quot; system (in the sense
+of <a href="../../Text/Template.html">Text::Template</a>, not in the sense of C++ templates),
+where normal text is passed thru basically as is, but text in special
+regions is specially interpreted.  In Bracket Notation, you use square brackets (&quot;[...]&quot;),
+not curly braces (&quot;{...}&quot;) to note sections that are specially interpreted.</p>
+<p>For example, here all the areas that are taken literally are underlined with
+a &quot;^&quot;, and all the in-bracket special regions are underlined with an X:</p>
+<pre>
+  &quot;Minimum ([_1]) is larger than maximum ([_2])!\n&quot;,
+   ^^^^^^^^^ XX ^^^^^^^^^^^^^^^^^^^^^^^^^^ XX ^^^^</pre>
+<p>When that string is compiled from bracket notation into a real Perl sub,
+it's basically turned into:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">@params</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="keyword">join</span> <span class="string">''</span><span class="operator">,</span>
+      <span class="string">"Minimum ("</span><span class="operator">,</span>
+      <span class="operator">...</span><span class="variable">some</span> <span class="variable">code</span> <span class="variable">here</span><span class="operator">...</span>
+      <span class="string">") is larger than maximum ("</span><span class="operator">,</span>
+      <span class="operator">...</span><span class="variable">some</span> <span class="variable">code</span> <span class="variable">here</span><span class="operator">...</span>
+      <span class="string">")!\n"</span><span class="operator">,</span>
+  <span class="operator">}</span>
+  <span class="comment"># to be called by $lh-&gt;maketext(KEY, params...)</span>
+   
+  <span class="variable">In</span> <span class="variable">other</span> <span class="variable">words</span><span class="operator">,</span> <span class="variable">text</span> <span class="variable">outside</span> <span class="variable">bracket</span> <span class="variable">groups</span> <span class="variable">is</span> <span class="variable">turned</span> <span class="variable">into</span> <span class="variable">string</span>
+  <span class="variable">literals</span><span class="operator">.</span>  <span class="variable">Text</span> <span class="variable">in</span> <span class="variable">brackets</span> <span class="variable">is</span> <span class="variable">rather</span> <span class="variable">more</span> <span class="variable">complex</span><span class="operator">,</span> <span class="keyword">and</span> <span class="variable">currently</span> <span class="variable">follows</span>
+  <span class="variable">these</span> <span class="variable">rules</span><span class="operator">:</span>
+</pre>
+<ul>
+<li>
+<p>Bracket groups that are empty, or which consist only of whitespace,
+are ignored.  (Examples: &quot;[]&quot;, &quot;[    ]&quot;, or a [ and a ] with returns
+and/or tabs and/or spaces between them.</p>
+<p>Otherwise, each group is taken to be a comma-separated group of items,
+and each item is interpreted as follows:</p>
+</li>
+<li>
+<p>An item that is &quot;_<em>digits</em>&quot; or &quot;_-<em>digits</em>&quot; is interpreted as
+$_[<em>value</em>].  I.e., &quot;_1&quot; becomes with $_[1], and &quot;_-3&quot; is interpreted
+as $_[-3] (in which case @_ should have at least three elements in it).
+Note that $_[0] is the language handle, and is typically not named
+directly.</p>
+</li>
+<li>
+<p>An item &quot;_*&quot; is interpreted to mean &quot;all of @_ except $_[0]&quot;.
+I.e., <code>@_[1..$#_]</code>.  Note that this is an empty list in the case
+of calls like $lh-&gt;maketext(<em>key</em>) where there are no
+parameters (except $_[0], the language handle).</p>
+</li>
+<li>
+<p>Otherwise, each item is interpreted as a string literal.</p>
+</li>
+</ul>
+<p>The group as a whole is interpreted as follows:</p>
+<ul>
+<li>
+<p>If the first item in a bracket group looks like a method name,
+then that group is interpreted like this:</p>
+<pre>
+  $lh-&gt;that_method_name(
+    ...rest of items in this group...
+  ),</pre>
+</li>
+<li>
+<p>If the first item in a bracket group is &quot;*&quot;, it's taken as shorthand
+for the so commonly called &quot;quant&quot; method.  Similarly, if the first
+item in a bracket group is &quot;#&quot;, it's taken to be shorthand for
+&quot;numf&quot;.</p>
+</li>
+<li>
+<p>If the first item in a bracket group is the empty-string, or &quot;_*&quot;
+or &quot;_<em>digits</em>&quot; or &quot;_-<em>digits</em>&quot;, then that group is interpreted
+as just the interpolation of all its items:</p>
+<pre>
+  join('',
+    ...rest of items in this group...
+  ),</pre>
+<p>Examples:  &quot;[_1]&quot; and &quot;[,_1]&quot;, which are synonymous; and
+&quot;<code>[,ID-(,_4,-,_2,)]</code>&quot;, which compiles as
+<code>join &quot;&quot;, &quot;ID-(&quot;, $_[4], &quot;-&quot;, $_[2], &quot;)&quot;</code>.</p>
+</li>
+<li>
+<p>Otherwise this bracket group is invalid.  For example, in the group
+&quot;[!@#,whatever]&quot;, the first item <code>&quot;!@#&quot;</code> is neither the empty-string,
+&quot;_<em>number</em>&quot;, &quot;_-<em>number</em>&quot;, &quot;_*&quot;, nor a valid method name; and so
+Locale::Maketext will throw an exception of you try compiling an
+expression containing this bracket group.</p>
+</li>
+</ul>
+<p>Note, incidentally, that items in each group are comma-separated,
+not <code>/\s*,\s*/</code>-separated.  That is, you might expect that this
+bracket group:</p>
+<pre>
+  &quot;Hoohah [foo, _1 , bar ,baz]!&quot;</pre>
+<p>would compile to this:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="keyword">join</span> <span class="string">''</span><span class="operator">,</span>
+      <span class="string">"Hoohah "</span><span class="operator">,</span>
+      <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">foo</span><span class="operator">(</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">,</span> <span class="string">"bar"</span><span class="operator">,</span> <span class="string">"baz"</span><span class="operator">),</span>
+      <span class="string">"!"</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>But it actually compiles as this:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="keyword">join</span> <span class="string">''</span><span class="operator">,</span>
+      <span class="string">"Hoohah "</span><span class="operator">,</span>
+      <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">foo</span><span class="operator">(</span><span class="string">" _1 "</span><span class="operator">,</span> <span class="string">" bar "</span><span class="operator">,</span> <span class="string">"baz"</span><span class="operator">),</span>  <span class="comment"># note the &lt;space&gt; in " bar "</span>
+      <span class="string">"!"</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>In the notation discussed so far, the characters &quot;[&quot; and &quot;]&quot; are given
+special meaning, for opening and closing bracket groups, and &quot;,&quot; has
+a special meaning inside bracket groups, where it separates items in the
+group.  This begs the question of how you'd express a literal &quot;[&quot; or
+&quot;]&quot; in a Bracket Notation string, and how you'd express a literal
+comma inside a bracket group.  For this purpose I've adopted &quot;~&quot; (tilde)
+as an escape character:  &quot;~[&quot; means a literal '[' character anywhere
+in Bracket Notation (i.e., regardless of whether you're in a bracket
+group or not), and ditto for &quot;~]&quot; meaning a literal ']', and &quot;~,&quot; meaning
+a literal comma.  (Altho &quot;,&quot; means a literal comma outside of
+bracket groups -- it's only inside bracket groups that commas are special.)</p>
+<p>And on the off chance you need a literal tilde in a bracket expression,
+you get it with &quot;~~&quot;.</p>
+<p>Currently, an unescaped &quot;~&quot; before a character
+other than a bracket or a comma is taken to mean just a &quot;~&quot; and that
+character.  I.e., &quot;~X&quot; means the same as &quot;~~X&quot; -- i.e., one literal tilde,
+and then one literal &quot;X&quot;.  However, by using &quot;~X&quot;, you are assuming that
+no future version of Maketext will use &quot;~X&quot; as a magic escape sequence.
+In practice this is not a great problem, since first off you can just
+write &quot;~~X&quot; and not worry about it; second off, I doubt I'll add lots
+of new magic characters to bracket notation; and third off, you
+aren't likely to want literal &quot;~&quot; characters in your messages anyway,
+since it's not a character with wide use in natural language text.</p>
+<p>Brackets must be balanced -- every openbracket must have
+one matching closebracket, and vice versa.  So these are all <strong>invalid</strong>:</p>
+<pre>
+  &quot;I ate [quant,_1,rhubarb pie.&quot;
+  &quot;I ate [quant,_1,rhubarb pie[.&quot;
+  &quot;I ate quant,_1,rhubarb pie].&quot;
+  &quot;I ate quant,_1,rhubarb pie[.&quot;</pre>
+<p>Currently, bracket groups do not nest.  That is, you <strong>cannot</strong> say:</p>
+<pre>
+  <span class="string">"Foo [bar,baz,[quux,quuux]]\n"</span><span class="operator">;</span>
+</pre>
+<p>If you need a notation that's that powerful, use normal Perl:</p>
+<pre>
+  <span class="variable">%Lexicon</span> <span class="operator">=</span> <span class="operator">(</span>
+    <span class="operator">...</span>
+    <span class="string">"some_key"</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+      <span class="keyword">join</span> <span class="string">''</span><span class="operator">,</span>
+        <span class="string">"Foo "</span><span class="operator">,</span>
+        <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">bar</span><span class="operator">(</span><span class="string">'baz'</span><span class="operator">,</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">quux</span><span class="operator">(</span><span class="string">'quuux'</span><span class="operator">)),</span>
+        <span class="string">"\n"</span><span class="operator">,</span>
+    <span class="operator">},</span>
+    <span class="operator">...</span>
+  <span class="operator">);</span>
+</pre>
+<p>Or write the &quot;bar&quot; method so you don't need to pass it the
+output from calling quux.</p>
+<p>I do not anticipate that you will need (or particularly want)
+to nest bracket groups, but you are welcome to email me with
+convincing (real-life) arguments to the contrary.</p>
+<p>
+</p>
+<hr />
+<h1><a name="auto_lexicons">AUTO LEXICONS</a></h1>
+<p>If maketext goes to look in an individual %Lexicon for an entry
+for <em>key</em> (where <em>key</em> does not start with an underscore), and
+sees none, <strong>but does see</strong> an entry of &quot;_AUTO&quot; =&gt; <em>some_true_value</em>,
+then we actually define $Lexicon{<em>key</em>} = <em>key</em> right then and there,
+and then use that value as if it had been there all
+along.  This happens before we even look in any superclass %Lexicons!</p>
+<p>(This is meant to be somewhat like the AUTOLOAD mechanism in
+Perl's function call system -- or, looked at another way,
+like the <a href="../../lib/AutoLoader.html">AutoLoader</a> module.)</p>
+<p>I can picture all sorts of circumstances where you just
+do not want lookup to be able to fail (since failing
+normally means that maketext throws a <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>, although
+see the next section for greater control over that).  But
+here's one circumstance where _AUTO lexicons are meant to
+be <em>especially</em> useful:</p>
+<p>As you're writing an application, you decide as you go what messages
+you need to emit.  Normally you'd go to write this:</p>
+<pre>
+  <span class="keyword">if</span><span class="operator">(</span><span class="keyword">-e</span> <span class="variable">$filename</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="variable">go_process_file</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">)</span>
+  <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+    <span class="keyword">print</span> <span class="string">qq{Couldn't find file "</span><span class="variable">$filename</span><span class="string">"!\n}</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>but since you anticipate localizing this, you write:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">ThisProject::I18N</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">ThisProject::I18N</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">();</span>
+   <span class="comment"># For the moment, assume that things are set up so</span>
+   <span class="comment"># that we load class ThisProject::I18N::en</span>
+   <span class="comment"># and that that's the class that $lh belongs to.</span>
+  <span class="operator">...</span>
+  <span class="keyword">if</span><span class="operator">(</span><span class="keyword">-e</span> <span class="variable">$filename</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="variable">go_process_file</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">)</span>
+  <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+    <span class="keyword">print</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span>
+      <span class="string">qq{Couldn't find file "[_1]"!\n}</span><span class="operator">,</span> <span class="variable">$filename</span>
+    <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>Now, right after you've just written the above lines, you'd
+normally have to go open the file 
+ThisProject/I18N/en.pm, and immediately add an entry:</p>
+<pre>
+  &quot;Couldn't find file \&quot;[_1]\&quot;!\n&quot;
+  =&gt; &quot;Couldn't find file \&quot;[_1]\&quot;!\n&quot;,</pre>
+<p>But I consider that somewhat of a distraction from the work
+of getting the main code working -- to say nothing of the fact
+that I often have to play with the program a few times before
+I can decide exactly what wording I want in the messages (which
+in this case would require me to go changing three lines of code:
+the call to maketext with that key, and then the two lines in
+ThisProject/I18N/en.pm).</p>
+<p>However, if you set &quot;_AUTO =&gt; 1&quot; in the %Lexicon in,
+ThisProject/I18N/en.pm (assuming that English (en) is
+the language that all your programmers will be using for this
+project's internal message keys), then you don't ever have to
+go adding lines like this</p>
+<pre>
+  &quot;Couldn't find file \&quot;[_1]\&quot;!\n&quot;
+  =&gt; &quot;Couldn't find file \&quot;[_1]\&quot;!\n&quot;,</pre>
+<p>to ThisProject/I18N/en.pm, because if _AUTO is true there,
+then just looking for an entry with the key &quot;Couldn't find
+file \&quot;[_1]\&quot;!\n&quot; in that lexicon will cause it to be added,
+with that value!</p>
+<p>Note that the reason that keys that start with &quot;_&quot;
+are immune to _AUTO isn't anything generally magical about
+the underscore character -- I just wanted a way to have most
+lexicon keys be autoable, except for possibly a few, and I
+arbitrarily decided to use a leading underscore as a signal
+to distinguish those few.</p>
+<p>
+</p>
+<hr />
+<h1><a name="readonly_lexicons">READONLY LEXICONS</a></h1>
+<p>If your lexicon is a tied hash the simple act of caching the compiled value can be fatal.</p>
+<p>For example a <em>GDBM_File</em> GDBM_READER tied hash will die with something like:</p>
+<pre>
+   gdbm store returned -1, errno 2, key &quot;...&quot; at ...</pre>
+<p>All you need to do is turn on caching outside of the lexicon hash itself like so:</p>
+<pre>
+   <span class="keyword">sub</span><span class="variable"> init </span><span class="operator">{</span>
+       <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$lh</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+       <span class="operator">...</span>
+       <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'use_external_lex_cache'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+       <span class="operator">...</span>
+   <span class="operator">}</span>
+</pre>
+<p>And then instead of storing the compiled value in the lexicon hash it will store it in $lh-&gt;{'_external_lex_cache'}</p>
+<p>
+</p>
+<hr />
+<h1><a name="controlling_lookup_failure">CONTROLLING LOOKUP FAILURE</a></h1>
+<p>If you call $lh-&gt;maketext(<em>key</em>, ...parameters...),
+and there's no entry <em>key</em> in $lh's class's %Lexicon, nor
+in the superclass %Lexicon hash, <em>and</em> if we can't auto-make
+<em>key</em> (because either it starts with a &quot;_&quot;, or because none
+of its lexicons have <code>_AUTO =&gt; 1,</code>), then we have
+failed to find a normal way to maketext <em>key</em>.  What then
+happens in these failure conditions, depends on the $lh object's
+&quot;fail&quot; attribute.</p>
+<p>If the language handle has no &quot;fail&quot; attribute, maketext
+will simply throw an exception (i.e., it calls <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>, mentioning
+the <em>key</em> whose lookup failed, and naming the line number where
+the calling $lh-&gt;maketext(<em>key</em>,...) was.</p>
+<p>If the language handle has a &quot;fail&quot; attribute whose value is a
+coderef, then $lh-&gt;maketext(<em>key</em>,...params...) gives up and calls:</p>
+<pre>
+  <span class="keyword">return</span> <span class="variable">$that_subref</span><span class="operator">-&gt;(</span><span class="variable">$lh</span><span class="operator">,</span> <span class="variable">$key</span><span class="operator">,</span> <span class="variable">@params</span><span class="operator">);</span>
+</pre>
+<p>Otherwise, the &quot;fail&quot; attribute's value should be a string denoting
+a method name, so that $lh-&gt;maketext(<em>key</em>,...params...) can
+give up with:</p>
+<pre>
+  <span class="keyword">return</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">$that_method_name</span><span class="operator">(</span><span class="variable">$phrase</span><span class="operator">,</span> <span class="variable">@params</span><span class="operator">);</span>
+</pre>
+<p>The &quot;fail&quot; attribute can be accessed with the <a href="#fail_with"><code>fail_with</code></a> method:</p>
+<pre>
+  <span class="comment"># Set to a coderef:</span>
+  <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">fail_with</span><span class="operator">(</span> <span class="operator">\&amp;</span><span class="variable">failure_handler</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment"># Set to a method name:</span>
+  <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">fail_with</span><span class="operator">(</span> <span class="string">'failure_method'</span> <span class="operator">);</span>
+  
+  <span class="comment"># Set to nothing (i.e., so failure throws a plain exception)</span>
+  <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">fail_with</span><span class="operator">(</span> <span class="keyword">undef</span> <span class="operator">);</span>
+  
+  <span class="comment"># Get the current value</span>
+  <span class="variable">$handler</span> <span class="operator">=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">fail_with</span><span class="operator">();</span>
+</pre>
+<p>Now, as to what you may want to do with these handlers:  Maybe you'd
+want to log what key failed for what class, and then die.  Maybe
+you don't like <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> and instead you want to send the error message
+to STDOUT (or wherever) and then merely <a href="../../lib/pods/perlfunc.html#exit"><code>exit()</code></a>.</p>
+<p>Or maybe you don't want to <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> at all!  Maybe you could use a
+handler like this:</p>
+<pre>
+  <span class="comment"># Make all lookups fall back onto an English value,</span>
+  <span class="comment">#  but only after we log it for later fingerpointing.</span>
+  <span class="keyword">my</span> <span class="variable">$lh_backup</span> <span class="operator">=</span> <span class="variable">ThisProject</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">(</span><span class="string">'en'</span><span class="operator">);</span>
+  <span class="keyword">open</span><span class="operator">(</span><span class="variable">LEX_FAIL_LOG</span><span class="operator">,</span> <span class="string">"&gt;&gt;wherever/lex.log"</span><span class="operator">)</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"GNAARGH $!"</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> lex_fail </span><span class="operator">{</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$failing_lh</span><span class="operator">,</span> <span class="variable">$key</span><span class="operator">,</span> <span class="variable">$params</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">LEX_FAIL_LOG</span> <span class="keyword">scalar</span><span class="operator">(</span><span class="keyword">localtime</span><span class="operator">),</span> <span class="string">"\t"</span><span class="operator">,</span>
+       <span class="keyword">ref</span><span class="operator">(</span><span class="variable">$failing_lh</span><span class="operator">),</span> <span class="string">"\t"</span><span class="operator">,</span> <span class="variable">$key</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="variable">$lh_backup</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="variable">$key</span><span class="operator">,</span><span class="variable">@params</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>Some users have expressed that they think this whole mechanism of
+having a &quot;fail&quot; attribute at all, seems a rather pointless complication.
+But I want Locale::Maketext to be usable for software projects of <em>any</em>
+scale and type; and different software projects have different ideas
+of what the right thing is to do in failure conditions.  I could simply
+say that failure always throws an exception, and that if you want to be
+careful, you'll just have to wrap every call to $lh-&gt;maketext in an
+eval&nbsp;{&nbsp;}.  However, I want programmers to reserve the right (via
+the &quot;fail&quot; attribute) to treat lookup failure as something other than
+an exception of the same level of severity as a config file being
+unreadable, or some essential resource being inaccessible.</p>
+<p>One possibly useful value for the &quot;fail&quot; attribute is the method name
+&quot;failure_handler_auto&quot;.  This is a method defined in the class
+Locale::Maketext itself.  You set it with:</p>
+<pre>
+  <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">fail_with</span><span class="operator">(</span><span class="string">'failure_handler_auto'</span><span class="operator">);</span>
+</pre>
+<p>Then when you call $lh-&gt;maketext(<em>key</em>, ...parameters...) and
+there's no <em>key</em> in any of those lexicons, maketext gives up with</p>
+<pre>
+  <span class="keyword">return</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">failure_handler_auto</span><span class="operator">(</span><span class="variable">$key</span><span class="operator">,</span> <span class="variable">@params</span><span class="operator">);</span>
+</pre>
+<p>But failure_handler_auto, instead of dying or anything, compiles
+$key, caching it in</p>
+<pre>
+    <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'failure_lex'</span><span class="operator">}{</span><span class="variable">$key</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">$complied</span>
+</pre>
+<p>and then calls the compiled value, and returns that.  (I.e., if
+$key looks like bracket notation, $compiled is a sub, and we return
+&amp;{$compiled}(@params); but if $key is just a plain string, we just
+return that.)</p>
+<p>The effect of using &quot;failure_auto_handler&quot;
+is like an AUTO lexicon, except that it 1) compiles $key even if
+it starts with &quot;_&quot;, and 2) you have a record in the new hashref
+$lh-&gt;{'failure_lex'} of all the keys that have failed for
+this object.  This should avoid your program dying -- as long
+as your keys aren't actually invalid as bracket code, and as
+long as they don't try calling methods that don't exist.</p>
+<p>&quot;failure_auto_handler&quot; may not be exactly what you want, but I
+hope it at least shows you that maketext failure can be mitigated
+in any number of very flexible ways.  If you can formalize exactly
+what you want, you should be able to express that as a failure
+handler.  You can even make it default for every object of a given
+class, by setting it in that class's init:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>  <span class="comment"># a newborn handle</span>
+    <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">SUPER::init</span><span class="operator">();</span>
+    <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">fail_with</span><span class="operator">(</span><span class="string">'my_clever_failure_handler'</span><span class="operator">);</span>
+    <span class="keyword">return</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  <span class="keyword">sub</span><span class="variable"> my_clever_failure_handler </span><span class="operator">{</span>
+    <span class="operator">...</span><span class="variable">you</span> <span class="variable">clever</span> <span class="variable">things</span> <span class="variable">here</span><span class="operator">...</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="how_to_use_maketext">HOW TO USE MAKETEXT</a></h1>
+<p>Here is a brief checklist on how to use Maketext to localize
+applications:</p>
+<ul>
+<li>
+<p>Decide what system you'll use for lexicon keys.  If you insist,
+you can use opaque IDs (if you're nostalgic for <code>catgets</code>),
+but I have better suggestions in the
+section &quot;Entries in Each Lexicon&quot;, above.  Assuming you opt for
+meaningful keys that double as values (like &quot;Minimum ([_1]) is
+larger than maximum ([_2])!\n&quot;), you'll have to settle on what
+language those should be in.  For the sake of argument, I'll
+call this English, specifically American English, &quot;en-US&quot;.</p>
+</li>
+<li>
+<p>Create a class for your localization project.  This is
+the name of the class that you'll use in the idiom:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Projname::L10N</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">Projname::L10N</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">(...)</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Language?"</span><span class="operator">;</span>
+</pre>
+<p>Assuming you call your class Projname::L10N, create a class
+consisting minimally of:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Projname::L10N</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw(Locale::Maketext)</span><span class="operator">;</span>
+  <span class="operator">...</span><span class="variable">any</span> <span class="variable">methods</span> <span class="variable">you</span> <span class="variable">might</span> <span class="variable">want</span> <span class="variable">all</span> <span class="variable">your</span> <span class="variable">languages</span> <span class="variable">to</span> <span class="variable">share</span><span class="operator">...</span>
+  
+  <span class="comment"># And, assuming you want the base class to be an _AUTO lexicon,</span>
+  <span class="comment"># as is discussed a few sections up:</span>
+  
+  <span class="number">1</span><span class="operator">;</span>
+</pre>
+</li>
+<li>
+<p>Create a class for the language your internal keys are in.  Name
+the class after the language-tag for that language, in lowercase,
+with dashes changed to underscores.  Assuming your project's first
+language is US English, you should call this Projname::L10N::en_us.
+It should consist minimally of:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Projname::L10N::en_us</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw(Projname::L10N)</span><span class="operator">;</span>
+  <span class="variable">%Lexicon</span> <span class="operator">=</span> <span class="operator">(</span>
+    <span class="string">'_AUTO'</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+  <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>(For the rest of this section, I'll assume that this &quot;first
+language class&quot; of Projname::L10N::en_us has
+_AUTO lexicon.)</p>
+</li>
+<li>
+<p>Go and write your program.  Everywhere in your program where 
+you would say:</p>
+<pre>
+  <span class="keyword">print</span> <span class="string">"Foobar </span><span class="variable">$thing</span><span class="string"> stuff\n"</span><span class="operator">;</span>
+</pre>
+<p>instead do it thru maketext, using no variable interpolation in
+the key:</p>
+<pre>
+  <span class="keyword">print</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">"Foobar [_1] stuff\n"</span><span class="operator">,</span> <span class="variable">$thing</span><span class="operator">);</span>
+</pre>
+<p>If you get tired of constantly saying <code>print $lh-&gt;maketext</code>,
+consider making a functional wrapper for it, like so:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Projname::L10N</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">vars</span> <span class="string">qw($lh)</span><span class="operator">;</span>
+  <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">Projname::L10N</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">(...)</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Language?"</span><span class="operator">;</span>
+  <span class="keyword">sub</span><span class="variable"> pmt </span><span class="operator">(</span>@<span class="operator">)</span> <span class="operator">{</span> <span class="keyword">print</span><span class="operator">(</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">))</span> <span class="operator">}</span>
+   <span class="comment"># "pmt" is short for "Print MakeText"</span>
+  <span class="variable">$Carp::Verbose</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+   <span class="comment"># so if maketext fails, we see made the call to pmt</span>
+</pre>
+<p>Besides whole phrases meant for output, anything language-dependent
+should be put into the class Projname::L10N::en_us,
+whether as methods, or as lexicon entries -- this is discussed
+in the section &quot;Entries in Each Lexicon&quot;, above.</p>
+</li>
+<li>
+<p>Once the program is otherwise done, and once its localization for
+the first language works right (via the data and methods in
+Projname::L10N::en_us), you can get together the data for translation.
+If your first language lexicon isn't an _AUTO lexicon, then you already
+have all the messages explicitly in the lexicon (or else you'd be
+getting exceptions thrown when you call $lh-&gt;maketext to get
+messages that aren't in there).  But if you were (advisedly) lazy and are
+using an _AUTO lexicon, then you've got to make a list of all the phrases
+that you've so far been letting _AUTO generate for you.  There are very
+many ways to assemble such a list.  The most straightforward is to simply
+grep the source for every occurrence of &quot;maketext&quot; (or calls
+to wrappers around it, like the above <code>pmt</code> function), and to log the
+following phrase.</p>
+</li>
+<li>
+<p>You may at this point want to consider whether your base class 
+(Projname::L10N), from which all lexicons inherit from (Projname::L10N::en,
+Projname::L10N::es, etc.), should be an _AUTO lexicon.  It may be true
+that in theory, all needed messages will be in each language class;
+but in the presumably unlikely or &quot;impossible&quot; case of lookup failure,
+you should consider whether your program should throw an exception,
+emit text in English (or whatever your project's first language is),
+or some more complex solution as described in the section
+&quot;Controlling Lookup Failure&quot;, above.</p>
+</li>
+<li>
+<p>Submit all messages/phrases/etc. to translators.</p>
+<p>(You may, in fact, want to start with localizing to <em>one</em> other language
+at first, if you're not sure that you've properly abstracted the
+language-dependent parts of your code.)</p>
+<p>Translators may request clarification of the situation in which a
+particular phrase is found.  For example, in English we are entirely happy
+saying &quot;<em>n</em> files found&quot;, regardless of whether we mean &quot;I looked for files,
+and found <em>n</em> of them&quot; or the rather distinct situation of &quot;I looked for
+something else (like lines in files), and along the way I saw <em>n</em>
+files.&quot;  This may involve rethinking things that you thought quite clear:
+should &quot;Edit&quot; on a toolbar be a noun (&quot;editing&quot;) or a verb (&quot;to edit&quot;)?  Is
+there already a conventionalized way to express that menu option, separate
+from the target language's normal word for &quot;to edit&quot;?</p>
+<p>In all cases where the very common phenomenon of quantification
+(saying &quot;<em>N</em> files&quot;, for <strong>any</strong> value of N)
+is involved, each translator should make clear what dependencies the
+number causes in the sentence.  In many cases, dependency is
+limited to words adjacent to the number, in places where you might
+expect them (&quot;I found the-?PLURAL <em>N</em>
+empty-?PLURAL directory-?PLURAL&quot;), but in some cases there are
+unexpected dependencies (&quot;I found-?PLURAL ...&quot;!) as well as long-distance
+dependencies &quot;The <em>N</em> directory-?PLURAL could not be deleted-?PLURAL&quot;!).</p>
+<p>Remind the translators to consider the case where N is 0:
+&quot;0 files found&quot; isn't exactly natural-sounding in any language, but it
+may be unacceptable in many -- or it may condition special
+kinds of agreement (similar to English &quot;I didN'T find ANY files&quot;).</p>
+<p>Remember to ask your translators about numeral formatting in their
+language, so that you can override the <a href="#numf"><code>numf</code></a> method as
+appropriate.  Typical variables in number formatting are:  what to
+use as a decimal point (comma? period?); what to use as a thousands
+separator (space? nonbreaking space? comma? period? small
+middot? prime? apostrophe?); and even whether the so-called &quot;thousands
+separator&quot; is actually for every third digit -- I've heard reports of
+two hundred thousand being expressible as &quot;2,00,000&quot; for some Indian
+(Subcontinental) languages, besides the less surprising &quot;200&nbsp;000&quot;,
+&quot;200.000&quot;, &quot;200,000&quot;, and &quot;200'000&quot;.  Also, using a set of numeral
+glyphs other than the usual ASCII &quot;0&quot;-&quot;9&quot; might be appreciated, as via
+<a href="../../lib/pods/perlfunc.html#tr_"><code>tr/0-9/\x{0966}-\x{096F}/</code></a> for getting digits in Devanagari script
+(for Hindi, Konkani, others).</p>
+<p>The basic <a href="#quant"><code>quant</code></a> method that Locale::Maketext provides should be
+good for many languages.  For some languages, it might be useful
+to modify it (or its constituent <code>numerate</code> method)
+to take a plural form in the two-argument call to <a href="#quant"><code>quant</code></a>
+(as in &quot;[quant,_1,files]&quot;) if
+it's all-around easier to infer the singular form from the plural, than
+to infer the plural form from the singular.</p>
+<p>But for other languages (as is discussed at length
+in <a href="../../lib/Locale/Maketext/TPJ13.html">Locale::Maketext::TPJ13</a>), simple
+<a href="#quant"><code>quant</code></a>/<code>numerify</code> is not enough.  For the particularly problematic
+Slavic languages, what you may need is a method which you provide
+with the number, the citation form of the noun to quantify, and
+the case and gender that the sentence's syntax projects onto that
+noun slot.  The method would then be responsible for determining
+what grammatical number that numeral projects onto its noun phrase,
+and what case and gender it may override the normal case and gender
+with; and then it would look up the noun in a lexicon providing
+all needed inflected forms.</p>
+</li>
+<li>
+<p>You may also wish to discuss with the translators the question of
+how to relate different subforms of the same language tag,
+considering how this reacts with <code>get_handle</code>'s treatment of
+these.  For example, if a user accepts interfaces in &quot;en, fr&quot;, and
+you have interfaces available in &quot;en-US&quot; and &quot;fr&quot;, what should
+they get?  You may wish to resolve this by establishing that &quot;en&quot;
+and &quot;en-US&quot; are effectively synonymous, by having one class
+zero-derive from the other.</p>
+<p>For some languages this issue may never come up (Danish is rarely
+expressed as &quot;da-DK&quot;, but instead is just &quot;da&quot;).  And for other
+languages, the whole concept of a &quot;generic&quot; form may verge on
+being uselessly vague, particularly for interfaces involving voice
+media in forms of Arabic or Chinese.</p>
+</li>
+<li>
+<p>Once you've localized your program/site/etc. for all desired
+languages, be sure to show the result (whether live, or via
+screenshots) to the translators.  Once they approve, make every
+effort to have it then checked by at least one other speaker of
+that language.  This holds true even when (or especially when) the
+translation is done by one of your own programmers.  Some
+kinds of systems may be harder to find testers for than others,
+depending on the amount of domain-specific jargon and concepts
+involved -- it's easier to find people who can tell you whether
+they approve of your translation for &quot;delete this message&quot; in an
+email-via-Web interface, than to find people who can give you
+an informed opinion on your translation for &quot;attribute value&quot;
+in an XML query tool's interface.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>I recommend reading all of these:</p>
+<p><a href="../../lib/Locale/Maketext/TPJ13.html">Locale::Maketext::TPJ13</a> -- my <em>The Perl
+Journal</em> article about Maketext.  It explains many important concepts
+underlying Locale::Maketext's design, and some insight into why
+Maketext is better than the plain old approach of having 
+message catalogs that are just databases of sprintf formats.</p>
+<p><a href="../../File/Findgrep.html">File::Findgrep</a> is a sample application/module
+that uses Locale::Maketext to localize its messages.  For a larger
+internationalized system, see also <a href="../../Apache/MP3.html">the Apache::MP3 manpage</a>.</p>
+<p><a href="../../lib/I18N/LangTags.html">I18N::LangTags</a>.</p>
+<p><a href="../../Win32/Locale.html">Win32::Locale</a>.</p>
+<p>RFC 3066, <em>Tags for the Identification of Languages</em>,
+as at <a href="http://sunsite.dk/RFC/rfc/rfc3066.html">http://sunsite.dk/RFC/rfc/rfc3066.html</a></p>
+<p>RFC 2277, <em>IETF Policy on Character Sets and Languages</em>
+is at <a href="http://sunsite.dk/RFC/rfc/rfc2277.html">http://sunsite.dk/RFC/rfc/rfc2277.html</a> -- much of it is
+just things of interest to protocol designers, but it explains
+some basic concepts, like the distinction between locales and
+language-tags.</p>
+<p>The manual for GNU <code>gettext</code>.  The gettext dist is available in
+<code>ftp://prep.ai.mit.edu/pub/gnu/</code> -- get
+a recent gettext tarball and look in its &quot;doc/&quot; directory, there's
+an easily browsable HTML version in there.  The
+gettext documentation asks lots of questions worth thinking
+about, even if some of their answers are sometimes wonky,
+particularly where they start talking about pluralization.</p>
+<p>The Locale/Maketext.pm source.  Obverse that the module is much
+shorter than its documentation!</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_disclaimer">COPYRIGHT AND DISCLAIMER</a></h1>
+<p>Copyright (c) 1999-2004 Sean M. Burke.  All rights reserved.</p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+<p>This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Sean M. Burke <code>sburke@cpan.org</code></p>
+
+</body>
+
+</html>

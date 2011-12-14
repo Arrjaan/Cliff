@@ -1,0 +1,506 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>Tcl - Tcl extension module for Perl</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>Tcl - Tcl extension module for Perl</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#methods_in_class_tcl">Methods in class Tcl</a></li>
+		<li><a href="#linking_perl_and_tcl_variables">Linking Perl and Tcl variables</a></li>
+		<li><a href="#accessing_perl_from_within_tcl">Accessing Perl from within Tcl</a></li>
+		<li><a href="#moving_tcl_tk_around_with_tcl_pm">Moving Tcl/Tk around with Tcl.pm</a></li>
+	</ul>
+
+	<li><a href="#other_tcl_interpreter_methods">Other Tcl interpreter methods</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Tcl - Tcl extension module for Perl</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Tcl</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$interp</span> <span class="operator">=</span> <span class="variable">Tcl</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+    <span class="variable">$interp</span><span class="operator">-&gt;</span><span class="variable">Eval</span><span class="operator">(</span><span class="string">'puts "Hello world"'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The Tcl extension module gives access to the Tcl library with
+functionality and interface similar to the C functions of Tcl.
+In other words, you can</p>
+<ul>
+<li>
+<p>create Tcl interpreters</p>
+<p>The Tcl interpreters so created are Perl objects whose destructors
+delete the interpreters cleanly when appropriate.</p>
+</li>
+<li>
+<p>execute Tcl code in an interpreter</p>
+<p>The code can come from strings, files or Perl filehandles.</p>
+</li>
+<li>
+<p>bind in new Tcl procedures</p>
+<p>The new procedures can be either C code (with addresses presumably
+obtained using <em>dl_open</em> and <em>dl_find_symbol</em>) or Perl subroutines
+(by name, reference or as anonymous subs). The (optional) deleteProc
+callback in the latter case is another perl subroutine which is called
+when the command is explicitly deleted by name or else when the
+destructor for the interpreter object is explicitly or implicitly called.</p>
+</li>
+<li>
+<p>Manipulate the result field of a Tcl interpreter</p>
+</li>
+<li>
+<p>Set and get values of variables in a Tcl interpreter</p>
+</li>
+<li>
+<p>Tie perl variables to variables in a Tcl interpreter</p>
+<p>The variables can be either scalars or hashes.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="methods_in_class_tcl">Methods in class Tcl</a></h2>
+<p>To create a new Tcl interpreter, use</p>
+<pre>
+    <span class="variable">$interp</span> <span class="operator">=</span> <span class="variable">Tcl</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<p>The following methods and routines can then be used on the Perl object
+returned (the object argument omitted in each case).</p>
+<dl>
+<dt><strong><a name="init" class="item">$interp-&gt;Init ()</a></strong></dt>
+
+<dd>
+<p>Invoke <em>Tcl_Init</em> on the interpeter.</p>
+</dd>
+<dt><strong><a name="eval" class="item">$interp-&gt;Eval (STRING, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Evaluate script STRING in the interpreter. If the script returns
+successfully (TCL_OK) then the Perl return value corresponds to Tcl
+interpreter's result otherwise a <em>die</em> exception is raised with the $@
+variable corresponding to Tcl's interpreter result object. In each case,
+<em>corresponds</em> means that if the method is called in scalar context then
+the string result is returned but if the method is called in list context
+then the result is split as a Tcl list and returned as a Perl list.
+The FLAGS field is optional and can be a bitwise OR of the constants
+Tcl::EVAL_GLOBAL or Tcl::EVAL_DIRECT.</p>
+</dd>
+<dt><strong><a name="globaleval" class="item">$interp-&gt;GlobalEval (STRING)</a></strong></dt>
+
+<dd>
+<p>REMOVED.  Evalulate script STRING at global level.
+Call <em>Eval</em>(STRING, Tcl::EVAL_GLOBAL) instead.</p>
+</dd>
+<dt><strong><a name="evalfile" class="item">$interp-&gt;EvalFile (FILENAME)</a></strong></dt>
+
+<dd>
+<p>Evaluate the contents of the file with name FILENAME. Otherwise, the
+same as <em>Eval</em>() above.</p>
+</dd>
+<dt><strong><a name="evalfilehandle" class="item">$interp-&gt;EvalFileHandle (FILEHANDLE)</a></strong></dt>
+
+<dd>
+<p>Evaluate the contents of the Perl filehandle FILEHANDLE. Otherwise, the
+same as <em>Eval</em>() above. Useful when using the filehandle DATA to tack
+on a Tcl script following an __END__ token.</p>
+</dd>
+<dt><strong><a name="call" class="item">$interp-&gt;call (PROC, ARG, ...)</a></strong></dt>
+
+<dd>
+<p>Looks up procedure PROC in the interpreter and invokes it using Tcl's eval
+semantics that does command tracing and will use the ::unknown (AUTOLOAD)
+mechanism.  The arguments (ARG, ...) are not passed through the Tcl parser.
+For example, spaces embedded in any ARG will not cause it to be split into
+two Tcl arguments before being passed to PROC.</p>
+<p>Before invoking procedure PROC special processing is performed on ARG list:</p>
+<p>1.  All subroutine references within ARG will be substituted with Tcl name
+which is responsible to invoke this subroutine. This Tcl name will be
+created using CreateCommand subroutine (see below).</p>
+<p>2.  All references to scalars will be substituted with names of Tcl variables
+transformed appropriately.</p>
+<p>These first two items allows to write and expect it to work properly such
+code as:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$r</span> <span class="operator">=</span> <span class="string">'aaaa'</span><span class="operator">;</span>
+  <span class="variable">button</span><span class="operator">(</span><span class="string">".d"</span><span class="operator">,</span> <span class="string">-textvariable</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$r</span><span class="operator">,</span> <span class="string">-command</span><span class="operator">=&gt;</span><span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span><span class="variable">$r</span><span class="operator">++});</span>
+</pre>
+<p>3. All references to hashes will be substituted with names of Tcl array
+variables transformed appropriately.</p>
+<p>4.  As a special case, there is a mechanism to deal with Tk's special event
+variables (they are mentioned as '%x', '%y' and so on throughout Tcl).
+When creating a subroutine reference that uses such variables, you must
+declare the desired variables using Tcl::Ev as the first argument to the
+subroutine.  Example:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> textPaste </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$x</span><span class="operator">,</span><span class="variable">$y</span><span class="operator">,</span><span class="variable">$w</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="variable">widget</span><span class="operator">(</span><span class="variable">$w</span><span class="operator">)-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="string">"\@</span><span class="variable">$x</span><span class="string">,</span><span class="variable">$y</span><span class="string">"</span><span class="operator">,</span> <span class="variable">$interp</span><span class="operator">-&gt;</span><span class="variable">Eval</span><span class="operator">(</span><span class="string">'selection get'</span><span class="operator">));</span>
+  <span class="operator">}</span>
+  <span class="variable">$widget</span><span class="operator">-&gt;</span><span class="variable">bind</span><span class="operator">(</span><span class="string">'&lt;2&gt;'</span><span class="operator">,</span> <span class="operator">[</span><span class="operator">\&amp;</span><span class="variable">textPaste</span><span class="operator">,</span> <span class="variable">Tcl::Ev</span><span class="operator">(</span><span class="string">'%x'</span><span class="operator">,</span> <span class="string">'%y'</span><span class="operator">),</span> <span class="variable">$widget</span><span class="operator">]</span> <span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="return_ref" class="item">$interp-&gt;return_ref (NAME)</a></strong></dt>
+
+<dd>
+<p>returns a reference corresponding to NAME, which was associated during
+previously called <a href="#call"><code>$interpnt-&gt;call(...)</code></a> preprocessing. As a typical
+example this could be variable associated with a widget.</p>
+</dd>
+<dt><strong><a name="delete_ref" class="item">$interp-&gt;delete_ref (NAME)</a></strong></dt>
+
+<dd>
+<p>deletes and returns a reference corresponding to NAME, which was associated
+during previously called <a href="#call"><code>$interpnt-&gt;call(...)</code></a> preprocessing.</p>
+</dd>
+<dt><strong><a name="icall" class="item">$interp-&gt;icall (PROC, ARG, ...)</a></strong></dt>
+
+<dd>
+<p>Looks up procedure PROC in the interpreter and invokes it using Tcl's eval
+semantics that does command tracing and will use the ::unknown (AUTOLOAD)
+mechanism.  The arguments (ARG, ...) are not passed through the Tcl parser.
+For example, spaces embedded in any ARG will not cause it to be split into
+two Tcl arguments before being passed to PROC.</p>
+<p>This is the lower-level procedure that the 'call' method uses.  Arguments
+are converted efficiently from Perl SVs to Tcl_Objs.  A Perl AV array
+becomes a Tcl_ListObj, an SvIV becomes a Tcl_IntObj, etc.  The reverse
+conversion is done to the result.</p>
+</dd>
+<dt><strong><a name="invoke" class="item">$interp-&gt;invoke (PROC, ARG, ...)</a></strong></dt>
+
+<dd>
+<p>Looks up procedure PROC in the interpreter and invokes it directly with
+arguments (ARG, ...) without passing through the Tcl parser. For example,
+spaces embedded in any ARG will not cause it to be split into two Tcl
+arguments before being passed to PROC.  This differs from icall/call in
+that it directly invokes the command name without allowing for command
+tracing or making use of Tcl's unknown (AUTOLOAD) mechanism.  If the
+command does not already exist in the interpreter, and error will be
+thrown.</p>
+<p>Arguments are converted efficiently from Perl SVs to Tcl_Objs.  A Perl AV
+array becomes a Tcl_ListObj, an SvIV becomes a Tcl_IntObj, etc.  The
+reverse conversion is done to the result.</p>
+</dd>
+<dt><strong><a name="ev" class="item">Tcl::Ev (FIELD, ...)</a></strong></dt>
+
+<dd>
+<p>Used to declare %-substitution variables of interest to a subroutine
+callback.  FIELD is expected to be of the form &quot;%#&quot; where # is a single
+character, and multiple fields may be specified.  Returns a blessed object
+that the 'call' method will recognize when it is passed as the first
+argument to a subroutine in a callback.  See description of 'call' method
+for details.</p>
+</dd>
+<dt><strong><a name="result" class="item">$interp-&gt;result ()</a></strong></dt>
+
+<dd>
+<p>Returns the current Tcl interpreter result. List v. scalar context is
+handled as in <em>Eval</em>() above.</p>
+</dd>
+<dt><strong><a name="createcommand" class="item">$interp-&gt;CreateCommand (CMDNAME, CMDPROC, CLIENTDATA, DELETEPROC, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Binds a new procedure named CMDNAME into the interpreter. The
+CLIENTDATA and DELETEPROC arguments are optional. There are two cases:</p>
+<p>(1) CMDPROC is the address of a C function</p>
+<p>(presumably obtained using <em>dl_open</em> and <em>dl_find_symbol</em>. In this case
+CLIENTDATA and DELETEPROC are taken to be raw data of the ClientData and
+deleteProc field presumably obtained in a similar way.</p>
+<p>(2) CMDPROC is a Perl subroutine</p>
+<p>(either a sub name, a sub reference or an anonymous sub). In this case
+CLIENTDATA can be any perl scalar (e.g. a ref to some other data) and
+DELETEPROC must be a perl sub too. When CMDNAME is invoked in the Tcl
+interpeter, the arguments passed to the Perl sub CMDPROC are</p>
+<pre>
+    (CLIENTDATA, INTERP, LIST)</pre>
+<p>where INTERP is a Perl object for the Tcl interpreter which called out
+and LIST is a Perl list of the arguments CMDNAME was called with.
+If the 1-bit of FLAGS is set then the 3 first arguments on the call
+to CMDPROC are suppressed.
+As usual in Tcl, the first element of the list is CMDNAME itself.
+When CMDNAME is deleted from the interpreter (either explicitly with
+<em>DeleteCommand</em> or because the destructor for the interpeter object
+is called), it is passed the single argument CLIENTDATA.</p>
+</dd>
+<dt><strong><a name="deletecommand" class="item">$interp-&gt;DeleteCommand (CMDNAME)</a></strong></dt>
+
+<dd>
+<p>Deletes command CMDNAME from the interpreter. If the command was created
+with a DELETEPROC (see <em>CreateCommand</em> above), then it is invoked at
+this point. When a Tcl interpreter object is destroyed either explicitly
+or implicitly, an implicit <em>DeleteCommand</em> happens on all its currently
+registered commands.</p>
+</dd>
+<dt><strong><a name="setresult" class="item">$interp-&gt;SetResult (STRING)</a></strong></dt>
+
+<dd>
+<p>Sets Tcl interpreter result to STRING.</p>
+</dd>
+<dt><strong><a name="appendresult" class="item">$interp-&gt;AppendResult (LIST)</a></strong></dt>
+
+<dd>
+<p>Appends each element of LIST to Tcl's interpreter result object.</p>
+</dd>
+<dt><strong><a name="appendelement" class="item">$interp-&gt;AppendElement (STRING)</a></strong></dt>
+
+<dd>
+<p>Appends STRING to Tcl interpreter result object as an extra Tcl list element.</p>
+</dd>
+<dt><strong><a name="resetresult" class="item">$interp-&gt;ResetResult ()</a></strong></dt>
+
+<dd>
+<p>Resets Tcl interpreter result.</p>
+</dd>
+<dt><strong><a name="splitlist" class="item">$interp-&gt;SplitList (STRING)</a></strong></dt>
+
+<dd>
+<p>Splits STRING as a Tcl list. Returns a Perl list or the empty list if
+there was an error (i.e. STRING was not a properly formed Tcl list).
+In the latter case, the error message is left in Tcl's interpreter
+result object.</p>
+</dd>
+<dt><strong><a name="setvar" class="item">$interp-&gt;SetVar (VARNAME, VALUE, FLAGS)</a></strong></dt>
+
+<dd>
+<p>The FLAGS field is optional. Sets Tcl variable VARNAME in the
+interpreter to VALUE. The FLAGS argument is the usual Tcl one and
+can be a bitwise OR of the constants Tcl::GLOBAL_ONLY,
+Tcl::LEAVE_ERR_MSG, Tcl::APPEND_VALUE, Tcl::LIST_ELEMENT.</p>
+</dd>
+<dt><strong><a name="setvar2" class="item">$interp-&gt;SetVar2 (VARNAME1, VARNAME2, VALUE, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Sets the element VARNAME1(VARNAME2) of a Tcl array to VALUE. The optional
+argument FLAGS behaves as in <em>SetVar</em> above.</p>
+</dd>
+<dt><strong><a name="getvar" class="item">$interp-&gt;GetVar (VARNAME, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Returns the value of Tcl variable VARNAME. The optional argument FLAGS
+behaves as in <em>SetVar</em> above.</p>
+</dd>
+<dt><strong><a name="getvar2" class="item">$interp-&gt;GetVar2 (VARNAME1, VARNAME2, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Returns the value of the element VARNAME1(VARNAME2) of a Tcl array.
+The optional argument FLAGS behaves as in <em>SetVar</em> above.</p>
+</dd>
+<dt><strong><a name="unsetvar" class="item">$interp-&gt;UnsetVar (VARNAME, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Unsets Tcl variable VARNAME. The optional argument FLAGS
+behaves as in <em>SetVar</em> above.</p>
+</dd>
+<dt><strong><a name="unsetvar2" class="item">$interp-&gt;UnsetVar2 (VARNAME1, VARNAME2, FLAGS)</a></strong></dt>
+
+<dd>
+<p>Unsets the element VARNAME1(VARNAME2) of a Tcl array.
+The optional argument FLAGS behaves as in <em>SetVar</em> above.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="linking_perl_and_tcl_variables">Linking Perl and Tcl variables</a></h2>
+<p>You can <em>tie</em> a Perl variable (scalar or hash) into class Tcl::Var
+so that changes to a Tcl variable automatically &quot;change&quot; the value
+of the Perl variable. In fact, as usual with Perl tied variables,
+its current value is just fetched from the Tcl variable when needed
+and setting the Perl variable triggers the setting of the Tcl variable.</p>
+<p>To tie a Perl scalar <em>$scalar</em> to the Tcl variable <em>tclscalar</em> in
+interpreter <em>$interp</em> with optional flags <em>$flags</em> (see <em>SetVar</em>
+above), use</p>
+<pre>
+        <span class="keyword">tie</span> <span class="variable">$scalar</span><span class="operator">,</span> <span class="string">"Tcl::Var"</span><span class="operator">,</span> <span class="variable">$interp</span><span class="operator">,</span> <span class="string">"tclscalar"</span><span class="operator">,</span> <span class="variable">$flags</span><span class="operator">;</span>
+</pre>
+<p>Omit the <em>$flags</em> argument if not wanted.</p>
+<p>To tie a Perl hash <em>%hash</em> to the Tcl array variable <em>array</em> in
+interpreter <em>$interp</em> with optional flags <em>$flags</em>
+(see <em>SetVar</em> above), use</p>
+<pre>
+        <span class="keyword">tie</span> <span class="variable">%hash</span><span class="operator">,</span> <span class="string">"Tcl::Var"</span><span class="operator">,</span> <span class="variable">$interp</span><span class="operator">,</span> <span class="string">"array"</span><span class="operator">,</span> <span class="variable">$flags</span><span class="operator">;</span>
+</pre>
+<p>Omit the <em>$flags</em> argument if not wanted. Any alteration to Perl
+variable <em>$hash{&quot;key&quot;}</em> affects the Tcl variable <em>array(key)</em>
+and <em>vice versa</em>.</p>
+<p>
+</p>
+<h2><a name="accessing_perl_from_within_tcl">Accessing Perl from within Tcl</a></h2>
+<p>After creation of Tcl interpreter, in addition to evaluation of Tcl/Tk
+commands within Perl, other way round also instantiated. Within a special
+namespace <code> ::perl </code> following objects are created:</p>
+<pre>
+   ::perl::Eval</pre>
+<p>So it is possible to use Perl objects from within Tcl.</p>
+<p>
+</p>
+<h2><a name="moving_tcl_tk_around_with_tcl_pm">Moving Tcl/Tk around with Tcl.pm</a></h2>
+<p>NOTE: explanations below is for developers managing Tcl/Tk installations
+itself, users should skip this section.</p>
+<p>In order to create Tcl/Tk application with this module, you need to make
+sure that Tcl/Tk is available within visibility of this module. There are
+many ways to achieve this, varying on ease of starting things up and
+providing flexible moveable archived files.</p>
+<p>Following list enumerates them, in order of increased possibility to change
+location.</p>
+<ul>
+<li>
+<p>First method</p>
+<p>Install Tcl/Tk first, then install Perl module Tcl, so installed Tcl/Tk will
+be used. This is most normal approach, and no care of Tcl/Tk distribution is
+taken on Perl side (this is done on Tcl/Tk side)</p>
+</li>
+<li>
+<p>Second method</p>
+<p>Copy installed Tcl/Tk binaries to some location, then install Perl module Tcl
+with a special action to make Tcl.pm know of this location. This approach
+makes sure that only chosen Tcl installation is used.</p>
+</li>
+<li>
+<p>Third method</p>
+<p>During compiling Tcl Perl module, Tcl/Tk could be statically linked into
+module's shared library and all other files zipped into a single archive, so
+each file extracted when needed.</p>
+<p>To link Tcl/Tk binaries, prepare their libraries and then instruct Makefile.PL
+to use these libraries in a link stage.
+(TODO provide better detailed description)</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="other_tcl_interpreter_methods">Other Tcl interpreter methods</a></h1>
+<dl>
+<dt><strong><a name="export_to_tcl_method" class="item">export_to_tcl method</a></strong></dt>
+
+<dd>
+<p>An interpreter method, export_to_tcl, is used to expose a number of perl
+subroutines and variables all at once into tcl/tk.</p>
+<p><strong>export_to_tcl</strong> takes a hash as arguments, which represents named parameters,
+with following allowed values:</p>
+<dl>
+<dt><strong><a name="namespace" class="item"><strong>namespace</strong> =&gt; '...'</a></strong></dt>
+
+<dd>
+<p>tcl namespace, where commands and variables are to
+be created, defaults to 'perl'. If '' is specified - then global
+namespace is used. A possible '::' at end is stripped.</p>
+</dd>
+<dt><strong><a name="subs" class="item"><strong>subs</strong> =&gt; { ... }</a></strong></dt>
+
+<dd>
+<p>anonymous hash of subs to be created in Tcl, in the form /tcl name/ =&gt; /code ref/</p>
+</dd>
+<dt><strong><a name="vars" class="item"><strong>vars</strong> =&gt; { ... }</a></strong></dt>
+
+<dd>
+<p>anonymous hash of vars to be created in Tcl, in the form /tcl name/ =&gt; /code ref/</p>
+</dd>
+<dt><strong><a name="subs_from" class="item"><strong>subs_from</strong> =&gt; '...'</a></strong></dt>
+
+<dd>
+<p>a name of Perl namespace, from where all existing subroutines will be searched
+and Tcl command will be created for each of them.</p>
+</dd>
+<dt><strong><a name="vars_from" class="item"><strong>vars_from</strong> =&gt; '...'</a></strong></dt>
+
+<dd>
+<p>a name of Perl namespace, from where all existing variables will be searched,
+and each such variable will be tied to Tcl.</p>
+</dd>
+</dl>
+<p>An example:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Tcl</span><span class="operator">;</span>
+  
+  <span class="keyword">my</span> <span class="variable">$int</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Tcl</span><span class="operator">;</span>
+  
+  <span class="variable">$tcl::foo</span> <span class="operator">=</span> <span class="string">'qwerty'</span><span class="operator">;</span>
+  <span class="variable">$int</span><span class="operator">-&gt;</span><span class="variable">export_to_tcl</span><span class="operator">(</span><span class="string">subs_from</span><span class="operator">=&gt;</span><span class="string">'tcl'</span><span class="operator">,</span><span class="string">vars_from</span><span class="operator">=&gt;</span><span class="string">'tcl'</span><span class="operator">);</span>
+  
+  <span class="variable">$int</span><span class="operator">-&gt;</span><span class="variable">Eval</span><span class="operator">(&lt;&lt;</span><span class="default">'EOS'</span><span class="operator">);</span><span class="string">
+  package require Tk
+  
+  button .b1 -text {a fluffy button} -command perl::fluffy_sub
+  button .b2 -text {a foo button} -command perl::foo
+  entry .e -textvariable perl::foo
+  pack .b1 .b2 .e
+  focus .b2
+  
+  tkwait window .
+  </span><span class="default">EOS</span>
+  
+  <span class="keyword">sub</span><span class="variable"> tcl::fluffy_sub </span><span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"Hi, I am a fluffy sub\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  <span class="keyword">sub</span><span class="variable"> tcl::foo </span><span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"Hi, I am foo\n"</span><span class="operator">;</span>
+      <span class="variable">$tcl::foo</span><span class="operator">++;</span>
+  <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="export_tcl_namespace" class="item"><strong>export_tcl_namespace</strong></a></strong></dt>
+
+<dd>
+<p>extra convenience sub, binds to tcl all subs and vars from perl <strong>tcl::</strong> namespace</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<pre>
+ Malcolm Beattie, mbeattie@sable.ox.ac.uk, 23 Oct 1994.
+ Vadim Konovalov, vkon@cpan.org, 19 May 2003.
+ Jeff Hobbs, jeff (a) activestate . com, 22 Mar 2004.
+ Gisle Aas, gisle (a) activestate . com, 14 Apr 2004.</pre>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.</p>
+<p>See <a href="http://www.perl.com/perl/misc/Artistic.html">http://www.perl.com/perl/misc/Artistic.html</a></p>
+
+</body>
+
+</html>

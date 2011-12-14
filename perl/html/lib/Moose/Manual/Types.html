@@ -1,0 +1,496 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Manual::Types - Moose's type system</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Manual::Types - Moose's type system</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#types_in_perl">TYPES IN PERL?</a></li>
+	<li><a href="#the_types">THE TYPES</a></li>
+	<li><a href="#what_is_a_type">WHAT IS A TYPE?</a></li>
+	<li><a href="#subtypes">SUBTYPES</a></li>
+	<li><a href="#type_names">TYPE NAMES</a></li>
+	<li><a href="#coercion">COERCION</a></li>
+	<ul>
+
+		<li><a href="#deep_coercion">Deep coercion</a></li>
+	</ul>
+
+	<li><a href="#type_unions">TYPE UNIONS</a></li>
+	<li><a href="#type_creation_helpers">TYPE CREATION HELPERS</a></li>
+	<li><a href="#anonymous_types">ANONYMOUS TYPES</a></li>
+	<li><a href="#validating_method_parameters">VALIDATING METHOD PARAMETERS</a></li>
+	<li><a href="#load_order_issues">LOAD ORDER ISSUES</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Manual::Types - Moose's type system</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="types_in_perl">TYPES IN PERL?</a></h1>
+<p>Moose provides its own type system for attributes. You can also use
+these types to validate method parameters with the help of a MooseX
+module.</p>
+<p>Moose's type system is based on a combination of Perl 5's own
+<em>implicit</em> types and some Perl 6 concepts. You can create your
+own subtypes with custom constraints, making it easy to express any
+sort of validation.</p>
+<p>Types have names, and you can re-use them by name, making it easy to
+share types throughout a large application.</p>
+<p>However, this is not a &quot;real&quot; type system. Moose does not magically make Perl
+start associating types with variables. This is just an advanced parameter
+checking system which allows you to associate a name with a constraint.</p>
+<p>That said, it's still pretty damn useful, and we think it's one of the
+things that makes Moose both fun and powerful. Taking advantage of the
+type system makes it much easier to ensure that you are getting valid
+data, and it also contributes greatly to code maintainability.</p>
+<p>
+</p>
+<hr />
+<h1><a name="the_types">THE TYPES</a></h1>
+<p>The basic Moose type hierarchy looks like this</p>
+<pre>
+  Any
+  Item
+      Bool
+      Maybe[`a]
+      Undef
+      Defined
+          Value
+              Str
+                  Num
+                      Int
+                  ClassName
+                  RoleName
+          Ref
+              ScalarRef[`a]
+              ArrayRef[`a]
+              HashRef[`a]
+              CodeRef
+              RegexpRef
+              GlobRef
+                  FileHandle
+              Object</pre>
+<p>In practice, the only difference between <code>Any</code> and <code>Item</code> is
+conceptual. <code>Item</code> is used as the top-level type in the hierarchy.</p>
+<p>The rest of these types correspond to existing Perl concepts.
+In particular:</p>
+<dl>
+<dt>
+<dd>
+<p><code>Bool</code> accepts <code>1</code> for true, and undef, 0, or the empty string as false.</p>
+</dd>
+<dt>
+<dd>
+<p><code>Maybe[`a]</code> accepts either <a href="../../../lib/pods/perlrun.html#a"><code>`a</code></a> or <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+</dd>
+<dt>
+<dd>
+<p><code>Num</code> accepts anything that perl thinks looks like a number (see <a href="../../../lib/Scalar/Util.html#looks_like_number">looks_like_number in the Scalar::Util manpage</a>).</p>
+</dd>
+<dt>
+<dd>
+<p><code>ClassName</code> and <code>RoleName</code> accept strings that are either the name of a class or the name of a role. The class/role must already be loaded when the constraint is checked.</p>
+</dd>
+<dt>
+<dd>
+<p><code>FileHandle</code> accepts either an <a href="../../../lib/IO/Handle.html">the IO::Handle manpage</a> object or a builtin perl filehandle (see <a href="../../../lib/Scalar/Util.html#openhandle">openhandle in the Scalar::Util manpage</a>).</p>
+</dd>
+<dt>
+<dd>
+<p><code>Object</code> accepts any blessed reference.</p>
+</dd>
+</dl>
+<p>The types followed by &quot;[`a]&quot; can be parameterized. So instead of just
+plain <code>ArrayRef</code> we can say that we want <code>ArrayRef[Int]</code> instead. We
+can even do something like <code>HashRef[ArrayRef[Str]]</code>.</p>
+<p>The <code>Maybe[`a]</code> type deserves a special mention. Used by itself, it
+doesn't really mean anything (and is equivalent to <code>Item</code>). When it
+is parameterized, it means that the value is either <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or the
+parameterized type. So <code>Maybe[Int]</code> means an integer or <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>For more details on the type hierarchy, see
+<a href="../../../lib/Moose/Util/TypeConstraints.html">the Moose::Util::TypeConstraints manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="what_is_a_type">WHAT IS A TYPE?</a></h1>
+<p>It's important to realize that types are not classes (or
+packages). Types are just objects (<a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a>
+objects, to be exact) with a name and a constraint. Moose maintains a
+global type registry that lets it convert names like <code>Num</code> into the
+appropriate object.</p>
+<p>However, class names <em>can be</em> type names. When you define a new class
+using Moose, it defines an associated type name behind the scenes:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::User</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<p>Now you can use <code>'MyApp::User'</code> as a type name:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">creator</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'MyApp::User'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>However, for non-Moose classes there's no magic. You may have to
+explicitly declare the class type. This is a bit muddled because Moose
+assumes that any unknown type name passed as the <code>isa</code> value for an
+attribute is a class. So this works:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'birth_date'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'DateTime'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>In general, when Moose is presented with an unknown name, it assumes
+that the name is a class:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'ModernDateTime'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">'DateTime'</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">year</span><span class="operator">()</span> <span class="operator">&gt;=</span> <span class="number">1980</span> <span class="operator">}</span>
+      <span class="operator">=&gt;</span> <span class="variable">message</span> <span class="operator">{</span> <span class="string">'The date you provided is not modern enough'</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'valid_dates'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'ArrayRef[DateTime]'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Moose will assume that <code>DateTime</code> is a class name in both of these
+instances.</p>
+<p>
+</p>
+<hr />
+<h1><a name="subtypes">SUBTYPES</a></h1>
+<p>Moose uses subtypes in its built-in hierarchy. For example, <code>Int</code> is
+a child of <code>Num</code>.</p>
+<p>A subtype is defined in terms of a parent type and a constraint. Any
+constraints defined by the parent(s) will be checked first, followed by
+constraints defined by the subtype. A value must pass <em>all</em> of these
+checks to be valid for the subtype.</p>
+<p>Typically, a subtype takes the parent's constraint and makes it more
+specific.</p>
+<p>A subtype can also define its own constraint failure message. This
+lets you do things like have an error &quot;The value you provided (20),
+was not a valid rating, which must be a number from 1-10.&quot; This is
+much friendlier than the default error, which just says that the value
+failed a validation check for the type. The default error can, however,
+be made more friendly by installing <a href="../../../Devel/PartialDump.html">the Devel::PartialDump manpage</a> (version 0.14 or
+higher), which Moose will use if possible to display the invalid value.</p>
+<p>Here's a simple (and useful) subtype example:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'PositiveInt'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'Int'</span><span class="operator">,</span>
+      <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&gt;</span> <span class="number">0</span> <span class="operator">},</span>
+      <span class="variable">message</span> <span class="operator">{</span> <span class="string">"The number you provided, </span><span class="variable">$_</span><span class="string">, was not a positive number"</span> <span class="operator">};</span>
+</pre>
+<p>Note that the sugar functions for working with types are all exported
+by <a href="../../../lib/Moose/Util/TypeConstraints.html">the Moose::Util::TypeConstraints manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="type_names">TYPE NAMES</a></h1>
+<p>Type names are global throughout the current Perl
+interpreter. Internally, Moose maps names to type objects via a
+<a href="../../../lib/Moose/Meta/TypeConstraint/Registry.html">registry</a>.</p>
+<p>If you have multiple apps or libraries all using Moose in the same
+process, you could have problems with collisions. We recommend that
+you prefix names with some sort of namespace indicator to prevent
+these sorts of collisions.</p>
+<p>For example, instead of calling a type &quot;PositiveInt&quot;, call it
+&quot;MyApp::Type::PositiveInt&quot; or &quot;MyApp::Types::PositiveInt&quot;. We
+recommend that you centralize all of these definitions in a single
+package, <code>MyApp::Types</code>, which can be loaded by other classes in your
+application.</p>
+<p>However, before you do this, you should look at the <a href="../../../MooseX/Types.html">the MooseX::Types manpage</a>
+module. This module makes it easy to create a &quot;type library&quot; module, which can
+export your types as perl constants.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'counter'</span> <span class="operator">=&gt;</span> <span class="operator">(</span><span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">PositiveInt</span><span class="operator">);</span>
+</pre>
+<p>This lets you use a short name rather than needing to fully qualify the name
+everywhere. It also allows you to easily create parameterized types:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'counts'</span> <span class="operator">=&gt;</span> <span class="operator">(</span><span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">HashRef</span><span class="operator">[</span><span class="variable">PositiveInt</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<p>This module will check your names at compile time, and is generally more
+robust than the string type parsing for complex cases.</p>
+<p>
+</p>
+<hr />
+<h1><a name="coercion">COERCION</a></h1>
+<p>A coercion lets you tell Moose to automatically convert one type to another.</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'ArrayRefOfInts'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'ArrayRef[Int]'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'ArrayRefOfInts'</span><span class="operator">,</span>
+      <span class="variable">from</span> <span class="string">'Int'</span><span class="operator">,</span>
+      <span class="variable">via</span> <span class="operator">{</span> <span class="operator">[</span> <span class="variable">$_</span> <span class="operator">]</span> <span class="operator">};</span>
+</pre>
+<p>You'll note that we created a subtype rather than coercing <code>ArrayRef[Int]</code>
+directly. It's a bad idea to add coercions to the raw built in
+types.</p>
+<p>Coercions are global, just like type names, so a coercion applied to a built
+in type is seen by all modules using Moose types. This is <em>another</em> reason
+why it is good to namespace your types.</p>
+<p>Moose will <em>never</em> try to coerce a value unless you explicitly ask for
+it. This is done by setting the <code>coerce</code> attribute option to a true value:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'sizes'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>    <span class="operator">=&gt;</span> <span class="string">'ArrayRefOfInts'</span><span class="operator">,</span>
+      <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">sizes</span> <span class="operator">=&gt;</span> <span class="number">42</span> <span class="operator">);</span>
+</pre>
+<p>This code example will do the right thing, and the newly created
+object will have <code>[ 42 ]</code> as its <code>sizes</code> attribute.</p>
+<p>
+</p>
+<h2><a name="deep_coercion">Deep coercion</a></h2>
+<p>Deep coercion is the coercion of type parameters for parameterized
+types. Let's take these types as an example:</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'HexNum'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'Str'</span><span class="operator">,</span>
+      <span class="variable">where</span> <span class="operator">{</span> <span class="regex">/[a-f0-9]/i</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'Int'</span><span class="operator">,</span>
+      <span class="variable">from</span> <span class="string">'HexNum'</span><span class="operator">,</span>
+      <span class="variable">via</span> <span class="operator">{</span> <span class="keyword">hex</span> <span class="variable">$_</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'sizes'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>    <span class="operator">=&gt;</span> <span class="string">'ArrayRef[Int]'</span><span class="operator">,</span>
+      <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>If we try passing an array reference of hex numbers for the <code>sizes</code>
+attribute, Moose will not do any coercion.</p>
+<p>However, you can define a set of subtypes to enable coercion between
+two parameterized types.</p>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'ArrayRefOfHexNums'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'ArrayRef[HexNum]'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'ArrayRefOfInts'</span><span class="operator">,</span>
+      <span class="variable">as</span> <span class="string">'ArrayRef[Int]'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'ArrayRefOfInts'</span><span class="operator">,</span>
+      <span class="variable">from</span> <span class="string">'ArrayRefOfHexNums'</span><span class="operator">,</span>
+      <span class="variable">via</span> <span class="operator">{</span> <span class="operator">[</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="keyword">hex</span> <span class="operator">}</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">]</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">sizes</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'a1'</span><span class="operator">,</span> <span class="string">'ff'</span><span class="operator">,</span> <span class="string">'22'</span> <span class="operator">]</span> <span class="operator">);</span>
+</pre>
+<p>Now Moose will coerce the hex numbers to integers.</p>
+<p>Moose does not attempt to chain coercions, so it will not
+coerce a single hex number. To do that, we need to define a separate
+coercion:</p>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'ArrayRefOfInts'</span><span class="operator">,</span>
+      <span class="variable">from</span> <span class="string">'HexNum'</span><span class="operator">,</span>
+      <span class="variable">via</span> <span class="operator">{</span> <span class="operator">[</span> <span class="keyword">hex</span> <span class="variable">$_</span> <span class="operator">]</span> <span class="operator">};</span>
+</pre>
+<p>Yes, this can all get verbose, but coercion is tricky magic, and we
+think it's best to make it explicit.</p>
+<p>
+</p>
+<hr />
+<h1><a name="type_unions">TYPE UNIONS</a></h1>
+<p>Moose allows you to say that an attribute can be of two or more
+disparate types. For example, we might allow an <code>Object</code> or
+<code>FileHandle</code>:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'output'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Object | FileHandle'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>Moose actually parses that string and recognizes that you are creating
+a type union. The <code>output</code> attribute will accept any sort of object,
+as well as an unblessed file handle. It is up to you to do the right
+thing for each of them in your code.</p>
+<p>Whenever you use a type union, you should consider whether or not
+coercion might be a better answer.</p>
+<p>For our example above, we might want to be more specific, and insist
+that output be an object with a <a href="../../../lib/pods/perlfunc.html#print"><code>print</code></a> method:</p>
+<pre>
+  <span class="variable">duck_type</span> <span class="string">'CanPrint'</span><span class="operator">,</span> <span class="operator">[</span><span class="string">qw(print)</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>We can coerce file handles to an object that satisfies this condition
+with a simple wrapper class:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">FHWrapper</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'handle'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'FileHandle'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> print </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$fh</span>   <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">handle</span><span class="operator">();</span>
+</pre>
+<pre>
+      <span class="keyword">print</span> <span class="operator">{</span><span class="variable">$fh</span><span class="operator">}</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>Now we can define a coercion from <code>FileHandle</code> to our wrapper class:</p>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'CanPrint'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'FileHandle'</span>
+      <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">FHWrapper</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">handle</span> <span class="operator">=&gt;</span> <span class="variable">$_</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'output'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>     <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>    <span class="operator">=&gt;</span> <span class="string">'CanPrint'</span><span class="operator">,</span>
+      <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This pattern of using a coercion instead of a type union will help
+make your class internals simpler.</p>
+<p>
+</p>
+<hr />
+<h1><a name="type_creation_helpers">TYPE CREATION HELPERS</a></h1>
+<p>The <a href="../../../lib/Moose/Util/TypeConstraints.html">the Moose::Util::TypeConstraints manpage</a> module exports a number of helper
+functions for creating specific kinds of types. These include
+<code>class_type</code>, <code>role_type</code>, <code>maybe_type</code>, and <code>duck_type</code>. See the
+docs for details.</p>
+<p>One helper worth noting is <code>enum</code>, which allows you to create a
+subtype of <code>Str</code> that only allows the specified values:</p>
+<pre>
+  <span class="variable">enum</span> <span class="string">'RGB'</span><span class="operator">,</span> <span class="operator">[</span><span class="string">qw( red green blue )</span><span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>This creates a type named <code>RGB</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="anonymous_types">ANONYMOUS TYPES</a></h1>
+<p>All of the type creation functions return a type object. This type
+object can be used wherever you would use a type name, as a parent
+type, or as the value for an attribute's <code>isa</code> option:</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'size'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="variable">subtype</span><span class="operator">(</span> <span class="string">'Int'</span> <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">&gt;</span> <span class="number">0</span> <span class="operator">}</span> <span class="operator">),</span>
+  <span class="operator">);</span>
+</pre>
+<p>This is handy when you want to create a one-off type and don't want to
+&quot;pollute&quot; the global namespace registry.</p>
+<p>
+</p>
+<hr />
+<h1><a name="validating_method_parameters">VALIDATING METHOD PARAMETERS</a></h1>
+<p>Moose does not provide any means of validating method
+parameters. However, there are several MooseX extensions on CPAN which
+let you do this.</p>
+<p>The simplest and least sugary is <a href="../../../MooseX/Params/Validate.html">the MooseX::Params::Validate manpage</a>. This
+lets you validate a set of named parameters using Moose types:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::Params::Validate</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> foo </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span>   <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">%params</span> <span class="operator">=</span> <span class="variable">validated_hash</span><span class="operator">(</span>
+          <span class="operator">\</span><span class="variable">@_</span><span class="operator">,</span>
+          <span class="string">bar</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span> <span class="string">default</span> <span class="operator">=&gt;</span> <span class="string">'Moose'</span> <span class="operator">}</span><span class="operator">,</span>
+      <span class="operator">);</span>
+      <span class="operator">...</span>
+  <span class="operator">}</span>
+</pre>
+<p><a href="../../../MooseX/Params/Validate.html">the MooseX::Params::Validate manpage</a> also supports coercions.</p>
+<p>There are several more powerful extensions that support method
+parameter validation using Moose types, including
+<a href="../../../MooseX/Method/Signatures.html">the MooseX::Method::Signatures manpage</a>, which gives you a full-blown <code>method</code>
+keyword.</p>
+<pre>
+  <span class="variable">method</span> <span class="variable">morning</span> <span class="operator">(</span> <span class="variable">Str</span> <span class="variable">$name</span> <span class="operator">)</span> <span class="operator">{</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">say</span><span class="operator">(</span><span class="string">"Good morning ${name}!"</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="load_order_issues">LOAD ORDER ISSUES</a></h1>
+<p>Because Moose types are defined at runtime, you may run into load
+order problems. In particular, you may want to use a class's type
+constraint before that type has been defined.</p>
+<p>In order to ameliorate this problem, we recommend defining <em>all</em> of your
+custom types in one module, <code>MyApp::Types</code>, and then loading this module in
+all of your other modules.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

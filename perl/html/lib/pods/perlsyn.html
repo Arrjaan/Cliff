@@ -1,0 +1,1002 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlsyn - Perl syntax</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlsyn - Perl syntax</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#declarations">Declarations</a></li>
+		<li><a href="#comments">Comments</a></li>
+		<li><a href="#simple_statements">Simple Statements</a></li>
+		<li><a href="#truth_and_falsehood">Truth and Falsehood</a></li>
+		<li><a href="#statement_modifiers">Statement Modifiers</a></li>
+		<li><a href="#compound_statements">Compound Statements</a></li>
+		<li><a href="#loop_control">Loop Control</a></li>
+		<li><a href="#for_loops">For Loops</a></li>
+		<li><a href="#foreach_loops">Foreach Loops</a></li>
+		<li><a href="#basic_blocks">Basic BLOCKs</a></li>
+		<li><a href="#switch_statements">Switch statements</a></li>
+		<ul>
+
+			<li><a href="#breaking_out">Breaking out</a></li>
+			<li><a href="#fall_through">Fall-through</a></li>
+			<li><a href="#return_value">Return value</a></li>
+			<li><a href="#switching_in_a_loop">Switching in a loop</a></li>
+			<li><a href="#smart_matching_in_detail">Smart matching in detail</a></li>
+			<li><a href="#custom_matching_via_overloading">Custom matching via overloading</a></li>
+			<li><a href="#differences_from_perl_6">Differences from Perl 6</a></li>
+		</ul>
+
+		<li><a href="#goto">Goto</a></li>
+		<li><a href="#pods__embedded_documentation">PODs: Embedded Documentation</a></li>
+		<li><a href="#plain_old_comments__not__">Plain Old Comments (Not!)</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlsyn - Perl syntax</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A Perl program consists of a sequence of declarations and statements
+which run from the top to the bottom.  Loops, subroutines and other
+control structures allow you to jump around within the code.</p>
+<p>Perl is a <strong>free-form</strong> language, you can format and indent it however
+you like.  Whitespace mostly serves to separate tokens, unlike
+languages like Python where it is an important part of the syntax.</p>
+<p>Many of Perl's syntactic elements are <strong>optional</strong>.  Rather than
+requiring you to put parentheses around every function call and
+declare every variable, you can often leave such explicit elements off
+and Perl will figure out what you meant.  This is known as <strong>Do What I
+Mean</strong>, abbreviated <strong>DWIM</strong>.  It allows programmers to be <strong>lazy</strong> and to
+code in a style with which they are comfortable.</p>
+<p>Perl <strong>borrows syntax</strong> and concepts from many languages: awk, sed, C,
+Bourne Shell, Smalltalk, Lisp and even English.  Other
+languages have borrowed syntax from Perl, particularly its regular
+expression extensions.  So if you have programmed in another language
+you will see familiar pieces in Perl.  They often work the same, but
+see <a href="../../lib/pods/perltrap.html">the perltrap manpage</a> for information about how they differ.</p>
+<p>
+</p>
+<h2><a name="declarations">Declarations</a></h2>
+<p>The only things you need to declare in Perl are report formats and
+subroutines (and sometimes not even subroutines).  A variable holds
+the undefined value (<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>) until it has been assigned a defined
+value, which is anything other than <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.  When used as a number,
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is treated as <code>0</code>; when used as a string, it is treated as
+the empty string, <code>&quot;&quot;</code>; and when used as a reference that isn't being
+assigned to, it is treated as an error.  If you enable warnings,
+you'll be notified of an uninitialized value whenever you treat
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> as a string or a number.  Well, usually.  Boolean contexts,
+such as:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$a</span><span class="operator">;</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$a</span><span class="operator">)</span> <span class="operator">{}</span>
+</pre>
+<p>are exempt from warnings (because they care about truth rather than
+definedness).  Operators such as <code>++</code>, <code>--</code>, <code>+=</code>,
+<code>-=</code>, and <code>.=</code>, that operate on undefined left values such as:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$a</span><span class="operator">;</span>
+    <span class="variable">$a</span><span class="operator">++;</span>
+</pre>
+<p>are also always exempt from such warnings.</p>
+<p>A declaration can be put anywhere a statement can, but has no effect on
+the execution of the primary sequence of statements--declarations all
+take effect at compile time.  Typically all the declarations are put at
+the beginning or the end of the script.  However, if you're using
+lexically-scoped private variables created with <a href="../../lib/pods/perlfunc.html#my"><code>my()</code></a>, you'll
+have to make sure
+your format or subroutine definition is within the same block scope
+as the my if you expect to be able to access those private variables.</p>
+<p>Declaring a subroutine allows a subroutine name to be used as if it were a
+list operator from that point forward in the program.  You can declare a
+subroutine without defining it by saying <code>sub name</code>, thus:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> myname</span><span class="operator">;</span>
+    <span class="variable">$me</span> <span class="operator">=</span> <span class="variable">myname</span> <span class="variable">$0</span>             <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"can't get myname"</span><span class="operator">;</span>
+</pre>
+<p>Note that <code>myname()</code> functions as a list operator, not as a unary operator;
+so be careful to use <code>or</code> instead of <code>||</code> in this case.  However, if
+you were to declare the subroutine as <code>sub myname ($)</code>, then
+<code>myname</code> would function as a unary operator, so either <code>or</code> or
+<code>||</code> would work.</p>
+<p>Subroutines declarations can also be loaded up with the <a href="../../lib/pods/perlfunc.html#require"><code>require</code></a> statement
+or both loaded and imported into your namespace with a <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> statement.
+See <a href="../../lib/pods/perlmod.html">the perlmod manpage</a> for details on this.</p>
+<p>A statement sequence may contain declarations of lexically-scoped
+variables, but apart from declaring a variable name, the declaration acts
+like an ordinary statement, and is elaborated within the sequence of
+statements as if it were an ordinary statement.  That means it actually
+has both compile-time and run-time effects.</p>
+<p>
+</p>
+<h2><a name="comments">Comments</a></h2>
+<p>Text from a <code>&quot;#&quot;</code> character until the end of the line is a comment,
+and is ignored.  Exceptions include <code>&quot;#&quot;</code> inside a string or regular
+expression.</p>
+<p>
+</p>
+<h2><a name="simple_statements">Simple Statements</a></h2>
+<p>The only kind of simple statement is an expression evaluated for its
+side effects.  Every simple statement must be terminated with a
+semicolon, unless it is the final statement in a block, in which case
+the semicolon is optional.  (A semicolon is still encouraged if the
+block takes up more than one line, because you may eventually add
+another line.)  Note that there are some operators like <a href="../../lib/pods/perlfunc.html#eval"><code>eval {}</code></a> and
+<a href="../../lib/pods/perlfunc.html#do"><code>do {}</code></a> that look like compound statements, but aren't (they're just
+TERMs in an expression), and thus need an explicit termination if used
+as the last item in a statement.</p>
+<p>
+</p>
+<h2><a name="truth_and_falsehood">Truth and Falsehood</a></h2>
+<p>The number 0, the strings <code>'0'</code> and <code>''</code>, the empty list <code>()</code>, and
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> are all false in a boolean context. All other values are true.
+Negation of a true value by <code>!</code> or <code>not</code> returns a special false value.
+When evaluated as a string it is treated as <code>''</code>, but as a number, it
+is treated as 0.</p>
+<p>
+</p>
+<h2><a name="statement_modifiers">Statement Modifiers</a></h2>
+<p>Any simple statement may optionally be followed by a <em>SINGLE</em> modifier,
+just before the terminating semicolon (or block ending).  The possible
+modifiers are:</p>
+<pre>
+    if EXPR
+    unless EXPR
+    while EXPR
+    until EXPR
+    when EXPR
+    for LIST
+    foreach LIST</pre>
+<p>The <code>EXPR</code> following the modifier is referred to as the &quot;condition&quot;.
+Its truth or falsehood determines how the modifier will behave.</p>
+<p><code>if</code> executes the statement once <em>if</em> and only if the condition is
+true.  <code>unless</code> is the opposite, it executes the statement <em>unless</em>
+the condition is true (i.e., if the condition is false).</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Basset hounds got long ears"</span> <span class="keyword">if</span> <span class="keyword">length</span> <span class="variable">$ear</span> <span class="operator">&gt;=</span> <span class="number">10</span><span class="operator">;</span>
+    <span class="variable">go_outside</span><span class="operator">()</span> <span class="keyword">and</span> <span class="variable">play</span><span class="operator">()</span> <span class="keyword">unless</span> <span class="variable">$is_raining</span><span class="operator">;</span>
+</pre>
+<p><a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> executes the statement <em>when</em> <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> smart matches <code>EXPR</code>, and
+then either <a href="../../lib/pods/perlfunc.html#break"><code>break</code></a>s out if it's enclosed in a <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> scope or skips
+to the <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a> element when it lies directly inside a <code>for</code> loop.
+See also <a href="#switch_statements">Switch statements</a>.</p>
+<pre>
+    <span class="keyword">given</span> <span class="operator">(</span><span class="variable">$something</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$abc</span>    <span class="operator">=</span> <span class="number">1</span> <span class="keyword">when</span> <span class="operator">/^</span><span class="variable">abc</span><span class="operator">/;</span>
+        <span class="variable">$just_a</span> <span class="operator">=</span> <span class="number">1</span> <span class="keyword">when</span> <span class="operator">/^</span><span class="variable">a</span><span class="operator">/;</span>
+        <span class="variable">$other</span>  <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="variable">@names</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">admin</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span>   <span class="keyword">when</span> <span class="operator">[</span> <span class="string">qw/Alice Bob/</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">regular</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="keyword">when</span> <span class="operator">[</span> <span class="string">qw/Chris David Ellen/</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>The <code>foreach</code> modifier is an iterator: it executes the statement once
+for each item in the LIST (with <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> aliased to each item in turn).</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Hello </span><span class="variable">$_</span><span class="string">!\n"</span> <span class="keyword">foreach</span> <span class="string">qw(world Dolly nurse)</span><span class="operator">;</span>
+</pre>
+<p><code>while</code> repeats the statement <em>while</em> the condition is true.
+<code>until</code> does the opposite, it repeats the statement <em>until</em> the
+condition is true (or while the condition is false):</p>
+<pre>
+    <span class="comment"># Both of these count from 0 to 10.</span>
+    <span class="keyword">print</span> <span class="variable">$i</span><span class="operator">++</span> <span class="keyword">while</span> <span class="variable">$i</span> <span class="operator">&lt;=</span> <span class="number">10</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$j</span><span class="operator">++</span> <span class="keyword">until</span> <span class="variable">$j</span> <span class="operator">&gt;</span>  <span class="number">10</span><span class="operator">;</span>
+</pre>
+<p>The <code>while</code> and <code>until</code> modifiers have the usual &quot;<code>while</code> loop&quot;
+semantics (conditional evaluated first), except when applied to a
+<a href="../../lib/pods/perlfunc.html#do"><code>do</code></a>-BLOCK (or to the deprecated <a href="../../lib/pods/perlfunc.html#do"><code>do</code></a>-SUBROUTINE statement), in
+which case the block executes once before the conditional is
+evaluated.  This is so that you can write loops like:</p>
+<pre>
+    <span class="keyword">do</span> <span class="operator">{</span>
+        <span class="variable">$line</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">STDIN</span><span class="operator">&gt;;</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span> <span class="keyword">until</span> <span class="variable">$line</span>  <span class="keyword">eq</span> <span class="string">".\n"</span><span class="operator">;</span>
+</pre>
+<p>See <a href="../../lib/pods/perlfunc.html#do">do in the perlfunc manpage</a>.  Note also that the loop control statements described
+later will <em>NOT</em> work in this construct, because modifiers don't take
+loop labels.  Sorry.  You can always put another block inside of it
+(for <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a>) or around it (for <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a>) to do that sort of thing.
+For <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a>, just double the braces:</p>
+<pre>
+    <span class="keyword">do</span> <span class="operator">{{</span>
+        <span class="keyword">next</span> <span class="keyword">if</span> <span class="variable">$x</span> <span class="operator">==</span> <span class="variable">$y</span><span class="operator">;</span>
+        <span class="comment"># do something here</span>
+    <span class="operator">}}</span> <span class="keyword">until</span> <span class="variable">$x</span><span class="operator">++</span> <span class="operator">&gt;</span> <span class="variable">$z</span><span class="operator">;</span>
+</pre>
+<p>For <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a>, you have to be more elaborate:</p>
+<pre>
+    <span class="variable">LOOP</span><span class="operator">:</span> <span class="operator">{</span> 
+            <span class="keyword">do</span> <span class="operator">{</span>
+                <span class="keyword">last</span> <span class="keyword">if</span> <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$y</span><span class="operator">**</span><span class="number">2</span><span class="operator">;</span>
+                <span class="comment"># do something here</span>
+            <span class="operator">}</span> <span class="keyword">while</span> <span class="variable">$x</span><span class="operator">++</span> <span class="operator">&lt;=</span> <span class="variable">$z</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p><strong>NOTE:</strong> The behaviour of a <a href="../../lib/pods/perlfunc.html#my"><code>my</code></a> statement modified with a statement
+modifier conditional or loop construct (e.g. <code>my $x if ...</code>) is
+<strong>undefined</strong>.  The value of the <a href="../../lib/pods/perlfunc.html#my"><code>my</code></a> variable may be <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, any
+previously assigned value, or possibly anything else.  Don't rely on
+it.  Future versions of perl might do something different from the
+version of perl you try it out on.  Here be dragons.</p>
+<p>
+</p>
+<h2><a name="compound_statements">Compound Statements</a></h2>
+<p>In Perl, a sequence of statements that defines a scope is called a block.
+Sometimes a block is delimited by the file containing it (in the case
+of a required file, or the program as a whole), and sometimes a block
+is delimited by the extent of a string (in the case of an eval).</p>
+<p>But generally, a block is delimited by curly brackets, also known as braces.
+We will call this syntactic construct a BLOCK.</p>
+<p>The following compound statements may be used to control flow:</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">else</span> <span class="variable">BLOCK</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">elsif</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="operator">...</span> <span class="keyword">else</span> <span class="variable">BLOCK</span>
+    <span class="keyword">unless</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span>
+    <span class="keyword">unless</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">else</span> <span class="variable">BLOCK</span>
+    <span class="keyword">unless</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">elsif</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="operator">...</span> <span class="keyword">else</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">while</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">while</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">continue</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">until</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">until</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">continue</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">for</span> <span class="operator">(</span><span class="variable">EXPR</span><span class="operator">;</span> <span class="variable">EXPR</span><span class="operator">;</span> <span class="variable">EXPR</span><span class="operator">)</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">foreach</span> <span class="variable">VAR</span> <span class="operator">(</span><span class="variable">LIST</span><span class="operator">)</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="keyword">foreach</span> <span class="variable">VAR</span> <span class="operator">(</span><span class="variable">LIST</span><span class="operator">)</span> <span class="variable">BLOCK</span> <span class="keyword">continue</span> <span class="variable">BLOCK</span>
+    <span class="variable">LABEL</span> <span class="variable">BLOCK</span> <span class="keyword">continue</span> <span class="variable">BLOCK</span>
+</pre>
+<p>Note that, unlike C and Pascal, these are defined in terms of BLOCKs,
+not statements.  This means that the curly brackets are <em>required</em>--no
+dangling statements allowed.  If you want to write conditionals without
+curly brackets there are several other ways to do it.  The following
+all do the same thing:</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(!</span><span class="keyword">open</span><span class="operator">(</span><span class="variable">FOO</span><span class="operator">))</span> <span class="operator">{</span> <span class="keyword">die</span> <span class="string">"Can't open </span><span class="variable">$FOO</span><span class="string">: $!"</span><span class="operator">;</span> <span class="operator">}</span>
+    <span class="keyword">die</span> <span class="string">"Can't open </span><span class="variable">$FOO</span><span class="string">: $!"</span> <span class="keyword">unless</span> <span class="keyword">open</span><span class="operator">(</span><span class="variable">FOO</span><span class="operator">);</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">FOO</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Can't open </span><span class="variable">$FOO</span><span class="string">: $!"</span><span class="operator">;</span>     <span class="comment"># FOO or bust!</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">FOO</span><span class="operator">)</span> <span class="operator">?</span> <span class="string">'hi mom'</span> <span class="operator">:</span> <span class="keyword">die</span> <span class="string">"Can't open </span><span class="variable">$FOO</span><span class="string">: $!"</span><span class="operator">;</span>
+                        <span class="comment"># a bit exotic, that last one</span>
+</pre>
+<p>The <code>if</code> statement is straightforward.  Because BLOCKs are always
+bounded by curly brackets, there is never any ambiguity about which
+<code>if</code> an <code>else</code> goes with.  If you use <code>unless</code> in place of <code>if</code>,
+the sense of the test is reversed. Like <code>if</code>, <code>unless</code> can be followed
+by <code>else</code>. <code>unless</code> can even be followed by one or more <code>elsif</code>
+statements, though you may want to think twice before using that particular
+language construct, as everyone reading your code will have to think at least
+twice before they can understand what's going on.</p>
+<p>The <code>while</code> statement executes the block as long as the expression is
+<a href="#truth_and_falsehood">true</a>.
+The <code>until</code> statement executes the block as long as the expression is
+false.
+The LABEL is optional, and if present, consists of an identifier followed
+by a colon.  The LABEL identifies the loop for the loop control
+statements <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a>, <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a>, and <a href="../../lib/pods/perlfunc.html#redo"><code>redo</code></a>.
+If the LABEL is omitted, the loop control statement
+refers to the innermost enclosing loop.  This may include dynamically
+looking back your call-stack at run time to find the LABEL.  Such
+desperate behavior triggers a warning if you use the <code>use warnings</code>
+pragma or the <strong>-w</strong> flag.</p>
+<p>If there is a <a href="../../lib/pods/perlfunc.html#continue"><code>continue</code></a> BLOCK, it is always executed just before the
+conditional is about to be evaluated again.  Thus it can be used to
+increment a loop variable, even when the loop has been continued via
+the <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a> statement.</p>
+<p>Extension modules can also hook into the Perl parser to define new
+kinds of compound statement.  These are introduced by a keyword which
+the extension recognizes, and the syntax following the keyword is
+defined entirely by the extension.  If you are an implementor, see
+<a href="../../lib/pods/perlapi.html#pl_keyword_plugin">PL_keyword_plugin in the perlapi manpage</a> for the mechanism.  If you are using such
+a module, see the module's documentation for details of the syntax that
+it defines.</p>
+<p>
+</p>
+<h2><a name="loop_control">Loop Control</a></h2>
+<p>The <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a> command starts the next iteration of the loop:</p>
+<pre>
+    <span class="variable">LINE</span><span class="operator">:</span> <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">STDIN</span><span class="operator">&gt;)</span> <span class="operator">{</span>
+        <span class="keyword">next</span> <span class="variable">LINE</span> <span class="keyword">if</span> <span class="regex">/^#/</span><span class="operator">;</span>      <span class="comment"># discard comments</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>The <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a> command immediately exits the loop in question.  The
+<a href="../../lib/pods/perlfunc.html#continue"><code>continue</code></a> block, if any, is not executed:</p>
+<pre>
+    <span class="variable">LINE</span><span class="operator">:</span> <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">STDIN</span><span class="operator">&gt;)</span> <span class="operator">{</span>
+        <span class="keyword">last</span> <span class="variable">LINE</span> <span class="keyword">if</span> <span class="regex">/^$/</span><span class="operator">;</span>      <span class="comment"># exit when done with header</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>The <a href="../../lib/pods/perlfunc.html#redo"><code>redo</code></a> command restarts the loop block without evaluating the
+conditional again.  The <a href="../../lib/pods/perlfunc.html#continue"><code>continue</code></a> block, if any, is <em>not</em> executed.
+This command is normally used by programs that want to lie to themselves
+about what was just input.</p>
+<p>For example, when processing a file like <em class="file">/etc/termcap</em>.
+If your input lines might end in backslashes to indicate continuation, you
+want to skip ahead and get the next record.</p>
+<pre>
+    <span class="keyword">while</span> <span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+        <span class="keyword">chomp</span><span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="regex">s/\\$//</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">$_</span> <span class="operator">.=</span> <span class="operator">&lt;&gt;;</span>
+            <span class="keyword">redo</span> <span class="keyword">unless</span> <span class="keyword">eof</span><span class="operator">();</span>
+        <span class="operator">}</span>
+        <span class="comment"># now process $_</span>
+    <span class="operator">}</span>
+</pre>
+<p>which is Perl short-hand for the more explicitly written version:</p>
+<pre>
+    <span class="variable">LINE</span><span class="operator">:</span> <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">defined</span><span class="operator">(</span><span class="variable">$line</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">ARGV</span><span class="operator">&gt;))</span> <span class="operator">{</span>
+        <span class="keyword">chomp</span><span class="operator">(</span><span class="variable">$line</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$line</span> <span class="operator">=~</span> <span class="regex">s/\\$//</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">$line</span> <span class="operator">.=</span> <span class="operator">&lt;</span><span class="variable">ARGV</span><span class="operator">&gt;;</span>
+            <span class="keyword">redo</span> <span class="variable">LINE</span> <span class="keyword">unless</span> <span class="keyword">eof</span><span class="operator">();</span> <span class="comment"># not eof(ARGV)!</span>
+        <span class="operator">}</span>
+        <span class="comment"># now process $line</span>
+    <span class="operator">}</span>
+</pre>
+<p>Note that if there were a <a href="../../lib/pods/perlfunc.html#continue"><code>continue</code></a> block on the above code, it would
+get executed only on lines discarded by the regex (since redo skips the
+continue block). A continue block is often used to reset line counters
+or <code>m?pat?</code> one-time matches:</p>
+<pre>
+    <span class="comment"># inspired by :1,$g/fred/s//WILMA/</span>
+    <span class="keyword">while</span> <span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+        <span class="regex">m?(fred)?</span>    <span class="operator">&amp;&amp;</span> <span class="regex">s//WILMA $1 WILMA/</span><span class="operator">;</span>
+        <span class="regex">m?(barney)?</span>  <span class="operator">&amp;&amp;</span> <span class="regex">s//BETTY $1 BETTY/</span><span class="operator">;</span>
+        <span class="regex">m?(homer)?</span>   <span class="operator">&amp;&amp;</span> <span class="regex">s//MARGE $1 MARGE/</span><span class="operator">;</span>
+    <span class="operator">}</span> <span class="keyword">continue</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$ARGV</span><span class="string"> $.: </span><span class="variable">$_</span><span class="string">"</span><span class="operator">;</span>
+        <span class="keyword">close</span> <span class="variable">ARGV</span>  <span class="keyword">if</span> <span class="keyword">eof</span><span class="operator">;</span>             <span class="comment"># reset $.</span>
+        <span class="keyword">reset</span>       <span class="keyword">if</span> <span class="keyword">eof</span><span class="operator">;</span>             <span class="comment"># reset ?pat?</span>
+    <span class="operator">}</span>
+</pre>
+<p>If the word <code>while</code> is replaced by the word <code>until</code>, the sense of the
+test is reversed, but the conditional is still tested before the first
+iteration.</p>
+<p>The loop control statements don't work in an <code>if</code> or <code>unless</code>, since
+they aren't loops.  You can double the braces to make them such, though.</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/pattern/</span><span class="operator">)</span> <span class="operator">{{</span>
+        <span class="keyword">last</span> <span class="keyword">if</span> <span class="regex">/fred/</span><span class="operator">;</span>
+        <span class="keyword">next</span> <span class="keyword">if</span> <span class="regex">/barney/</span><span class="operator">;</span> <span class="comment"># same effect as "last", but doesn't document as well</span>
+        <span class="comment"># do something here</span>
+    <span class="operator">}}</span>
+</pre>
+<p>This is caused by the fact that a block by itself acts as a loop that
+executes once, see <a href="#basic_blocks">Basic BLOCKs</a>.</p>
+<p>The form <code>while/if BLOCK BLOCK</code>, available in Perl 4, is no longer
+available.   Replace any occurrence of <code>if BLOCK</code> by <code>if (do BLOCK)</code>.</p>
+<p>
+</p>
+<h2><a name="for_loops">For Loops</a></h2>
+<p>Perl's C-style <code>for</code> loop works like the corresponding <code>while</code> loop;
+that means that this:</p>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="variable">$i</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="variable">$i</span> <span class="operator">&lt;</span> <span class="number">10</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">++)</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>is the same as this:</p>
+<pre>
+    <span class="variable">$i</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">$i</span> <span class="operator">&lt;</span> <span class="number">10</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span> <span class="keyword">continue</span> <span class="operator">{</span>
+        <span class="variable">$i</span><span class="operator">++;</span>
+    <span class="operator">}</span>
+</pre>
+<p>There is one minor difference: if variables are declared with <a href="../../lib/pods/perlfunc.html#my"><code>my</code></a>
+in the initialization section of the <code>for</code>, the lexical scope of
+those variables is exactly the <code>for</code> loop (the body of the loop
+and the control sections).</p>
+<p>Besides the normal array index looping, <code>for</code> can lend itself
+to many other interesting applications.  Here's one that avoids the
+problem you get into if you explicitly test for end-of-file on
+an interactive file descriptor causing your program to appear to
+hang.</p>
+<pre>
+    <span class="variable">$on_a_tty</span> <span class="operator">=</span> <span class="keyword">-t</span> <span class="variable">STDIN</span> <span class="operator">&amp;&amp;</span> <span class="keyword">-t</span> <span class="variable">STDOUT</span><span class="operator">;</span>
+    <span class="keyword">sub</span><span class="variable"> prompt </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"yes? "</span> <span class="keyword">if</span> <span class="variable">$on_a_tty</span> <span class="operator">}</span>
+    <span class="keyword">for</span> <span class="operator">(</span> <span class="variable">prompt</span><span class="operator">();</span> <span class="operator">&lt;</span><span class="variable">STDIN</span><span class="operator">&gt;;</span> <span class="variable">prompt</span><span class="operator">()</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="comment"># do something</span>
+    <span class="operator">}</span>
+</pre>
+<p>Using <a href="../../lib/pods/perlfunc.html#readline"><code>readline</code></a> (or the operator form, <code>&lt;EXPR&gt;</code>) as the
+conditional of a <code>for</code> loop is shorthand for the following.  This
+behaviour is the same as a <code>while</code> loop conditional.
+  &gt;&gt;</p>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span> <span class="variable">prompt</span><span class="operator">();</span> <span class="keyword">defined</span><span class="operator">(</span> <span class="variable">$_</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">STDIN</span><span class="operator">&gt;</span> <span class="operator">);</span> <span class="variable">prompt</span><span class="operator">()</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="comment"># do something</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="foreach_loops">Foreach Loops</a></h2>
+<p>The <code>foreach</code> loop iterates over a normal list value and sets the
+variable VAR to be each element of the list in turn.  If the variable
+is preceded with the keyword <a href="../../lib/pods/perlfunc.html#my"><code>my</code></a>, then it is lexically scoped, and
+is therefore visible only within the loop.  Otherwise, the variable is
+implicitly local to the loop and regains its former value upon exiting
+the loop.  If the variable was previously declared with <a href="../../lib/pods/perlfunc.html#my"><code>my</code></a>, it uses
+that variable instead of the global one, but it's still localized to
+the loop.  This implicit localization occurs <em>only</em> in a <code>foreach</code>
+loop.</p>
+<p>The <code>foreach</code> keyword is actually a synonym for the <code>for</code> keyword, so
+you can use <code>foreach</code> for readability or <code>for</code> for brevity.  (Or because
+the Bourne shell is more familiar to you than <em>csh</em>, so writing <code>for</code>
+comes more naturally.)  If VAR is omitted, <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> is set to each value.</p>
+<p>If any element of LIST is an lvalue, you can modify it by modifying
+VAR inside the loop.  Conversely, if any element of LIST is NOT an
+lvalue, any attempt to modify that element will fail.  In other words,
+the <code>foreach</code> loop index variable is an implicit alias for each item
+in the list that you're looping over.</p>
+<p>If any part of LIST is an array, <code>foreach</code> will get very confused if
+you add or remove elements within the loop body, for example with
+<code>splice</code>.   So don't do that.</p>
+<p><code>foreach</code> probably won't do what you expect if VAR is a tied or other
+special variable.   Don't do that either.</p>
+<p>Examples:</p>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="variable">@ary</span><span class="operator">)</span> <span class="operator">{</span> <span class="regex">s/foo/bar/</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$elem</span> <span class="operator">(</span><span class="variable">@elements</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$elem</span> <span class="operator">*=</span> <span class="number">2</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="variable">$count</span> <span class="operator">(</span><span class="number">10</span><span class="operator">,</span><span class="number">9</span><span class="operator">,</span><span class="number">8</span><span class="operator">,</span><span class="number">7</span><span class="operator">,</span><span class="number">6</span><span class="operator">,</span><span class="number">5</span><span class="operator">,</span><span class="number">4</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span><span class="number">2</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="string">'BOOM'</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="variable">$count</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span> <span class="keyword">sleep</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="number">1</span><span class="operator">..</span><span class="number">15</span><span class="operator">)</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Merry Christmas\n"</span><span class="operator">;</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">foreach</span> <span class="variable">$item</span> <span class="operator">(</span><span class="keyword">split</span><span class="operator">(</span><span class="regex">/:[\\\n:]*/</span><span class="operator">,</span> <span class="variable">$ENV</span><span class="operator">{</span><span class="string">TERMCAP</span><span class="operator">}</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"Item: </span><span class="variable">$item</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Here's how a C programmer might code up a particular algorithm in Perl:</p>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span> <span class="variable">$i</span> <span class="operator">&lt;</span> <span class="variable">@ary1</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">++)</span> <span class="operator">{</span>
+        <span class="keyword">for</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$j</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span> <span class="variable">$j</span> <span class="operator">&lt;</span> <span class="variable">@ary2</span><span class="operator">;</span> <span class="variable">$j</span><span class="operator">++)</span> <span class="operator">{</span>
+            <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$ary1</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">]</span> <span class="operator">&gt;</span> <span class="variable">$ary2</span><span class="operator">[</span><span class="variable">$j</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">last</span><span class="operator">;</span> <span class="comment"># can't go to outer :-(</span>
+            <span class="operator">}</span>
+            <span class="variable">$ary1</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">]</span> <span class="operator">+=</span> <span class="variable">$ary2</span><span class="operator">[</span><span class="variable">$j</span><span class="operator">]</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="comment"># this is where that last takes me</span>
+    <span class="operator">}</span>
+</pre>
+<p>Whereas here's how a Perl programmer more comfortable with the idiom might
+do it:</p>
+<pre>
+    <span class="variable">OUTER</span><span class="operator">:</span> <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$wid</span> <span class="operator">(</span><span class="variable">@ary1</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="variable">INNER</span><span class="operator">:</span>   <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$jet</span> <span class="operator">(</span><span class="variable">@ary2</span><span class="operator">)</span> <span class="operator">{</span>
+                <span class="keyword">next</span> <span class="variable">OUTER</span> <span class="keyword">if</span> <span class="variable">$wid</span> <span class="operator">&gt;</span> <span class="variable">$jet</span><span class="operator">;</span>
+                <span class="variable">$wid</span> <span class="operator">+=</span> <span class="variable">$jet</span><span class="operator">;</span>
+             <span class="operator">}</span>
+          <span class="operator">}</span>
+</pre>
+<p>See how much easier this is?  It's cleaner, safer, and faster.  It's
+cleaner because it's less noisy.  It's safer because if code gets added
+between the inner and outer loops later on, the new code won't be
+accidentally executed.  The <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a> explicitly iterates the other loop
+rather than merely terminating the inner one.  And it's faster because
+Perl executes a <code>foreach</code> statement more rapidly than it would the
+equivalent <code>for</code> loop.</p>
+<p>
+</p>
+<h2><a name="basic_blocks">Basic BLOCKs</a></h2>
+<p>A BLOCK by itself (labeled or not) is semantically equivalent to a
+loop that executes once.  Thus you can use any of the loop control
+statements in it to leave or restart the block.  (Note that this is
+<em>NOT</em> true in <a href="../../lib/pods/perlfunc.html#eval"><code>eval{}</code></a>, <a href="../../lib/pods/perlfunc.html#sub"><code>sub{}</code></a>, or contrary to popular belief
+<a href="../../lib/pods/perlfunc.html#do"><code>do{}</code></a> blocks, which do <em>NOT</em> count as loops.)  The <a href="../../lib/pods/perlfunc.html#continue"><code>continue</code></a>
+block is optional.</p>
+<p>The BLOCK construct can be used to emulate case structures.</p>
+<pre>
+    <span class="variable">SWITCH</span><span class="operator">:</span> <span class="operator">{</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/^abc/</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$abc</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="keyword">last</span> <span class="variable">SWITCH</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/^def/</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$def</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="keyword">last</span> <span class="variable">SWITCH</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/^xyz/</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$xyz</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="keyword">last</span> <span class="variable">SWITCH</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="variable">$nothing</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Such constructs are quite frequently used, because older versions
+of Perl had no official <code>switch</code> statement.</p>
+<p>
+</p>
+<h2><a name="switch_statements">Switch statements</a></h2>
+<p>Starting from Perl 5.10, you can say</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">"switch"</span><span class="operator">;</span>
+</pre>
+<p>which enables a switch feature that is closely based on the
+Perl 6 proposal.</p>
+<p>The keywords <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> and <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> are analogous
+to <code>switch</code> and <code>case</code> in other languages, so the code
+above could be written as</p>
+<pre>
+    <span class="keyword">given</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^abc/</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$abc</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^def/</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$def</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^xyz/</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$xyz</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">default</span> <span class="operator">{</span> <span class="variable">$nothing</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>This construct is very flexible and powerful. For example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">":5.10"</span><span class="operator">;</span>
+    <span class="keyword">given</span><span class="operator">(</span><span class="variable">$foo</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="keyword">undef</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">say</span> <span class="string">'$foo is undefined'</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="string">"foo"</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">say</span> <span class="string">'$foo is the string "foo"'</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="operator">[</span><span class="number">1</span><span class="operator">,</span><span class="number">3</span><span class="operator">,</span><span class="number">5</span><span class="operator">,</span><span class="number">7</span><span class="operator">,</span><span class="number">9</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">say</span> <span class="string">'$foo is an odd digit'</span><span class="operator">;</span>
+            <span class="keyword">continue</span><span class="operator">;</span> <span class="comment"># Fall through</span>
+        <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="variable">$_</span> <span class="operator">&lt;</span> <span class="number">100</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">say</span> <span class="string">'$foo is numerically less than 100'</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(\&amp;</span><span class="variable">complicated_check</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">say</span> <span class="string">'a complicated check for $foo is true'</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">default</span> <span class="operator">{</span>
+            <span class="keyword">die</span> <span class="string">q(I don't know what to do with $foo)</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p><a href="../../lib/pods/perlfunc.html#given"><code>given(EXPR)</code></a> will assign the value of EXPR to <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>
+within the lexical scope of the block, so it's similar to</p>
+<pre>
+        <span class="keyword">do</span> <span class="operator">{</span> <span class="keyword">my</span> <span class="variable">$_</span> <span class="operator">=</span> <span class="variable">EXPR</span><span class="operator">;</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>except that the block is automatically broken out of by a
+successful <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> or an explicit <a href="../../lib/pods/perlfunc.html#break"><code>break</code></a>.</p>
+<p>Most of the power comes from implicit smart matching:</p>
+<pre>
+        when($foo)</pre>
+<p>is exactly equivalent to</p>
+<pre>
+        when($_ ~~ $foo)</pre>
+<p>Most of the time, <a href="../../lib/pods/perlfunc.html#when"><code>when(EXPR)</code></a> is treated as an implicit smart match of
+<a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>, i.e. <a href="../../lib/pods/perlvar.html#__"><code>$_ ~~ EXPR</code></a>. (See <a href="#smart_matching_in_detail">Smart matching in detail</a> for more
+information on smart matching.) But when EXPR is one of the below
+exceptional cases, it is used directly as a boolean:</p>
+<ul>
+<li>
+<p>a subroutine or method call</p>
+</li>
+<li>
+<p>a regular expression match, i.e. <code>/REGEX/</code> or <code>$foo =~ /REGEX/</code>,
+or a negated regular expression match (<code>!/REGEX/</code> or <code>$foo !~ /REGEX/</code>).</p>
+</li>
+<li>
+<p>a comparison such as <a href="../../lib/pods/perlvar.html#__"><code>$_ &lt; 10</code></a> or <code>$x eq &quot;abc&quot;</code>
+(or of course <a href="../../lib/pods/perlvar.html#__"><code>$_ ~~ $c</code></a>)</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#defined"><code>defined(...)</code></a>, <a href="../../lib/pods/perlfunc.html#exists"><code>exists(...)</code></a>, or <a href="../../lib/pods/perlfunc.html#eof"><code>eof(...)</code></a></p>
+</li>
+<li>
+<p>a negated expression <code>!(...)</code> or <code>not (...)</code>, or a logical
+exclusive-or <code>(...) xor (...)</code>.</p>
+</li>
+<li>
+<p>a filetest operator, with the exception of <a href="../../lib/pods/perlrun.html#s"><code>-s</code></a>, <a href="../../lib/pods/perlguts.html#m"><code>-M</code></a>, <a href="../../lib/pods/perlguts.html#a"><code>-A</code></a>, and <code>-C</code>,
+that return numerical values, not boolean ones.</p>
+</li>
+<li>
+<p>the <code>..</code> and <code>...</code> flip-flop operators.</p>
+</li>
+</ul>
+<p>In those cases the value of EXPR is used directly as a boolean.</p>
+<p>Furthermore, Perl inspects the operands of the binary boolean operators to
+decide whether to use smart matching for each one by applying the above test to
+the operands:</p>
+<ul>
+<li>
+<p>If EXPR is <code>... &amp;&amp; ...</code> or <code>... and ...</code>, the test
+is applied recursively to both operands. If <em>both</em>
+operands pass the test, then the expression is treated
+as boolean; otherwise, smart matching is used.</p>
+</li>
+<li>
+<p>If EXPR is <code>... || ...</code>, <code>... // ...</code> or <code>... or ...</code>, the test
+is applied recursively to the first operand (which may be a
+higher-precedence AND operator, for example). If the first operand
+is to use smart matching, then both operands will do so; if it is
+not, then the second argument will not be either.</p>
+</li>
+</ul>
+<p>These rules look complicated, but usually they will do what
+you want. For example:</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^\d+$/</span> <span class="operator">&amp;&amp;</span> <span class="variable">$_</span> <span class="operator">&lt;</span> <span class="number">75</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>will be treated as a boolean match because the rules say both a regex match and
+an explicit test on $_ will be treated as boolean.</p>
+<p>Also:</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="operator">[</span><span class="string">qw(foo bar)</span><span class="operator">]</span> <span class="operator">&amp;&amp;</span> <span class="regex">/baz/</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>will use smart matching because only <em>one</em> of the operands is a boolean; the
+other uses smart matching, and that wins.</p>
+<p>Further:</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="operator">[</span><span class="string">qw(foo bar)</span><span class="operator">]</span> <span class="operator">||</span> <span class="regex">/^baz/</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>will use smart matching (only the first operand is considered), whereas</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^baz/</span> <span class="operator">||</span> <span class="operator">[</span><span class="string">qw(foo bar)</span><span class="operator">]</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>will test only the regex, which causes both operands to be treated as boolean.
+Watch out for this one, then, because an arrayref is always a true value, which
+makes it effectively redundant.</p>
+<p>Tautologous boolean operators are still going to be optimized away. Don't be
+tempted to write</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="string">'foo'</span> <span class="keyword">or</span> <span class="string">'bar'</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>This will optimize down to <code>'foo'</code>, so <code>'bar'</code> will never be considered (even
+though the rules say to use a smart match on <code>'foo'</code>). For an alternation like
+this, an array ref will work, because this will instigate smart matching:</p>
+<pre>
+    <span class="keyword">when</span> <span class="operator">(</span><span class="operator">[</span><span class="string">qw(foo bar)</span><span class="operator">]</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>This is somewhat equivalent to the C-style switch statement's fallthrough
+functionality (not to be confused with <em>Perl's</em> fallthrough functionality - see
+below), wherein the same block is used for several <code>case</code> statements.</p>
+<p>Another useful shortcut is that, if you use a literal array
+or hash as the argument to <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a>, it is turned into a
+reference. So <a href="../../lib/pods/perlfunc.html#given"><code>given(@foo)</code></a> is the same as <a href="../../lib/pods/perlfunc.html#given"><code>given(\@foo)</code></a>,
+for example.</p>
+<p><a href="../../lib/pods/perlfunc.html#default"><code>default</code></a> behaves exactly like <a href="../../lib/pods/perlfunc.html#when"><code>when(1 == 1)</code></a>, which is
+to say that it always matches.</p>
+<p>
+</p>
+<h3><a name="breaking_out">Breaking out</a></h3>
+<p>You can use the <a href="../../lib/pods/perlfunc.html#break"><code>break</code></a> keyword to break out of the enclosing
+<a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> block.  Every <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> block is implicitly ended with
+a <a href="../../lib/pods/perlfunc.html#break"><code>break</code></a>.</p>
+<p>
+</p>
+<h3><a name="fall_through">Fall-through</a></h3>
+<p>You can use the <a href="../../lib/pods/perlfunc.html#continue"><code>continue</code></a> keyword to fall through from one
+case to the next:</p>
+<pre>
+    <span class="keyword">given</span><span class="operator">(</span><span class="variable">$foo</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/x/</span><span class="operator">)</span> <span class="operator">{</span> <span class="keyword">say</span> <span class="string">'$foo contains an x'</span><span class="operator">;</span> <span class="keyword">continue</span> <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/y/</span><span class="operator">)</span> <span class="operator">{</span> <span class="keyword">say</span> <span class="string">'$foo contains a y'</span> <span class="operator">}</span>
+        <span class="keyword">default</span>    <span class="operator">{</span> <span class="keyword">say</span> <span class="string">'$foo does not contain a y'</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h3><a name="return_value">Return value</a></h3>
+<p>When a <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> statement is also a valid expression (e.g.
+when it's the last statement of a block), it evaluates to :</p>
+<ul>
+<li>
+<p>an empty list as soon as an explicit <a href="../../lib/pods/perlfunc.html#break"><code>break</code></a> is encountered.</p>
+</li>
+<li>
+<p>the value of the last evaluated expression of the successful
+<a href="../../lib/pods/perlfunc.html#when"><code>when</code></a>/<a href="../../lib/pods/perlfunc.html#default"><code>default</code></a> clause, if there's one.</p>
+</li>
+<li>
+<p>the value of the last evaluated expression of the <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> block if no
+condition is true.</p>
+</li>
+</ul>
+<p>In both last cases, the last expression is evaluated in the context that
+was applied to the <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> block.</p>
+<p>Note that, unlike <code>if</code> and <code>unless</code>, failed <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> statements always
+evaluate to an empty list.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$price</span> <span class="operator">=</span> <span class="keyword">do</span> <span class="operator">{</span> <span class="keyword">given</span> <span class="operator">(</span><span class="variable">$item</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="operator">[</span> <span class="string">'pear'</span><span class="operator">,</span> <span class="string">'apple'</span> <span class="operator">]</span><span class="operator">)</span> <span class="operator">{</span> <span class="number">1</span> <span class="operator">}</span>
+        <span class="keyword">break</span> <span class="keyword">when</span> <span class="string">'vote'</span><span class="operator">;</span>      <span class="comment"># My vote cannot be bought</span>
+        <span class="number">1e10</span>  <span class="keyword">when</span> <span class="operator">/</span><span class="variable">Mona</span> <span class="variable">Lisa</span><span class="operator">/;</span>
+        <span class="string">'unknown'</span><span class="operator">;</span>
+    <span class="operator">}</span> <span class="operator">};</span>
+</pre>
+<p>Currently, <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> blocks can't always be used as proper expressions. This
+may be addressed in a future version of perl.</p>
+<p>
+</p>
+<h3><a name="switching_in_a_loop">Switching in a loop</a></h3>
+<p>Instead of using <a href="../../lib/pods/perlfunc.html#given"><code>given()</code></a>, you can use a <code>foreach()</code> loop.
+For example, here's one way to count how many times a particular
+string occurs in an array:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="variable">@array</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="string">"foo"</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">++</span><span class="variable">$count</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+    <span class="keyword">print</span> <span class="string">"\@array contains </span><span class="variable">$count</span><span class="string"> copies of 'foo'\n"</span><span class="operator">;</span>
+</pre>
+<p>At the end of all <a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> blocks, there is an implicit <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a>.
+You can override that with an explicit <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a> if you're only
+interested in the first match.</p>
+<p>This doesn't work if you explicitly specify a loop variable,
+as in <code>for $item (@array)</code>. You have to use the default
+variable <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>. (You can use <code>for my $_ (@array)</code>.)</p>
+<p>
+</p>
+<h3><a name="smart_matching_in_detail">Smart matching in detail</a></h3>
+<p>The behaviour of a smart match depends on what type of thing its arguments
+are. The behaviour is determined by the following table: the first row
+that applies determines the match behaviour (which is thus mostly
+determined by the type of the right operand). Note that the smart match
+implicitly dereferences any non-blessed hash or array ref, so the &quot;Hash&quot;
+and &quot;Array&quot; entries apply in those cases. (For blessed references, the
+&quot;Object&quot; entries apply.)</p>
+<p>Note that the &quot;Matching Code&quot; column is not always an exact rendition.  For
+example, the smart match operator short-circuits whenever possible, but
+<a href="../../lib/pods/perlfunc.html#grep"><code>grep</code></a> does not.</p>
+<pre>
+    $a      $b        Type of Match Implied    Matching Code
+    ======  =====     =====================    =============
+    Any     undef     undefined                !defined $a</pre>
+<pre>
+    Any     Object    invokes ~~ overloading on $object, or dies</pre>
+<pre>
+    <span class="variable">Hash</span>    <span class="variable">CodeRef</span>   <span class="keyword">sub</span><span class="variable"> truth for each key[1] !grep </span><span class="operator">{</span> <span class="operator">!</span><span class="variable">$b</span><span class="operator">-&gt;(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="keyword">keys</span> <span class="variable">%$a</span>
+    <span class="variable">Array</span>   <span class="variable">CodeRef</span>   <span class="keyword">sub</span><span class="variable"> truth for each elt[1] !grep </span><span class="operator">{</span> <span class="operator">!</span><span class="variable">$b</span><span class="operator">-&gt;(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span> <span class="variable">@$a</span>
+    <span class="variable">Any</span>     <span class="variable">CodeRef</span>   <span class="keyword">scalar</span> <span class="keyword">sub</span><span class="variable"> truth          $b-&gt;</span><span class="operator">(</span>$a<span class="operator">)</span>
+</pre>
+<pre>
+    <span class="variable">Hash</span>    <span class="variable">Hash</span>      <span class="variable">hash</span> <span class="keyword">keys</span> <span class="variable">identical</span> <span class="operator">(</span><span class="variable">every</span> <span class="variable">key</span> <span class="variable">is</span> <span class="variable">found</span> <span class="variable">in</span> <span class="variable">both</span> <span class="variable">hashes</span><span class="operator">)</span>
+    <span class="variable">Array</span>   <span class="variable">Hash</span>      <span class="variable">hash</span> <span class="keyword">keys</span> <span class="variable">intersection</span>   <span class="keyword">grep</span> <span class="operator">{</span> <span class="keyword">exists</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@$a</span>
+    <span class="variable">Regex</span>   <span class="variable">Hash</span>      <span class="variable">hash</span> <span class="variable">key</span> <span class="keyword">grep</span>            <span class="keyword">grep</span> <span class="regex">/</span><span class="variable">$a</span><span class="regex">/</span><span class="operator">,</span> <span class="keyword">keys</span> <span class="variable">%$b</span>
+    <span class="keyword">undef</span>   <span class="variable">Hash</span>      <span class="variable">always</span> <span class="variable">false</span> <span class="operator">(</span><span class="keyword">undef</span> <span class="variable">can't</span> <span class="variable">be</span> <span class="variable">a</span> <span class="variable">key</span><span class="operator">)</span>
+    <span class="variable">Any</span>     <span class="variable">Hash</span>      <span class="variable">hash</span> <span class="variable">entry</span> <span class="variable">existence</span>     <span class="keyword">exists</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$a</span><span class="operator">}</span>
+</pre>
+<pre>
+    <span class="variable">Hash</span>    <span class="variable">Array</span>     <span class="variable">hash</span> <span class="keyword">keys</span> <span class="variable">intersection</span>   <span class="keyword">grep</span> <span class="operator">{</span> <span class="keyword">exists</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@$b</span>
+    <span class="variable">Array</span>   <span class="variable">Array</span>     <span class="variable">arrays</span> <span class="variable">are</span> <span class="variable">comparable</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span>
+    <span class="variable">Regex</span>   <span class="variable">Array</span>     <span class="variable">array</span> <span class="keyword">grep</span>               <span class="keyword">grep</span> <span class="regex">/</span><span class="variable">$a</span><span class="regex">/</span><span class="operator">,</span> <span class="variable">@$b</span>
+    <span class="keyword">undef</span>   <span class="variable">Array</span>     <span class="variable">array</span> <span class="variable">contains</span> <span class="keyword">undef</span>     <span class="keyword">grep</span> <span class="operator">!</span><span class="keyword">defined</span><span class="operator">,</span> <span class="variable">@$b</span>
+    <span class="variable">Any</span>     <span class="variable">Array</span>     <span class="variable">match</span> <span class="variable">against</span> <span class="variable">an</span> <span class="variable">array</span> <span class="variable">element</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span>
+                                               <span class="keyword">grep</span> <span class="variable">$a</span> <span class="operator">~~</span> <span class="variable">$_</span><span class="operator">,</span> <span class="variable">@$b</span>
+</pre>
+<pre>
+    Hash    Regex     hash key grep            grep /$b/, keys %$a
+    Array   Regex     array grep               grep /$b/, @$a
+    Any     Regex     pattern match            $a =~ /$b/</pre>
+<pre>
+    Object  Any       invokes ~~ overloading on $object, or falls back:
+    Any     Num       numeric equality         $a == $b
+    Num     numish[4] numeric equality         $a == $b
+    undef   Any       undefined                !defined($b)
+    Any     Any       string equality          $a eq $b</pre>
+<pre>
+ 1 - empty hashes or arrays will match.
+ 2 - that is, each element smart-matches the element of same index in the
+     other array. [3]
+ 3 - If a circular reference is found, we fall back to referential equality.
+ 4 - either a real number, or a string that looks like a number</pre>
+<p>
+</p>
+<h3><a name="custom_matching_via_overloading">Custom matching via overloading</a></h3>
+<p>You can change the way that an object is matched by overloading
+the <code>~~</code> operator. This may alter the usual smart match semantics.</p>
+<p>It should be noted that <code>~~</code> will refuse to work on objects that
+don't overload it (in order to avoid relying on the object's
+underlying structure).</p>
+<p>Note also that smart match's matching rules take precedence over
+overloading, so if <code>$obj</code> has smart match overloading, then</p>
+<pre>
+    $obj ~~ X</pre>
+<p>will not automatically invoke the overload method with X as an argument;
+instead the table above is consulted as normal, and based in the type of X,
+overloading may or may not be invoked.</p>
+<p>See <a href="../../lib/overload.html">the overload manpage</a>.</p>
+<p>
+</p>
+<h3><a name="differences_from_perl_6">Differences from Perl 6</a></h3>
+<p>The Perl 5 smart match and <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a>/<a href="../../lib/pods/perlfunc.html#when"><code>when</code></a> constructs are not
+absolutely identical to their Perl 6 analogues. The most visible
+difference is that, in Perl 5, parentheses are required around
+the argument to <a href="../../lib/pods/perlfunc.html#given"><code>given()</code></a> and <a href="../../lib/pods/perlfunc.html#when"><code>when()</code></a> (except when this last
+one is used as a statement modifier). Parentheses in Perl 6
+are always optional in a control construct such as <code>if()</code>,
+<code>while()</code>, or <a href="../../lib/pods/perlfunc.html#when"><code>when()</code></a>; they can't be made optional in Perl
+5 without a great deal of potential confusion, because Perl 5
+would parse the expression</p>
+<pre>
+  <span class="keyword">given</span> <span class="variable">$foo</span> <span class="operator">{</span>
+    <span class="operator">...</span>
+  <span class="operator">}</span>
+</pre>
+<p>as though the argument to <a href="../../lib/pods/perlfunc.html#given"><code>given</code></a> were an element of the hash
+<code>%foo</code>, interpreting the braces as hash-element syntax.</p>
+<p>The table of smart matches is not identical to that proposed by the
+Perl 6 specification, mainly due to the differences between Perl 6's
+and Perl 5's data models.</p>
+<p>In Perl 6, <a href="../../lib/pods/perlfunc.html#when"><code>when()</code></a> will always do an implicit smart match
+with its argument, whilst it is convenient in Perl 5 to
+suppress this implicit smart match in certain situations,
+as documented above. (The difference is largely because Perl 5
+does not, even internally, have a boolean type.)</p>
+<p>
+</p>
+<h2><a name="goto">Goto</a></h2>
+<p>Although not for the faint of heart, Perl does support a <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>
+statement.  There are three forms: <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>-LABEL, <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>-EXPR, and
+<a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>-&amp;NAME.  A loop's LABEL is not actually a valid target for
+a <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>; it's just the name of the loop.</p>
+<p>The <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>-LABEL form finds the statement labeled with LABEL and resumes
+execution there.  It may not be used to go into any construct that
+requires initialization, such as a subroutine or a <code>foreach</code> loop.  It
+also can't be used to go into a construct that is optimized away.  It
+can be used to go almost anywhere else within the dynamic scope,
+including out of subroutines, but it's usually better to use some other
+construct such as <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a> or <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>.  The author of Perl has never felt the
+need to use this form of <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a> (in Perl, that is--C is another matter).</p>
+<p>The <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>-EXPR form expects a label name, whose scope will be resolved
+dynamically.  This allows for computed <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>s per FORTRAN, but isn't
+necessarily recommended if you're optimizing for maintainability:</p>
+<pre>
+    <span class="keyword">goto</span><span class="operator">((</span><span class="string">"FOO"</span><span class="operator">,</span> <span class="string">"BAR"</span><span class="operator">,</span> <span class="string">"GLARCH"</span><span class="operator">)</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<p>The <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>-&amp;NAME form is highly magical, and substitutes a call to the
+named subroutine for the currently running subroutine.  This is used by
+<code>AUTOLOAD()</code> subroutines that wish to load another subroutine and then
+pretend that the other subroutine had been called in the first place
+(except that any modifications to <a href="../../lib/pods/perlvar.html#__"><code>@_</code></a> in the current subroutine are
+propagated to the other subroutine.)  After the <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>, not even <a href="../../lib/pods/perlfunc.html#caller"><code>caller()</code></a>
+will be able to tell that this routine was called first.</p>
+<p>In almost all cases like this, it's usually a far, far better idea to use the
+structured control flow mechanisms of <a href="../../lib/pods/perlfunc.html#next"><code>next</code></a>, <a href="../../lib/pods/perlfunc.html#last"><code>last</code></a>, or <a href="../../lib/pods/perlfunc.html#redo"><code>redo</code></a> instead of
+resorting to a <a href="../../lib/pods/perlfunc.html#goto"><code>goto</code></a>.  For certain applications, the catch and throw pair of
+<a href="../../lib/pods/perlfunc.html#eval"><code>eval{}</code></a> and <a href="../../lib/pods/perlfunc.html#die"><code>die()</code></a> for exception processing can also be a prudent approach.</p>
+<p>
+</p>
+<h2><a name="pods__embedded_documentation">PODs: Embedded Documentation</a></h2>
+<p>Perl has a mechanism for intermixing documentation with source code.
+While it's expecting the beginning of a new statement, if the compiler
+encounters a line that begins with an equal sign and a word, like this</p>
+<pre>
+    =head1 Here There Be Pods!</pre>
+<p>Then that text and all remaining text up through and including a line
+beginning with <code>=cut</code> will be ignored.  The format of the intervening
+text is described in <a href="../../lib/pods/perlpod.html">the perlpod manpage</a>.</p>
+<p>This allows you to intermix your source code
+and your documentation text freely, as in</p>
+<pre>
+    =item snazzle($)</pre>
+<pre>
+    The snazzle() function will behave in the most spectacular
+    form that you can possibly imagine, not even excepting
+    cybernetic pyrotechnics.</pre>
+<pre>
+    =cut back to the compiler, nuff of this pod stuff!</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> snazzle</span><span class="operator">(</span>$<span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$thingie</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="operator">.........</span>
+    <span class="operator">}</span>
+</pre>
+<p>Note that pod translators should look at only paragraphs beginning
+with a pod directive (it makes parsing easier), whereas the compiler
+actually knows to look for pod escapes even in the middle of a
+paragraph.  This means that the following secret stuff will be
+ignored by both the compiler and the translators.</p>
+<pre>
+    <span class="variable">$a</span><span class="operator">=</span><span class="number">3</span><span class="operator">;</span>
+    <span class="comment">=secret stuff
+     warn "Neither POD nor CODE!?"
+    =cut</span><span class="comment"> back</span>
+    <span class="keyword">print</span> <span class="string">"got </span><span class="variable">$a</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<p>You probably shouldn't rely upon the <a href="../../lib/pods/perlfunc.html#warn"><code>warn()</code></a> being podded out forever.
+Not all pod translators are well-behaved in this regard, and perhaps
+the compiler will become pickier.</p>
+<p>One may also use pod directives to quickly comment out a section
+of code.</p>
+<p>
+</p>
+<h2><a name="plain_old_comments__not__">Plain Old Comments (Not!)</a></h2>
+<p>Perl can process line directives, much like the C preprocessor.  Using
+this, one can control Perl's idea of filenames and line numbers in
+error or warning messages (especially for strings that are processed
+with <a href="../../lib/pods/perlfunc.html#eval"><code>eval()</code></a>).  The syntax for this mechanism is almost the same as for
+most C preprocessors: it matches the regular expression</p>
+<pre>
+    # example: '# line 42 &quot;new_filename.plx&quot;'
+    /^\#   \s*
+      line \s+ (\d+)   \s*
+      (?:\s(&quot;?)([^&quot;]+)\g2)? \s*
+     $/x</pre>
+<p>with <code>$1</code> being the line number for the next line, and <code>$3</code> being
+the optional filename (specified with or without quotes). Note that
+no whitespace may precede the <code>#</code>, unlike modern C preprocessors.</p>
+<p>There is a fairly obvious gotcha included with the line directive:
+Debuggers and profilers will only show the last source line to appear
+at a particular line number in a given file.  Care should be taken not
+to cause line number collisions in code you'd like to debug later.</p>
+<p>Here are some examples that you should be able to type into your command
+shell:</p>
+<pre>
+    <span class="operator">% </span><span class="variable">perl</span>
+    <span class="comment"># line 200 "bzzzt"</span>
+    <span class="comment"># the `#' on the previous line must be the first char on line</span>
+    <span class="keyword">die</span> <span class="string">'foo'</span><span class="operator">;</span>
+    <span class="comment">__END__
+    foo at bzzzt line 201.
+    </span>
+</pre>
+<pre>
+    <span class="operator">% </span><span class="variable">perl</span>
+    <span class="comment"># line 200 "bzzzt"</span>
+    <span class="keyword">eval</span> <span class="string">qq[\n#line 2001 ""\ndie 'foo']</span><span class="operator">;</span> <span class="keyword">print</span> <span class="variable">$@</span><span class="operator">;</span>
+    <span class="comment">__END__
+    foo at - line 2001.
+    </span>
+</pre>
+<pre>
+    <span class="operator">% </span><span class="variable">perl</span>
+    <span class="keyword">eval</span> <span class="string">qq[\n#line 200 "foo bar"\ndie 'foo']</span><span class="operator">;</span> <span class="keyword">print</span> <span class="variable">$@</span><span class="operator">;</span>
+    <span class="comment">__END__
+    foo at foo bar line 200.
+    </span>
+</pre>
+<pre>
+    <span class="operator">% </span><span class="variable">perl</span>
+    <span class="comment"># line 345 "goop"</span>
+    <span class="keyword">eval</span> <span class="string">"\n#line "</span> <span class="operator">.</span> <span class="keyword">__LINE__</span> <span class="operator">.</span> <span class="string">' "'</span> <span class="operator">.</span> <span class="keyword">__FILE__</span> <span class="operator">.</span><span class="string">"\"\ndie 'foo'"</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$@</span><span class="operator">;</span>
+    <span class="comment">__END__
+    foo at goop line 345.
+    </span>
+</pre>
+
+</body>
+
+</html>

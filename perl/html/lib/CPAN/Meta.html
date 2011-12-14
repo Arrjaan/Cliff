@@ -1,0 +1,433 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>CPAN::Meta - the distribution metadata for a CPAN dist</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>CPAN::Meta - the distribution metadata for a CPAN dist</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#new">new</a></li>
+		<li><a href="#create">create</a></li>
+		<li><a href="#load_file">load_file</a></li>
+		<li><a href="#load_yaml_string">load_yaml_string</a></li>
+		<li><a href="#load_json_string">load_json_string</a></li>
+		<li><a href="#save">save</a></li>
+		<li><a href="#meta_spec_version">meta_spec_version</a></li>
+		<li><a href="#effective_prereqs">effective_prereqs</a></li>
+		<li><a href="#should_index_file">should_index_file</a></li>
+		<li><a href="#should_index_package">should_index_package</a></li>
+		<li><a href="#features">features</a></li>
+		<li><a href="#feature">feature</a></li>
+		<li><a href="#as_struct">as_struct</a></li>
+		<li><a href="#as_string">as_string</a></li>
+	</ul>
+
+	<li><a href="#string_data">STRING DATA</a></li>
+	<li><a href="#list_data">LIST DATA</a></li>
+	<li><a href="#map_data">MAP DATA</a></li>
+	<li><a href="#custom_data">CUSTOM DATA</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<ul>
+
+		<li><a href="#bugs___feature_requests">Bugs / Feature Requests</a></li>
+		<li><a href="#source_code">Source Code</a></li>
+	</ul>
+
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>CPAN::Meta - the distribution metadata for a CPAN dist</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.112150</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_file</span><span class="operator">(</span><span class="string">'META.json'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">printf</span> <span class="string">"testing requirements for %s version %s\n"</span><span class="operator">,</span>
+    <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">,</span>
+    <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">version</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$prereqs</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">requirements_for</span><span class="operator">(</span><span class="string">'configure'</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$module</span> <span class="operator">(</span><span class="variable">$prereqs</span><span class="operator">-&gt;</span><span class="variable">required_modules</span><span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">my</span> <span class="variable">$version</span> <span class="operator">=</span> <span class="variable">get_local_version</span><span class="operator">(</span><span class="variable">$module</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">die</span> <span class="string">"missing required module </span><span class="variable">$module</span><span class="string">"</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$version</span><span class="operator">;</span>
+    <span class="keyword">die</span> <span class="string">"version for </span><span class="variable">$module</span><span class="string"> not in range"</span>
+      <span class="keyword">unless</span> <span class="variable">$prereqs</span><span class="operator">-&gt;</span><span class="variable">accepts_module</span><span class="operator">(</span><span class="variable">$module</span><span class="operator">,</span> <span class="variable">$version</span><span class="operator">);</span>
+      <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Software distributions released to the CPAN include a <em class="file">META.json</em> or, for
+older distributions, <em class="file">META.yml</em>, which describes the distribution, its
+contents, and the requirements for building and installing the distribution.
+The data structure stored in the <em class="file">META.json</em> file is described in
+<a href="../../lib/CPAN/Meta/Spec.html">the CPAN::Meta::Spec manpage</a>.</p>
+<p>CPAN::Meta provides a simple class to represent this distribution metadata (or
+<em>distmeta</em>), along with some helpful methods for interrogating that data.</p>
+<p>The documentation below is only for the methods of the CPAN::Meta object.  For
+information on the meaning of individual fields, consult the spec.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="new">new</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$distmeta_struct</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>Returns a valid CPAN::Meta object or dies if the supplied metadata hash
+reference fails to validate.  Older-format metadata will be up-converted to
+version 2 if they validate against the original stated specification.</p>
+<p>It takes an optional hashref of options. Valid options include:</p>
+<ul>
+<li>
+<p>lazy_validation -- if true, new will attempt to convert the given metadata
+to version 2 before attempting to validate it.  This means than any
+fixable errors will be handled by CPAN::Meta::Converter before validation.
+(Note that this might result in invalid optional data being silently
+dropped.)  The default is false.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="create">create</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">create</span><span class="operator">(</span><span class="variable">$distmeta_struct</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>This is same as <code>new()</code>, except that <code>generated_by</code> and <code>meta-spec</code> fields
+will be generated if not provided.  This means the metadata structure is
+assumed to otherwise follow the latest <a href="../../lib/CPAN/Meta/Spec.html">the CPAN::Meta::Spec manpage</a>.</p>
+<p>
+</p>
+<h2><a name="load_file">load_file</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_file</span><span class="operator">(</span><span class="variable">$distmeta_file</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>Given a pathname to a file containing metadata, this deserializes the file
+according to its file suffix and constructs a new <code>CPAN::Meta</code> object, just
+like <code>new()</code>.  It will die if the deserialized version fails to validate
+against its stated specification version.</p>
+<p>It takes the same options as <code>new()</code> but <code>lazy_validation</code> defaults to
+true.</p>
+<p>
+</p>
+<h2><a name="load_yaml_string">load_yaml_string</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_yaml_string</span><span class="operator">(</span><span class="variable">$yaml</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>This method returns a new CPAN::Meta object using the first document in the
+given YAML string.  In other respects it is identical to <code>load_file()</code>.</p>
+<p>
+</p>
+<h2><a name="load_json_string">load_json_string</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">CPAN::Meta</span><span class="operator">-&gt;</span><span class="variable">load_json_string</span><span class="operator">(</span><span class="variable">$json</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>This method returns a new CPAN::Meta object using the structure represented by
+the given JSON string.  In other respects it is identical to <code>load_file()</code>.</p>
+<p>
+</p>
+<h2><a name="save">save</a></h2>
+<pre>
+  <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">save</span><span class="operator">(</span><span class="variable">$distmeta_file</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%options</span><span class="operator">);</span>
+</pre>
+<p>Serializes the object as JSON and writes it to the given file.  The only valid
+option is <code>version</code>, which defaults to '2'. On Perl 5.8.1 or later, the file
+is saved with UTF-8 encoding.</p>
+<p>For <code>version</code> 2 (or higher), the filename should end in '.json'.  <a href="../../lib/JSON/PP.html">the JSON::PP manpage</a>
+is the default JSON backend. Using another JSON backend requires <a href="../../lib/JSON.html">the JSON manpage</a> 2.5 or
+later and you must set the <code>$ENV{PERL_JSON_BACKEND}</code> to a supported alternate
+backend like <a href="../../JSON/XS.html">the JSON::XS manpage</a>.</p>
+<p>For <code>version</code> less than 2, the filename should end in '.yml'.
+<a href="../../lib/CPAN/Meta/Converter.html">the CPAN::Meta::Converter manpage</a> is used to generate an older metadata structure, which
+is serialized to YAML.  CPAN::Meta::YAML is the default YAML backend.  You may
+set the <code>$ENV{PERL_YAML_BACKEND}</code> to a supported alternative backend, though
+this is not recommended due to subtle incompatibilities between YAML parsers on
+CPAN.</p>
+<p>
+</p>
+<h2><a name="meta_spec_version">meta_spec_version</a></h2>
+<p>This method returns the version part of the <code>meta_spec</code> entry in the distmeta
+structure.  It is equivalent to:</p>
+<pre>
+  <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">meta_spec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">version</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="effective_prereqs">effective_prereqs</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$prereqs</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">effective_prereqs</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$prereqs</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">effective_prereqs</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@feature_identifiers</span> <span class="operator">);</span>
+</pre>
+<p>This method returns a <a href="../../lib/CPAN/Meta/Prereqs.html">the CPAN::Meta::Prereqs manpage</a> object describing all the
+prereqs for the distribution.  If an arrayref of feature identifiers is given,
+the prereqs for the identified features are merged together with the
+distribution's core prereqs before the CPAN::Meta::Prereqs object is returned.</p>
+<p>
+</p>
+<h2><a name="should_index_file">should_index_file</a></h2>
+<pre>
+  <span class="operator">...</span> <span class="keyword">if</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">should_index_file</span><span class="operator">(</span> <span class="variable">$filename</span> <span class="operator">);</span>
+</pre>
+<p>This method returns true if the given file should be indexed.  It decides this
+by checking the <code>file</code> and <code>directory</code> keys in the <code>no_index</code> property of
+the distmeta structure.</p>
+<p><code>$filename</code> should be given in unix format.</p>
+<p>
+</p>
+<h2><a name="should_index_package">should_index_package</a></h2>
+<pre>
+  <span class="operator">...</span> <span class="keyword">if</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">should_index_package</span><span class="operator">(</span> <span class="variable">$package</span> <span class="operator">);</span>
+</pre>
+<p>This method returns true if the given package should be indexed.  It decides
+this by checking the <a href="../../lib/pods/perlfunc.html#package"><code>package</code></a> and <code>namespace</code> keys in the <code>no_index</code>
+property of the distmeta structure.</p>
+<p>
+</p>
+<h2><a name="features">features</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">@feature_objects</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">features</span><span class="operator">;</span>
+</pre>
+<p>This method returns a list of <a href="../../lib/CPAN/Meta/Feature.html">the CPAN::Meta::Feature manpage</a> objects, one for each
+optional feature described by the distribution's metadata.</p>
+<p>
+</p>
+<h2><a name="feature">feature</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$feature_object</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">feature</span><span class="operator">(</span> <span class="variable">$identifier</span> <span class="operator">);</span>
+</pre>
+<p>This method returns a <a href="../../lib/CPAN/Meta/Feature.html">the CPAN::Meta::Feature manpage</a> object for the optional feature
+with the given identifier.  If no feature with that identifier exists, an
+exception will be raised.</p>
+<p>
+</p>
+<h2><a name="as_struct">as_struct</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">as_struct</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">%options</span> <span class="operator">);</span>
+</pre>
+<p>This method returns a deep copy of the object's metadata as an unblessed has
+reference.  It takes an optional hashref of options.  If the hashref contains
+a <code>version</code> argument, the copied metadata will be converted to the version
+of the specification and returned.  For example:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$old_spec</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">as_struct</span><span class="operator">(</span> <span class="operator">{</span><span class="string">version</span> <span class="operator">=&gt;</span> <span class="string">"1.4"</span><span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="as_string">as_string</a></h2>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$string</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">as_string</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">%options</span> <span class="operator">);</span>
+</pre>
+<p>This method returns a serialized copy of the object's metadata as a character
+string.  (The strings are <strong>not</strong> UTF-8 encoded.)  It takes an optional hashref
+of options.  If the hashref contains a <code>version</code> argument, the copied metadata
+will be converted to the version of the specification and returned.  For
+example:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$string</span> <span class="operator">=</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">as_struct</span><span class="operator">(</span> <span class="operator">{</span><span class="string">version</span> <span class="operator">=&gt;</span> <span class="string">"1.4"</span><span class="operator">}</span> <span class="operator">);</span>
+</pre>
+<p>For <code>version</code> greater than or equal to 2, the string will be serialized as
+JSON.  For <code>version</code> less than 2, the string will be serialized as YAML.  In
+both cases, the same rules are followed as in the <code>save()</code> method for choosing
+a serialization backend.</p>
+<p>
+</p>
+<hr />
+<h1><a name="string_data">STRING DATA</a></h1>
+<p>The following methods return a single value, which is the value for the
+corresponding entry in the distmeta structure.  Values should be either undef
+or strings.</p>
+<ul>
+<li>
+<p>abstract</p>
+</li>
+<li>
+<p>description</p>
+</li>
+<li>
+<p>dynamic_config</p>
+</li>
+<li>
+<p>generated_by</p>
+</li>
+<li>
+<p>name</p>
+</li>
+<li>
+<p>release_status</p>
+</li>
+<li>
+<p>version</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="list_data">LIST DATA</a></h1>
+<p>These methods return lists of string values, which might be represented in the
+distmeta structure as arrayrefs or scalars:</p>
+<ul>
+<li>
+<p>authors</p>
+</li>
+<li>
+<p>keywords</p>
+</li>
+<li>
+<p>licenses</p>
+</li>
+</ul>
+<p>The <code>authors</code> and <code>licenses</code> methods may also be called as <code>author</code> and
+<code>license</code>, respectively, to match the field name in the distmeta structure.</p>
+<p>
+</p>
+<hr />
+<h1><a name="map_data">MAP DATA</a></h1>
+<p>These readers return hashrefs of arbitrary unblessed data structures, each
+described more fully in the specification:</p>
+<ul>
+<li>
+<p>meta_spec</p>
+</li>
+<li>
+<p>resources</p>
+</li>
+<li>
+<p>provides</p>
+</li>
+<li>
+<p>no_index</p>
+</li>
+<li>
+<p>prereqs</p>
+</li>
+<li>
+<p>optional_features</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="custom_data">CUSTOM DATA</a></h1>
+<p>A list of custom keys are available from the <code>custom_keys</code> method and
+particular keys may be retrieved with the <code>custom</code> method.</p>
+<pre>
+  <span class="keyword">say</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">custom</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="keyword">for</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">custom_keys</span><span class="operator">;</span>
+</pre>
+<p>If a custom key refers to a data structure, a deep clone is returned.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Please report any bugs or feature using the CPAN Request Tracker.
+Bugs can be submitted through the web interface at
+<a href="http://rt.cpan.org/Dist/Display.html?Queue=CPAN-Meta">http://rt.cpan.org/Dist/Display.html</a></p>
+<p>When submitting a bug or request, please include a test-file or a patch to an
+existing test-file that illustrates the bug or desired feature.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<ul>
+<li>
+<p><a href="../../lib/CPAN/Meta/Converter.html">the CPAN::Meta::Converter manpage</a></p>
+</li>
+<li>
+<p><a href="../../lib/CPAN/Meta/Validator.html">the CPAN::Meta::Validator manpage</a></p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>
+</p>
+<h2><a name="bugs___feature_requests">Bugs / Feature Requests</a></h2>
+<p>Please report any bugs or feature requests by email to <code>bug-cpan-meta at rt.cpan.org</code>, or through
+the web interface at <a href="http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Meta">http://rt.cpan.org/Public/Dist/Display.html</a>. You will be automatically notified of any
+progress on the request by the system.</p>
+<p>
+</p>
+<h2><a name="source_code">Source Code</a></h2>
+<p>This is open source software.  The code repository is available for
+public review and contribution under the terms of the license.</p>
+<p><a href="http://github.com/dagolden/cpan-meta">http://github.com/dagolden/cpan-meta</a></p>
+<pre>
+  git clone git://github.com/dagolden/cpan-meta.git</pre>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<ul>
+<li>
+<p>David Golden &lt;<a href="mailto:dagolden@cpan.org">dagolden@cpan.org</a>&gt;</p>
+</li>
+<li>
+<p>Ricardo Signes &lt;<a href="mailto:rjbs@cpan.org">rjbs@cpan.org</a>&gt;</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2010 by David Golden and Ricardo Signes.</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

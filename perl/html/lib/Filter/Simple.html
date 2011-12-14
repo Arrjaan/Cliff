@@ -1,0 +1,606 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Filter::Simple - Simplified source filtering</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Filter::Simple - Simplified source filtering</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#the_problem">The Problem</a></li>
+		<li><a href="#a_solution">A Solution</a></li>
+		<li><a href="#disabling_or_changing__no__behaviour">Disabling or changing &lt;no&gt; behaviour</a></li>
+		<li><a href="#all_in_one_interface">All-in-one interface</a></li>
+		<li><a href="#filtering_only_specific_components_of_source_code">Filtering only specific components of source code</a></li>
+		<li><a href="#filtering_only_the_code_parts_of_source_code">Filtering only the code parts of source code</a></li>
+		<li><a href="#using_filter__simple_with_an_explicit_import_subroutine">Using Filter::Simple with an explicit <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine</a></li>
+		<li><a href="#using_filter__simple_and_exporter_together">Using Filter::Simple and Exporter together</a></li>
+		<li><a href="#how_it_works">How it works</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#contact">CONTACT</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Filter::Simple - Simplified source filtering</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="comment"># in MyFilter.pm:</span>
+</pre>
+<pre>
+     <span class="keyword">package</span> <span class="variable">MyFilter</span><span class="operator">;</span>
+</pre>
+<pre>
+     <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+     
+     <span class="variable">FILTER</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+</pre>
+<pre>
+     <span class="comment"># or just:</span>
+     <span class="comment">#</span>
+     <span class="comment"># use Filter::Simple sub { ... };</span>
+</pre>
+<pre>
+ <span class="comment"># in user's code:</span>
+</pre>
+<pre>
+     <span class="keyword">use</span> <span class="variable">MyFilter</span><span class="operator">;</span>
+</pre>
+<pre>
+     <span class="comment"># this code is filtered</span>
+</pre>
+<pre>
+     <span class="keyword">no</span> <span class="variable">MyFilter</span><span class="operator">;</span>
+</pre>
+<pre>
+     <span class="comment"># this code is not</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>
+</p>
+<h2><a name="the_problem">The Problem</a></h2>
+<p>Source filtering is an immensely powerful feature of recent versions of Perl.
+It allows one to extend the language itself (e.g. the Switch module), to 
+simplify the language (e.g. Language::Pythonesque), or to completely recast the
+language (e.g. Lingua::Romana::Perligata). Effectively, it allows one to use
+the full power of Perl as its own, recursively applied, macro language.</p>
+<p>The excellent Filter::Util::Call module (by Paul Marquess) provides a
+usable Perl interface to source filtering, but it is often too powerful
+and not nearly as simple as it could be.</p>
+<p>To use the module it is necessary to do the following:</p>
+<ol>
+<li>
+<p>Download, build, and install the Filter::Util::Call module.
+(If you have Perl 5.7.1 or later, this is already done for you.)</p>
+</li>
+<li>
+<p>Set up a module that does a <code>use Filter::Util::Call</code>.</p>
+</li>
+<li>
+<p>Within that module, create an <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine.</p>
+</li>
+<li>
+<p>Within the <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine do a call to <code>filter_add</code>, passing
+it either a subroutine reference.</p>
+</li>
+<li>
+<p>Within the subroutine reference, call <code>filter_read</code> or <code>filter_read_exact</code>
+to &quot;prime&quot; $_ with source code data from the source file that will
+<a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> your module. Check the status value returned to see if any
+source code was actually read in.</p>
+</li>
+<li>
+<p>Process the contents of $_ to change the source code in the desired manner.</p>
+</li>
+<li>
+<p>Return the status value.</p>
+</li>
+<li>
+<p>If the act of unimporting your module (via a <a href="../../lib/pods/perlfunc.html#no"><code>no</code></a>) should cause source
+code filtering to cease, create an <code>unimport</code> subroutine, and have it call
+<code>filter_del</code>. Make sure that the call to <code>filter_read</code> or
+<code>filter_read_exact</code> in step 5 will not accidentally read past the
+<a href="../../lib/pods/perlfunc.html#no"><code>no</code></a>. Effectively this limits source code filters to line-by-line
+operation, unless the <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine does some fancy
+pre-pre-parsing of the source code it's filtering.</p>
+</li>
+</ol>
+<p>For example, here is a minimal source code filter in a module named
+BANG.pm. It simply converts every occurrence of the sequence <code>BANG\s+BANG</code>
+to the sequence <code>die 'BANG' if $BANG</code> in any piece of code following a
+<code>use BANG;</code> statement (until the next <code>no BANG;</code> statement, if any):</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">BANG</span><span class="operator">;</span>
+     
+    <span class="keyword">use</span> <span class="variable">Filter::Util::Call</span> <span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> import </span><span class="operator">{</span>
+        <span class="variable">filter_add</span><span class="operator">(</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$caller</span> <span class="operator">=</span> <span class="keyword">caller</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$status</span><span class="operator">,</span> <span class="variable">$no_seen</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">);</span>
+        <span class="keyword">while</span> <span class="operator">(</span><span class="variable">$status</span> <span class="operator">=</span> <span class="variable">filter_read</span><span class="operator">())</span> <span class="operator">{</span>
+            <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/^\s*no\s+</span><span class="variable">$caller</span><span class="regex">\s*;\s*?$/</span><span class="operator">)</span> <span class="operator">{</span>
+                <span class="variable">$no_seen</span><span class="operator">=</span><span class="number">1</span><span class="operator">;</span>
+                <span class="keyword">last</span><span class="operator">;</span>
+            <span class="operator">}</span>
+            <span class="variable">$data</span> <span class="operator">.=</span> <span class="variable">$_</span><span class="operator">;</span>
+            <span class="variable">$_</span> <span class="operator">=</span> <span class="string">""</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="variable">$_</span> <span class="operator">=</span> <span class="variable">$data</span><span class="operator">;</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span>
+            <span class="keyword">unless</span> <span class="variable">$status</span> <span class="operator">&lt;</span> <span class="number">0</span><span class="operator">;</span>
+        <span class="variable">$_</span> <span class="operator">.=</span> <span class="string">"no </span><span class="variable">$class</span><span class="string">;\n"</span> <span class="keyword">if</span> <span class="variable">$no_seen</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="number">1</span><span class="operator">;</span>
+        <span class="operator">})</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> unimport </span><span class="operator">{</span>
+        <span class="variable">filter_del</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="number">1</span> <span class="operator">;</span>
+</pre>
+<p>This level of sophistication puts filtering out of the reach of
+many programmers.</p>
+<p>
+</p>
+<h2><a name="a_solution">A Solution</a></h2>
+<p>The Filter::Simple module provides a simplified interface to
+Filter::Util::Call; one that is sufficient for most common cases.</p>
+<p>Instead of the above process, with Filter::Simple the task of setting up
+a source code filter is reduced to:</p>
+<ol>
+<li>
+<p>Download and install the Filter::Simple module.
+(If you have Perl 5.7.1 or later, this is already done for you.)</p>
+</li>
+<li>
+<p>Set up a module that does a <code>use Filter::Simple</code> and then
+calls <code>FILTER { ... }</code>.</p>
+</li>
+<li>
+<p>Within the anonymous subroutine or block that is passed to
+<code>FILTER</code>, process the contents of $_ to change the source code in
+the desired manner.</p>
+</li>
+</ol>
+<p>In other words, the previous example, would become:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">BANG</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+    
+    <span class="variable">FILTER</span> <span class="operator">{</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+    <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="number">1</span> <span class="operator">;</span>
+</pre>
+<p>Note that the source code is passed as a single string, so any regex that
+uses <code>^</code> or <code>$</code> to detect line boundaries will need the <a href="../../lib/pods/perlguts.html#m"><code>/m</code></a> flag.</p>
+<p>
+</p>
+<h2><a name="disabling_or_changing__no__behaviour">Disabling or changing &lt;no&gt; behaviour</a></h2>
+<p>By default, the installed filter only filters up to a line consisting of one of
+the three standard source &quot;terminators&quot;:</p>
+<pre>
+    <span class="keyword">no</span> <span class="variable">ModuleName</span><span class="operator">;</span>  <span class="comment"># optional comment</span>
+</pre>
+<p>or:</p>
+<pre>
+    __END__</pre>
+<p>or:</p>
+<pre>
+    __DATA__</pre>
+<p>but this can be altered by passing a second argument to <code>use Filter::Simple</code>
+or <code>FILTER</code> (just remember: there's <em>no</em> comma after the initial block when
+you use <code>FILTER</code>).</p>
+<p>That second argument may be either a <code>qr</code>'d regular expression (which is then
+used to match the terminator line), or a defined false value (which indicates
+that no terminator line should be looked for), or a reference to a hash
+(in which case the terminator is the value associated with the key
+<code>'terminator'</code>.</p>
+<p>For example, to cause the previous filter to filter only up to a line of the
+form:</p>
+<pre>
+    <span class="variable">GNAB</span> <span class="variable">esu</span><span class="operator">;</span>
+</pre>
+<p>you would write:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">BANG</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+    
+    <span class="variable">FILTER</span> <span class="operator">{</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="string">qr/^\s*GNAB\s+esu\s*;\s*?$/</span><span class="operator">;</span>
+</pre>
+<p>or:</p>
+<pre>
+    <span class="variable">FILTER</span> <span class="operator">{</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="operator">{</span> <span class="string">terminator</span> <span class="operator">=&gt;</span> <span class="string">qr/^\s*GNAB\s+esu\s*;\s*?$/</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>and to prevent the filter's being turned off in any way:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">BANG</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+    
+    <span class="variable">FILTER</span> <span class="operator">{</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="string">""</span><span class="operator">;</span>    <span class="comment"># or: 0</span>
+</pre>
+<p>or:</p>
+<pre>
+    <span class="variable">FILTER</span> <span class="operator">{</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="operator">{</span> <span class="string">terminator</span> <span class="operator">=&gt;</span> <span class="string">""</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p><strong>Note that, no matter what you set the terminator pattern to,
+the actual terminator itself <em>must</em> be contained on a single source line.</strong></p>
+<p>
+</p>
+<h2><a name="all_in_one_interface">All-in-one interface</a></h2>
+<p>Separating the loading of Filter::Simple:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+</pre>
+<p>from the setting up of the filtering:</p>
+<pre>
+    <span class="variable">FILTER</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">};</span>
+</pre>
+<p>is useful because it allows other code (typically parser support code
+or caching variables) to be defined before the filter is invoked.
+However, there is often no need for such a separation.</p>
+<p>In those cases, it is easier to just append the filtering subroutine and
+any terminator specification directly to the <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> statement that loads
+Filter::Simple, like so:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+    <span class="operator">};</span>
+</pre>
+<p>This is exactly the same as:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="variable">Filter::Simple::FILTER</span> <span class="operator">{</span>
+            <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span><span class="operator">;</span>
+        <span class="operator">};</span>
+    <span class="operator">}</span>
+</pre>
+<p>except that the <code>FILTER</code> subroutine is not exported by Filter::Simple.</p>
+<p>
+</p>
+<h2><a name="filtering_only_specific_components_of_source_code">Filtering only specific components of source code</a></h2>
+<p>One of the problems with a filter like:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">FILTER</span> <span class="operator">{</span> <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span> <span class="operator">};</span>
+</pre>
+<p>is that it indiscriminately applies the specified transformation to
+the entire text of your source program. So something like:</p>
+<pre>
+    warn 'BANG BANG, YOU'RE DEAD';
+    BANG BANG;</pre>
+<p>will become:</p>
+<pre>
+    warn 'die 'BANG' if $BANG, YOU'RE DEAD';
+    die 'BANG' if $BANG;</pre>
+<p>It is very common when filtering source to only want to apply the filter
+to the non-character-string parts of the code, or alternatively to <em>only</em>
+the character strings.</p>
+<p>Filter::Simple supports this type of filtering by automatically
+exporting the <code>FILTER_ONLY</code> subroutine.</p>
+<p><code>FILTER_ONLY</code> takes a sequence of specifiers that install separate
+(and possibly multiple) filters that act on only parts of the source code.
+For example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">FILTER_ONLY</span>
+        <span class="string">code</span>      <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="regex">s/BANG\s+BANG/die 'BANG' if \$BANG/g</span> <span class="operator">},</span>
+        <span class="string">quotelike</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="regex">s/BANG\s+BANG/CHITTY CHITTY/g</span> <span class="operator">};</span>
+</pre>
+<p>The <a href="#code"><code>&quot;code&quot;</code></a> subroutine will only be used to filter parts of the source
+code that are not quotelikes, POD, or <code>__DATA__</code>. The <a href="#quotelike"><code>quotelike</code></a>
+subroutine only filters Perl quotelikes (including here documents).</p>
+<p>The full list of alternatives is:</p>
+<dl>
+<dt><strong><a name="code2" class="item"><a href="#code"><code>&quot;code&quot;</code></a></a></strong></dt>
+
+<dd>
+<p>Filters only those sections of the source code that are not quotelikes, POD, or
+<code>__DATA__</code>.</p>
+</dd>
+<dt><strong><a name="code_no_comments" class="item"><code>&quot;code_no_comments&quot;</code></a></strong></dt>
+
+<dd>
+<p>Filters only those sections of the source code that are not quotelikes, POD,
+comments, or <code>__DATA__</code>.</p>
+</dd>
+<dt><strong><a name="executable" class="item"><code>&quot;executable&quot;</code></a></strong></dt>
+
+<dd>
+<p>Filters only those sections of the source code that are not POD or <code>__DATA__</code>.</p>
+</dd>
+<dt><strong><a name="executable_no_comments" class="item"><code>&quot;executable_no_comments&quot;</code></a></strong></dt>
+
+<dd>
+<p>Filters only those sections of the source code that are not POD, comments, or <code>__DATA__</code>.</p>
+</dd>
+<dt><strong><a name="quotelike" class="item"><code>&quot;quotelike&quot;</code></a></strong></dt>
+
+<dd>
+<p>Filters only Perl quotelikes (as interpreted by
+<code>&amp;Text::Balanced::extract_quotelike</code>).</p>
+</dd>
+<dt><strong><a name="string" class="item"><code>&quot;string&quot;</code></a></strong></dt>
+
+<dd>
+<p>Filters only the string literal parts of a Perl quotelike (i.e. the 
+contents of a string literal, either half of a <a href="../../lib/pods/perlfunc.html#tr_"><code>tr///</code></a>, the second
+half of an <a href="../../lib/pods/perlfunc.html#s_"><code>s///</code></a>).</p>
+</dd>
+<dt><strong><a name="regex" class="item"><code>&quot;regex&quot;</code></a></strong></dt>
+
+<dd>
+<p>Filters only the pattern literal parts of a Perl quotelike (i.e. the 
+contents of a <a href="../../lib/pods/perlfunc.html#qr_"><code>qr//</code></a> or an <a href="../../lib/pods/perlfunc.html#m_"><code>m//</code></a>, the first half of an <a href="../../lib/pods/perlfunc.html#s_"><code>s///</code></a>).</p>
+</dd>
+<dt><strong><a name="all2" class="item"><a href="#all"><code>&quot;all&quot;</code></a></a></strong></dt>
+
+<dd>
+<p>Filters everything. Identical in effect to <code>FILTER</code>.</p>
+</dd>
+</dl>
+<p>Except for <code>FILTER_ONLY code =&gt; sub {...}</code>, each of
+the component filters is called repeatedly, once for each component
+found in the source code.</p>
+<p>Note that you can also apply two or more of the same type of filter in
+a single <code>FILTER_ONLY</code>. For example, here's a simple 
+macro-preprocessor that is only applied within regexes,
+with a final debugging pass that prints the resulting source code:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Regexp::Common</span><span class="operator">;</span>
+    <span class="variable">FILTER_ONLY</span>
+        <span class="string">regex</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="regex">s/!\[/[^/g</span> <span class="operator">},</span>
+        <span class="string">regex</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="regex">s/%d/$RE{num}{int}/g</span> <span class="operator">},</span>
+        <span class="string">regex</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="regex">s/%f/$RE{num}{real}/g</span> <span class="operator">},</span>
+        <span class="string">all</span>   <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">print</span> <span class="keyword">if</span> <span class="variable">$::DEBUG</span> <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<h2><a name="filtering_only_the_code_parts_of_source_code">Filtering only the code parts of source code</a></h2>
+<p>Most source code ceases to be grammatically correct when it is broken up
+into the pieces between string literals and regexes. So the <a href="#code"><code>'code'</code></a>
+and <a href="#code_no_comments"><code>'code_no_comments'</code></a> component filter behave slightly differently
+from the other partial filters described in the previous section.</p>
+<p>Rather than calling the specified processor on each individual piece of
+code (i.e. on the bits between quotelikes), the <a href="#code"><code>'code...'</code></a> partial
+filters operate on the entire source code, but with the quotelike bits
+(and, in the case of <a href="#code_no_comments"><code>'code_no_comments'</code></a>, the comments) &quot;blanked out&quot;.</p>
+<p>That is, a <a href="#code"><code>'code...'</code></a> filter <em>replaces</em> each quoted string, quotelike,
+regex, POD, and __DATA__ section with a placeholder. The
+delimiters of this placeholder are the contents of the <a href="../../lib/pods/perlvar.html#__"><code>$;</code></a> variable
+at the time the filter is applied (normally <code>&quot;\034&quot;</code>). The remaining
+four bytes are a unique identifier for the component being replaced.</p>
+<p>This approach makes it comparatively easy to write code preprocessors
+without worrying about the form or contents of strings, regexes, etc.</p>
+<p>For convenience, during a <a href="#code"><code>'code...'</code></a> filtering operation, Filter::Simple
+provides a package variable (<code>$Filter::Simple::placeholder</code>) that
+contains a pre-compiled regex that matches any placeholder...and
+captures the identifier within the placeholder. Placeholders can be
+moved and re-ordered within the source code as needed.</p>
+<p>In addition, a second package variable (<code>@Filter::Simple::components</code>)
+contains a list of the various pieces of <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>, as they were originally split
+up to allow placeholders to be inserted.</p>
+<p>Once the filtering has been applied, the original strings, regexes, POD,
+etc. are re-inserted into the code, by replacing each placeholder with
+the corresponding original component (from <code>@components</code>). Note that
+this means that the <code>@components</code> variable must be treated with extreme
+care within the filter. The <code>@components</code> array stores the &quot;back-
+translations&quot; of each placeholder inserted into <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a>, as well as the
+interstitial source code between placeholders. If the placeholder
+backtranslations are altered in <code>@components</code>, they will be similarly
+changed when the placeholders are removed from <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> after the filter
+is complete.</p>
+<p>For example, the following filter detects concatenated pairs of
+strings/quotelikes and reverses the order in which they are
+concatenated:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">DemoRevCat</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">FILTER_ONLY</span> <span class="string">code</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$ph</span> <span class="operator">=</span> <span class="variable">$Filter::Simple::placeholder</span><span class="operator">;</span>
+        <span class="regex">s{ (</span><span class="variable">$ph</span><span class="regex">) \s* [.] \s* (</span><span class="variable">$ph</span><span class="regex">) }{ $2.$1 }gx</span>
+    <span class="operator">};</span>
+</pre>
+<p>Thus, the following code:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DemoRevCat</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="string">"abc"</span> <span class="operator">.</span> <span class="string">q(def)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="string">"</span><span class="variable">$str</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<p>would become:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="string">q(def)</span><span class="operator">.</span><span class="string">"abc"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">print</span> <span class="string">"</span><span class="variable">$str</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<p>and hence print:</p>
+<pre>
+    defabc</pre>
+<p>
+</p>
+<h2><a name="using_filter__simple_with_an_explicit_import_subroutine">Using Filter::Simple with an explicit <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine</a></h2>
+<p>Filter::Simple generates a special <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine for
+your module (see <a href="#how_it_works">How it works</a>) which would normally replace any
+<a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine you might have explicitly declared.</p>
+<p>However, Filter::Simple is smart enough to notice your existing
+<a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> and Do The Right Thing with it.
+That is, if you explicitly define an <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine in a package
+that's using Filter::Simple, that <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine will still
+be invoked immediately after any filter you install.</p>
+<p>The only thing you have to remember is that the <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine
+<em>must</em> be declared <em>before</em> the filter is installed. If you use <code>FILTER</code>
+to install the filter:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Filter::TurnItUpTo11</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">FILTER</span> <span class="operator">{</span> <span class="regex">s/(\w+)/\U$1/</span> <span class="operator">};</span>
+</pre>
+<p>that will almost never be a problem, but if you install a filtering
+subroutine by passing it directly to the <code>use Filter::Simple</code>
+statement:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Filter::TurnItUpTo11</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span> <span class="keyword">sub</span><span class="operator">{</span> <span class="regex">s/(\w+)/\U$1/</span> <span class="operator">};</span>
+</pre>
+<p>then you must make sure that your <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine appears before
+that <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> statement.</p>
+<p>
+</p>
+<h2><a name="using_filter__simple_and_exporter_together">Using Filter::Simple and Exporter together</a></h2>
+<p>Likewise, Filter::Simple is also smart enough
+to Do The Right Thing if you use Exporter:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Switch</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">base</span> <span class="variable">Exporter</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@EXPORT</span>    <span class="operator">=</span> <span class="string">qw(switch case)</span><span class="operator">;</span>
+    <span class="variable">@EXPORT_OK</span> <span class="operator">=</span> <span class="string">qw(given  when)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">FILTER</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=</span> <span class="variable">magic_Perl_filter</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">)</span> <span class="operator">}</span>
+</pre>
+<p>Immediately after the filter has been applied to the source,
+Filter::Simple will pass control to Exporter, so it can do its magic too.</p>
+<p>Of course, here too, Filter::Simple has to know you're using Exporter
+before it applies the filter. That's almost never a problem, but if you're
+nervous about it, you can guarantee that things will work correctly by
+ensuring that your <code>use base Exporter</code> always precedes your
+<code>use Filter::Simple</code>.</p>
+<p>
+</p>
+<h2><a name="how_it_works">How it works</a></h2>
+<p>The Filter::Simple module exports into the package that calls <code>FILTER</code>
+(or <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a>s it directly) -- such as package &quot;BANG&quot; in the above example --
+two automagically constructed
+subroutines -- <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> and <code>unimport</code> -- which take care of all the
+nasty details.</p>
+<p>In addition, the generated <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> subroutine passes its own argument
+list to the filtering subroutine, so the BANG.pm filter could easily 
+be made parametric:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">BANG</span><span class="operator">;</span>
+     
+    <span class="keyword">use</span> <span class="variable">Filter::Simple</span><span class="operator">;</span>
+    
+    <span class="variable">FILTER</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$die_msg</span><span class="operator">,</span> <span class="variable">$var_name</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="regex">s/BANG\s+BANG/die '$die_msg' if \${$var_name}/g</span><span class="operator">;</span>
+    <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="comment"># and in some user code:</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">BANG</span> <span class="string">"BOOM"</span><span class="operator">,</span> <span class="string">"BAM"</span><span class="operator">;</span>  <span class="comment"># "BANG BANG" becomes: die 'BOOM' if $BAM</span>
+</pre>
+<p>The specified filtering subroutine is called every time a <a href="../../lib/pods/perlfunc.html#use"><code>use BANG</code></a> is
+encountered, and passed all the source code following that call, up to
+either the next <code>no BANG;</code> (or whatever terminator you've set) or the
+end of the source file, whichever occurs first. By default, any <code>no
+BANG;</code> call must appear by itself on a separate line, or it is ignored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Damian Conway</p>
+<p>
+</p>
+<hr />
+<h1><a name="contact">CONTACT</a></h1>
+<p>Filter::Simple is now maintained by the Perl5-Porters.
+Please submit bug via the <code>perlbug</code> tool that comes with your perl.
+For usage instructions, read <code>perldoc perlbug</code> or possibly <code>man perlbug</code>.
+For mostly anything else, please contact &lt;<a href="mailto:perl5-porters@perl.org">perl5-porters@perl.org</a>&gt;.</p>
+<p>Maintainer of the CPAN release is Steffen Mueller &lt;<a href="mailto:smueller@cpan.org">smueller@cpan.org</a>&gt;.
+Contact him with technical difficulties with respect to the packaging of the
+CPAN module.</p>
+<p>Praise of the module, flowers, and presents still go to the author,
+Damian Conway &lt;<a href="mailto:damian@conway.org">damian@conway.org</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<pre>
+    Copyright (c) 2000-2008, Damian Conway. All Rights Reserved.
+    This module is free software. It may be used, redistributed
+    and/or modified under the same terms as Perl itself.</pre>
+
+</body>
+
+</html>

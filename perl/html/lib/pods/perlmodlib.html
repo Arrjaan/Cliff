@@ -1,0 +1,4282 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlmodlib - constructing new Perl modules and finding existing ones</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlmodlib - constructing new Perl modules and finding existing ones</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#the_perl_module_library">THE PERL MODULE LIBRARY</a></li>
+	<ul>
+
+		<li><a href="#pragmatic_modules">Pragmatic Modules</a></li>
+		<li><a href="#standard_modules">Standard Modules</a></li>
+		<li><a href="#extension_modules">Extension Modules</a></li>
+	</ul>
+
+	<li><a href="#cpan">CPAN</a></li>
+	<ul>
+
+		<li><a href="#africa">Africa</a></li>
+		<li><a href="#asia">Asia</a></li>
+		<li><a href="#central_america">Central America</a></li>
+		<li><a href="#europe">Europe</a></li>
+		<li><a href="#north_america">North America</a></li>
+		<li><a href="#oceania">Oceania</a></li>
+		<li><a href="#south_america">South America</a></li>
+		<li><a href="#rsync_mirrors">RSYNC Mirrors</a></li>
+	</ul>
+
+	<li><a href="#modules__creation__use__and_abuse">Modules: Creation, Use, and Abuse</a></li>
+	<ul>
+
+		<li><a href="#guidelines_for_module_creation">Guidelines for Module Creation</a></li>
+		<li><a href="#guidelines_for_converting_perl_4_library_scripts_into_modules">Guidelines for Converting Perl 4 Library Scripts into Modules</a></li>
+		<li><a href="#guidelines_for_reusing_application_code">Guidelines for Reusing Application Code</a></li>
+	</ul>
+
+	<li><a href="#note">NOTE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perlmodlib - constructing new Perl modules and finding existing ones</p>
+<p>
+</p>
+<hr />
+<h1><a name="the_perl_module_library">THE PERL MODULE LIBRARY</a></h1>
+<p>Many modules are included in the Perl distribution.  These are described
+below, and all end in <em class="file">.pm</em>.  You may discover compiled library
+files (usually ending in <em class="file">.so</em>) or small pieces of modules to be
+autoloaded (ending in <em class="file">.al</em>); these were automatically generated
+by the installation process.  You may also discover files in the
+library directory that end in either <em class="file">.pl</em> or <em class="file">.ph</em>.  These are
+old libraries supplied so that old programs that use them still
+run.  The <em class="file">.pl</em> files will all eventually be converted into standard
+modules, and the <em class="file">.ph</em> files made by <strong>h2ph</strong> will probably end up
+as extension modules made by <strong>h2xs</strong>.  (Some <em class="file">.ph</em> values may
+already be available through the POSIX, Errno, or Fcntl modules.)
+The <strong>pl2pm</strong> file in the distribution may help in your conversion,
+but it's just a mechanical process and therefore far from bulletproof.</p>
+<p>
+</p>
+<h2><a name="pragmatic_modules">Pragmatic Modules</a></h2>
+<p>They work somewhat like compiler directives (pragmata) in that they
+tend to affect the compilation of your program, and thus will usually
+work well only when used within a <a href="../../lib/pods/perlfunc.html#use"><code>use</code></a>, or <a href="../../lib/pods/perlfunc.html#no"><code>no</code></a>.  Most of these
+are lexically scoped, so an inner BLOCK may countermand them
+by saying:</p>
+<pre>
+    <span class="keyword">no</span> <span class="variable">integer</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">strict</span> <span class="string">'refs'</span><span class="operator">;</span>
+    <span class="keyword">no</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<p>which lasts until the end of that BLOCK.</p>
+<p>Some pragmas are lexically scoped--typically those that affect the
+<a href="../../lib/pods/perlvar.html#__h"><code>$^H</code></a> hints variable.  Others affect the current package instead,
+like <code>use vars</code> and <code>use subs</code>, which allow you to predeclare a
+variables or subroutines within a particular <em>file</em> rather than
+just a block.  Such declarations are effective for the entire file
+for which they were declared.  You cannot rescind them with <code>no
+vars</code> or <code>no subs</code>.</p>
+<p>The following pragmas are defined (and have their own documentation).</p>
+<dl>
+<dt><strong><a name="attributes" class="item">attributes</a></strong></dt>
+
+<dd>
+<p>Get/set subroutine or variable attributes</p>
+</dd>
+<dt><strong><a name="autodie" class="item">autodie</a></strong></dt>
+
+<dd>
+<p>Replace functions with ones that succeed or die with lexical scope</p>
+</dd>
+<dt><strong><a name="autodie_exception" class="item">autodie::exception</a></strong></dt>
+
+<dd>
+<p>Exceptions from autodying functions.</p>
+</dd>
+<dt><strong><a name="autodie_exception_system" class="item">autodie::exception::system</a></strong></dt>
+
+<dd>
+<p>Exceptions from autodying <a href="../../lib/pods/perlfunc.html#system"><code>system()</code></a>.</p>
+</dd>
+<dt><strong><a name="autodie_hints" class="item">autodie::hints</a></strong></dt>
+
+<dd>
+<p>Provide hints about user subroutines to autodie</p>
+</dd>
+<dt><strong><a name="autouse" class="item">autouse</a></strong></dt>
+
+<dd>
+<p>Postpone load of modules until a function is used</p>
+</dd>
+<dt><strong><a name="base" class="item">base</a></strong></dt>
+
+<dd>
+<p>Establish an ISA relationship with base classes at compile time</p>
+</dd>
+<dt><strong><a name="bigint" class="item">bigint</a></strong></dt>
+
+<dd>
+<p>Transparent BigInteger support for Perl</p>
+</dd>
+<dt><strong><a name="bignum" class="item">bignum</a></strong></dt>
+
+<dd>
+<p>Transparent BigNumber support for Perl</p>
+</dd>
+<dt><strong><a name="bigrat" class="item">bigrat</a></strong></dt>
+
+<dd>
+<p>Transparent BigNumber/BigRational support for Perl</p>
+</dd>
+<dt><strong><a name="blib" class="item">blib</a></strong></dt>
+
+<dd>
+<p>Use MakeMaker's uninstalled version of a package</p>
+</dd>
+<dt><strong><a name="bytes" class="item">bytes</a></strong></dt>
+
+<dd>
+<p>Force byte semantics rather than character semantics</p>
+</dd>
+<dt><strong><a name="charnames" class="item">charnames</a></strong></dt>
+
+<dd>
+<p>Access to Unicode character names and named character sequences; also define character names</p>
+</dd>
+<dt><strong><a name="constant" class="item">constant</a></strong></dt>
+
+<dd>
+<p>Declare constants</p>
+</dd>
+<dt><strong><a name="deprecate" class="item">deprecate</a></strong></dt>
+
+<dd>
+<p>Perl pragma for deprecating the core version of a module</p>
+</dd>
+<dt><strong><a name="diagnostics" class="item">diagnostics</a></strong></dt>
+
+<dd>
+<p>Produce verbose warning diagnostics</p>
+</dd>
+<dt><strong><a name="encoding" class="item">encoding</a></strong></dt>
+
+<dd>
+<p>Allows you to write your script in non-ascii or non-utf8</p>
+</dd>
+<dt><strong><a name="encoding_warnings" class="item">encoding::warnings</a></strong></dt>
+
+<dd>
+<p>Warn on implicit encoding conversions</p>
+</dd>
+<dt><strong><a name="feature" class="item">feature</a></strong></dt>
+
+<dd>
+<p>Enable new features</p>
+</dd>
+<dt><strong><a name="fields" class="item">fields</a></strong></dt>
+
+<dd>
+<p>Compile-time class fields</p>
+</dd>
+<dt><strong><a name="filetest" class="item">filetest</a></strong></dt>
+
+<dd>
+<p>Control the filetest permission operators</p>
+</dd>
+<dt><strong><a name="if" class="item">if</a></strong></dt>
+
+<dd>
+<p><a href="../../lib/pods/perlfunc.html#use"><code>use</code></a> a Perl module if a condition holds</p>
+</dd>
+<dt><strong><a name="inc_latest" class="item">inc::latest</a></strong></dt>
+
+<dd>
+<p>Use modules bundled in inc/ if they are newer than installed ones</p>
+</dd>
+<dt><strong><a name="integer" class="item">integer</a></strong></dt>
+
+<dd>
+<p>Use integer arithmetic instead of floating point</p>
+</dd>
+<dt><strong><a name="less" class="item">less</a></strong></dt>
+
+<dd>
+<p>Request less of something</p>
+</dd>
+<dt><strong><a name="lib" class="item">lib</a></strong></dt>
+
+<dd>
+<p>Manipulate @INC at compile time</p>
+</dd>
+<dt><strong><a name="locale" class="item">locale</a></strong></dt>
+
+<dd>
+<p>Use and avoid POSIX locales for built-in operations</p>
+</dd>
+<dt><strong><a name="mro" class="item">mro</a></strong></dt>
+
+<dd>
+<p>Method Resolution Order</p>
+</dd>
+<dt><strong><a name="open" class="item">open</a></strong></dt>
+
+<dd>
+<p>Set default PerlIO layers for input and output</p>
+</dd>
+<dt><strong><a name="ops" class="item">ops</a></strong></dt>
+
+<dd>
+<p>Restrict unsafe operations when compiling</p>
+</dd>
+<dt><strong><a name="overload" class="item">overload</a></strong></dt>
+
+<dd>
+<p>Package for overloading Perl operations</p>
+</dd>
+<dt><strong><a name="overloading" class="item">overloading</a></strong></dt>
+
+<dd>
+<p>Lexically control overloading</p>
+</dd>
+<dt><strong><a name="parent" class="item">parent</a></strong></dt>
+
+<dd>
+<p>Establish an ISA relationship with base classes at compile time</p>
+</dd>
+<dt><strong><a name="re" class="item">re</a></strong></dt>
+
+<dd>
+<p>Alter regular expression behaviour</p>
+</dd>
+<dt><strong><a name="sigtrap" class="item">sigtrap</a></strong></dt>
+
+<dd>
+<p>Enable simple signal handling</p>
+</dd>
+<dt><strong><a name="sort" class="item">sort</a></strong></dt>
+
+<dd>
+<p>Control <a href="#sort"><code>sort()</code></a> behaviour</p>
+</dd>
+<dt><strong><a name="strict" class="item">strict</a></strong></dt>
+
+<dd>
+<p>Restrict unsafe constructs</p>
+</dd>
+<dt><strong><a name="subs" class="item">subs</a></strong></dt>
+
+<dd>
+<p>Predeclare sub names</p>
+</dd>
+<dt><strong><a name="threads" class="item">threads</a></strong></dt>
+
+<dd>
+<p>Perl interpreter-based threads</p>
+</dd>
+<dt><strong><a name="threads_shared10" class="item">threads::shared</a></strong></dt>
+
+<dd>
+<p>Perl extension for sharing data structures between threads</p>
+</dd>
+<dt><strong><a name="utf8" class="item">utf8</a></strong></dt>
+
+<dd>
+<p>Enable/disable UTF-8 (or UTF-EBCDIC) in source code</p>
+</dd>
+<dt><strong><a name="vars" class="item">vars</a></strong></dt>
+
+<dd>
+<p>Predeclare global variable names (obsolete)</p>
+</dd>
+<dt><strong><a name="version" class="item">version</a></strong></dt>
+
+<dd>
+<p>Perl extension for Version Objects</p>
+</dd>
+<dt><strong><a name="vmsish" class="item">vmsish</a></strong></dt>
+
+<dd>
+<p>Control VMS-specific language features</p>
+</dd>
+<dt><strong><a name="warnings" class="item">warnings</a></strong></dt>
+
+<dd>
+<p>Control optional warnings</p>
+</dd>
+<dt><strong><a name="warnings_register" class="item">warnings::register</a></strong></dt>
+
+<dd>
+<p>Warnings import function</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="standard_modules">Standard Modules</a></h2>
+<p>Standard, bundled modules are all expected to behave in a well-defined
+manner with respect to namespace pollution because they use the
+Exporter module.  See their own documentation for details.</p>
+<p>It's possible that not all modules listed below are installed on your
+system. For example, the GDBM_File module will not be installed if you
+don't have the gdbm library.</p>
+<dl>
+<dt><strong><a name="activeperl" class="item">ActivePerl</a></strong></dt>
+
+<dd>
+<p>ActiveState's quality-assured binary build of Perl</p>
+</dd>
+<dt><strong><a name="anydbm_file" class="item">AnyDBM_File</a></strong></dt>
+
+<dd>
+<p>Provide framework for multiple DBMs</p>
+</dd>
+<dt><strong><a name="app_cpan" class="item">App::Cpan</a></strong></dt>
+
+<dd>
+<p>Easily interact with CPAN from the command line</p>
+</dd>
+<dt><strong><a name="app_prove" class="item">App::Prove</a></strong></dt>
+
+<dd>
+<p>Implements the <code>prove</code> command.</p>
+</dd>
+<dt><strong><a name="app_prove_state" class="item">App::Prove::State</a></strong></dt>
+
+<dd>
+<p>State storage for the <code>prove</code> command.</p>
+</dd>
+<dt><strong><a name="app_prove_state_result" class="item">App::Prove::State::Result</a></strong></dt>
+
+<dd>
+<p>Individual test suite results.</p>
+</dd>
+<dt><strong><a name="app_prove_state_result_test" class="item">App::Prove::State::Result::Test</a></strong></dt>
+
+<dd>
+<p>Individual test results.</p>
+</dd>
+<dt><strong><a name="archive_extract6" class="item">Archive::Extract</a></strong></dt>
+
+<dd>
+<p>A generic archive extracting mechanism</p>
+</dd>
+<dt><strong><a name="archive_tar5" class="item">Archive::Tar</a></strong></dt>
+
+<dd>
+<p>Module for manipulations of tar archives</p>
+</dd>
+<dt><strong><a name="archive_tar_file" class="item">Archive::Tar::File</a></strong></dt>
+
+<dd>
+<p>A subclass for in-memory extracted file from Archive::Tar</p>
+</dd>
+<dt><strong><a name="attribute_handlers7" class="item">Attribute::Handlers</a></strong></dt>
+
+<dd>
+<p>Simpler definition of attribute handlers</p>
+</dd>
+<dt><strong><a name="autoloader3" class="item">AutoLoader</a></strong></dt>
+
+<dd>
+<p>Load subroutines only on demand</p>
+</dd>
+<dt><strong><a name="autosplit2" class="item">AutoSplit</a></strong></dt>
+
+<dd>
+<p>Split a package for autoloading</p>
+</dd>
+<dt><strong><a name="b10" class="item">B</a></strong></dt>
+
+<dd>
+<p>The Perl Compiler Backend</p>
+</dd>
+<dt><strong><a name="b_concise8" class="item">B::Concise</a></strong></dt>
+
+<dd>
+<p>Walk Perl syntax tree, printing concise info about ops</p>
+</dd>
+<dt><strong><a name="b_debug6" class="item">B::Debug</a></strong></dt>
+
+<dd>
+<p>Walk Perl syntax tree, printing debug info about ops</p>
+</dd>
+<dt><strong><a name="b_deparse10" class="item">B::Deparse</a></strong></dt>
+
+<dd>
+<p>Perl compiler backend to produce perl code</p>
+</dd>
+<dt><strong><a name="b_lint8" class="item">B::Lint</a></strong></dt>
+
+<dd>
+<p>Perl lint</p>
+</dd>
+<dt><strong><a name="b_lint_debug" class="item">B::Lint::Debug</a></strong></dt>
+
+<dd>
+<p>Adds debugging stringification to B::</p>
+</dd>
+<dt><strong><a name="b_showlex2" class="item">B::Showlex</a></strong></dt>
+
+<dd>
+<p>Show lexical variables used in functions or files</p>
+</dd>
+<dt><strong><a name="b_terse2" class="item">B::Terse</a></strong></dt>
+
+<dd>
+<p>Walk Perl syntax tree, printing terse info about ops</p>
+</dd>
+<dt><strong><a name="b_xref4" class="item">B::Xref</a></strong></dt>
+
+<dd>
+<p>Generates cross reference reports for Perl programs</p>
+</dd>
+<dt><strong><a name="benchmark9" class="item">Benchmark</a></strong></dt>
+
+<dd>
+<p>Benchmark running times of Perl code</p>
+</dd>
+<dt><strong><a name="cgi10" class="item">CGI</a></strong></dt>
+
+<dd>
+<p>Handle Common Gateway Interface requests and responses</p>
+</dd>
+<dt><strong><a name="cgi_apache" class="item">CGI::Apache</a></strong></dt>
+
+<dd>
+<p>Backward compatibility module for CGI.pm</p>
+</dd>
+<dt><strong><a name="cgi_carp" class="item">CGI::Carp</a></strong></dt>
+
+<dd>
+<p>CGI routines for writing to the HTTPD (or other) error log</p>
+</dd>
+<dt><strong><a name="cgi_cookie" class="item">CGI::Cookie</a></strong></dt>
+
+<dd>
+<p>Interface to HTTP Cookies</p>
+</dd>
+<dt><strong><a name="cgi_fast" class="item">CGI::Fast</a></strong></dt>
+
+<dd>
+<p>CGI Interface for Fast CGI</p>
+</dd>
+<dt><strong><a name="cgi_pretty" class="item">CGI::Pretty</a></strong></dt>
+
+<dd>
+<p>Module to produce nicely formatted HTML code</p>
+</dd>
+<dt><strong><a name="cgi_push" class="item">CGI::Push</a></strong></dt>
+
+<dd>
+<p>Simple Interface to Server Push</p>
+</dd>
+<dt><strong><a name="cgi_switch" class="item">CGI::Switch</a></strong></dt>
+
+<dd>
+<p>Backward compatibility module for defunct CGI::Switch</p>
+</dd>
+<dt><strong><a name="cgi_util" class="item">CGI::Util</a></strong></dt>
+
+<dd>
+<p>Internal utilities used by CGI module</p>
+</dd>
+<dt><strong><a name="core" class="item">CORE</a></strong></dt>
+
+<dd>
+<p>Pseudo-namespace for Perl's core routines</p>
+</dd>
+<dt><strong><a name="cpan11" class="item">CPAN</a></strong></dt>
+
+<dd>
+<p>Query, download and build perl modules from CPAN sites</p>
+</dd>
+<dt><strong><a name="cpan_api_howto2" class="item">CPAN::API::HOWTO</a></strong></dt>
+
+<dd>
+<p>A recipe book for programming with CPAN.pm</p>
+</dd>
+<dt><strong><a name="cpan_distroprefs" class="item">CPAN::Distroprefs</a></strong></dt>
+
+<dd>
+<p>Read and match distroprefs</p>
+</dd>
+<dt><strong><a name="cpan_firsttime" class="item">CPAN::FirstTime</a></strong></dt>
+
+<dd>
+<p>Utility for CPAN::Config file Initialization</p>
+</dd>
+<dt><strong><a name="cpan_kwalify" class="item">CPAN::Kwalify</a></strong></dt>
+
+<dd>
+<p>Interface between CPAN.pm and Kwalify.pm</p>
+</dd>
+<dt><strong><a name="cpan_meta" class="item">CPAN::Meta</a></strong></dt>
+
+<dd>
+<p>The distribution metadata for a CPAN dist</p>
+</dd>
+<dt><strong><a name="cpan_meta_converter" class="item">CPAN::Meta::Converter</a></strong></dt>
+
+<dd>
+<p>Convert CPAN distribution metadata structures</p>
+</dd>
+<dt><strong><a name="cpan_meta_feature" class="item">CPAN::Meta::Feature</a></strong></dt>
+
+<dd>
+<p>An optional feature provided by a CPAN distribution</p>
+</dd>
+<dt><strong><a name="cpan_meta_history" class="item">CPAN::Meta::History</a></strong></dt>
+
+<dd>
+<p>History of CPAN Meta Spec changes</p>
+</dd>
+<dt><strong><a name="cpan_meta_prereqs" class="item">CPAN::Meta::Prereqs</a></strong></dt>
+
+<dd>
+<p>A set of distribution prerequisites by phase and type</p>
+</dd>
+<dt><strong><a name="cpan_meta_spec" class="item">CPAN::Meta::Spec</a></strong></dt>
+
+<dd>
+<p>Specification for CPAN distribution metadata</p>
+</dd>
+<dt><strong><a name="cpan_meta_validator" class="item">CPAN::Meta::Validator</a></strong></dt>
+
+<dd>
+<p>Validate CPAN distribution metadata structures</p>
+</dd>
+<dt><strong><a name="cpan_meta_yaml" class="item">CPAN::Meta::YAML</a></strong></dt>
+
+<dd>
+<p>Read and write a subset of YAML for CPAN Meta files</p>
+</dd>
+<dt><strong><a name="cpan_nox" class="item">CPAN::Nox</a></strong></dt>
+
+<dd>
+<p>Wrapper around CPAN.pm without using any XS module</p>
+</dd>
+<dt><strong><a name="cpan_version" class="item">CPAN::Version</a></strong></dt>
+
+<dd>
+<p>Utility functions to compare CPAN versions</p>
+</dd>
+<dt><strong><a name="cpanplus7" class="item">CPANPLUS</a></strong></dt>
+
+<dd>
+<p>API &amp; CLI access to the CPAN mirrors</p>
+</dd>
+<dt><strong><a name="cpanplus_dist_base" class="item">CPANPLUS::Dist::Base</a></strong></dt>
+
+<dd>
+<p>Base class for custom distribution classes</p>
+</dd>
+<dt><strong><a name="cpanplus_dist_build5" class="item">CPANPLUS::Dist::Build</a></strong></dt>
+
+<dd>
+<p>CPANPLUS plugin to install packages that use Build.PL</p>
+</dd>
+<dt><strong><a name="cpanplus_dist_build_constants" class="item">CPANPLUS::Dist::Build::Constants</a></strong></dt>
+
+<dd>
+<p>Constants for CPANPLUS::Dist::Build</p>
+</dd>
+<dt><strong><a name="cpanplus_dist_sample" class="item">CPANPLUS::Dist::Sample</a></strong></dt>
+
+<dd>
+<p>Sample code to create your own Dist::* plugin</p>
+</dd>
+<dt><strong><a name="cpanplus_internals_source_memory" class="item">CPANPLUS::Internals::Source::Memory</a></strong></dt>
+
+<dd>
+<p>In memory implementation</p>
+</dd>
+<dt><strong><a name="cpanplus_internals_source_sqlite" class="item">CPANPLUS::Internals::Source::SQLite</a></strong></dt>
+
+<dd>
+<p>SQLite implementation</p>
+</dd>
+<dt><strong><a name="cpanplus_shell_classic" class="item">CPANPLUS::Shell::Classic</a></strong></dt>
+
+<dd>
+<p>CPAN.pm emulation for CPANPLUS</p>
+</dd>
+<dt><strong><a name="cpanplus_shell_default_plugins_howto" class="item">CPANPLUS::Shell::Default::Plugins::HOWTO</a></strong></dt>
+
+<dd>
+<p>Documentation on how to write your own plugins</p>
+</dd>
+<dt><strong><a name="carp8" class="item">Carp</a></strong></dt>
+
+<dd>
+<p>Alternative warn and die for modules</p>
+</dd>
+<dt><strong><a name="class_struct2" class="item">Class::Struct</a></strong></dt>
+
+<dd>
+<p>Declare struct-like datatypes as Perl classes</p>
+</dd>
+<dt><strong><a name="compress_raw_bzip27" class="item">Compress::Raw::Bzip2</a></strong></dt>
+
+<dd>
+<p>Low-Level Interface to bzip2 compression library</p>
+</dd>
+<dt><strong><a name="compress_raw_bzip2_faq" class="item">Compress::Raw::Bzip2::FAQ</a></strong></dt>
+
+<dd>
+<p>Frequently Asked Questions about Compress::Raw::Bzip2</p>
+</dd>
+<dt><strong><a name="compress_raw_zlib5" class="item">Compress::Raw::Zlib</a></strong></dt>
+
+<dd>
+<p>Low-Level Interface to zlib compression library</p>
+</dd>
+<dt><strong><a name="compress_raw_zlib_faq" class="item">Compress::Raw::Zlib::FAQ</a></strong></dt>
+
+<dd>
+<p>Frequently Asked Questions about Compress::Raw::Zlib</p>
+</dd>
+<dt><strong><a name="compress_zlib4" class="item">Compress::Zlib</a></strong></dt>
+
+<dd>
+<p>Interface to zlib compression library</p>
+</dd>
+<dt><strong><a name="config" class="item">Config</a></strong></dt>
+
+<dd>
+<p>Access Perl configuration information</p>
+</dd>
+<dt><strong><a name="cwd5" class="item">Cwd</a></strong></dt>
+
+<dd>
+<p>Get pathname of current working directory</p>
+</dd>
+<dt><strong><a name="db4" class="item">DB</a></strong></dt>
+
+<dd>
+<p>Programmatic interface to the Perl debugging API</p>
+</dd>
+<dt><strong><a name="dbm_filter" class="item">DBM_Filter</a></strong></dt>
+
+<dd>
+<p>Filter DBM keys/values</p>
+</dd>
+<dt><strong><a name="dbm_filter_compress" class="item">DBM_Filter::compress</a></strong></dt>
+
+<dd>
+<p>Filter for DBM_Filter</p>
+</dd>
+<dt><strong><a name="dbm_filter_encode" class="item">DBM_Filter::encode</a></strong></dt>
+
+<dd>
+<p>Filter for DBM_Filter</p>
+</dd>
+<dt><strong><a name="dbm_filter_int32" class="item">DBM_Filter::int32</a></strong></dt>
+
+<dd>
+<p>Filter for DBM_Filter</p>
+</dd>
+<dt><strong><a name="dbm_filter_null" class="item">DBM_Filter::null</a></strong></dt>
+
+<dd>
+<p>Filter for DBM_Filter</p>
+</dd>
+<dt><strong><a name="dbm_filter_utf8" class="item">DBM_Filter::utf8</a></strong></dt>
+
+<dd>
+<p>Filter for DBM_Filter</p>
+</dd>
+<dt><strong><a name="db_file10" class="item">DB_File</a></strong></dt>
+
+<dd>
+<p>Perl5 access to Berkeley DB version 1.x</p>
+</dd>
+<dt><strong><a name="data_dumper11" class="item">Data::Dumper</a></strong></dt>
+
+<dd>
+<p>Stringified perl data structures, suitable for both printing and <a href="../../lib/pods/perlfunc.html#eval"><code>eval</code></a></p>
+</dd>
+<dt><strong><a name="devel_dprof5" class="item">Devel::DProf</a></strong></dt>
+
+<dd>
+<p>A <strong>DEPRECATED</strong> Perl code profiler</p>
+</dd>
+<dt><strong><a name="devel_innerpackage" class="item">Devel::InnerPackage</a></strong></dt>
+
+<dd>
+<p>Find all the inner packages of a package</p>
+</dd>
+<dt><strong><a name="devel_ppport6" class="item">Devel::PPPort</a></strong></dt>
+
+<dd>
+<p>Perl/Pollution/Portability</p>
+</dd>
+<dt><strong><a name="devel_peek4" class="item">Devel::Peek</a></strong></dt>
+
+<dd>
+<p>A data debugging tool for the XS programmer</p>
+</dd>
+<dt><strong><a name="devel_selfstubber" class="item">Devel::SelfStubber</a></strong></dt>
+
+<dd>
+<p>Generate stubs for a SelfLoading module</p>
+</dd>
+<dt><strong><a name="digest3" class="item">Digest</a></strong></dt>
+
+<dd>
+<p>Modules that calculate message digests</p>
+</dd>
+<dt><strong><a name="digest_md58" class="item">Digest::MD5</a></strong></dt>
+
+<dd>
+<p>Perl interface to the MD5 Algorithm</p>
+</dd>
+<dt><strong><a name="digest_sha4" class="item">Digest::SHA</a></strong></dt>
+
+<dd>
+<p>Perl extension for SHA-1/224/256/384/512</p>
+</dd>
+<dt><strong><a name="digest_base" class="item">Digest::base</a></strong></dt>
+
+<dd>
+<p>Digest base class</p>
+</dd>
+<dt><strong><a name="digest_file" class="item">Digest::file</a></strong></dt>
+
+<dd>
+<p>Calculate digests of files</p>
+</dd>
+<dt><strong><a name="dirhandle2" class="item">DirHandle</a></strong></dt>
+
+<dd>
+<p>Supply object methods for directory handles</p>
+</dd>
+<dt><strong><a name="dumpvalue5" class="item">Dumpvalue</a></strong></dt>
+
+<dd>
+<p>Provides screen dump of Perl data.</p>
+</dd>
+<dt><strong><a name="dynaloader4" class="item">DynaLoader</a></strong></dt>
+
+<dd>
+<p>Dynamically load C libraries into Perl code</p>
+</dd>
+<dt><strong><a name="encode9" class="item">Encode</a></strong></dt>
+
+<dd>
+<p>Character encodings</p>
+</dd>
+<dt><strong><a name="encode_alias" class="item">Encode::Alias</a></strong></dt>
+
+<dd>
+<p>Alias definitions to encodings</p>
+</dd>
+<dt><strong><a name="encode_byte" class="item">Encode::Byte</a></strong></dt>
+
+<dd>
+<p>Single Byte Encodings</p>
+</dd>
+<dt><strong><a name="encode_cjkconstants" class="item">Encode::CJKConstants</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode::??::ISO_2022_*</p>
+</dd>
+<dt><strong><a name="encode_cn" class="item">Encode::CN</a></strong></dt>
+
+<dd>
+<p>China-based Chinese Encodings</p>
+</dd>
+<dt><strong><a name="encode_cn_hz" class="item">Encode::CN::HZ</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode::CN</p>
+</dd>
+<dt><strong><a name="encode_config" class="item">Encode::Config</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode</p>
+</dd>
+<dt><strong><a name="encode_ebcdic2" class="item">Encode::EBCDIC</a></strong></dt>
+
+<dd>
+<p>EBCDIC Encodings</p>
+</dd>
+<dt><strong><a name="encode_encoder" class="item">Encode::Encoder</a></strong></dt>
+
+<dd>
+<p>Object Oriented Encoder</p>
+</dd>
+<dt><strong><a name="encode_encoding" class="item">Encode::Encoding</a></strong></dt>
+
+<dd>
+<p>Encode Implementation Base Class</p>
+</dd>
+<dt><strong><a name="encode_gsm0338" class="item">Encode::GSM0338</a></strong></dt>
+
+<dd>
+<p>ESTI GSM 03.38 Encoding</p>
+</dd>
+<dt><strong><a name="encode_guess2" class="item">Encode::Guess</a></strong></dt>
+
+<dd>
+<p>Guesses encoding from data</p>
+</dd>
+<dt><strong><a name="encode_jp" class="item">Encode::JP</a></strong></dt>
+
+<dd>
+<p>Japanese Encodings</p>
+</dd>
+<dt><strong><a name="encode_jp_h2z" class="item">Encode::JP::H2Z</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode::JP::2022_JP*</p>
+</dd>
+<dt><strong><a name="encode_jp_jis7" class="item">Encode::JP::JIS7</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode::JP</p>
+</dd>
+<dt><strong><a name="encode_kr" class="item">Encode::KR</a></strong></dt>
+
+<dd>
+<p>Korean Encodings</p>
+</dd>
+<dt><strong><a name="encode_kr_2022_kr" class="item">Encode::KR::2022_KR</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode::KR</p>
+</dd>
+<dt><strong><a name="encode_mime_header2" class="item">Encode::MIME::Header</a></strong></dt>
+
+<dd>
+<p>MIME 'B' and 'Q' header encoding</p>
+</dd>
+<dt><strong><a name="encode_mime_name" class="item">Encode::MIME::Name</a></strong></dt>
+
+<dd>
+<p>Internally used by Encode</p>
+</dd>
+<dt><strong><a name="encode_perlio" class="item">Encode::PerlIO</a></strong></dt>
+
+<dd>
+<p>A detailed document on Encode and PerlIO</p>
+</dd>
+<dt><strong><a name="encode_supported" class="item">Encode::Supported</a></strong></dt>
+
+<dd>
+<p>Encodings supported by Encode</p>
+</dd>
+<dt><strong><a name="encode_symbol" class="item">Encode::Symbol</a></strong></dt>
+
+<dd>
+<p>Symbol Encodings</p>
+</dd>
+<dt><strong><a name="encode_tw" class="item">Encode::TW</a></strong></dt>
+
+<dd>
+<p>Taiwan-based Chinese Encodings</p>
+</dd>
+<dt><strong><a name="encode_unicode" class="item">Encode::Unicode</a></strong></dt>
+
+<dd>
+<p>Various Unicode Transformation Formats</p>
+</dd>
+<dt><strong><a name="encode_unicode_utf7" class="item">Encode::Unicode::UTF7</a></strong></dt>
+
+<dd>
+<p>UTF-7 encoding</p>
+</dd>
+<dt><strong><a name="english3" class="item">English</a></strong></dt>
+
+<dd>
+<p>Use nice English (or awk) names for ugly punctuation variables</p>
+</dd>
+<dt><strong><a name="env4" class="item">Env</a></strong></dt>
+
+<dd>
+<p>Perl module that imports environment variables as scalars or arrays</p>
+</dd>
+<dt><strong><a name="errno5" class="item">Errno</a></strong></dt>
+
+<dd>
+<p>System errno constants</p>
+</dd>
+<dt><strong><a name="exporter6" class="item">Exporter</a></strong></dt>
+
+<dd>
+<p>Implements default import method for modules</p>
+</dd>
+<dt><strong><a name="exporter_heavy" class="item">Exporter::Heavy</a></strong></dt>
+
+<dd>
+<p>Exporter guts</p>
+</dd>
+<dt><strong><a name="extutils_cbuilder5" class="item">ExtUtils::CBuilder</a></strong></dt>
+
+<dd>
+<p>Compile and link C code for Perl modules</p>
+</dd>
+<dt><strong><a name="extutils_cbuilder_platform_windows" class="item">ExtUtils::CBuilder::Platform::Windows</a></strong></dt>
+
+<dd>
+<p>Builder class for Windows platforms</p>
+</dd>
+<dt><strong><a name="extutils_command3" class="item">ExtUtils::Command</a></strong></dt>
+
+<dd>
+<p>Utilities to replace common UNIX commands in Makefiles etc.</p>
+</dd>
+<dt><strong><a name="extutils_command_mm" class="item">ExtUtils::Command::MM</a></strong></dt>
+
+<dd>
+<p>Commands for the MM's to use in Makefiles</p>
+</dd>
+<dt><strong><a name="extutils_constant3" class="item">ExtUtils::Constant</a></strong></dt>
+
+<dd>
+<p>Generate XS code to import C header constants</p>
+</dd>
+<dt><strong><a name="extutils_constant_base" class="item">ExtUtils::Constant::Base</a></strong></dt>
+
+<dd>
+<p>Base class for ExtUtils::Constant objects</p>
+</dd>
+<dt><strong><a name="extutils_constant_utils" class="item">ExtUtils::Constant::Utils</a></strong></dt>
+
+<dd>
+<p>Helper functions for ExtUtils::Constant</p>
+</dd>
+<dt><strong><a name="extutils_constant_xs" class="item">ExtUtils::Constant::XS</a></strong></dt>
+
+<dd>
+<p>Generate C code for XS modules' constants.</p>
+</dd>
+<dt><strong><a name="extutils_embed2" class="item">ExtUtils::Embed</a></strong></dt>
+
+<dd>
+<p>Utilities for embedding Perl in C/C++ applications</p>
+</dd>
+<dt><strong><a name="extutils_install3" class="item">ExtUtils::Install</a></strong></dt>
+
+<dd>
+<p>Install files from here to there</p>
+</dd>
+<dt><strong><a name="extutils_installed2" class="item">ExtUtils::Installed</a></strong></dt>
+
+<dd>
+<p>Inventory management of installed modules</p>
+</dd>
+<dt><strong><a name="extutils_liblist" class="item">ExtUtils::Liblist</a></strong></dt>
+
+<dd>
+<p>Determine libraries to use and how to use them</p>
+</dd>
+<dt><strong><a name="extutils_mm" class="item">ExtUtils::MM</a></strong></dt>
+
+<dd>
+<p>OS adjusted ExtUtils::MakeMaker subclass</p>
+</dd>
+<dt><strong><a name="extutils_mm_aix" class="item">ExtUtils::MM_AIX</a></strong></dt>
+
+<dd>
+<p>AIX specific subclass of ExtUtils::MM_Unix</p>
+</dd>
+<dt><strong><a name="extutils_mm_any" class="item">ExtUtils::MM_Any</a></strong></dt>
+
+<dd>
+<p>Platform-agnostic MM methods</p>
+</dd>
+<dt><strong><a name="extutils_mm_beos" class="item">ExtUtils::MM_BeOS</a></strong></dt>
+
+<dd>
+<p>Methods to override UN*X behaviour in ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_cygwin" class="item">ExtUtils::MM_Cygwin</a></strong></dt>
+
+<dd>
+<p>Methods to override UN*X behaviour in ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_dos" class="item">ExtUtils::MM_DOS</a></strong></dt>
+
+<dd>
+<p>DOS specific subclass of ExtUtils::MM_Unix</p>
+</dd>
+<dt><strong><a name="extutils_mm_darwin" class="item">ExtUtils::MM_Darwin</a></strong></dt>
+
+<dd>
+<p>Special behaviors for OS X</p>
+</dd>
+<dt><strong><a name="extutils_mm_macos" class="item">ExtUtils::MM_MacOS</a></strong></dt>
+
+<dd>
+<p>Once produced Makefiles for MacOS Classic</p>
+</dd>
+<dt><strong><a name="extutils_mm_nw5" class="item">ExtUtils::MM_NW5</a></strong></dt>
+
+<dd>
+<p>Methods to override UN*X behaviour in ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_os2" class="item">ExtUtils::MM_OS2</a></strong></dt>
+
+<dd>
+<p>Methods to override UN*X behaviour in ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_qnx" class="item">ExtUtils::MM_QNX</a></strong></dt>
+
+<dd>
+<p>QNX specific subclass of ExtUtils::MM_Unix</p>
+</dd>
+<dt><strong><a name="extutils_mm_uwin" class="item">ExtUtils::MM_UWIN</a></strong></dt>
+
+<dd>
+<p>U/WIN specific subclass of ExtUtils::MM_Unix</p>
+</dd>
+<dt><strong><a name="extutils_mm_unix" class="item">ExtUtils::MM_Unix</a></strong></dt>
+
+<dd>
+<p>Methods used by ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_vms" class="item">ExtUtils::MM_VMS</a></strong></dt>
+
+<dd>
+<p>Methods to override UN*X behaviour in ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_vos" class="item">ExtUtils::MM_VOS</a></strong></dt>
+
+<dd>
+<p>VOS specific subclass of ExtUtils::MM_Unix</p>
+</dd>
+<dt><strong><a name="extutils_mm_win32" class="item">ExtUtils::MM_Win32</a></strong></dt>
+
+<dd>
+<p>Methods to override UN*X behaviour in ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_mm_win95" class="item">ExtUtils::MM_Win95</a></strong></dt>
+
+<dd>
+<p>Method to customize MakeMaker for Win9X</p>
+</dd>
+<dt><strong><a name="extutils_my" class="item">ExtUtils::MY</a></strong></dt>
+
+<dd>
+<p>ExtUtils::MakeMaker subclass for customization</p>
+</dd>
+<dt><strong><a name="extutils_makemaker6" class="item">ExtUtils::MakeMaker</a></strong></dt>
+
+<dd>
+<p>Create a module Makefile</p>
+</dd>
+<dt><strong><a name="extutils_makemaker_config" class="item">ExtUtils::MakeMaker::Config</a></strong></dt>
+
+<dd>
+<p>Wrapper around Config.pm</p>
+</dd>
+<dt><strong><a name="extutils_makemaker_faq" class="item">ExtUtils::MakeMaker::FAQ</a></strong></dt>
+
+<dd>
+<p>Frequently Asked Questions About MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_makemaker_tutorial" class="item">ExtUtils::MakeMaker::Tutorial</a></strong></dt>
+
+<dd>
+<p>Writing a module with MakeMaker</p>
+</dd>
+<dt><strong><a name="extutils_makemaker_yaml" class="item">ExtUtils::MakeMaker::YAML</a></strong></dt>
+
+<dd>
+<p>Clone of YAML::Tiny</p>
+</dd>
+<dt><strong><a name="extutils_manifest4" class="item">ExtUtils::Manifest</a></strong></dt>
+
+<dd>
+<p>Utilities to write and check a MANIFEST file</p>
+</dd>
+<dt><strong><a name="extutils_mkbootstrap" class="item">ExtUtils::Mkbootstrap</a></strong></dt>
+
+<dd>
+<p>Make a bootstrap file for use by DynaLoader</p>
+</dd>
+<dt><strong><a name="extutils_mksymlists" class="item">ExtUtils::Mksymlists</a></strong></dt>
+
+<dd>
+<p>Write linker options files for dynamic extension</p>
+</dd>
+<dt><strong><a name="extutils_packlist2" class="item">ExtUtils::Packlist</a></strong></dt>
+
+<dd>
+<p>Manage .packlist files</p>
+</dd>
+<dt><strong><a name="extutils_parsexs4" class="item">ExtUtils::ParseXS</a></strong></dt>
+
+<dd>
+<p>Converts Perl XS code into C code</p>
+</dd>
+<dt><strong><a name="extutils_xssymset" class="item">ExtUtils::XSSymSet</a></strong></dt>
+
+<dd>
+<p>Keep sets of symbol names palatable to the VMS linker</p>
+</dd>
+<dt><strong><a name="extutils_testlib" class="item">ExtUtils::testlib</a></strong></dt>
+
+<dd>
+<p>Add blib/* directories to @INC</p>
+</dd>
+<dt><strong><a name="fatal3" class="item">Fatal</a></strong></dt>
+
+<dd>
+<p>Replace functions with equivalents which succeed or die</p>
+</dd>
+<dt><strong><a name="fcntl4" class="item">Fcntl</a></strong></dt>
+
+<dd>
+<p>Load the C Fcntl.h defines</p>
+</dd>
+<dt><strong><a name="file_basename2" class="item">File::Basename</a></strong></dt>
+
+<dd>
+<p>Parse file paths into directory, filename and suffix.</p>
+</dd>
+<dt><strong><a name="file_checktree" class="item">File::CheckTree</a></strong></dt>
+
+<dd>
+<p>Run many filetest checks on a tree</p>
+</dd>
+<dt><strong><a name="file_compare4" class="item">File::Compare</a></strong></dt>
+
+<dd>
+<p>Compare files or filehandles</p>
+</dd>
+<dt><strong><a name="file_copy4" class="item">File::Copy</a></strong></dt>
+
+<dd>
+<p>Copy files or filehandles</p>
+</dd>
+<dt><strong><a name="file_dosglob" class="item">File::DosGlob</a></strong></dt>
+
+<dd>
+<p>DOS like globbing and then some</p>
+</dd>
+<dt><strong><a name="file_fetch5" class="item">File::Fetch</a></strong></dt>
+
+<dd>
+<p>A generic file fetching mechanism</p>
+</dd>
+<dt><strong><a name="file_find7" class="item">File::Find</a></strong></dt>
+
+<dd>
+<p>Traverse a directory tree.</p>
+</dd>
+<dt><strong><a name="file_glob4" class="item">File::Glob</a></strong></dt>
+
+<dd>
+<p>Perl extension for BSD glob routine</p>
+</dd>
+<dt><strong><a name="file_globmapper" class="item">File::GlobMapper</a></strong></dt>
+
+<dd>
+<p>Extend File Glob to Allow Input and Output Files</p>
+</dd>
+<dt><strong><a name="file_path4" class="item">File::Path</a></strong></dt>
+
+<dd>
+<p>Create or remove directory trees</p>
+</dd>
+<dt><strong><a name="file_spec8" class="item">File::Spec</a></strong></dt>
+
+<dd>
+<p>Portably perform operations on file names</p>
+</dd>
+<dt><strong><a name="file_spec_cygwin" class="item">File::Spec::Cygwin</a></strong></dt>
+
+<dd>
+<p>Methods for Cygwin file specs</p>
+</dd>
+<dt><strong><a name="file_spec_epoc" class="item">File::Spec::Epoc</a></strong></dt>
+
+<dd>
+<p>Methods for Epoc file specs</p>
+</dd>
+<dt><strong><a name="file_spec_functions3" class="item">File::Spec::Functions</a></strong></dt>
+
+<dd>
+<p>Portably perform operations on file names</p>
+</dd>
+<dt><strong><a name="file_spec_mac" class="item">File::Spec::Mac</a></strong></dt>
+
+<dd>
+<p>File::Spec for Mac OS (Classic)</p>
+</dd>
+<dt><strong><a name="file_spec_os2" class="item">File::Spec::OS2</a></strong></dt>
+
+<dd>
+<p>Methods for OS/2 file specs</p>
+</dd>
+<dt><strong><a name="file_spec_unix" class="item">File::Spec::Unix</a></strong></dt>
+
+<dd>
+<p>File::Spec for Unix, base for other File::Spec modules</p>
+</dd>
+<dt><strong><a name="file_spec_vms" class="item">File::Spec::VMS</a></strong></dt>
+
+<dd>
+<p>Methods for VMS file specs</p>
+</dd>
+<dt><strong><a name="file_spec_win32" class="item">File::Spec::Win32</a></strong></dt>
+
+<dd>
+<p>Methods for Win32 file specs</p>
+</dd>
+<dt><strong><a name="file_temp4" class="item">File::Temp</a></strong></dt>
+
+<dd>
+<p>Return name and handle of a temporary file safely</p>
+</dd>
+<dt><strong><a name="file_stat2" class="item">File::stat</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in <a href="../../lib/pods/perlfunc.html#stat"><code>stat()</code></a> functions</p>
+</dd>
+<dt><strong><a name="filecache2" class="item">FileCache</a></strong></dt>
+
+<dd>
+<p>Keep more files open than the system permits</p>
+</dd>
+<dt><strong><a name="filehandle2" class="item">FileHandle</a></strong></dt>
+
+<dd>
+<p>Supply object methods for filehandles</p>
+</dd>
+<dt><strong><a name="filter_simple4" class="item">Filter::Simple</a></strong></dt>
+
+<dd>
+<p>Simplified source filtering</p>
+</dd>
+<dt><strong><a name="filter_util_call3" class="item">Filter::Util::Call</a></strong></dt>
+
+<dd>
+<p>Perl Source Filter Utility Module</p>
+</dd>
+<dt><strong><a name="findbin4" class="item">FindBin</a></strong></dt>
+
+<dd>
+<p>Locate directory of original perl script</p>
+</dd>
+<dt><strong><a name="gdbm_file3" class="item">GDBM_File</a></strong></dt>
+
+<dd>
+<p>Perl5 access to the gdbm library.</p>
+</dd>
+<dt><strong><a name="getopt_long6" class="item">Getopt::Long</a></strong></dt>
+
+<dd>
+<p>Extended processing of command line options</p>
+</dd>
+<dt><strong><a name="getopt_std" class="item">Getopt::Std</a></strong></dt>
+
+<dd>
+<p>Process single-character switches with switch clustering</p>
+</dd>
+<dt><strong><a name="http_tiny" class="item">HTTP::Tiny</a></strong></dt>
+
+<dd>
+<p>A small, simple, correct HTTP/1.1 client</p>
+</dd>
+<dt><strong><a name="hash_util2" class="item">Hash::Util</a></strong></dt>
+
+<dd>
+<p>A selection of general-utility hash subroutines</p>
+</dd>
+<dt><strong><a name="hash_util_fieldhash2" class="item">Hash::Util::FieldHash</a></strong></dt>
+
+<dd>
+<p>Support for Inside-Out Classes</p>
+</dd>
+<dt><strong><a name="i18n_collate2" class="item">I18N::Collate</a></strong></dt>
+
+<dd>
+<p>Compare 8-bit scalar data according to the current locale</p>
+</dd>
+<dt><strong><a name="i18n_langtags3" class="item">I18N::LangTags</a></strong></dt>
+
+<dd>
+<p>Functions for dealing with <a href="http://www.ietf.org/rfc/rfc3066.txt" class="rfc">RFC3066</a>-style language tags</p>
+</dd>
+<dt><strong><a name="i18n_langtags_detect" class="item">I18N::LangTags::Detect</a></strong></dt>
+
+<dd>
+<p>Detect the user's language preferences</p>
+</dd>
+<dt><strong><a name="i18n_langtags_list" class="item">I18N::LangTags::List</a></strong></dt>
+
+<dd>
+<p>Tags and names for human languages</p>
+</dd>
+<dt><strong><a name="i18n_langinfo2" class="item">I18N::Langinfo</a></strong></dt>
+
+<dd>
+<p>Query locale information</p>
+</dd>
+<dt><strong><a name="io8" class="item">IO</a></strong></dt>
+
+<dd>
+<p>Load various IO modules</p>
+</dd>
+<dt><strong><a name="io_compress_base" class="item">IO::Compress::Base</a></strong></dt>
+
+<dd>
+<p>Base Class for IO::Compress modules</p>
+</dd>
+<dt><strong><a name="io_compress_bzip2" class="item">IO::Compress::Bzip2</a></strong></dt>
+
+<dd>
+<p>Write bzip2 files/buffers</p>
+</dd>
+<dt><strong><a name="io_compress_deflate" class="item">IO::Compress::Deflate</a></strong></dt>
+
+<dd>
+<p>Write <a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a> files/buffers</p>
+</dd>
+<dt><strong><a name="io_compress_faq" class="item">IO::Compress::FAQ</a></strong></dt>
+
+<dd>
+<p>Frequently Asked Questions about IO::Compress</p>
+</dd>
+<dt><strong><a name="io_compress_gzip" class="item">IO::Compress::Gzip</a></strong></dt>
+
+<dd>
+<p>Write <a href="http://www.ietf.org/rfc/rfc1952.txt" class="rfc">RFC 1952</a> files/buffers</p>
+</dd>
+<dt><strong><a name="io_compress_rawdeflate" class="item">IO::Compress::RawDeflate</a></strong></dt>
+
+<dd>
+<p>Write <a href="http://www.ietf.org/rfc/rfc1951.txt" class="rfc">RFC 1951</a> files/buffers</p>
+</dd>
+<dt><strong><a name="io_compress_zip" class="item">IO::Compress::Zip</a></strong></dt>
+
+<dd>
+<p>Write zip files/buffers</p>
+</dd>
+<dt><strong><a name="io_dir2" class="item">IO::Dir</a></strong></dt>
+
+<dd>
+<p>Supply object methods for directory handles</p>
+</dd>
+<dt><strong><a name="io_file" class="item">IO::File</a></strong></dt>
+
+<dd>
+<p>Supply object methods for filehandles</p>
+</dd>
+<dt><strong><a name="io_handle2" class="item">IO::Handle</a></strong></dt>
+
+<dd>
+<p>Supply object methods for I/O handles</p>
+</dd>
+<dt><strong><a name="io_pipe" class="item">IO::Pipe</a></strong></dt>
+
+<dd>
+<p>Supply object methods for pipes</p>
+</dd>
+<dt><strong><a name="io_poll2" class="item">IO::Poll</a></strong></dt>
+
+<dd>
+<p>Object interface to system poll call</p>
+</dd>
+<dt><strong><a name="io_seekable" class="item">IO::Seekable</a></strong></dt>
+
+<dd>
+<p>Supply seek based methods for I/O objects</p>
+</dd>
+<dt><strong><a name="io_select" class="item">IO::Select</a></strong></dt>
+
+<dd>
+<p>OO interface to the select system call</p>
+</dd>
+<dt><strong><a name="io_socket3" class="item">IO::Socket</a></strong></dt>
+
+<dd>
+<p>Object interface to socket communications</p>
+</dd>
+<dt><strong><a name="io_socket_inet" class="item">IO::Socket::INET</a></strong></dt>
+
+<dd>
+<p>Object interface for AF_INET domain sockets</p>
+</dd>
+<dt><strong><a name="io_socket_unix" class="item">IO::Socket::UNIX</a></strong></dt>
+
+<dd>
+<p>Object interface for AF_UNIX domain sockets</p>
+</dd>
+<dt><strong><a name="io_uncompress_anyinflate" class="item">IO::Uncompress::AnyInflate</a></strong></dt>
+
+<dd>
+<p>Uncompress zlib-based (zip, gzip) file/buffer</p>
+</dd>
+<dt><strong><a name="io_uncompress_anyuncompress" class="item">IO::Uncompress::AnyUncompress</a></strong></dt>
+
+<dd>
+<p>Uncompress gzip, zip, bzip2 or lzop file/buffer</p>
+</dd>
+<dt><strong><a name="io_uncompress_base" class="item">IO::Uncompress::Base</a></strong></dt>
+
+<dd>
+<p>Base Class for IO::Uncompress modules</p>
+</dd>
+<dt><strong><a name="io_uncompress_bunzip2" class="item">IO::Uncompress::Bunzip2</a></strong></dt>
+
+<dd>
+<p>Read bzip2 files/buffers</p>
+</dd>
+<dt><strong><a name="io_uncompress_gunzip" class="item">IO::Uncompress::Gunzip</a></strong></dt>
+
+<dd>
+<p>Read <a href="http://www.ietf.org/rfc/rfc1952.txt" class="rfc">RFC 1952</a> files/buffers</p>
+</dd>
+<dt><strong><a name="io_uncompress_inflate" class="item">IO::Uncompress::Inflate</a></strong></dt>
+
+<dd>
+<p>Read <a href="http://www.ietf.org/rfc/rfc1950.txt" class="rfc">RFC 1950</a> files/buffers</p>
+</dd>
+<dt><strong><a name="io_uncompress_rawinflate" class="item">IO::Uncompress::RawInflate</a></strong></dt>
+
+<dd>
+<p>Read <a href="http://www.ietf.org/rfc/rfc1951.txt" class="rfc">RFC 1951</a> files/buffers</p>
+</dd>
+<dt><strong><a name="io_uncompress_unzip" class="item">IO::Uncompress::Unzip</a></strong></dt>
+
+<dd>
+<p>Read zip files/buffers</p>
+</dd>
+<dt><strong><a name="io_zlib3" class="item">IO::Zlib</a></strong></dt>
+
+<dd>
+<p>IO:: style interface to <a href="../../lib/Compress/Zlib.html">the Compress::Zlib manpage</a></p>
+</dd>
+<dt><strong><a name="ipc_cmd5" class="item">IPC::Cmd</a></strong></dt>
+
+<dd>
+<p>Finding and running system commands made easy</p>
+</dd>
+<dt><strong><a name="ipc_msg" class="item">IPC::Msg</a></strong></dt>
+
+<dd>
+<p>SysV Msg IPC object class</p>
+</dd>
+<dt><strong><a name="ipc_open22" class="item">IPC::Open2</a></strong></dt>
+
+<dd>
+<p>Open a process for both reading and writing using open2()</p>
+</dd>
+<dt><strong><a name="ipc_open34" class="item">IPC::Open3</a></strong></dt>
+
+<dd>
+<p>Open a process for reading, writing, and error handling using open3()</p>
+</dd>
+<dt><strong><a name="ipc_semaphore" class="item">IPC::Semaphore</a></strong></dt>
+
+<dd>
+<p>SysV Semaphore IPC object class</p>
+</dd>
+<dt><strong><a name="ipc_sharedmem" class="item">IPC::SharedMem</a></strong></dt>
+
+<dd>
+<p>SysV Shared Memory IPC object class</p>
+</dd>
+<dt><strong><a name="ipc_sysv5" class="item">IPC::SysV</a></strong></dt>
+
+<dd>
+<p>System V IPC constants and system calls</p>
+</dd>
+<dt><strong><a name="json_pp" class="item">JSON::PP</a></strong></dt>
+
+<dd>
+<p>JSON::XS compatible pure-Perl module.</p>
+</dd>
+<dt><strong><a name="json_pp_boolean" class="item">JSON::PP::Boolean</a></strong></dt>
+
+<dd>
+<p>Dummy module providing JSON::PP::Boolean</p>
+</dd>
+<dt><strong><a name="list_util5" class="item">List::Util</a></strong></dt>
+
+<dd>
+<p>A selection of general-utility list subroutines</p>
+</dd>
+<dt><strong><a name="list_util_xs" class="item">List::Util::XS</a></strong></dt>
+
+<dd>
+<p>Indicate if List::Util was compiled with a C compiler</p>
+</dd>
+<dt><strong><a name="locale_codes12" class="item">Locale::Codes</a></strong></dt>
+
+<dd>
+<p>A distribution of modules to handle locale codes</p>
+</dd>
+<dt><strong><a name="locale_codes_changes2" class="item">Locale::Codes::Changes</a></strong></dt>
+
+<dd>
+<p>Details important changes after 2.07</p>
+</dd>
+<dt><strong><a name="locale_codes_country3" class="item">Locale::Codes::Country</a></strong></dt>
+
+<dd>
+<p>Country codes for the Locale::Country module</p>
+</dd>
+<dt><strong><a name="locale_codes_currency3" class="item">Locale::Codes::Currency</a></strong></dt>
+
+<dd>
+<p>Currency codes for the Locale::Currency module</p>
+</dd>
+<dt><strong><a name="locale_codes_language3" class="item">Locale::Codes::Language</a></strong></dt>
+
+<dd>
+<p>Language codes for the Locale::Language module</p>
+</dd>
+<dt><strong><a name="locale_codes_script3" class="item">Locale::Codes::Script</a></strong></dt>
+
+<dd>
+<p>Script codes for the Locale::Script module</p>
+</dd>
+<dt><strong><a name="locale_constants" class="item">Locale::Constants</a></strong></dt>
+
+<dd>
+<p>Constants for Locale codes</p>
+</dd>
+<dt><strong><a name="locale_country" class="item">Locale::Country</a></strong></dt>
+
+<dd>
+<p>Standard codes for country identification</p>
+</dd>
+<dt><strong><a name="locale_currency" class="item">Locale::Currency</a></strong></dt>
+
+<dd>
+<p>Standard codes for currency identification</p>
+</dd>
+<dt><strong><a name="locale_language" class="item">Locale::Language</a></strong></dt>
+
+<dd>
+<p>Standard codes for language identification</p>
+</dd>
+<dt><strong><a name="locale_maketext4" class="item">Locale::Maketext</a></strong></dt>
+
+<dd>
+<p>Framework for localization</p>
+</dd>
+<dt><strong><a name="locale_maketext_cookbook" class="item">Locale::Maketext::Cookbook</a></strong></dt>
+
+<dd>
+<p>Recipes for using Locale::Maketext</p>
+</dd>
+<dt><strong><a name="locale_maketext_guts" class="item">Locale::Maketext::Guts</a></strong></dt>
+
+<dd>
+<p>Deprecated module to load Locale::Maketext utf8 code</p>
+</dd>
+<dt><strong><a name="locale_maketext_gutsloader" class="item">Locale::Maketext::GutsLoader</a></strong></dt>
+
+<dd>
+<p>Deprecated module to load Locale::Maketext utf8 code</p>
+</dd>
+<dt><strong><a name="locale_maketext_simple2" class="item">Locale::Maketext::Simple</a></strong></dt>
+
+<dd>
+<p>Simple interface to Locale::Maketext::Lexicon</p>
+</dd>
+<dt><strong><a name="locale_maketext_tpj13" class="item">Locale::Maketext::TPJ13</a></strong></dt>
+
+<dd>
+<p>Article about software localization</p>
+</dd>
+<dt><strong><a name="locale_script" class="item">Locale::Script</a></strong></dt>
+
+<dd>
+<p>Standard codes for script identification</p>
+</dd>
+<dt><strong><a name="log_message4" class="item">Log::Message</a></strong></dt>
+
+<dd>
+<p>A generic message storing mechanism;</p>
+</dd>
+<dt><strong><a name="log_message_config2" class="item">Log::Message::Config</a></strong></dt>
+
+<dd>
+<p>Configuration options for Log::Message</p>
+</dd>
+<dt><strong><a name="log_message_handlers2" class="item">Log::Message::Handlers</a></strong></dt>
+
+<dd>
+<p>Message handlers for Log::Message</p>
+</dd>
+<dt><strong><a name="log_message_item2" class="item">Log::Message::Item</a></strong></dt>
+
+<dd>
+<p>Message objects for Log::Message</p>
+</dd>
+<dt><strong><a name="log_message_simple2" class="item">Log::Message::Simple</a></strong></dt>
+
+<dd>
+<p>Simplified interface to Log::Message</p>
+</dd>
+<dt><strong><a name="mime_base647" class="item">MIME::Base64</a></strong></dt>
+
+<dd>
+<p>Encoding and decoding of base64 strings</p>
+</dd>
+<dt><strong><a name="mime_quotedprint" class="item">MIME::QuotedPrint</a></strong></dt>
+
+<dd>
+<p>Encoding and decoding of quoted-printable strings</p>
+</dd>
+<dt><strong><a name="math_bigfloat4" class="item">Math::BigFloat</a></strong></dt>
+
+<dd>
+<p>Arbitrary size floating point math package</p>
+</dd>
+<dt><strong><a name="math_bigint10" class="item">Math::BigInt</a></strong></dt>
+
+<dd>
+<p>Arbitrary size integer/float math package</p>
+</dd>
+<dt><strong><a name="math_bigint_calc" class="item">Math::BigInt::Calc</a></strong></dt>
+
+<dd>
+<p>Pure Perl module to support Math::BigInt</p>
+</dd>
+<dt><strong><a name="math_bigint_calcemu" class="item">Math::BigInt::CalcEmu</a></strong></dt>
+
+<dd>
+<p>Emulate low-level math with BigInt code</p>
+</dd>
+<dt><strong><a name="math_bigint_fastcalc4" class="item">Math::BigInt::FastCalc</a></strong></dt>
+
+<dd>
+<p>Math::BigInt::Calc with some XS for more speed</p>
+</dd>
+<dt><strong><a name="math_bigrat5" class="item">Math::BigRat</a></strong></dt>
+
+<dd>
+<p>Arbitrary big rational numbers</p>
+</dd>
+<dt><strong><a name="math_complex7" class="item">Math::Complex</a></strong></dt>
+
+<dd>
+<p>Complex numbers and associated mathematical functions</p>
+</dd>
+<dt><strong><a name="math_trig5" class="item">Math::Trig</a></strong></dt>
+
+<dd>
+<p>Trigonometric functions</p>
+</dd>
+<dt><strong><a name="memoize3" class="item">Memoize</a></strong></dt>
+
+<dd>
+<p>Make functions faster by trading space for time</p>
+</dd>
+<dt><strong><a name="memoize_anydbm_file" class="item">Memoize::AnyDBM_File</a></strong></dt>
+
+<dd>
+<p>Glue to provide EXISTS for AnyDBM_File for Storable use</p>
+</dd>
+<dt><strong><a name="memoize_expire" class="item">Memoize::Expire</a></strong></dt>
+
+<dd>
+<p>Plug-in module for automatic expiration of memoized values</p>
+</dd>
+<dt><strong><a name="memoize_expirefile" class="item">Memoize::ExpireFile</a></strong></dt>
+
+<dd>
+<p>Test for Memoize expiration semantics</p>
+</dd>
+<dt><strong><a name="memoize_expiretest" class="item">Memoize::ExpireTest</a></strong></dt>
+
+<dd>
+<p>Test for Memoize expiration semantics</p>
+</dd>
+<dt><strong><a name="memoize_ndbm_file" class="item">Memoize::NDBM_File</a></strong></dt>
+
+<dd>
+<p>Glue to provide EXISTS for NDBM_File for Storable use</p>
+</dd>
+<dt><strong><a name="memoize_sdbm_file" class="item">Memoize::SDBM_File</a></strong></dt>
+
+<dd>
+<p>Glue to provide EXISTS for SDBM_File for Storable use</p>
+</dd>
+<dt><strong><a name="memoize_storable" class="item">Memoize::Storable</a></strong></dt>
+
+<dd>
+<p>Store Memoized data in Storable database</p>
+</dd>
+<dt><strong><a name="module_build7" class="item">Module::Build</a></strong></dt>
+
+<dd>
+<p>Build and install Perl modules</p>
+</dd>
+<dt><strong><a name="module_build_api" class="item">Module::Build::API</a></strong></dt>
+
+<dd>
+<p>API Reference for Module Authors</p>
+</dd>
+<dt><strong><a name="module_build_authoring" class="item">Module::Build::Authoring</a></strong></dt>
+
+<dd>
+<p>Authoring Module::Build modules</p>
+</dd>
+<dt><strong><a name="module_build_base" class="item">Module::Build::Base</a></strong></dt>
+
+<dd>
+<p>Default methods for Module::Build</p>
+</dd>
+<dt><strong><a name="module_build_bundling" class="item">Module::Build::Bundling</a></strong></dt>
+
+<dd>
+<p>How to bundle Module::Build with a distribution</p>
+</dd>
+<dt><strong><a name="module_build_compat" class="item">Module::Build::Compat</a></strong></dt>
+
+<dd>
+<p>Compatibility with ExtUtils::MakeMaker</p>
+</dd>
+<dt><strong><a name="module_build_configdata" class="item">Module::Build::ConfigData</a></strong></dt>
+
+<dd>
+<p>Configuration for Module::Build</p>
+</dd>
+<dt><strong><a name="module_build_cookbook" class="item">Module::Build::Cookbook</a></strong></dt>
+
+<dd>
+<p>Examples of Module::Build Usage</p>
+</dd>
+<dt><strong><a name="module_build_moduleinfo" class="item">Module::Build::ModuleInfo</a></strong></dt>
+
+<dd>
+<p>DEPRECATED</p>
+</dd>
+<dt><strong><a name="module_build_notes" class="item">Module::Build::Notes</a></strong></dt>
+
+<dd>
+<p>Create persistent distribution configuration modules</p>
+</dd>
+<dt><strong><a name="module_build_ppmmaker" class="item">Module::Build::PPMMaker</a></strong></dt>
+
+<dd>
+<p>Perl Package Manager file creation</p>
+</dd>
+<dt><strong><a name="module_build_platform_amiga" class="item">Module::Build::Platform::Amiga</a></strong></dt>
+
+<dd>
+<p>Builder class for Amiga platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_default" class="item">Module::Build::Platform::Default</a></strong></dt>
+
+<dd>
+<p>Stub class for unknown platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_ebcdic" class="item">Module::Build::Platform::EBCDIC</a></strong></dt>
+
+<dd>
+<p>Builder class for EBCDIC platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_mpeix" class="item">Module::Build::Platform::MPEiX</a></strong></dt>
+
+<dd>
+<p>Builder class for MPEiX platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_macos" class="item">Module::Build::Platform::MacOS</a></strong></dt>
+
+<dd>
+<p>Builder class for MacOS platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_riscos" class="item">Module::Build::Platform::RiscOS</a></strong></dt>
+
+<dd>
+<p>Builder class for RiscOS platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_unix" class="item">Module::Build::Platform::Unix</a></strong></dt>
+
+<dd>
+<p>Builder class for Unix platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_vms" class="item">Module::Build::Platform::VMS</a></strong></dt>
+
+<dd>
+<p>Builder class for VMS platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_vos" class="item">Module::Build::Platform::VOS</a></strong></dt>
+
+<dd>
+<p>Builder class for VOS platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_windows" class="item">Module::Build::Platform::Windows</a></strong></dt>
+
+<dd>
+<p>Builder class for Windows platforms</p>
+</dd>
+<dt><strong><a name="module_build_platform_aix" class="item">Module::Build::Platform::aix</a></strong></dt>
+
+<dd>
+<p>Builder class for AIX platform</p>
+</dd>
+<dt><strong><a name="module_build_platform_cygwin" class="item">Module::Build::Platform::cygwin</a></strong></dt>
+
+<dd>
+<p>Builder class for Cygwin platform</p>
+</dd>
+<dt><strong><a name="module_build_platform_darwin" class="item">Module::Build::Platform::darwin</a></strong></dt>
+
+<dd>
+<p>Builder class for Mac OS X platform</p>
+</dd>
+<dt><strong><a name="module_build_platform_os2" class="item">Module::Build::Platform::os2</a></strong></dt>
+
+<dd>
+<p>Builder class for OS/2 platform</p>
+</dd>
+<dt><strong><a name="module_build_version" class="item">Module::Build::Version</a></strong></dt>
+
+<dd>
+<p>DEPRECATED</p>
+</dd>
+<dt><strong><a name="module_build_yaml" class="item">Module::Build::YAML</a></strong></dt>
+
+<dd>
+<p>DEPRECATED</p>
+</dd>
+<dt><strong><a name="module_corelist8" class="item">Module::CoreList</a></strong></dt>
+
+<dd>
+<p>What modules shipped with versions of perl</p>
+</dd>
+<dt><strong><a name="module_load4" class="item">Module::Load</a></strong></dt>
+
+<dd>
+<p>Runtime require of both modules and files</p>
+</dd>
+<dt><strong><a name="module_load_conditional3" class="item">Module::Load::Conditional</a></strong></dt>
+
+<dd>
+<p>Looking up module information / loading at runtime</p>
+</dd>
+<dt><strong><a name="module_loaded3" class="item">Module::Loaded</a></strong></dt>
+
+<dd>
+<p>Mark modules as loaded or unloaded</p>
+</dd>
+<dt><strong><a name="module_metadata" class="item">Module::Metadata</a></strong></dt>
+
+<dd>
+<p>Gather package and POD information from perl module files</p>
+</dd>
+<dt><strong><a name="module_pluggable3" class="item">Module::Pluggable</a></strong></dt>
+
+<dd>
+<p>Automatically give your module the ability to have plugins</p>
+</dd>
+<dt><strong><a name="module_pluggable_object" class="item">Module::Pluggable::Object</a></strong></dt>
+
+<dd>
+<p>Automatically give your module the ability to have plugins</p>
+</dd>
+<dt><strong><a name="ndbm_file2" class="item">NDBM_File</a></strong></dt>
+
+<dd>
+<p>Tied access to ndbm files</p>
+</dd>
+<dt><strong><a name="next5" class="item">NEXT</a></strong></dt>
+
+<dd>
+<p>Provide a pseudo-class NEXT (et al) that allows method redispatch</p>
+</dd>
+<dt><strong><a name="net_cmd" class="item">Net::Cmd</a></strong></dt>
+
+<dd>
+<p>Network Command class (as used by FTP, SMTP etc)</p>
+</dd>
+<dt><strong><a name="net_config" class="item">Net::Config</a></strong></dt>
+
+<dd>
+<p>Local configuration data for libnet</p>
+</dd>
+<dt><strong><a name="net_domain" class="item">Net::Domain</a></strong></dt>
+
+<dd>
+<p>Attempt to evaluate the current host's internet name and domain</p>
+</dd>
+<dt><strong><a name="net_ftp" class="item">Net::FTP</a></strong></dt>
+
+<dd>
+<p>FTP Client class</p>
+</dd>
+<dt><strong><a name="net_nntp" class="item">Net::NNTP</a></strong></dt>
+
+<dd>
+<p>NNTP Client class</p>
+</dd>
+<dt><strong><a name="net_netrc" class="item">Net::Netrc</a></strong></dt>
+
+<dd>
+<p>OO interface to users netrc file</p>
+</dd>
+<dt><strong><a name="net_pop3" class="item">Net::POP3</a></strong></dt>
+
+<dd>
+<p>Post Office Protocol 3 Client class (<a href="http://www.ietf.org/rfc/rfc1939.txt" class="rfc">RFC1939</a>)</p>
+</dd>
+<dt><strong><a name="net_ping6" class="item">Net::Ping</a></strong></dt>
+
+<dd>
+<p>Check a remote host for reachability</p>
+</dd>
+<dt><strong><a name="net_smtp" class="item">Net::SMTP</a></strong></dt>
+
+<dd>
+<p>Simple Mail Transfer Protocol Client</p>
+</dd>
+<dt><strong><a name="net_time" class="item">Net::Time</a></strong></dt>
+
+<dd>
+<p>Time and daytime network client interface</p>
+</dd>
+<dt><strong><a name="net_hostent" class="item">Net::hostent</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in gethost*() functions</p>
+</dd>
+<dt><strong><a name="net_libnetfaq" class="item">Net::libnetFAQ</a></strong></dt>
+
+<dd>
+<p>Libnet Frequently Asked Questions</p>
+</dd>
+<dt><strong><a name="net_netent" class="item">Net::netent</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in getnet*() functions</p>
+</dd>
+<dt><strong><a name="net_protoent" class="item">Net::protoent</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in getproto*() functions</p>
+</dd>
+<dt><strong><a name="net_servent" class="item">Net::servent</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in getserv*() functions</p>
+</dd>
+<dt><strong><a name="o5" class="item">O</a></strong></dt>
+
+<dd>
+<p>Generic interface to Perl Compiler backends</p>
+</dd>
+<dt><strong><a name="odbm_file2" class="item">ODBM_File</a></strong></dt>
+
+<dd>
+<p>Tied access to odbm files</p>
+</dd>
+<dt><strong><a name="object_accessor3" class="item">Object::Accessor</a></strong></dt>
+
+<dd>
+<p>Interface to create per object accessors</p>
+</dd>
+<dt><strong><a name="opcode2" class="item">Opcode</a></strong></dt>
+
+<dd>
+<p>Disable named opcodes when compiling perl code</p>
+</dd>
+<dt><strong><a name="posix9" class="item">POSIX</a></strong></dt>
+
+<dd>
+<p>Perl interface to IEEE Std 1003.1</p>
+</dd>
+<dt><strong><a name="package_constants3" class="item">Package::Constants</a></strong></dt>
+
+<dd>
+<p>List all constants declared in a package</p>
+</dd>
+<dt><strong><a name="params_check" class="item">Params::Check</a></strong></dt>
+
+<dd>
+<p>A generic input parsing/checking mechanism.</p>
+</dd>
+<dt><strong><a name="parse_cpan_meta4" class="item">Parse::CPAN::Meta</a></strong></dt>
+
+<dd>
+<p>Parse META.yml and META.json CPAN metadata files</p>
+</dd>
+<dt><strong><a name="perl_ostype" class="item">Perl::OSType</a></strong></dt>
+
+<dd>
+<p>Map Perl operating system names to generic types</p>
+</dd>
+<dt><strong><a name="perlio4" class="item">PerlIO</a></strong></dt>
+
+<dd>
+<p>On demand loader for PerlIO layers and root of PerlIO::* name space</p>
+</dd>
+<dt><strong><a name="perlio_encoding" class="item">PerlIO::encoding</a></strong></dt>
+
+<dd>
+<p>Encoding layer</p>
+</dd>
+<dt><strong><a name="perlio_scalar4" class="item">PerlIO::scalar</a></strong></dt>
+
+<dd>
+<p>In-memory IO, scalar IO</p>
+</dd>
+<dt><strong><a name="perlio_via2" class="item">PerlIO::via</a></strong></dt>
+
+<dd>
+<p>Helper class for PerlIO layers implemented in perl</p>
+</dd>
+<dt><strong><a name="perlio_via_quotedprint" class="item">PerlIO::via::QuotedPrint</a></strong></dt>
+
+<dd>
+<p>PerlIO layer for quoted-printable strings</p>
+</dd>
+<dt><strong><a name="pod_checker" class="item">Pod::Checker</a></strong></dt>
+
+<dd>
+<p>Check pod documents for syntax errors</p>
+</dd>
+<dt><strong><a name="pod_escapes" class="item">Pod::Escapes</a></strong></dt>
+
+<dd>
+<p>For resolving Pod E&lt;...&gt; sequences</p>
+</dd>
+<dt><strong><a name="pod_find" class="item">Pod::Find</a></strong></dt>
+
+<dd>
+<p>Find POD documents in directory trees</p>
+</dd>
+<dt><strong><a name="pod_functions" class="item">Pod::Functions</a></strong></dt>
+
+<dd>
+<p>Group Perl's functions a la perlfunc.pod</p>
+</dd>
+<dt><strong><a name="pod_html" class="item">Pod::Html</a></strong></dt>
+
+<dd>
+<p>Module to convert pod files to HTML</p>
+</dd>
+<dt><strong><a name="pod_inputobjects" class="item">Pod::InputObjects</a></strong></dt>
+
+<dd>
+<p>Objects representing POD input paragraphs, commands, etc.</p>
+</dd>
+<dt><strong><a name="pod_latex4" class="item">Pod::LaTeX</a></strong></dt>
+
+<dd>
+<p>Convert Pod data to formatted Latex</p>
+</dd>
+<dt><strong><a name="pod_man2" class="item">Pod::Man</a></strong></dt>
+
+<dd>
+<p>Convert POD data to formatted *roff input</p>
+</dd>
+<dt><strong><a name="pod_parselink" class="item">Pod::ParseLink</a></strong></dt>
+
+<dd>
+<p>Parse an L&lt;&gt; formatting code in POD text</p>
+</dd>
+<dt><strong><a name="pod_parseutils" class="item">Pod::ParseUtils</a></strong></dt>
+
+<dd>
+<p>Helpers for POD parsing and conversion</p>
+</dd>
+<dt><strong><a name="pod_parser4" class="item">Pod::Parser</a></strong></dt>
+
+<dd>
+<p>Base class for creating POD filters and translators</p>
+</dd>
+<dt><strong><a name="pod_perldoc7" class="item">Pod::Perldoc</a></strong></dt>
+
+<dd>
+<p>Look up Perl documentation in Pod format.</p>
+</dd>
+<dt><strong><a name="pod_perldoc_baseto" class="item">Pod::Perldoc::BaseTo</a></strong></dt>
+
+<dd>
+<p>Base for Pod::Perldoc formatters</p>
+</dd>
+<dt><strong><a name="pod_perldoc_getoptsoo" class="item">Pod::Perldoc::GetOptsOO</a></strong></dt>
+
+<dd>
+<p>Customized option parser for Pod::Perldoc</p>
+</dd>
+<dt><strong><a name="pod_perldoc_tochecker" class="item">Pod::Perldoc::ToChecker</a></strong></dt>
+
+<dd>
+<p>Let Perldoc check Pod for errors</p>
+</dd>
+<dt><strong><a name="pod_perldoc_toman" class="item">Pod::Perldoc::ToMan</a></strong></dt>
+
+<dd>
+<p>Let Perldoc render Pod as man pages</p>
+</dd>
+<dt><strong><a name="pod_perldoc_tonroff" class="item">Pod::Perldoc::ToNroff</a></strong></dt>
+
+<dd>
+<p>Let Perldoc convert Pod to nroff</p>
+</dd>
+<dt><strong><a name="pod_perldoc_topod" class="item">Pod::Perldoc::ToPod</a></strong></dt>
+
+<dd>
+<p>Let Perldoc render Pod as ... Pod!</p>
+</dd>
+<dt><strong><a name="pod_perldoc_tortf" class="item">Pod::Perldoc::ToRtf</a></strong></dt>
+
+<dd>
+<p>Let Perldoc render Pod as RTF</p>
+</dd>
+<dt><strong><a name="pod_perldoc_totext" class="item">Pod::Perldoc::ToText</a></strong></dt>
+
+<dd>
+<p>Let Perldoc render Pod as plaintext</p>
+</dd>
+<dt><strong><a name="pod_perldoc_totk" class="item">Pod::Perldoc::ToTk</a></strong></dt>
+
+<dd>
+<p>Let Perldoc use Tk::Pod to render Pod</p>
+</dd>
+<dt><strong><a name="pod_perldoc_toxml" class="item">Pod::Perldoc::ToXml</a></strong></dt>
+
+<dd>
+<p>Let Perldoc render Pod as XML</p>
+</dd>
+<dt><strong><a name="pod_plaintext" class="item">Pod::PlainText</a></strong></dt>
+
+<dd>
+<p>Convert POD data to formatted ASCII text</p>
+</dd>
+<dt><strong><a name="pod_select" class="item">Pod::Select</a></strong></dt>
+
+<dd>
+<p>Extract selected sections of POD from input</p>
+</dd>
+<dt><strong><a name="pod_simple5" class="item">Pod::Simple</a></strong></dt>
+
+<dd>
+<p>Framework for parsing Pod</p>
+</dd>
+<dt><strong><a name="pod_simple_checker" class="item">Pod::Simple::Checker</a></strong></dt>
+
+<dd>
+<p>Check the Pod syntax of a document</p>
+</dd>
+<dt><strong><a name="pod_simple_debug" class="item">Pod::Simple::Debug</a></strong></dt>
+
+<dd>
+<p>Put Pod::Simple into trace/debug mode</p>
+</dd>
+<dt><strong><a name="pod_simple_dumpastext" class="item">Pod::Simple::DumpAsText</a></strong></dt>
+
+<dd>
+<p>Dump Pod-parsing events as text</p>
+</dd>
+<dt><strong><a name="pod_simple_dumpasxml" class="item">Pod::Simple::DumpAsXML</a></strong></dt>
+
+<dd>
+<p>Turn Pod into XML</p>
+</dd>
+<dt><strong><a name="pod_simple_html" class="item">Pod::Simple::HTML</a></strong></dt>
+
+<dd>
+<p>Convert Pod to HTML</p>
+</dd>
+<dt><strong><a name="pod_simple_htmlbatch" class="item">Pod::Simple::HTMLBatch</a></strong></dt>
+
+<dd>
+<p>Convert several Pod files to several HTML files</p>
+</dd>
+<dt><strong><a name="pod_simple_linksection" class="item">Pod::Simple::LinkSection</a></strong></dt>
+
+<dd>
+<p>Represent &quot;section&quot; attributes of L codes</p>
+</dd>
+<dt><strong><a name="pod_simple_methody" class="item">Pod::Simple::Methody</a></strong></dt>
+
+<dd>
+<p>Turn Pod::Simple events into method calls</p>
+</dd>
+<dt><strong><a name="pod_simple_pullparser" class="item">Pod::Simple::PullParser</a></strong></dt>
+
+<dd>
+<p>A pull-parser interface to parsing Pod</p>
+</dd>
+<dt><strong><a name="pod_simple_pullparserendtoken" class="item">Pod::Simple::PullParserEndToken</a></strong></dt>
+
+<dd>
+<p>End-tokens from Pod::Simple::PullParser</p>
+</dd>
+<dt><strong><a name="pod_simple_pullparserstarttoken" class="item">Pod::Simple::PullParserStartToken</a></strong></dt>
+
+<dd>
+<p>Start-tokens from Pod::Simple::PullParser</p>
+</dd>
+<dt><strong><a name="pod_simple_pullparsertexttoken" class="item">Pod::Simple::PullParserTextToken</a></strong></dt>
+
+<dd>
+<p>Text-tokens from Pod::Simple::PullParser</p>
+</dd>
+<dt><strong><a name="pod_simple_pullparsertoken" class="item">Pod::Simple::PullParserToken</a></strong></dt>
+
+<dd>
+<p>Tokens from Pod::Simple::PullParser</p>
+</dd>
+<dt><strong><a name="pod_simple_rtf" class="item">Pod::Simple::RTF</a></strong></dt>
+
+<dd>
+<p>Format Pod as RTF</p>
+</dd>
+<dt><strong><a name="pod_simple_search" class="item">Pod::Simple::Search</a></strong></dt>
+
+<dd>
+<p>Find POD documents in directory trees</p>
+</dd>
+<dt><strong><a name="pod_simple_simpletree" class="item">Pod::Simple::SimpleTree</a></strong></dt>
+
+<dd>
+<p>Parse Pod into a simple parse tree</p>
+</dd>
+<dt><strong><a name="pod_simple_subclassing" class="item">Pod::Simple::Subclassing</a></strong></dt>
+
+<dd>
+<p>Write a formatter as a Pod::Simple subclass</p>
+</dd>
+<dt><strong><a name="pod_simple_text" class="item">Pod::Simple::Text</a></strong></dt>
+
+<dd>
+<p>Format Pod as plaintext</p>
+</dd>
+<dt><strong><a name="pod_simple_textcontent" class="item">Pod::Simple::TextContent</a></strong></dt>
+
+<dd>
+<p>Get the text content of Pod</p>
+</dd>
+<dt><strong><a name="pod_simple_xhtml" class="item">Pod::Simple::XHTML</a></strong></dt>
+
+<dd>
+<p>Format Pod as validating XHTML</p>
+</dd>
+<dt><strong><a name="pod_simple_xmloutstream" class="item">Pod::Simple::XMLOutStream</a></strong></dt>
+
+<dd>
+<p>Turn Pod into XML</p>
+</dd>
+<dt><strong><a name="pod_text3" class="item">Pod::Text</a></strong></dt>
+
+<dd>
+<p>Convert POD data to formatted ASCII text</p>
+</dd>
+<dt><strong><a name="pod_text_color" class="item">Pod::Text::Color</a></strong></dt>
+
+<dd>
+<p>Convert POD data to formatted color ASCII text</p>
+</dd>
+<dt><strong><a name="pod_text_termcap" class="item">Pod::Text::Termcap</a></strong></dt>
+
+<dd>
+<p>Convert POD data to ASCII text with format escapes</p>
+</dd>
+<dt><strong><a name="pod_usage" class="item">Pod::Usage</a></strong></dt>
+
+<dd>
+<p>Print a usage message from embedded pod documentation</p>
+</dd>
+<dt><strong><a name="sdbm_file4" class="item">SDBM_File</a></strong></dt>
+
+<dd>
+<p>Tied access to sdbm files</p>
+</dd>
+<dt><strong><a name="safe7" class="item">Safe</a></strong></dt>
+
+<dd>
+<p>Compile and execute code in restricted compartments</p>
+</dd>
+<dt><strong><a name="scalar_util5" class="item">Scalar::Util</a></strong></dt>
+
+<dd>
+<p>A selection of general-utility scalar subroutines</p>
+</dd>
+<dt><strong><a name="search_dict" class="item">Search::Dict</a></strong></dt>
+
+<dd>
+<p>Search for key in dictionary file</p>
+</dd>
+<dt><strong><a name="selectsaver2" class="item">SelectSaver</a></strong></dt>
+
+<dd>
+<p>Save and restore selected file handle</p>
+</dd>
+<dt><strong><a name="selfloader3" class="item">SelfLoader</a></strong></dt>
+
+<dd>
+<p>Load functions only on demand</p>
+</dd>
+<dt><strong><a name="shell3" class="item">Shell</a></strong></dt>
+
+<dd>
+<p>Run shell commands transparently within perl</p>
+</dd>
+<dt><strong><a name="socket5" class="item">Socket</a></strong></dt>
+
+<dd>
+<p>Load the C socket.h defines and structure manipulators</p>
+</dd>
+<dt><strong><a name="storable7" class="item">Storable</a></strong></dt>
+
+<dd>
+<p>Persistence for Perl data structures</p>
+</dd>
+<dt><strong><a name="symbol2" class="item">Symbol</a></strong></dt>
+
+<dd>
+<p>Manipulate Perl symbols and their names</p>
+</dd>
+<dt><strong><a name="sys_hostname3" class="item">Sys::Hostname</a></strong></dt>
+
+<dd>
+<p>Try every conceivable way to get hostname</p>
+</dd>
+<dt><strong><a name="sys_syslog8" class="item">Sys::Syslog</a></strong></dt>
+
+<dd>
+<p>Perl interface to the UNIX <code>syslog(3)</code> calls</p>
+</dd>
+<dt><strong><a name="sys_syslog_win32" class="item">Sys::Syslog::Win32</a></strong></dt>
+
+<dd>
+<p>Win32 support for Sys::Syslog</p>
+</dd>
+<dt><strong><a name="tap_base" class="item">TAP::Base</a></strong></dt>
+
+<dd>
+<p>Base class that provides common functionality to <a href="../../lib/TAP/Parser.html">the TAP::Parser manpage</a></p>
+</dd>
+<dt><strong><a name="tap_formatter_base" class="item">TAP::Formatter::Base</a></strong></dt>
+
+<dd>
+<p>Base class for harness output delegates</p>
+</dd>
+<dt><strong><a name="tap_formatter_color" class="item">TAP::Formatter::Color</a></strong></dt>
+
+<dd>
+<p>Run Perl test scripts with color</p>
+</dd>
+<dt><strong><a name="tap_formatter_console" class="item">TAP::Formatter::Console</a></strong></dt>
+
+<dd>
+<p>Harness output delegate for default console output</p>
+</dd>
+<dt><strong><a name="tap_formatter_console_parallelsession" class="item">TAP::Formatter::Console::ParallelSession</a></strong></dt>
+
+<dd>
+<p>Harness output delegate for parallel console output</p>
+</dd>
+<dt><strong><a name="tap_formatter_console_session" class="item">TAP::Formatter::Console::Session</a></strong></dt>
+
+<dd>
+<p>Harness output delegate for default console output</p>
+</dd>
+<dt><strong><a name="tap_formatter_file" class="item">TAP::Formatter::File</a></strong></dt>
+
+<dd>
+<p>Harness output delegate for file output</p>
+</dd>
+<dt><strong><a name="tap_formatter_file_session" class="item">TAP::Formatter::File::Session</a></strong></dt>
+
+<dd>
+<p>Harness output delegate for file output</p>
+</dd>
+<dt><strong><a name="tap_formatter_session" class="item">TAP::Formatter::Session</a></strong></dt>
+
+<dd>
+<p>Abstract base class for harness output delegate</p>
+</dd>
+<dt><strong><a name="tap_harness" class="item">TAP::Harness</a></strong></dt>
+
+<dd>
+<p>Run test scripts with statistics</p>
+</dd>
+<dt><strong><a name="tap_object" class="item">TAP::Object</a></strong></dt>
+
+<dd>
+<p>Base class that provides common functionality to all <code>TAP::*</code> modules</p>
+</dd>
+<dt><strong><a name="tap_parser" class="item">TAP::Parser</a></strong></dt>
+
+<dd>
+<p>Parse <a href="../../Test/Harness/TAP.html">TAP</a> output</p>
+</dd>
+<dt><strong><a name="tap_parser_aggregator" class="item">TAP::Parser::Aggregator</a></strong></dt>
+
+<dd>
+<p>Aggregate TAP::Parser results</p>
+</dd>
+<dt><strong><a name="tap_parser_grammar" class="item">TAP::Parser::Grammar</a></strong></dt>
+
+<dd>
+<p>A grammar for the Test Anything Protocol.</p>
+</dd>
+<dt><strong><a name="tap_parser_iterator" class="item">TAP::Parser::Iterator</a></strong></dt>
+
+<dd>
+<p>Base class for TAP source iterators</p>
+</dd>
+<dt><strong><a name="tap_parser_iterator_array" class="item">TAP::Parser::Iterator::Array</a></strong></dt>
+
+<dd>
+<p>Iterator for array-based TAP sources</p>
+</dd>
+<dt><strong><a name="tap_parser_iterator_process" class="item">TAP::Parser::Iterator::Process</a></strong></dt>
+
+<dd>
+<p>Iterator for process-based TAP sources</p>
+</dd>
+<dt><strong><a name="tap_parser_iterator_stream" class="item">TAP::Parser::Iterator::Stream</a></strong></dt>
+
+<dd>
+<p>Iterator for filehandle-based TAP sources</p>
+</dd>
+<dt><strong><a name="tap_parser_iteratorfactory" class="item">TAP::Parser::IteratorFactory</a></strong></dt>
+
+<dd>
+<p>Figures out which SourceHandler objects to use for a given Source</p>
+</dd>
+<dt><strong><a name="tap_parser_multiplexer" class="item">TAP::Parser::Multiplexer</a></strong></dt>
+
+<dd>
+<p>Multiplex multiple TAP::Parsers</p>
+</dd>
+<dt><strong><a name="tap_parser_result" class="item">TAP::Parser::Result</a></strong></dt>
+
+<dd>
+<p>Base class for TAP::Parser output objects</p>
+</dd>
+<dt><strong><a name="tap_parser_result_bailout" class="item">TAP::Parser::Result::Bailout</a></strong></dt>
+
+<dd>
+<p>Bailout result token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_comment" class="item">TAP::Parser::Result::Comment</a></strong></dt>
+
+<dd>
+<p>Comment result token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_plan" class="item">TAP::Parser::Result::Plan</a></strong></dt>
+
+<dd>
+<p>Plan result token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_pragma" class="item">TAP::Parser::Result::Pragma</a></strong></dt>
+
+<dd>
+<p>TAP pragma token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_test" class="item">TAP::Parser::Result::Test</a></strong></dt>
+
+<dd>
+<p>Test result token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_unknown" class="item">TAP::Parser::Result::Unknown</a></strong></dt>
+
+<dd>
+<p>Unknown result token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_version" class="item">TAP::Parser::Result::Version</a></strong></dt>
+
+<dd>
+<p>TAP syntax version token.</p>
+</dd>
+<dt><strong><a name="tap_parser_result_yaml" class="item">TAP::Parser::Result::YAML</a></strong></dt>
+
+<dd>
+<p>YAML result token.</p>
+</dd>
+<dt><strong><a name="tap_parser_resultfactory" class="item">TAP::Parser::ResultFactory</a></strong></dt>
+
+<dd>
+<p>Factory for creating TAP::Parser output objects</p>
+</dd>
+<dt><strong><a name="tap_parser_scheduler" class="item">TAP::Parser::Scheduler</a></strong></dt>
+
+<dd>
+<p>Schedule tests during parallel testing</p>
+</dd>
+<dt><strong><a name="tap_parser_scheduler_job" class="item">TAP::Parser::Scheduler::Job</a></strong></dt>
+
+<dd>
+<p>A single testing job.</p>
+</dd>
+<dt><strong><a name="tap_parser_scheduler_spinner" class="item">TAP::Parser::Scheduler::Spinner</a></strong></dt>
+
+<dd>
+<p>A no-op job.</p>
+</dd>
+<dt><strong><a name="tap_parser_source" class="item">TAP::Parser::Source</a></strong></dt>
+
+<dd>
+<p>A TAP source &amp; meta data about it</p>
+</dd>
+<dt><strong><a name="tap_parser_sourcehandler" class="item">TAP::Parser::SourceHandler</a></strong></dt>
+
+<dd>
+<p>Base class for different TAP source handlers</p>
+</dd>
+<dt><strong><a name="tap_parser_sourcehandler_executable" class="item">TAP::Parser::SourceHandler::Executable</a></strong></dt>
+
+<dd>
+<p>Stream output from an executable TAP source</p>
+</dd>
+<dt><strong><a name="tap_parser_sourcehandler_file" class="item">TAP::Parser::SourceHandler::File</a></strong></dt>
+
+<dd>
+<p>Stream TAP from a text file.</p>
+</dd>
+<dt><strong><a name="tap_parser_sourcehandler_handle" class="item">TAP::Parser::SourceHandler::Handle</a></strong></dt>
+
+<dd>
+<p>Stream TAP from an IO::Handle or a GLOB.</p>
+</dd>
+<dt><strong><a name="tap_parser_sourcehandler_perl" class="item">TAP::Parser::SourceHandler::Perl</a></strong></dt>
+
+<dd>
+<p>Stream TAP from a Perl executable</p>
+</dd>
+<dt><strong><a name="tap_parser_sourcehandler_rawtap" class="item">TAP::Parser::SourceHandler::RawTAP</a></strong></dt>
+
+<dd>
+<p>Stream output from raw TAP in a scalar/array ref.</p>
+</dd>
+<dt><strong><a name="tap_parser_utils" class="item">TAP::Parser::Utils</a></strong></dt>
+
+<dd>
+<p>Internal TAP::Parser utilities</p>
+</dd>
+<dt><strong><a name="tap_parser_yamlish_reader" class="item">TAP::Parser::YAMLish::Reader</a></strong></dt>
+
+<dd>
+<p>Read YAMLish data from iterator</p>
+</dd>
+<dt><strong><a name="tap_parser_yamlish_writer" class="item">TAP::Parser::YAMLish::Writer</a></strong></dt>
+
+<dd>
+<p>Write YAMLish data</p>
+</dd>
+<dt><strong><a name="term_ansicolor7" class="item">Term::ANSIColor</a></strong></dt>
+
+<dd>
+<p>Color screen output using ANSI escape sequences</p>
+</dd>
+<dt><strong><a name="term_cap" class="item">Term::Cap</a></strong></dt>
+
+<dd>
+<p>Perl termcap interface</p>
+</dd>
+<dt><strong><a name="term_complete" class="item">Term::Complete</a></strong></dt>
+
+<dd>
+<p>Perl word completion module</p>
+</dd>
+<dt><strong><a name="term_readline2" class="item">Term::ReadLine</a></strong></dt>
+
+<dd>
+<p>Perl interface to various <a href="../../lib/pods/perlfunc.html#readline"><code>readline</code></a> packages.</p>
+</dd>
+<dt><strong><a name="term_ui3" class="item">Term::UI</a></strong></dt>
+
+<dd>
+<p>Term::ReadLine UI made easy</p>
+</dd>
+<dt><strong><a name="test4" class="item">Test</a></strong></dt>
+
+<dd>
+<p>Provides a simple framework for writing test scripts</p>
+</dd>
+<dt><strong><a name="test_builder2" class="item">Test::Builder</a></strong></dt>
+
+<dd>
+<p>Backend for building test libraries</p>
+</dd>
+<dt><strong><a name="test_builder_module" class="item">Test::Builder::Module</a></strong></dt>
+
+<dd>
+<p>Base class for test modules</p>
+</dd>
+<dt><strong><a name="test_builder_tester" class="item">Test::Builder::Tester</a></strong></dt>
+
+<dd>
+<p>Test testsuites that have been built with</p>
+</dd>
+<dt><strong><a name="test_builder_tester_color" class="item">Test::Builder::Tester::Color</a></strong></dt>
+
+<dd>
+<p>Turn on colour in Test::Builder::Tester</p>
+</dd>
+<dt><strong><a name="test_harness9" class="item">Test::Harness</a></strong></dt>
+
+<dd>
+<p>Run Perl standard test scripts with statistics</p>
+</dd>
+<dt><strong><a name="test_more5" class="item">Test::More</a></strong></dt>
+
+<dd>
+<p>Yet another framework for writing test scripts</p>
+</dd>
+<dt><strong><a name="test_simple7" class="item">Test::Simple</a></strong></dt>
+
+<dd>
+<p>Basic utilities for writing tests.</p>
+</dd>
+<dt><strong><a name="test_tutorial" class="item">Test::Tutorial</a></strong></dt>
+
+<dd>
+<p>A tutorial about writing really basic tests</p>
+</dd>
+<dt><strong><a name="text_abbrev" class="item">Text::Abbrev</a></strong></dt>
+
+<dd>
+<p>Create an abbreviation table from a list</p>
+</dd>
+<dt><strong><a name="text_balanced4" class="item">Text::Balanced</a></strong></dt>
+
+<dd>
+<p>Extract delimited text sequences from strings.</p>
+</dd>
+<dt><strong><a name="text_parsewords3" class="item">Text::ParseWords</a></strong></dt>
+
+<dd>
+<p>Parse text into an array of tokens or array of arrays</p>
+</dd>
+<dt><strong><a name="text_soundex2" class="item">Text::Soundex</a></strong></dt>
+
+<dd>
+<p>Implementation of the soundex algorithm.</p>
+</dd>
+<dt><strong><a name="text_tabs2" class="item">Text::Tabs</a></strong></dt>
+
+<dd>
+<p>Expand and unexpand tabs per the unix <code>expand(1)</code> and <code>unexpand(1)</code></p>
+</dd>
+<dt><strong><a name="text_wrap2" class="item">Text::Wrap</a></strong></dt>
+
+<dd>
+<p>Line wrapping to form simple paragraphs</p>
+</dd>
+<dt><strong><a name="thread4" class="item">Thread</a></strong></dt>
+
+<dd>
+<p>Manipulate threads in Perl (for old code only)</p>
+</dd>
+<dt><strong><a name="thread_queue3" class="item">Thread::Queue</a></strong></dt>
+
+<dd>
+<p>Thread-safe queues</p>
+</dd>
+<dt><strong><a name="thread_semaphore3" class="item">Thread::Semaphore</a></strong></dt>
+
+<dd>
+<p>Thread-safe semaphores</p>
+</dd>
+<dt><strong><a name="tie_array2" class="item">Tie::Array</a></strong></dt>
+
+<dd>
+<p>Base class for tied arrays</p>
+</dd>
+<dt><strong><a name="tie_file" class="item">Tie::File</a></strong></dt>
+
+<dd>
+<p>Access the lines of a disk file via a Perl array</p>
+</dd>
+<dt><strong><a name="tie_handle2" class="item">Tie::Handle</a></strong></dt>
+
+<dd>
+<p>Base class definitions for tied handles</p>
+</dd>
+<dt><strong><a name="tie_hash3" class="item">Tie::Hash</a></strong></dt>
+
+<dd>
+<p>Base class definitions for tied hashes</p>
+</dd>
+<dt><strong><a name="tie_hash_namedcapture" class="item">Tie::Hash::NamedCapture</a></strong></dt>
+
+<dd>
+<p>Named regexp capture buffers</p>
+</dd>
+<dt><strong><a name="tie_memoize" class="item">Tie::Memoize</a></strong></dt>
+
+<dd>
+<p>Add data to hash when needed</p>
+</dd>
+<dt><strong><a name="tie_refhash4" class="item">Tie::RefHash</a></strong></dt>
+
+<dd>
+<p>Use references as hash keys</p>
+</dd>
+<dt><strong><a name="tie_scalar" class="item">Tie::Scalar</a></strong></dt>
+
+<dd>
+<p>Base class definitions for tied scalars</p>
+</dd>
+<dt><strong><a name="tie_stdhandle2" class="item">Tie::StdHandle</a></strong></dt>
+
+<dd>
+<p>Base class definitions for tied handles</p>
+</dd>
+<dt><strong><a name="tie_substrhash2" class="item">Tie::SubstrHash</a></strong></dt>
+
+<dd>
+<p>Fixed-table-size, fixed-key-length hashing</p>
+</dd>
+<dt><strong><a name="time_hires8" class="item">Time::HiRes</a></strong></dt>
+
+<dd>
+<p>High resolution alarm, sleep, gettimeofday, interval timers</p>
+</dd>
+<dt><strong><a name="time_local5" class="item">Time::Local</a></strong></dt>
+
+<dd>
+<p>Efficiently compute time from local and GMT time</p>
+</dd>
+<dt><strong><a name="time_piece4" class="item">Time::Piece</a></strong></dt>
+
+<dd>
+<p>Object Oriented time objects</p>
+</dd>
+<dt><strong><a name="time_seconds" class="item">Time::Seconds</a></strong></dt>
+
+<dd>
+<p>A simple API to convert seconds to other date values</p>
+</dd>
+<dt><strong><a name="time_gmtime" class="item">Time::gmtime</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in <a href="../../lib/pods/perlfunc.html#gmtime"><code>gmtime()</code></a> function</p>
+</dd>
+<dt><strong><a name="time_localtime" class="item">Time::localtime</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in <a href="../../lib/pods/perlfunc.html#localtime"><code>localtime()</code></a> function</p>
+</dd>
+<dt><strong><a name="time_tm" class="item">Time::tm</a></strong></dt>
+
+<dd>
+<p>Internal object used by Time::gmtime and Time::localtime</p>
+</dd>
+<dt><strong><a name="universal4" class="item">UNIVERSAL</a></strong></dt>
+
+<dd>
+<p>Base class for ALL classes (blessed references)</p>
+</dd>
+<dt><strong><a name="unicode_collate16" class="item">Unicode::Collate</a></strong></dt>
+
+<dd>
+<p>Unicode Collation Algorithm</p>
+</dd>
+<dt><strong><a name="unicode_collate_cjk_big5" class="item">Unicode::Collate::CJK::Big5</a></strong></dt>
+
+<dd>
+<p>Weighting CJK Unified Ideographs</p>
+</dd>
+<dt><strong><a name="unicode_collate_cjk_gb2312" class="item">Unicode::Collate::CJK::GB2312</a></strong></dt>
+
+<dd>
+<p>Weighting CJK Unified Ideographs</p>
+</dd>
+<dt><strong><a name="unicode_collate_cjk_jisx0208" class="item">Unicode::Collate::CJK::JISX0208</a></strong></dt>
+
+<dd>
+<p>Weighting JIS KANJI for Unicode::Collate</p>
+</dd>
+<dt><strong><a name="unicode_collate_cjk_korean" class="item">Unicode::Collate::CJK::Korean</a></strong></dt>
+
+<dd>
+<p>Weighting CJK Unified Ideographs</p>
+</dd>
+<dt><strong><a name="unicode_collate_cjk_pinyin" class="item">Unicode::Collate::CJK::Pinyin</a></strong></dt>
+
+<dd>
+<p>Weighting CJK Unified Ideographs</p>
+</dd>
+<dt><strong><a name="unicode_collate_cjk_stroke" class="item">Unicode::Collate::CJK::Stroke</a></strong></dt>
+
+<dd>
+<p>Weighting CJK Unified Ideographs</p>
+</dd>
+<dt><strong><a name="unicode_collate_locale7" class="item">Unicode::Collate::Locale</a></strong></dt>
+
+<dd>
+<p>Linguistic tailoring for DUCET via Unicode::Collate</p>
+</dd>
+<dt><strong><a name="unicode_normalize9" class="item">Unicode::Normalize</a></strong></dt>
+
+<dd>
+<p>Unicode Normalization Forms</p>
+</dd>
+<dt><strong><a name="unicode_ucd3" class="item">Unicode::UCD</a></strong></dt>
+
+<dd>
+<p>Unicode character database</p>
+</dd>
+<dt><strong><a name="user_grent" class="item">User::grent</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in getgr*() functions</p>
+</dd>
+<dt><strong><a name="user_pwent" class="item">User::pwent</a></strong></dt>
+
+<dd>
+<p>By-name interface to Perl's built-in getpw*() functions</p>
+</dd>
+<dt><strong><a name="vms_dclsym2" class="item">VMS::DCLsym</a></strong></dt>
+
+<dd>
+<p>Perl extension to manipulate DCL symbols</p>
+</dd>
+<dt><strong><a name="vms_stdio2" class="item">VMS::Stdio</a></strong></dt>
+
+<dd>
+<p>Standard I/O functions via VMS extensions</p>
+</dd>
+<dt><strong><a name="version_requirements" class="item">Version::Requirements</a></strong></dt>
+
+<dd>
+<p>A set of version requirements for a CPAN dist</p>
+</dd>
+<dt><strong><a name="win3212" class="item">Win32</a></strong></dt>
+
+<dd>
+<p>Interfaces to some Win32 API Functions</p>
+</dd>
+<dt><strong><a name="win32api_file3" class="item">Win32API::File</a></strong></dt>
+
+<dd>
+<p>Low-level access to Win32 system API calls for files/dirs.</p>
+</dd>
+<dt><strong><a name="win32core" class="item">Win32CORE</a></strong></dt>
+
+<dd>
+<p>Win32 CORE function stubs</p>
+</dd>
+<dt><strong><a name="xs_apitest" class="item">XS::APItest</a></strong></dt>
+
+<dd>
+<p>Test the perl C API</p>
+</dd>
+<dt><strong><a name="xs_typemap" class="item">XS::Typemap</a></strong></dt>
+
+<dd>
+<p>Module to test the XS typemaps distributed with perl</p>
+</dd>
+<dt><strong><a name="xsloader6" class="item">XSLoader</a></strong></dt>
+
+<dd>
+<p>Dynamically load C libraries into Perl code</p>
+</dd>
+<dt><strong><a name="version_internals" class="item">version::Internals</a></strong></dt>
+
+<dd>
+<p>Perl extension for Version Objects</p>
+</dd>
+</dl>
+<p>To find out <em>all</em> modules installed on your system, including
+those without documentation or outside the standard release,
+just use the following command (under the default win32 shell,
+double quotes should be used instead of single quotes).</p>
+<pre>
+    <span class="operator">% </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">MFile::Find</span><span class="operator">=</span><span class="variable">find</span> <span class="operator">-</span><span class="variable">MFile::Spec::Functions</span> <span class="operator">-</span><span class="variable">Tlwe</span> <span class="operator">\</span>
+      <span class="string">'find { wanted =&gt; sub { print canonpath $_ if /\.pm\z/ },
+      no_chdir =&gt; 1 }, @INC'</span>
+</pre>
+<p>(The -T is here to prevent '.' from being listed in @INC.)
+They should all have their own documentation installed and accessible
+via your system <code>man(1)</code> command.  If you do not have a <strong>find</strong>
+program, you can use the Perl <strong>find2perl</strong> program instead, which
+generates Perl code as output you can run through perl.  If you
+have a <strong>man</strong> program but it doesn't find your modules, you'll have
+to fix your manpath.  See <a href="../../lib/pods/perl.html">the perl manpage</a> for details.  If you have no
+system <strong>man</strong> command, you might try the <strong>perldoc</strong> program.</p>
+<p>Note also that the command <code>perldoc perllocal</code> gives you a (possibly
+incomplete) list of the modules that have been further installed on
+your system. (The perllocal.pod file is updated by the standard MakeMaker
+install process.)</p>
+<p>
+</p>
+<h2><a name="extension_modules">Extension Modules</a></h2>
+<p>Extension modules are written in C (or a mix of Perl and C).  They
+are usually dynamically loaded into Perl if and when you need them,
+but may also be linked in statically.  Supported extension modules
+include Socket, Fcntl, and POSIX.</p>
+<p>Many popular C extension modules do not come bundled (at least, not
+completely) due to their sizes, volatility, or simply lack of time
+for adequate testing and configuration across the multitude of
+platforms on which Perl was beta-tested.  You are encouraged to
+look for them on CPAN (described below), or using web search engines
+like Alta Vista or Google.</p>
+<p>
+</p>
+<hr />
+<h1><a name="cpan">CPAN</a></h1>
+<p>CPAN stands for Comprehensive Perl Archive Network; it's a globally
+replicated trove of Perl materials, including documentation, style
+guides, tricks and traps, alternate ports to non-Unix systems and
+occasional binary distributions for these.   Search engines for
+CPAN can be found at <a href="http://www.cpan.org/">http://www.cpan.org/</a></p>
+<p>Most importantly, CPAN includes around a thousand unbundled modules,
+some of which require a C compiler to build.  Major categories of
+modules are:</p>
+<ul>
+<li>
+<p>Language Extensions and Documentation Tools</p>
+</li>
+<li>
+<p>Development Support</p>
+</li>
+<li>
+<p>Operating System Interfaces</p>
+</li>
+<li>
+<p>Networking, Device Control (modems) and InterProcess Communication</p>
+</li>
+<li>
+<p>Data Types and Data Type Utilities</p>
+</li>
+<li>
+<p>Database Interfaces</p>
+</li>
+<li>
+<p>User Interfaces</p>
+</li>
+<li>
+<p>Interfaces to / Emulations of Other Programming Languages</p>
+</li>
+<li>
+<p>File Names, File Systems and File Locking (see also File Handles)</p>
+</li>
+<li>
+<p>String Processing, Language Text Processing, Parsing, and Searching</p>
+</li>
+<li>
+<p>Option, Argument, Parameter, and Configuration File Processing</p>
+</li>
+<li>
+<p>Internationalization and Locale</p>
+</li>
+<li>
+<p>Authentication, Security, and Encryption</p>
+</li>
+<li>
+<p>World Wide Web, HTML, HTTP, CGI, MIME</p>
+</li>
+<li>
+<p>Server and Daemon Utilities</p>
+</li>
+<li>
+<p>Archiving and Compression</p>
+</li>
+<li>
+<p>Images, Pixmap and Bitmap Manipulation, Drawing, and Graphing</p>
+</li>
+<li>
+<p>Mail and Usenet News</p>
+</li>
+<li>
+<p>Control Flow Utilities (callbacks and exceptions etc)</p>
+</li>
+<li>
+<p>File Handle and Input/Output Stream Utilities</p>
+</li>
+<li>
+<p>Miscellaneous Modules</p>
+</li>
+</ul>
+<p>The list of the registered CPAN sites follows.
+Please note that the sorting order is alphabetical on fields:</p>
+<p>Continent
+   |
+   |--&gt;Country
+         |
+         |--&gt;[state/province]
+                   |
+                   |--&gt;ftp
+                   |
+                   |--&gt;[http]</p>
+<p>and thus the North American servers happen to be listed between the
+European and the South American sites.</p>
+<p>Registered CPAN sites</p>
+<p>
+</p>
+<h2><a name="africa">Africa</a></h2>
+<dl>
+<dt><strong><a name="south_africa" class="item">South Africa</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.mirror.ac.za/">http://cpan.mirror.ac.za/</a>
+                      <a href="ftp://cpan.mirror.ac.za/">ftp://cpan.mirror.ac.za/</a>
+                      <a href="http://mirror.is.co.za/pub/cpan/">http://mirror.is.co.za/pub/cpan/</a>
+                      <a href="ftp://ftp.is.co.za/pub/cpan/">ftp://ftp.is.co.za/pub/cpan/</a>
+                      <a href="ftp://ftp.saix.net/pub/CPAN/">ftp://ftp.saix.net/pub/CPAN/</a></pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="asia">Asia</a></h2>
+<dl>
+<dt><strong><a name="hong_kong" class="item">Hong Kong</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.cuhk.edu.hk/pub/packages/perl/CPAN/">http://ftp.cuhk.edu.hk/pub/packages/perl/CPAN/</a>
+                      <a href="ftp://ftp.cuhk.edu.hk/pub/packages/perl/CPAN/">ftp://ftp.cuhk.edu.hk/pub/packages/perl/CPAN/</a>
+                      <a href="http://mirrors.geoexpat.com/cpan/">http://mirrors.geoexpat.com/cpan/</a></pre>
+</dd>
+<dt><strong><a name="india" class="item">India</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://perlmirror.indialinks.com/">http://perlmirror.indialinks.com/</a></pre>
+</dd>
+<dt><strong><a name="indonesia" class="item">Indonesia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.biz.net.id/">http://cpan.biz.net.id/</a>
+                      <a href="http://komo.vlsm.org/CPAN/">http://komo.vlsm.org/CPAN/</a>
+                      <a href="ftp://komo.vlsm.org/CPAN/">ftp://komo.vlsm.org/CPAN/</a>
+                      <a href="http://cpan.pesat.net.id/">http://cpan.pesat.net.id/</a>
+                      <a href="http://mirror.unej.ac.id/cpan/">http://mirror.unej.ac.id/cpan/</a>
+                      <a href="ftp://mirror.unej.ac.id/cpan/">ftp://mirror.unej.ac.id/cpan/</a></pre>
+</dd>
+<dt><strong><a name="japan" class="item">Japan</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.u-aizu.ac.jp/pub/CPAN">ftp://ftp.u-aizu.ac.jp/pub/CPAN</a>
+                      <a href="ftp://ftp.kddilabs.jp/CPAN/">ftp://ftp.kddilabs.jp/CPAN/</a>
+                      <a href="http://ftp.nara.wide.ad.jp/pub/CPAN/">http://ftp.nara.wide.ad.jp/pub/CPAN/</a>
+                      <a href="ftp://ftp.nara.wide.ad.jp/pub/CPAN/">ftp://ftp.nara.wide.ad.jp/pub/CPAN/</a>
+                      <a href="http://ftp.jaist.ac.jp/pub/CPAN/">http://ftp.jaist.ac.jp/pub/CPAN/</a>
+                      <a href="ftp://ftp.jaist.ac.jp/pub/CPAN/">ftp://ftp.jaist.ac.jp/pub/CPAN/</a>
+                      <a href="ftp://ftp.dti.ad.jp/pub/lang/CPAN/">ftp://ftp.dti.ad.jp/pub/lang/CPAN/</a>
+                      <a href="ftp://ftp.ring.gr.jp/pub/lang/perl/CPAN/">ftp://ftp.ring.gr.jp/pub/lang/perl/CPAN/</a>
+                      <a href="http://ftp.riken.jp/lang/CPAN/">http://ftp.riken.jp/lang/CPAN/</a>
+                      <a href="ftp://ftp.riken.jp/lang/CPAN/">ftp://ftp.riken.jp/lang/CPAN/</a>
+                      <a href="http://ftp.yz.yamagata-u.ac.jp/pub/lang/cpan/">http://ftp.yz.yamagata-u.ac.jp/pub/lang/cpan/</a>
+                      <a href="ftp://ftp.yz.yamagata-u.ac.jp/pub/lang/cpan/">ftp://ftp.yz.yamagata-u.ac.jp/pub/lang/cpan/</a></pre>
+</dd>
+<dt><strong><a name="kazakhstan" class="item">Kazakhstan</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.linuxiso.kz/CPAN/">http://mirror.linuxiso.kz/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="republic_of_korea" class="item">Republic of Korea</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.kaist.ac.kr/pub/CPAN">http://ftp.kaist.ac.kr/pub/CPAN</a>
+                      <a href="ftp://ftp.kaist.ac.kr/pub/CPAN">ftp://ftp.kaist.ac.kr/pub/CPAN</a>
+                      <a href="http://cpan.mirror.cdnetworks.com/">http://cpan.mirror.cdnetworks.com/</a>
+                      <a href="ftp://cpan.mirror.cdnetworks.com/CPAN/">ftp://cpan.mirror.cdnetworks.com/CPAN/</a>
+                      <a href="http://cpan.sarang.net/">http://cpan.sarang.net/</a>
+                      <a href="ftp://cpan.sarang.net/CPAN/">ftp://cpan.sarang.net/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="russia" class="item">Russia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.tomsk.ru/">http://cpan.tomsk.ru/</a>
+                      <a href="ftp://cpan.tomsk.ru/">ftp://cpan.tomsk.ru/</a></pre>
+</dd>
+<dt><strong><a name="singapore" class="item">Singapore</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.averse.net/pub/CPAN">http://mirror.averse.net/pub/CPAN</a>
+                      <a href="ftp://mirror.averse.net/pub/CPAN">ftp://mirror.averse.net/pub/CPAN</a>
+                      <a href="http://cpan.mirror.choon.net/">http://cpan.mirror.choon.net/</a>
+                      <a href="http://cpan.oss.eznetsols.org">http://cpan.oss.eznetsols.org</a>
+                      <a href="ftp://ftp.oss.eznetsols.org/cpan">ftp://ftp.oss.eznetsols.org/cpan</a></pre>
+</dd>
+<dt><strong><a name="taiwan" class="item">Taiwan</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.cse.yzu.edu.tw/pub/CPAN/">http://ftp.cse.yzu.edu.tw/pub/CPAN/</a>
+                      <a href="ftp://ftp.cse.yzu.edu.tw/pub/CPAN/">ftp://ftp.cse.yzu.edu.tw/pub/CPAN/</a>
+                      <a href="http://cpan.nctu.edu.tw/">http://cpan.nctu.edu.tw/</a>
+                      <a href="ftp://cpan.nctu.edu.tw/">ftp://cpan.nctu.edu.tw/</a>
+                      <a href="ftp://ftp.ncu.edu.tw/CPAN/">ftp://ftp.ncu.edu.tw/CPAN/</a>
+                      <a href="http://cpan.cdpa.nsysu.edu.tw/">http://cpan.cdpa.nsysu.edu.tw/</a>
+                      <a href="ftp://cpan.cdpa.nsysu.edu.tw/Unix/Lang/CPAN/">ftp://cpan.cdpa.nsysu.edu.tw/Unix/Lang/CPAN/</a>
+                      <a href="http://cpan.stu.edu.tw">http://cpan.stu.edu.tw</a>
+                      <a href="ftp://ftp.stu.edu.tw/CPAN">ftp://ftp.stu.edu.tw/CPAN</a>
+                      <a href="http://ftp.stu.edu.tw/CPAN">http://ftp.stu.edu.tw/CPAN</a>
+                      <a href="ftp://ftp.stu.edu.tw/pub/CPAN">ftp://ftp.stu.edu.tw/pub/CPAN</a>
+                      <a href="http://cpan.cs.pu.edu.tw/">http://cpan.cs.pu.edu.tw/</a>
+                      <a href="ftp://cpan.cs.pu.edu.tw/pub/CPAN">ftp://cpan.cs.pu.edu.tw/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="thailand" class="item">Thailand</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirrors.issp.co.th/cpan/">http://mirrors.issp.co.th/cpan/</a>
+                      <a href="ftp://mirrors.issp.co.th/cpan/">ftp://mirrors.issp.co.th/cpan/</a></pre>
+</dd>
+<dt><strong><a name="turkey" class="item">Turkey</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.gazi.edu.tr/">http://cpan.gazi.edu.tr/</a>
+                      <a href="http://cpan.ulak.net.tr">http://cpan.ulak.net.tr</a>
+                      <a href="ftp://ftp.ulak.net.tr/pub/CPAN">ftp://ftp.ulak.net.tr/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="viet_nam" class="item">Viet Nam</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror-fpt-telecom.fpt.net/cpan/">http://mirror-fpt-telecom.fpt.net/cpan/</a>
+                      <a href="ftp://mirror-fpt-telecom.fpt.net/cpan/">ftp://mirror-fpt-telecom.fpt.net/cpan/</a></pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="central_america">Central America</a></h2>
+<dl>
+<dt><strong><a name="costa_rica" class="item">Costa Rica</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirrors.ucr.ac.cr/CPAN/">http://mirrors.ucr.ac.cr/CPAN/</a>
+                      <a href="ftp://mirrors.ucr.ac.cr/CPAN/">ftp://mirrors.ucr.ac.cr/CPAN/</a></pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="europe">Europe</a></h2>
+<dl>
+<dt><strong><a name="austria" class="item">Austria</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.inode.at/">http://cpan.inode.at/</a>
+                      <a href="ftp://cpan.inode.at">ftp://cpan.inode.at</a>
+                      <a href="http://gd.tuwien.ac.at/languages/perl/CPAN/">http://gd.tuwien.ac.at/languages/perl/CPAN/</a>
+                      <a href="ftp://gd.tuwien.ac.at/pub/CPAN/">ftp://gd.tuwien.ac.at/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="belgium" class="item">Belgium</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.belnet.be/mirror/ftp.cpan.org/">http://ftp.belnet.be/mirror/ftp.cpan.org/</a>
+                      <a href="ftp://ftp.belnet.be/mirror/ftp.cpan.org/">ftp://ftp.belnet.be/mirror/ftp.cpan.org/</a>
+                      <a href="http://ftp.easynet.be/pub/CPAN/">http://ftp.easynet.be/pub/CPAN/</a>
+                      <a href="http://cpan.weepee.org/">http://cpan.weepee.org/</a>
+                      <a href="http://cpan.fluoline.net/">http://cpan.fluoline.net/</a></pre>
+</dd>
+<dt><strong><a name="bosnia_and_herzegovina" class="item">Bosnia and Herzegovina</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.blic.net/">http://cpan.blic.net/</a></pre>
+</dd>
+<dt><strong><a name="bulgaria" class="item">Bulgaria</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.cbox.biz/">http://cpan.cbox.biz/</a>
+                      <a href="ftp://cpan.cbox.biz/cpan/">ftp://cpan.cbox.biz/cpan/</a>
+                      <a href="http://cpan.digsys.bg/">http://cpan.digsys.bg/</a>
+                      <a href="ftp://ftp.digsys.bg/pub/CPAN">ftp://ftp.digsys.bg/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="croatia" class="item">Croatia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.carnet.hr/pub/CPAN/">http://ftp.carnet.hr/pub/CPAN/</a>
+                      <a href="ftp://ftp.carnet.hr/pub/CPAN/">ftp://ftp.carnet.hr/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="czech_republic" class="item">Czech Republic</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.fi.muni.cz/pub/CPAN/">ftp://ftp.fi.muni.cz/pub/CPAN/</a>
+                      <a href="http://archive.cpan.cz/">http://archive.cpan.cz/</a></pre>
+</dd>
+<dt><strong><a name="denmark" class="item">Denmark</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirrors.dotsrc.org/cpan">http://mirrors.dotsrc.org/cpan</a>
+                      <a href="ftp://mirrors.dotsrc.org/cpan/">ftp://mirrors.dotsrc.org/cpan/</a>
+                      <a href="http://www.cpan.dk/">http://www.cpan.dk/</a>
+                      <a href="http://mirror.uni-c.dk/pub/CPAN/">http://mirror.uni-c.dk/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="finland" class="item">Finland</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.funet.fi/pub/languages/perl/CPAN/">ftp://ftp.funet.fi/pub/languages/perl/CPAN/</a>
+                      <a href="http://mirror.eunet.fi/CPAN">http://mirror.eunet.fi/CPAN</a></pre>
+</dd>
+<dt><strong><a name="france" class="item">France</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.enstimac.fr/">http://cpan.enstimac.fr/</a>
+                      <a href="ftp://ftp.inria.fr/pub/CPAN/">ftp://ftp.inria.fr/pub/CPAN/</a>
+                      <a href="http://distrib-coffee.ipsl.jussieu.fr/pub/mirrors/cpan/">http://distrib-coffee.ipsl.jussieu.fr/pub/mirrors/cpan/</a>
+                      <a href="ftp://distrib-coffee.ipsl.jussieu.fr/pub/mirrors/cpan/">ftp://distrib-coffee.ipsl.jussieu.fr/pub/mirrors/cpan/</a>
+                      <a href="ftp://ftp.lip6.fr/pub/perl/CPAN/">ftp://ftp.lip6.fr/pub/perl/CPAN/</a>
+                      <a href="http://mir2.ovh.net/ftp.cpan.org">http://mir2.ovh.net/ftp.cpan.org</a>
+                      <a href="ftp://mir1.ovh.net/ftp.cpan.org">ftp://mir1.ovh.net/ftp.cpan.org</a>
+                      <a href="http://cpan.miroir-francais.fr/">http://cpan.miroir-francais.fr/</a>
+                      <a href="ftp://miroir-francais.fr/pub/cpan/">ftp://miroir-francais.fr/pub/cpan/</a>
+                      <a href="ftp://ftp.oleane.net/pub/CPAN/">ftp://ftp.oleane.net/pub/CPAN/</a>
+                      <a href="http://ftp.crihan.fr/mirrors/ftp.cpan.org/">http://ftp.crihan.fr/mirrors/ftp.cpan.org/</a>
+                      <a href="ftp://ftp.crihan.fr/mirrors/ftp.cpan.org/">ftp://ftp.crihan.fr/mirrors/ftp.cpan.org/</a>
+                      <a href="http://ftp.u-strasbg.fr/CPAN">http://ftp.u-strasbg.fr/CPAN</a>
+                      <a href="ftp://ftp.u-strasbg.fr/CPAN">ftp://ftp.u-strasbg.fr/CPAN</a>
+                      <a href="http://cpan.cict.fr/">http://cpan.cict.fr/</a>
+                      <a href="ftp://cpan.cict.fr/pub/CPAN/">ftp://cpan.cict.fr/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="germany" class="item">Germany</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.fu-berlin.de/unix/languages/perl/">ftp://ftp.fu-berlin.de/unix/languages/perl/</a>
+                      <a href="http://mirrors.softliste.de/cpan/">http://mirrors.softliste.de/cpan/</a>
+                      <a href="ftp://ftp.rub.de/pub/CPAN/">ftp://ftp.rub.de/pub/CPAN/</a>
+                      <a href="http://www.planet-elektronik.de/CPAN/">http://www.planet-elektronik.de/CPAN/</a>
+                      <a href="http://ftp.hosteurope.de/pub/CPAN/">http://ftp.hosteurope.de/pub/CPAN/</a>
+                      <a href="ftp://ftp.hosteurope.de/pub/CPAN/">ftp://ftp.hosteurope.de/pub/CPAN/</a>
+                      <a href="http://www.mirrorspace.org/cpan/">http://www.mirrorspace.org/cpan/</a>
+                      <a href="http://mirror.netcologne.de/cpan/">http://mirror.netcologne.de/cpan/</a>
+                      <a href="ftp://mirror.netcologne.de/cpan/">ftp://mirror.netcologne.de/cpan/</a>
+                      <a href="ftp://ftp.freenet.de/pub/ftp.cpan.org/pub/CPAN/">ftp://ftp.freenet.de/pub/ftp.cpan.org/pub/CPAN/</a>
+                      <a href="http://ftp-stud.hs-esslingen.de/pub/Mirrors/CPAN/">http://ftp-stud.hs-esslingen.de/pub/Mirrors/CPAN/</a>
+                      <a href="ftp://ftp-stud.hs-esslingen.de/pub/Mirrors/CPAN/">ftp://ftp-stud.hs-esslingen.de/pub/Mirrors/CPAN/</a>
+                      <a href="http://mirrors.zerg.biz/cpan/">http://mirrors.zerg.biz/cpan/</a>
+                      <a href="http://ftp.gwdg.de/pub/languages/perl/CPAN/">http://ftp.gwdg.de/pub/languages/perl/CPAN/</a>
+                      <a href="ftp://ftp.gwdg.de/pub/languages/perl/CPAN/">ftp://ftp.gwdg.de/pub/languages/perl/CPAN/</a>
+                      <a href="http://dl.ambiweb.de/mirrors/ftp.cpan.org/">http://dl.ambiweb.de/mirrors/ftp.cpan.org/</a>
+                      <a href="http://cpan.mirror.clusters.kg/">http://cpan.mirror.clusters.kg/</a>
+                      <a href="http://cpan.mirror.iphh.net/">http://cpan.mirror.iphh.net/</a>
+                      <a href="ftp://cpan.mirror.iphh.net/pub/CPAN/">ftp://cpan.mirror.iphh.net/pub/CPAN/</a>
+                      <a href="http://cpan.mirroring.de/">http://cpan.mirroring.de/</a>
+                      <a href="http://mirror.informatik.uni-mannheim.de/pub/mirrors/CPAN/">http://mirror.informatik.uni-mannheim.de/pub/mirrors/CPAN/</a>
+                      <a href="ftp://mirror.informatik.uni-mannheim.de/pub/mirrors/CPAN/">ftp://mirror.informatik.uni-mannheim.de/pub/mirrors/CPAN/</a>
+                      <a href="http://ftp.cw.net/pub/CPAN/">http://ftp.cw.net/pub/CPAN/</a>
+                      <a href="ftp://ftp.cw.net/pub/CPAN/">ftp://ftp.cw.net/pub/CPAN/</a>
+                      <a href="http://cpan.cpantesters.org/">http://cpan.cpantesters.org/</a>
+                      <a href="ftp://cpan.cpantesters.org/CPAN/">ftp://cpan.cpantesters.org/CPAN/</a>
+                      <a href="http://cpan.mirrored.de/">http://cpan.mirrored.de/</a>
+                      <a href="ftp://mirror.petamem.com/CPAN/">ftp://mirror.petamem.com/CPAN/</a>
+                      <a href="http://cpan.noris.de/">http://cpan.noris.de/</a>
+                      <a href="ftp://cpan.noris.de/pub/CPAN/">ftp://cpan.noris.de/pub/CPAN/</a>
+                      <a href="ftp://ftp.mpi-sb.mpg.de/pub/perl/CPAN/">ftp://ftp.mpi-sb.mpg.de/pub/perl/CPAN/</a>
+                      <a href="ftp://ftp.gmd.de/mirrors/CPAN/">ftp://ftp.gmd.de/mirrors/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="greece" class="item">Greece</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.forthnet.gr/pub/languages/perl/CPAN">ftp://ftp.forthnet.gr/pub/languages/perl/CPAN</a>
+                      <a href="ftp://ftp.ntua.gr/pub/lang/perl/">ftp://ftp.ntua.gr/pub/lang/perl/</a>
+                      <a href="http://cpan.cc.uoc.gr/">http://cpan.cc.uoc.gr/</a>
+                      <a href="ftp://ftp.cc.uoc.gr/mirrors/CPAN/">ftp://ftp.cc.uoc.gr/mirrors/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="hungary" class="item">Hungary</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.mirrors.enexis.hu/">http://cpan.mirrors.enexis.hu/</a>
+                      <a href="ftp://cpan.mirrors.enexis.hu/mirrors/cpan/">ftp://cpan.mirrors.enexis.hu/mirrors/cpan/</a>
+                      <a href="http://cpan.hu/">http://cpan.hu/</a></pre>
+</dd>
+<dt><strong><a name="iceland" class="item">Iceland</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.rhnet.is/pub/CPAN/">http://ftp.rhnet.is/pub/CPAN/</a>
+                      <a href="ftp://ftp.rhnet.is/pub/CPAN/">ftp://ftp.rhnet.is/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="ireland" class="item">Ireland</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.esat.net/pub/languages/perl/CPAN/">http://ftp.esat.net/pub/languages/perl/CPAN/</a>
+                      <a href="ftp://ftp.esat.net/pub/languages/perl/CPAN/">ftp://ftp.esat.net/pub/languages/perl/CPAN/</a>
+                      <a href="http://ftp.heanet.ie/mirrors/ftp.perl.org/pub/CPAN">http://ftp.heanet.ie/mirrors/ftp.perl.org/pub/CPAN</a>
+                      <a href="ftp://ftp.heanet.ie/mirrors/ftp.perl.org/pub/CPAN">ftp://ftp.heanet.ie/mirrors/ftp.perl.org/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="italy" class="item">Italy</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://bo.mirror.garr.it/mirrors/CPAN/">http://bo.mirror.garr.it/mirrors/CPAN/</a>
+                      <a href="http://cpan.panu.it/">http://cpan.panu.it/</a>
+                      <a href="ftp://ftp.panu.it/pub/mirrors/perl/CPAN/">ftp://ftp.panu.it/pub/mirrors/perl/CPAN/</a>
+                      <a href="http://cpan.fastbull.org/">http://cpan.fastbull.org/</a></pre>
+</dd>
+<dt><strong><a name="latvia" class="item">Latvia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://kvin.lv/pub/CPAN/">http://kvin.lv/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="lithuania" class="item">Lithuania</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.litnet.lt/pub/CPAN/">http://ftp.litnet.lt/pub/CPAN/</a>
+                      <a href="ftp://ftp.litnet.lt/pub/CPAN/">ftp://ftp.litnet.lt/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="malta" class="item">Malta</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.waldonet.net.mt/">http://cpan.waldonet.net.mt/</a></pre>
+</dd>
+<dt><strong><a name="netherlands" class="item">Netherlands</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.quicknet.nl/pub/CPAN/">ftp://ftp.quicknet.nl/pub/CPAN/</a>
+                      <a href="http://mirror.hostfuss.com/CPAN/">http://mirror.hostfuss.com/CPAN/</a>
+                      <a href="ftp://mirror.hostfuss.com/CPAN/">ftp://mirror.hostfuss.com/CPAN/</a>
+                      <a href="http://mirrors3.kernel.org/cpan/">http://mirrors3.kernel.org/cpan/</a>
+                      <a href="ftp://mirrors3.kernel.org/pub/CPAN/">ftp://mirrors3.kernel.org/pub/CPAN/</a>
+                      <a href="http://cpan.osmirror.nl/">http://cpan.osmirror.nl/</a>
+                      <a href="ftp://ftp.osmirror.nl/pub/cpan/">ftp://ftp.osmirror.nl/pub/cpan/</a>
+                      <a href="http://cpan.mirror.versatel.nl/">http://cpan.mirror.versatel.nl/</a>
+                      <a href="ftp://ftp.mirror.versatel.nl/cpan/">ftp://ftp.mirror.versatel.nl/cpan/</a>
+                      <a href="ftp://download.xs4all.nl/pub/mirror/CPAN/">ftp://download.xs4all.nl/pub/mirror/CPAN/</a>
+                      <a href="http://mirror.leaseweb.com/CPAN/">http://mirror.leaseweb.com/CPAN/</a>
+                      <a href="ftp://mirror.leaseweb.com/CPAN/">ftp://mirror.leaseweb.com/CPAN/</a>
+                      <a href="ftp://ftp.cpan.nl/pub/CPAN/">ftp://ftp.cpan.nl/pub/CPAN/</a>
+                      <a href="http://archive.cs.uu.nl/mirror/CPAN/">http://archive.cs.uu.nl/mirror/CPAN/</a>
+                      <a href="ftp://ftp.cs.uu.nl/mirror/CPAN/">ftp://ftp.cs.uu.nl/mirror/CPAN/</a>
+                      <a href="http://https://luxitude.net/cpan/">http://https://luxitude.net/cpan/</a></pre>
+</dd>
+<dt><strong><a name="norway" class="item">Norway</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.uninett.no/pub/languages/perl/CPAN">ftp://ftp.uninett.no/pub/languages/perl/CPAN</a>
+                      <a href="ftp://ftp.uit.no/pub/languages/perl/cpan/">ftp://ftp.uit.no/pub/languages/perl/cpan/</a></pre>
+</dd>
+<dt><strong><a name="poland" class="item">Poland</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.icis.pcz.pl/CPAN/">http://mirror.icis.pcz.pl/CPAN/</a>
+                      <a href="ftp://mirror.icis.pcz.pl/CPAN/">ftp://mirror.icis.pcz.pl/CPAN/</a>
+                      <a href="http://piotrkosoft.net/pub/mirrors/CPAN/">http://piotrkosoft.net/pub/mirrors/CPAN/</a>
+                      <a href="ftp://ftp.piotrkosoft.net/pub/mirrors/CPAN/">ftp://ftp.piotrkosoft.net/pub/mirrors/CPAN/</a>
+                      <a href="http://ftp.man.poznan.pl/pub/CPAN">http://ftp.man.poznan.pl/pub/CPAN</a>
+                      <a href="ftp://ftp.man.poznan.pl/pub/CPAN">ftp://ftp.man.poznan.pl/pub/CPAN</a>
+                      <a href="ftp://sunsite.icm.edu.pl/pub/CPAN/">ftp://sunsite.icm.edu.pl/pub/CPAN/</a>
+                      <a href="ftp://ftp.tpnet.pl/d4/CPAN/">ftp://ftp.tpnet.pl/d4/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="portugal" class="item">Portugal</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.dei.uc.pt/">http://cpan.dei.uc.pt/</a>
+                      <a href="ftp://ftp.dei.uc.pt/pub/CPAN">ftp://ftp.dei.uc.pt/pub/CPAN</a>
+                      <a href="ftp://ftp.ist.utl.pt/pub/CPAN/">ftp://ftp.ist.utl.pt/pub/CPAN/</a>
+                      <a href="http://cpan.perl.pt/">http://cpan.perl.pt/</a>
+                      <a href="http://cpan.ip.pt/">http://cpan.ip.pt/</a>
+                      <a href="ftp://cpan.ip.pt/pub/cpan/">ftp://cpan.ip.pt/pub/cpan/</a>
+                      <a href="http://mirrors.nfsi.pt/CPAN/">http://mirrors.nfsi.pt/CPAN/</a>
+                      <a href="ftp://mirrors.nfsi.pt/pub/CPAN/">ftp://mirrors.nfsi.pt/pub/CPAN/</a>
+                      <a href="http://cpan.dcc.fc.up.pt/">http://cpan.dcc.fc.up.pt/</a></pre>
+</dd>
+<dt><strong><a name="romania" class="item">Romania</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.astral.ro/pub/CPAN/">http://ftp.astral.ro/pub/CPAN/</a>
+                      <a href="ftp://ftp.astral.ro/pub/CPAN/">ftp://ftp.astral.ro/pub/CPAN/</a>
+                      <a href="ftp://ftp.lug.ro/CPAN">ftp://ftp.lug.ro/CPAN</a>
+                      <a href="http://mirrors.xservers.ro/CPAN/">http://mirrors.xservers.ro/CPAN/</a>
+                      <a href="http://mirrors.hostingromania.ro/ftp.cpan.org/">http://mirrors.hostingromania.ro/ftp.cpan.org/</a>
+                      <a href="ftp://ftp.hostingromania.ro/mirrors/ftp.cpan.org/">ftp://ftp.hostingromania.ro/mirrors/ftp.cpan.org/</a>
+                      <a href="ftp://ftp.iasi.roedu.net/pub/mirrors/ftp.cpan.org/">ftp://ftp.iasi.roedu.net/pub/mirrors/ftp.cpan.org/</a>
+                      <a href="ftp://ftp.ambra.ro/pub/CPAN">ftp://ftp.ambra.ro/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="russia2" class="item">Russia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.aha.ru/CPAN/">ftp://ftp.aha.ru/CPAN/</a>
+                      <a href="http://cpan.rinet.ru/">http://cpan.rinet.ru/</a>
+                      <a href="ftp://cpan.rinet.ru/pub/mirror/CPAN/">ftp://cpan.rinet.ru/pub/mirror/CPAN/</a>
+                      <a href="ftp://ftp.SpringDaemons.com/pub/CPAN/">ftp://ftp.SpringDaemons.com/pub/CPAN/</a>
+                      <a href="http://cpan.nx1.ru/">http://cpan.nx1.ru/</a>
+                      <a href="ftp://cpan.nx1.ru/">ftp://cpan.nx1.ru/</a>
+                      <a href="http://mirror.rol.ru/CPAN/">http://mirror.rol.ru/CPAN/</a>
+                      <a href="http://ftp.silvernet.ru/CPAN/">http://ftp.silvernet.ru/CPAN/</a>
+                      <a href="http://ftp.spbu.ru/CPAN/">http://ftp.spbu.ru/CPAN/</a>
+                      <a href="ftp://ftp.spbu.ru/CPAN/">ftp://ftp.spbu.ru/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="slovakia" class="item">Slovakia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.fyxm.net/">http://cpan.fyxm.net/</a></pre>
+</dd>
+<dt><strong><a name="slovenia" class="item">Slovenia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://www.klevze.si/cpan">http://www.klevze.si/cpan</a></pre>
+</dd>
+<dt><strong><a name="spain" class="item">Spain</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://osl.ugr.es/CPAN/">http://osl.ugr.es/CPAN/</a>
+                      <a href="ftp://ftp.rediris.es/mirror/CPAN/">ftp://ftp.rediris.es/mirror/CPAN/</a>
+                      <a href="http://ftp.gui.uva.es/sites/cpan.org/">http://ftp.gui.uva.es/sites/cpan.org/</a>
+                      <a href="ftp://ftp.gui.uva.es/sites/cpan.org/">ftp://ftp.gui.uva.es/sites/cpan.org/</a></pre>
+</dd>
+<dt><strong><a name="sweden" class="item">Sweden</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirrors4.kernel.org/cpan/">http://mirrors4.kernel.org/cpan/</a>
+                      <a href="ftp://mirrors4.kernel.org/pub/CPAN/">ftp://mirrors4.kernel.org/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="switzerland" class="item">Switzerland</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.mirror.solnet.ch/">http://cpan.mirror.solnet.ch/</a>
+                      <a href="ftp://ftp.solnet.ch/mirror/CPAN/">ftp://ftp.solnet.ch/mirror/CPAN/</a>
+                      <a href="http://mirror.switch.ch/ftp/mirror/CPAN/">http://mirror.switch.ch/ftp/mirror/CPAN/</a>
+                      <a href="ftp://mirror.switch.ch/mirror/CPAN/">ftp://mirror.switch.ch/mirror/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="ukraine" class="item">Ukraine</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.makeperl.org/">http://cpan.makeperl.org/</a>
+                      <a href="ftp://cpan.makeperl.org/pub/CPAN">ftp://cpan.makeperl.org/pub/CPAN</a>
+                      <a href="http://cpan.org.ua/">http://cpan.org.ua/</a>
+                      <a href="http://no-more.kiev.ua/CPAN/">http://no-more.kiev.ua/CPAN/</a>
+                      <a href="ftp://no-more.kiev.ua/pub/CPAN/">ftp://no-more.kiev.ua/pub/CPAN/</a>
+                      <a href="http://cpan.gafol.net/">http://cpan.gafol.net/</a>
+                      <a href="ftp://ftp.gafol.net/pub/cpan/">ftp://ftp.gafol.net/pub/cpan/</a></pre>
+</dd>
+<dt><strong><a name="united_kingdom" class="item">United Kingdom</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://www.mirrorservice.org/sites/ftp.funet.fi/pub/languages/perl/CPAN/">http://www.mirrorservice.org/sites/ftp.funet.fi/pub/languages/perl/CPAN/</a>
+                      <a href="ftp://ftp.mirrorservice.org/sites/ftp.funet.fi/pub/languages/perl/CPAN/">ftp://ftp.mirrorservice.org/sites/ftp.funet.fi/pub/languages/perl/CPAN/</a>
+                      <a href="http://mirror.tje.me.uk/pub/mirrors/ftp.cpan.org/">http://mirror.tje.me.uk/pub/mirrors/ftp.cpan.org/</a>
+                      <a href="ftp://mirror.tje.me.uk/pub/mirrors/ftp.cpan.org/">ftp://mirror.tje.me.uk/pub/mirrors/ftp.cpan.org/</a>
+                      <a href="http://www.mirror.8086.net/sites/CPAN/">http://www.mirror.8086.net/sites/CPAN/</a>
+                      <a href="ftp://ftp.mirror.8086.net/sites/CPAN/">ftp://ftp.mirror.8086.net/sites/CPAN/</a>
+                      <a href="http://cpan.mirror.anlx.net/">http://cpan.mirror.anlx.net/</a>
+                      <a href="ftp://ftp.mirror.anlx.net/CPAN/">ftp://ftp.mirror.anlx.net/CPAN/</a>
+                      <a href="http://mirror.bytemark.co.uk/CPAN/">http://mirror.bytemark.co.uk/CPAN/</a>
+                      <a href="ftp://mirror.bytemark.co.uk/CPAN/">ftp://mirror.bytemark.co.uk/CPAN/</a>
+                      <a href="http://cpan.etla.org/">http://cpan.etla.org/</a>
+                      <a href="ftp://cpan.etla.org/pub/CPAN">ftp://cpan.etla.org/pub/CPAN</a>
+                      <a href="ftp://ftp.demon.co.uk/pub/CPAN/">ftp://ftp.demon.co.uk/pub/CPAN/</a>
+                      <a href="http://mirror.sov.uk.goscomb.net/CPAN/">http://mirror.sov.uk.goscomb.net/CPAN/</a>
+                      <a href="ftp://mirror.sov.uk.goscomb.net/pub/CPAN/">ftp://mirror.sov.uk.goscomb.net/pub/CPAN/</a>
+                      <a href="http://ftp.plig.net/pub/CPAN/">http://ftp.plig.net/pub/CPAN/</a>
+                      <a href="ftp://ftp.plig.net/pub/CPAN/">ftp://ftp.plig.net/pub/CPAN/</a>
+                      <a href="http://ftp.ticklers.org/pub/CPAN/">http://ftp.ticklers.org/pub/CPAN/</a>
+                      <a href="ftp://ftp.ticklers.org/pub/CPAN/">ftp://ftp.ticklers.org/pub/CPAN/</a>
+                      <a href="http://cpan.mirrors.uk2.net/">http://cpan.mirrors.uk2.net/</a>
+                      <a href="ftp://mirrors.uk2.net/pub/CPAN/">ftp://mirrors.uk2.net/pub/CPAN/</a>
+                      <a href="http://mirror.ox.ac.uk/sites/www.cpan.org/">http://mirror.ox.ac.uk/sites/www.cpan.org/</a>
+                      <a href="ftp://mirror.ox.ac.uk/sites/www.cpan.org/">ftp://mirror.ox.ac.uk/sites/www.cpan.org/</a></pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="north_america">North America</a></h2>
+<dl>
+<dt><strong><a name="bahamas" class="item">Bahamas</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://www.securehost.com/mirror/CPAN/">http://www.securehost.com/mirror/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="canada" class="item">Canada</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.justanotherperlhacker.com/pub/CPAN/">http://cpan.justanotherperlhacker.com/pub/CPAN/</a>
+                      <a href="ftp://cpan.justanotherperlhacker.com/pub/CPAN/">ftp://cpan.justanotherperlhacker.com/pub/CPAN/</a>
+                      <a href="http://cpan.arcticnetwork.ca">http://cpan.arcticnetwork.ca</a>
+                      <a href="ftp://mirror.arcticnetwork.ca/pub/CPAN">ftp://mirror.arcticnetwork.ca/pub/CPAN</a>
+                      <a href="http://cpan.sunsite.ualberta.ca/">http://cpan.sunsite.ualberta.ca/</a>
+                      <a href="ftp://cpan.sunsite.ualberta.ca/pub/CPAN/">ftp://cpan.sunsite.ualberta.ca/pub/CPAN/</a>
+                      <a href="http://theoryx5.uwinnipeg.ca/pub/CPAN/">http://theoryx5.uwinnipeg.ca/pub/CPAN/</a>
+                      <a href="ftp://theoryx5.uwinnipeg.ca/pub/CPAN/">ftp://theoryx5.uwinnipeg.ca/pub/CPAN/</a>
+                      <a href="http://arwen.cs.dal.ca/mirror/CPAN/">http://arwen.cs.dal.ca/mirror/CPAN/</a>
+                      <a href="ftp://arwen.cs.dal.ca/pub/mirror/CPAN/">ftp://arwen.cs.dal.ca/pub/mirror/CPAN/</a>
+                      <a href="http://CPAN.mirror.rafal.ca/">http://CPAN.mirror.rafal.ca/</a>
+                      <a href="ftp://CPAN.mirror.rafal.ca/pub/CPAN/">ftp://CPAN.mirror.rafal.ca/pub/CPAN/</a>
+                      <a href="ftp://ftp.nrc.ca/pub/CPAN/">ftp://ftp.nrc.ca/pub/CPAN/</a>
+                      <a href="http://mirror.csclub.uwaterloo.ca/pub/CPAN/">http://mirror.csclub.uwaterloo.ca/pub/CPAN/</a>
+                      <a href="ftp://mirror.csclub.uwaterloo.ca/pub/CPAN/">ftp://mirror.csclub.uwaterloo.ca/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="mexico" class="item">Mexico</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://www.msg.com.mx/CPAN/">http://www.msg.com.mx/CPAN/</a>
+                      <a href="ftp://ftp.msg.com.mx/pub/CPAN/">ftp://ftp.msg.com.mx/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="united_states" class="item">United States</a></strong></dt>
+
+<dl>
+<dt><strong><a name="alabama" class="item">Alabama</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.hiwaay.net/CPAN/">http://mirror.hiwaay.net/CPAN/</a>
+                      <a href="ftp://mirror.hiwaay.net/CPAN/">ftp://mirror.hiwaay.net/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="california" class="item">California</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.knowledgematters.net/">http://cpan.knowledgematters.net/</a>
+                      <a href="http://cpan.binkerton.com/">http://cpan.binkerton.com/</a>
+                      <a href="http://cpan.develooper.com/">http://cpan.develooper.com/</a>
+                      <a href="http://mirrors.gossamer-threads.com/CPAN">http://mirrors.gossamer-threads.com/CPAN</a>
+                      <a href="http://cpan.schatt.com/">http://cpan.schatt.com/</a>
+                      <a href="http://mirrors.kernel.org/cpan/">http://mirrors.kernel.org/cpan/</a>
+                      <a href="ftp://mirrors.kernel.org/pub/CPAN">ftp://mirrors.kernel.org/pub/CPAN</a>
+                      <a href="http://mirrors2.kernel.org/cpan/">http://mirrors2.kernel.org/cpan/</a>
+                      <a href="ftp://mirrors2.kernel.org/pub/CPAN/">ftp://mirrors2.kernel.org/pub/CPAN/</a>
+                      <a href="http://cpan.mirrors.redwire.net/">http://cpan.mirrors.redwire.net/</a>
+                      <a href="http://cpan.mirror.facebook.net/">http://cpan.mirror.facebook.net/</a>
+                      <a href="http://mirrors1.kernel.org/cpan/">http://mirrors1.kernel.org/cpan/</a>
+                      <a href="ftp://mirrors1.kernel.org/pub/CPAN/">ftp://mirrors1.kernel.org/pub/CPAN/</a>
+                      <a href="http://cpan-sj.viaverio.com/">http://cpan-sj.viaverio.com/</a>
+                      <a href="ftp://cpan-sj.viaverio.com/pub/CPAN/">ftp://cpan-sj.viaverio.com/pub/CPAN/</a>
+                      <a href="http://www.perl.com/CPAN/">http://www.perl.com/CPAN/</a>
+                      <a href="http://cpan.yahoo.com/">http://cpan.yahoo.com/</a></pre>
+</dd>
+<dt><strong><a name="florida" class="item">Florida</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.cise.ufl.edu/pub/mirrors/CPAN/">ftp://ftp.cise.ufl.edu/pub/mirrors/CPAN/</a>
+                      <a href="http://mirror.atlantic.net/pub/CPAN/">http://mirror.atlantic.net/pub/CPAN/</a>
+                      <a href="ftp://mirror.atlantic.net/pub/CPAN/">ftp://mirror.atlantic.net/pub/CPAN/</a>
+                      <a href="http://mirror.candidhosting.com/pub/CPAN">http://mirror.candidhosting.com/pub/CPAN</a>
+                      <a href="ftp://mirror.candidhosting.com/pub/CPAN">ftp://mirror.candidhosting.com/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="idaho" class="item">Idaho</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.its.uidaho.edu/pub/cpan/">http://mirror.its.uidaho.edu/pub/cpan/</a>
+                      <a href="ftp://mirror.its.uidaho.edu/cpan/">ftp://mirror.its.uidaho.edu/cpan/</a></pre>
+</dd>
+<dt><strong><a name="illinois" class="item">Illinois</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.mirrors.hoobly.com/">http://cpan.mirrors.hoobly.com/</a>
+                      <a href="http://cpan.uchicago.edu/pub/CPAN/">http://cpan.uchicago.edu/pub/CPAN/</a>
+                      <a href="ftp://cpan.uchicago.edu/pub/CPAN/">ftp://cpan.uchicago.edu/pub/CPAN/</a>
+                      <a href="http://mirrors.servercentral.net/CPAN/">http://mirrors.servercentral.net/CPAN/</a>
+                      <a href="http://www.stathy.com/CPAN/">http://www.stathy.com/CPAN/</a>
+                      <a href="ftp://www.stathy.com/CPAN/">ftp://www.stathy.com/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="indiana" class="item">Indiana</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.uwsg.iu.edu/pub/perl/CPAN/">ftp://ftp.uwsg.iu.edu/pub/perl/CPAN/</a>
+                      <a href="http://cpan.netnitco.net/">http://cpan.netnitco.net/</a>
+                      <a href="ftp://cpan.netnitco.net/pub/mirrors/CPAN/">ftp://cpan.netnitco.net/pub/mirrors/CPAN/</a>
+                      <a href="http://ftp.ndlug.nd.edu/pub/perl/">http://ftp.ndlug.nd.edu/pub/perl/</a>
+                      <a href="ftp://ftp.ndlug.nd.edu/pub/perl/">ftp://ftp.ndlug.nd.edu/pub/perl/</a>
+                      <a href="http://fx.saintjoe.edu/pub/CPAN">http://fx.saintjoe.edu/pub/CPAN</a></pre>
+</dd>
+<dt><strong><a name="massachusetts" class="item">Massachusetts</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.ccs.neu.edu/net/mirrors/ftp.funet.fi/pub/languages/perl/CPAN/">ftp://ftp.ccs.neu.edu/net/mirrors/ftp.funet.fi/pub/languages/perl/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="michigan" class="item">Michigan</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.wayne.edu/cpan/">http://ftp.wayne.edu/cpan/</a>
+                      <a href="ftp://ftp.wayne.edu/cpan/">ftp://ftp.wayne.edu/cpan/</a></pre>
+</dd>
+<dt><strong><a name="minnesota" class="item">Minnesota</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.msi.umn.edu/">http://cpan.msi.umn.edu/</a></pre>
+</dd>
+<dt><strong><a name="new_jersey" class="item">New Jersey</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.datapipe.net/CPAN/">http://mirror.datapipe.net/CPAN/</a>
+                      <a href="ftp://mirror.datapipe.net/pub/CPAN/">ftp://mirror.datapipe.net/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="new_york" class="item">New York</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirrors.24-7-solutions.net/pub/CPAN/">http://mirrors.24-7-solutions.net/pub/CPAN/</a>
+                      <a href="ftp://mirrors.24-7-solutions.net/pub/CPAN/">ftp://mirrors.24-7-solutions.net/pub/CPAN/</a>
+                      <a href="http://mirror.cc.columbia.edu/pub/software/cpan/">http://mirror.cc.columbia.edu/pub/software/cpan/</a>
+                      <a href="ftp://mirror.cc.columbia.edu/pub/software/cpan/">ftp://mirror.cc.columbia.edu/pub/software/cpan/</a>
+                      <a href="http://cpan.belfry.net/">http://cpan.belfry.net/</a>
+                      <a href="http://cpan.erlbaum.net/">http://cpan.erlbaum.net/</a>
+                      <a href="ftp://cpan.erlbaum.net/CPAN/">ftp://cpan.erlbaum.net/CPAN/</a>
+                      <a href="http://cpan.hexten.net/">http://cpan.hexten.net/</a>
+                      <a href="ftp://cpan.hexten.net/">ftp://cpan.hexten.net/</a>
+                      <a href="http://ftp.fxcorporate.com/CPAN/">http://ftp.fxcorporate.com/CPAN/</a>
+                      <a href="ftp://ftp.fxcorporate.com/pub/CPAN/">ftp://ftp.fxcorporate.com/pub/CPAN/</a>
+                      <a href="ftp://mirror.nyi.net/CPAN/">ftp://mirror.nyi.net/CPAN/</a>
+                      <a href="http://mirror.rit.edu/CPAN/">http://mirror.rit.edu/CPAN/</a>
+                      <a href="ftp://mirror.rit.edu/CPAN/">ftp://mirror.rit.edu/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="north_carolina" class="item">North Carolina</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://www.ibiblio.org/pub/mirrors/CPAN">http://www.ibiblio.org/pub/mirrors/CPAN</a>
+                      <a href="ftp://ftp.ncsu.edu/pub/mirror/CPAN/">ftp://ftp.ncsu.edu/pub/mirror/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="oregon" class="item">Oregon</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.osuosl.org/pub/CPAN/">http://ftp.osuosl.org/pub/CPAN/</a>
+                      <a href="ftp://ftp.osuosl.org/pub/CPAN/">ftp://ftp.osuosl.org/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="pennsylvania" class="item">Pennsylvania</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://ftp.epix.net/CPAN/">http://ftp.epix.net/CPAN/</a>
+                      <a href="ftp://ftp.epix.net/pub/languages/perl/">ftp://ftp.epix.net/pub/languages/perl/</a>
+                      <a href="http://cpan.pair.com/">http://cpan.pair.com/</a>
+                      <a href="ftp://cpan.pair.com/pub/CPAN/">ftp://cpan.pair.com/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="south_carolina" class="item">South Carolina</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.mirror.clemson.edu/">http://cpan.mirror.clemson.edu/</a></pre>
+</dd>
+<dt><strong><a name="tennessee" class="item">Tennessee</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mira.sunsite.utk.edu/CPAN/">http://mira.sunsite.utk.edu/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="texas" class="item">Texas</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.uta.edu/CPAN">http://mirror.uta.edu/CPAN</a></pre>
+</dd>
+<dt><strong><a name="utah" class="item">Utah</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.cs.utah.edu">http://cpan.cs.utah.edu</a>
+                      <a href="ftp://cpan.cs.utah.edu/pub/CPAN/">ftp://cpan.cs.utah.edu/pub/CPAN/</a>
+                      <a href="ftp://mirror.xmission.com/CPAN/">ftp://mirror.xmission.com/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="virginia" class="item">Virginia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan-du.viaverio.com/">http://cpan-du.viaverio.com/</a>
+                      <a href="ftp://cpan-du.viaverio.com/pub/CPAN/">ftp://cpan-du.viaverio.com/pub/CPAN/</a>
+                      <a href="http://perl.secsup.org/">http://perl.secsup.org/</a>
+                      <a href="ftp://perl.secsup.org/pub/perl/">ftp://perl.secsup.org/pub/perl/</a>
+                      <a href="ftp://mirror.cogentco.com/pub/CPAN/">ftp://mirror.cogentco.com/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="washington" class="item">Washington</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.llarian.net/">http://cpan.llarian.net/</a>
+                      <a href="ftp://cpan.llarian.net/pub/CPAN/">ftp://cpan.llarian.net/pub/CPAN/</a>
+                      <a href="ftp://ftp-mirror.internap.com/pub/CPAN/">ftp://ftp-mirror.internap.com/pub/CPAN/</a></pre>
+</dd>
+<dt><strong><a name="wisconsin" class="item">Wisconsin</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.mirrors.tds.net">http://cpan.mirrors.tds.net</a>
+                      <a href="ftp://cpan.mirrors.tds.net/pub/CPAN">ftp://cpan.mirrors.tds.net/pub/CPAN</a>
+                      <a href="http://mirror.sit.wisc.edu/pub/CPAN/">http://mirror.sit.wisc.edu/pub/CPAN/</a>
+                      <a href="ftp://mirror.sit.wisc.edu/pub/CPAN/">ftp://mirror.sit.wisc.edu/pub/CPAN/</a></pre>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="oceania">Oceania</a></h2>
+<dl>
+<dt><strong><a name="australia" class="item">Australia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://mirror.internode.on.net/pub/cpan/">http://mirror.internode.on.net/pub/cpan/</a>
+                      <a href="ftp://mirror.internode.on.net/pub/cpan/">ftp://mirror.internode.on.net/pub/cpan/</a>
+                      <a href="http://cpan.mirror.aussiehq.net.au/">http://cpan.mirror.aussiehq.net.au/</a>
+                      <a href="http://mirror.as24220.net/cpan/">http://mirror.as24220.net/cpan/</a>
+                      <a href="ftp://mirror.as24220.net/cpan/">ftp://mirror.as24220.net/cpan/</a></pre>
+</dd>
+<dt><strong><a name="new_zealand" class="item">New Zealand</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://ftp.auckland.ac.nz/pub/perl/CPAN/">ftp://ftp.auckland.ac.nz/pub/perl/CPAN/</a>
+                      <a href="http://cpan.inspire.net.nz">http://cpan.inspire.net.nz</a>
+                      <a href="ftp://cpan.inspire.net.nz/cpan">ftp://cpan.inspire.net.nz/cpan</a>
+                      <a href="http://cpan.catalyst.net.nz/CPAN/">http://cpan.catalyst.net.nz/CPAN/</a>
+                      <a href="ftp://cpan.catalyst.net.nz/pub/CPAN/">ftp://cpan.catalyst.net.nz/pub/CPAN/</a></pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="south_america">South America</a></h2>
+<dl>
+<dt><strong><a name="argentina" class="item">Argentina</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.patan.com.ar/">http://cpan.patan.com.ar/</a>
+                      <a href="http://cpan.localhost.net.ar">http://cpan.localhost.net.ar</a>
+                      <a href="ftp://mirrors.localhost.net.ar/pub/mirrors/CPAN">ftp://mirrors.localhost.net.ar/pub/mirrors/CPAN</a></pre>
+</dd>
+<dt><strong><a name="brazil" class="item">Brazil</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="ftp://cpan.pop-mg.com.br/pub/CPAN/">ftp://cpan.pop-mg.com.br/pub/CPAN/</a>
+                      <a href="http://ftp.pucpr.br/CPAN">http://ftp.pucpr.br/CPAN</a>
+                      <a href="ftp://ftp.pucpr.br/CPAN">ftp://ftp.pucpr.br/CPAN</a>
+                      <a href="http://cpan.kinghost.net/">http://cpan.kinghost.net/</a>
+                      <a href="ftp://ftp.linorg.usp.br/CPAN">ftp://ftp.linorg.usp.br/CPAN</a></pre>
+</dd>
+<dt><strong><a name="chile" class="item">Chile</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://cpan.dcc.uchile.cl/">http://cpan.dcc.uchile.cl/</a>
+                      <a href="ftp://cpan.dcc.uchile.cl/pub/lang/cpan/">ftp://cpan.dcc.uchile.cl/pub/lang/cpan/</a></pre>
+</dd>
+<dt><strong><a name="colombia" class="item">Colombia</a></strong></dt>
+
+<dd>
+<pre>
+                      <a href="http://www.laqee.unal.edu.co/CPAN/">http://www.laqee.unal.edu.co/CPAN/</a></pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="rsync_mirrors">RSYNC Mirrors</a></h2>
+<pre>
+                      mirror.as24220.net::cpan
+                      cpan.inode.at::CPAN
+                      gd.tuwien.ac.at::CPAN
+                      ftp.belnet.be::packages/cpan
+                      rsync.linorg.usp.br::CPAN
+                      rsync.arcticnetwork.ca::CPAN
+                      CPAN.mirror.rafal.ca::CPAN
+                      mirror.csclub.uwaterloo.ca::CPAN
+                      theoryx5.uwinnipeg.ca::CPAN
+                      www.laqee.unal.edu.co::CPAN
+                      mirror.uni-c.dk::CPAN
+                      rsync.nic.funet.fi::CPAN
+                      rsync://distrib-coffee.ipsl.jussieu.fr/pub/mirrors/cpan/
+                      mir1.ovh.net::CPAN
+                      miroir-francais.fr::cpan
+                      ftp.crihan.fr::CPAN
+                      rsync://mirror.cict.fr/cpan/
+                      rsync://mirror.netcologne.de/cpan/
+                      ftp-stud.hs-esslingen.de::CPAN/
+                      ftp.gwdg.de::FTP/languages/perl/CPAN/
+                      cpan.mirror.iphh.net::CPAN
+                      cpan.cpantesters.org::cpan
+                      cpan.hu::CPAN
+                      komo.vlsm.org::CPAN
+                      mirror.unej.ac.id::cpan
+                      ftp.esat.net::/pub/languages/perl/CPAN
+                      ftp.heanet.ie::mirrors/ftp.perl.org/pub/CPAN
+                      rsync.panu.it::CPAN
+                      cpan.fastbull.org::CPAN
+                      ftp.kddilabs.jp::cpan
+                      ftp.nara.wide.ad.jp::cpan/
+                      rsync://ftp.jaist.ac.jp/pub/CPAN/
+                      rsync://ftp.riken.jp/cpan/
+                      mirror.linuxiso.kz::CPAN
+                      rsync://mirrors3.kernel.org/mirrors/CPAN/
+                      rsync://rsync.osmirror.nl/cpan/
+                      mirror.leaseweb.com::CPAN
+                      cpan.nautile.nc::CPAN
+                      mirror.icis.pcz.pl::CPAN
+                      piotrkosoft.net::mirrors/CPAN
+                      rsync://cpan.perl.pt/
+                      ftp.kaist.ac.kr::cpan
+                      cpan.sarang.net::CPAN
+                      mirror.averse.net::cpan
+                      rsync.oss.eznetsols.org
+                      mirror.ac.za::cpan
+                      ftp.is.co.za::IS-Mirror/ftp.cpan.org/
+                      rsync://ftp.gui.uva.es/cpan/
+                      rsync://mirrors4.kernel.org/mirrors/CPAN/
+                      ftp.solnet.ch::CPAN
+                      ftp.ulak.net.tr::CPAN
+                      gafol.net::cpan
+                      rsync.mirrorservice.org::ftp.funet.fi/pub/
+                      rsync://rsync.mirror.8086.net/CPAN/
+                      rsync.mirror.anlx.net::CPAN
+                      mirror.bytemark.co.uk::CPAN
+                      ftp.plig.net::CPAN
+                      rsync://ftp.ticklers.org:CPAN/
+                      mirrors.ibiblio.org::CPAN
+                      cpan-du.viaverio.com::CPAN
+                      mirror.hiwaay.net::CPAN
+                      rsync://mira.sunsite.utk.edu/CPAN/
+                      cpan.mirrors.tds.net::CPAN
+                      mirror.its.uidaho.edu::cpan
+                      rsync://mirror.cc.columbia.edu::cpan/
+                      ftp.fxcorporate.com::CPAN
+                      rsync.atlantic.net::CPAN
+                      mirrors.kernel.org::mirrors/CPAN
+                      rsync://mirrors2.kernel.org/mirrors/CPAN/
+                      cpan.pair.com::CPAN
+                      rsync://mirror.rit.edu/CPAN/
+                      rsync://mirror.facebook.net/cpan/
+                      rsync://mirrors1.kernel.org/mirrors/CPAN/
+                      cpan-sj.viaverio.com::CPAN</pre>
+<p>For an up-to-date listing of CPAN sites,
+see <a href="http://www.cpan.org/SITES">http://www.cpan.org/SITES</a> or <a href="ftp://www.cpan.org/SITES">ftp://www.cpan.org/SITES</a> .</p>
+<p>
+</p>
+<hr />
+<h1><a name="modules__creation__use__and_abuse">Modules: Creation, Use, and Abuse</a></h1>
+<p>(The following section is borrowed directly from Tim Bunce's modules
+file, available at your nearest CPAN site.)</p>
+<p>Perl implements a class using a package, but the presence of a
+package doesn't imply the presence of a class.  A package is just a
+namespace.  A class is a package that provides subroutines that can be
+used as methods.  A method is just a subroutine that expects, as its
+first argument, either the name of a package (for &quot;static&quot; methods),
+or a reference to something (for &quot;virtual&quot; methods).</p>
+<p>A module is a file that (by convention) provides a class of the same
+name (sans the .pm), plus an import method in that class that can be
+called to fetch exported symbols.  This module may implement some of
+its methods by loading dynamic C or C++ objects, but that should be
+totally transparent to the user of the module.  Likewise, the module
+might set up an AUTOLOAD function to slurp in subroutine definitions on
+demand, but this is also transparent.  Only the <em class="file">.pm</em> file is required to
+exist.  See <a href="../../lib/pods/perlsub.html">the perlsub manpage</a>, <a href="../../lib/pods/perltoot.html">the perltoot manpage</a>, and <a href="../../lib/AutoLoader.html">the AutoLoader manpage</a> for details about
+the AUTOLOAD mechanism.</p>
+<p>
+</p>
+<h2><a name="guidelines_for_module_creation">Guidelines for Module Creation</a></h2>
+<ul>
+<li>
+<p>Do similar modules already exist in some form?</p>
+<p>If so, please try to reuse the existing modules either in whole or
+by inheriting useful features into a new class.  If this is not
+practical try to get together with the module authors to work on
+extending or enhancing the functionality of the existing modules.
+A perfect example is the plethora of packages in perl4 for dealing
+with command line options.</p>
+<p>If you are writing a module to expand an already existing set of
+modules, please coordinate with the author of the package.  It
+helps if you follow the same naming scheme and module interaction
+scheme as the original author.</p>
+</li>
+<li>
+<p>Try to design the new module to be easy to extend and reuse.</p>
+<p>Try to <code>use warnings;</code> (or <code>use warnings qw(...);</code>).
+Remember that you can add <code>no warnings qw(...);</code> to individual blocks
+of code that need less warnings.</p>
+<p>Use blessed references.  Use the two argument form of bless to bless
+into the class name given as the first parameter of the constructor,
+e.g.,:</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+     <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+     <span class="keyword">return</span> <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<p>or even this if you'd like it to be used as either a static
+or a virtual method.</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+     <span class="keyword">my</span> <span class="variable">$self</span>  <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+     <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">ref</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">)</span> <span class="operator">||</span> <span class="variable">$self</span><span class="operator">;</span>
+     <span class="keyword">return</span> <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$class</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<p>Pass arrays as references so more parameters can be added later
+(it's also faster).  Convert functions into methods where
+appropriate.  Split large methods into smaller more flexible ones.
+Inherit methods from other modules if appropriate.</p>
+<p>Avoid class name tests like: <code>die &quot;Invalid&quot; unless ref $ref eq 'FOO'</code>.
+Generally you can delete the <code>eq 'FOO'</code> part with no harm at all.
+Let the objects look after themselves! Generally, avoid hard-wired
+class names as far as possible.</p>
+<p>Avoid <code>$r-&gt;Class::func()</code> where using <code>@ISA=qw(... Class ...)</code> and
+<code>$r-&gt;func()</code> would work (see <a href="../../lib/pods/perlbot.html">the perlbot manpage</a> for more details).</p>
+<p>Use autosplit so little used or newly added functions won't be a
+burden to programs that don't use them. Add test functions to
+the module after __END__ either using AutoSplit or by saying:</p>
+<pre>
+ <span class="keyword">eval</span> <span class="keyword">join</span><span class="operator">(</span><span class="string">''</span><span class="operator">,&lt;</span><span class="variable">main::DATA</span><span class="operator">&gt;)</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="variable">$@</span> <span class="keyword">unless</span> <span class="keyword">caller</span><span class="operator">();</span>
+</pre>
+<p>Does your module pass the 'empty subclass' test? If you say
+<code>@SUBCLASS::ISA = qw(YOURCLASS);</code> your applications should be able
+to use SUBCLASS in exactly the same way as YOURCLASS.  For example,
+does your application still work if you change:  <code>$obj = YOURCLASS-&gt;new();</code>
+into: <code>$obj = SUBCLASS-&gt;new();</code> ?</p>
+<p>Avoid keeping any state information in your packages. It makes it
+difficult for multiple other packages to use yours. Keep state
+information in objects.</p>
+<p>Always use <strong>-w</strong>.</p>
+<p>Try to <code>use strict;</code> (or <code>use strict qw(...);</code>).
+Remember that you can add <code>no strict qw(...);</code> to individual blocks
+of code that need less strictness.</p>
+<p>Always use <strong>-w</strong>.</p>
+<p>Follow the guidelines in <a href="../../lib/pods/perlstyle.html">the perlstyle manpage</a>.</p>
+<p>Always use <strong>-w</strong>.</p>
+</li>
+<li>
+<p>Some simple style guidelines</p>
+<p>The perlstyle manual supplied with Perl has many helpful points.</p>
+<p>Coding style is a matter of personal taste. Many people evolve their
+style over several years as they learn what helps them write and
+maintain good code.  Here's one set of assorted suggestions that
+seem to be widely used by experienced developers:</p>
+<p>Use underscores to separate words.  It is generally easier to read
+$var_names_like_this than $VarNamesLikeThis, especially for
+non-native speakers of English. It's also a simple rule that works
+consistently with VAR_NAMES_LIKE_THIS.</p>
+<p>Package/Module names are an exception to this rule. Perl informally
+reserves lowercase module names for 'pragma' modules like integer
+and strict. Other modules normally begin with a capital letter and
+use mixed case with no underscores (need to be short and portable).</p>
+<p>You may find it helpful to use letter case to indicate the scope
+or nature of a variable. For example:</p>
+<pre>
+ $ALL_CAPS_HERE   constants only (beware clashes with Perl vars)
+ $Some_Caps_Here  package-wide global/static
+ $no_caps_here    function scope my() or local() variables</pre>
+<p>Function and method names seem to work best as all lowercase.
+e.g., <code>$obj-&gt;as_string()</code>.</p>
+<p>You can use a leading underscore to indicate that a variable or
+function should not be used outside the package that defined it.</p>
+</li>
+<li>
+<p>Select what to export.</p>
+<p>Do NOT export method names!</p>
+<p>Do NOT export anything else by default without a good reason!</p>
+<p>Exports pollute the namespace of the module user.  If you must
+export try to use @EXPORT_OK in preference to @EXPORT and avoid
+short or common names to reduce the risk of name clashes.</p>
+<p>Generally anything not exported is still accessible from outside the
+module using the ModuleName::item_name (or <code>$blessed_ref-&gt;method</code>)
+syntax.  By convention you can use a leading underscore on names to
+indicate informally that they are 'internal' and not for public use.</p>
+<p>(It is actually possible to get private functions by saying:
+<code>my $subref = sub { ... };  &amp;$subref;</code>.  But there's no way to call that
+directly as a method, because a method must have a name in the symbol
+table.)</p>
+<p>As a general rule, if the module is trying to be object oriented
+then export nothing. If it's just a collection of functions then
+@EXPORT_OK anything but use @EXPORT with caution.</p>
+</li>
+<li>
+<p>Select a name for the module.</p>
+<p>This name should be as descriptive, accurate, and complete as
+possible.  Avoid any risk of ambiguity. Always try to use two or
+more whole words.  Generally the name should reflect what is special
+about what the module does rather than how it does it.  Please use
+nested module names to group informally or categorize a module.
+There should be a very good reason for a module not to have a nested name.
+Module names should begin with a capital letter.</p>
+<p>Having 57 modules all called Sort will not make life easy for anyone
+(though having 23 called Sort::Quick is only marginally better :-).
+Imagine someone trying to install your module alongside many others.
+If in any doubt ask for suggestions in comp.lang.perl.misc.</p>
+<p>If you are developing a suite of related modules/classes it's good
+practice to use nested classes with a common prefix as this will
+avoid namespace clashes. For example: Xyz::Control, Xyz::View,
+Xyz::Model etc. Use the modules in this list as a naming guide.</p>
+<p>If adding a new module to a set, follow the original author's
+standards for naming modules and the interface to methods in
+those modules.</p>
+<p>If developing modules for private internal or project specific use,
+that will never be released to the public, then you should ensure
+that their names will not clash with any future public module. You
+can do this either by using the reserved Local::* category or by
+using a category name that includes an underscore like Foo_Corp::*.</p>
+<p>To be portable each component of a module name should be limited to
+11 characters. If it might be used on MS-DOS then try to ensure each is
+unique in the first 8 characters. Nested modules make this easier.</p>
+</li>
+<li>
+<p>Have you got it right?</p>
+<p>How do you know that you've made the right decisions? Have you
+picked an interface design that will cause problems later? Have
+you picked the most appropriate name? Do you have any questions?</p>
+<p>The best way to know for sure, and pick up many helpful suggestions,
+is to ask someone who knows. Comp.lang.perl.misc is read by just about
+all the people who develop modules and it's the best place to ask.</p>
+<p>All you need to do is post a short summary of the module, its
+purpose and interfaces. A few lines on each of the main methods is
+probably enough. (If you post the whole module it might be ignored
+by busy people - generally the very people you want to read it!)</p>
+<p>Don't worry about posting if you can't say when the module will be
+ready - just say so in the message. It might be worth inviting
+others to help you, they may be able to complete it for you!</p>
+</li>
+<li>
+<p>README and other Additional Files.</p>
+<p>It's well known that software developers usually fully document the
+software they write. If, however, the world is in urgent need of
+your software and there is not enough time to write the full
+documentation please at least provide a README file containing:</p>
+<ul>
+<li>
+<p>A description of the module/package/extension etc.</p>
+</li>
+<li>
+<p>A copyright notice - see below.</p>
+</li>
+<li>
+<p>Prerequisites - what else you may need to have.</p>
+</li>
+<li>
+<p>How to build it - possible changes to Makefile.PL etc.</p>
+</li>
+<li>
+<p>How to install it.</p>
+</li>
+<li>
+<p>Recent changes in this release, especially incompatibilities</p>
+</li>
+<li>
+<p>Changes / enhancements you plan to make in the future.</p>
+</li>
+</ul>
+<p>If the README file seems to be getting too large you may wish to
+split out some of the sections into separate files: INSTALL,
+Copying, ToDo etc.</p>
+<ul>
+<li>
+<p>Adding a Copyright Notice.</p>
+<p>How you choose to license your work is a personal decision.
+The general mechanism is to assert your Copyright and then make
+a declaration of how others may copy/use/modify your work.</p>
+<p>Perl, for example, is supplied with two types of licence: The GNU GPL
+and The Artistic Licence (see the files README, Copying, and Artistic,
+or <a href="../../lib/pods/perlgpl.html">the perlgpl manpage</a> and <a href="../../lib/pods/perlartistic.html">the perlartistic manpage</a>).  Larry has good reasons for NOT
+just using the GNU GPL.</p>
+<p>My personal recommendation, out of respect for Larry, Perl, and the
+Perl community at large is to state something simply like:</p>
+<pre>
+ Copyright (c) 1995 Your Name. All rights reserved.
+ This program is free software; you can redistribute it and/or
+ modify it under the same terms as Perl itself.</pre>
+<p>This statement should at least appear in the README file. You may
+also wish to include it in a Copying file and your source files.
+Remember to include the other words in addition to the Copyright.</p>
+</li>
+<li>
+<p>Give the module a version/issue/release number.</p>
+<p>To be fully compatible with the Exporter and MakeMaker modules you
+should store your module's version number in a non-my package
+variable called $VERSION.  This should be a floating point
+number with at least two digits after the decimal (i.e., hundredths,
+e.g, <code>$VERSION = &quot;0.01&quot;</code>).  Don't use a &quot;1.3.2&quot; style version.
+See <a href="../../lib/Exporter.html">the Exporter manpage</a> for details.</p>
+<p>It may be handy to add a function or method to retrieve the number.
+Use the number in announcements and archive file names when
+releasing the module (ModuleName-1.02.tar.Z).
+See perldoc ExtUtils::MakeMaker.pm for details.</p>
+</li>
+<li>
+<p>How to release and distribute a module.</p>
+<p>It's good idea to post an announcement of the availability of your
+module (or the module itself if small) to the comp.lang.perl.announce
+Usenet newsgroup.  This will at least ensure very wide once-off
+distribution.</p>
+<p>If possible, register the module with CPAN.  You should
+include details of its location in your announcement.</p>
+<p>Some notes about ftp archives: Please use a long descriptive file
+name that includes the version number. Most incoming directories
+will not be readable/listable, i.e., you won't be able to see your
+file after uploading it. Remember to send your email notification
+message as soon as possible after uploading else your file may get
+deleted automatically. Allow time for the file to be processed
+and/or check the file has been processed before announcing its
+location.</p>
+<p>FTP Archives for Perl Modules:</p>
+<p>Follow the instructions and links on:</p>
+<pre>
+   <a href="http://www.cpan.org/modules/00modlist.long.html">http://www.cpan.org/modules/00modlist.long.html</a>
+   <a href="http://www.cpan.org/modules/04pause.html">http://www.cpan.org/modules/04pause.html</a></pre>
+<p>or upload to one of these sites:</p>
+<pre>
+   https://pause.kbx.de/pause/
+   <a href="http://pause.perl.org/">http://pause.perl.org/</a></pre>
+<p>and notify &lt;<a href="mailto:modules@perl.org">modules@perl.org</a>&gt;.</p>
+<p>By using the WWW interface you can ask the Upload Server to mirror
+your modules from your ftp or WWW site into your own directory on
+CPAN!</p>
+<p>Please remember to send me an updated entry for the Module list!</p>
+</li>
+<li>
+<p>Take care when changing a released module.</p>
+<p>Always strive to remain compatible with previous released versions.
+Otherwise try to add a mechanism to revert to the
+old behavior if people rely on it.  Document incompatible changes.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="guidelines_for_converting_perl_4_library_scripts_into_modules">Guidelines for Converting Perl 4 Library Scripts into Modules</a></h2>
+<ul>
+<li>
+<p>There is no requirement to convert anything.</p>
+<p>If it ain't broke, don't fix it! Perl 4 library scripts should
+continue to work with no problems. You may need to make some minor
+changes (like escaping non-array @'s in double quoted strings) but
+there is no need to convert a .pl file into a Module for just that.</p>
+</li>
+<li>
+<p>Consider the implications.</p>
+<p>All Perl applications that make use of the script will need to
+be changed (slightly) if the script is converted into a module.  Is
+it worth it unless you plan to make other changes at the same time?</p>
+</li>
+<li>
+<p>Make the most of the opportunity.</p>
+<p>If you are going to convert the script to a module you can use the
+opportunity to redesign the interface.  The guidelines for module
+creation above include many of the issues you should consider.</p>
+</li>
+<li>
+<p>The pl2pm utility will get you started.</p>
+<p>This utility will read *.pl files (given as parameters) and write
+corresponding *.pm files. The pl2pm utilities does the following:</p>
+<ul>
+<li>
+<p>Adds the standard Module prologue lines</p>
+</li>
+<li>
+<p>Converts package specifiers from ' to ::</p>
+</li>
+<li>
+<p>Converts die(...) to croak(...)</p>
+</li>
+<li>
+<p>Several other minor changes</p>
+</li>
+</ul>
+<p>Being a mechanical process pl2pm is not bullet proof. The converted
+code will need careful checking, especially any package statements.
+Don't delete the original .pl file till the new .pm one works!</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="guidelines_for_reusing_application_code">Guidelines for Reusing Application Code</a></h2>
+<ul>
+<li>
+<p>Complete applications rarely belong in the Perl Module Library.</p>
+</li>
+<li>
+<p>Many applications contain some Perl code that could be reused.</p>
+<p>Help save the world! Share your code in a form that makes it easy
+to reuse.</p>
+</li>
+<li>
+<p>Break-out the reusable code into one or more separate module files.</p>
+</li>
+<li>
+<p>Take the opportunity to reconsider and redesign the interfaces.</p>
+</li>
+<li>
+<p>In some cases the 'application' can then be reduced to a small</p>
+<p>fragment of code built on top of the reusable modules. In these cases
+the application could invoked as:</p>
+<pre>
+     <span class="operator">% </span><span class="variable">perl</span> <span class="keyword">-e</span> <span class="string">'use Module::Name; method(@ARGV)'</span> <span class="operator">...</span>
+     <span class="keyword">or</span>
+     <span class="operator">% </span><span class="variable">perl</span> <span class="operator">-</span><span class="variable">mModule::Name</span> <span class="operator">...</span>    <span class="operator">(</span><span class="variable">in</span> <span class="variable">perl5</span><span class="number">.002</span> <span class="keyword">or</span> <span class="variable">higher</span><span class="operator">)</span>
+</pre>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="note">NOTE</a></h1>
+<p>Perl does not enforce private and public parts of its modules as you may
+have been used to in other languages like C++, Ada, or Modula-17.  Perl
+doesn't have an infatuation with enforced privacy.  It would prefer
+that you stayed out of its living room because you weren't invited, not
+because it has a shotgun.</p>
+<p>The module and its user have a contract, part of which is common law,
+and part of which is &quot;written&quot;.  Part of the common law contract is
+that a module doesn't pollute any namespace it wasn't asked to.  The
+written contract for the module (A.K.A. documentation) may make other
+provisions.  But then you know when you <code>use RedefineTheWorld</code> that
+you're redefining the world and willing to take the consequences.</p>
+
+</body>
+
+</html>

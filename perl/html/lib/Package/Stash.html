@@ -1,0 +1,249 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Package::Stash - routines for manipulating stashes</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Package::Stash - routines for manipulating stashes</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#new__package_name">new $package_name</a></li>
+		<li><a href="#name">name</a></li>
+		<li><a href="#namespace">namespace</a></li>
+		<li><a href="#add_symbol__variable__value__opts">add_symbol $variable $value %opts</a></li>
+		<li><a href="#remove_glob__name">remove_glob $name</a></li>
+		<li><a href="#has_symbol__variable">has_symbol $variable</a></li>
+		<li><a href="#get_symbol__variable">get_symbol $variable</a></li>
+		<li><a href="#get_or_add_symbol__variable">get_or_add_symbol $variable</a></li>
+		<li><a href="#remove_symbol__variable">remove_symbol $variable</a></li>
+		<li><a href="#list_all_symbols__type_filter">list_all_symbols $type_filter</a></li>
+		<li><a href="#get_all_symbols__type_filter">get_all_symbols $type_filter</a></li>
+	</ul>
+
+	<li><a href="#bugs___caveats">BUGS / CAVEATS</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Package::Stash - routines for manipulating stashes</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 0.32</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$stash</span> <span class="operator">=</span> <span class="variable">Package::Stash</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'Foo'</span><span class="operator">);</span>
+  <span class="variable">$stash</span><span class="operator">-&gt;</span><span class="variable">add_symbol</span><span class="operator">(</span><span class="string">'%foo'</span><span class="operator">,</span> <span class="operator">{</span><span class="string">bar</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">}</span><span class="operator">);</span>
+  <span class="comment"># $Foo::foo{bar} == 1</span>
+  <span class="variable">$stash</span><span class="operator">-&gt;</span><span class="variable">has_symbol</span><span class="operator">(</span><span class="string">'$foo'</span><span class="operator">)</span> <span class="comment"># false</span>
+  <span class="keyword">my</span> <span class="variable">$namespace</span> <span class="operator">=</span> <span class="variable">$stash</span><span class="operator">-&gt;</span><span class="variable">namespace</span><span class="operator">;</span>
+  <span class="variable">*</span><span class="operator">{</span> <span class="variable">$namespace</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">foo</span><span class="operator">}</span> <span class="operator">}{</span><span class="string">HASH</span><span class="operator">}</span> <span class="comment"># {bar =&gt; 1}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Manipulating stashes (Perl's symbol tables) is occasionally necessary, but
+incredibly messy, and easy to get wrong. This module hides all of that behind a
+simple API.</p>
+<p>NOTE: Most methods in this class require a variable specification that includes
+a sigil. If this sigil is absent, it is assumed to represent the IO slot.</p>
+<p>Due to limitations in the typeglob API available to perl code, and to typeglob
+manipulation in perl being quite slow, this module provides two
+implementations - one in pure perl, and one using XS. The XS implementation is
+to be preferred for most usages; the pure perl one is provided for cases where
+XS modules are not a possibility. The current implementation in use can be set
+by setting <code>$ENV{PACKAGE_STASH_IMPLEMENTATION}</code> or
+<code>$Package::Stash::IMPLEMENTATION</code> before loading Package::Stash (with the
+environment variable taking precedence), otherwise, it will use the XS
+implementation if possible, falling back to the pure perl one.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="new__package_name">new $package_name</a></h2>
+<p>Creates a new <code>Package::Stash</code> object, for the package given as the only
+argument.</p>
+<p>
+</p>
+<h2><a name="name">name</a></h2>
+<p>Returns the name of the package that this object represents.</p>
+<p>
+</p>
+<h2><a name="namespace">namespace</a></h2>
+<p>Returns the raw stash itself.</p>
+<p>
+</p>
+<h2><a name="add_symbol__variable__value__opts">add_symbol $variable $value %opts</a></h2>
+<p>Adds a new package symbol, for the symbol given as <code>$variable</code>, and optionally
+gives it an initial value of <code>$value</code>. <code>$variable</code> should be the name of
+variable including the sigil, so</p>
+<pre>
+  Package::Stash-&gt;new('Foo')-&gt;add_symbol('%foo')</pre>
+<p>will create <code>%Foo::foo</code>.</p>
+<p>Valid options (all optional) are <code>filename</code>, <code>first_line_num</code>, and
+<code>last_line_num</code>.</p>
+<p><code>$opts{filename}</code>, <code>$opts{first_line_num}</code>, and <code>$opts{last_line_num}</code> can
+be used to indicate where the symbol should be regarded as having been defined.
+Currently these values are only used if the symbol is a subroutine ('<code>&amp;</code>'
+sigil) and only if <a href="../../lib/pods/perlvar.html#__p"><code>$^P &amp; 0x10</code></a> is true, in which case the special <code>%DB::sub</code>
+hash is updated to record the values of <code>filename</code>, <code>first_line_num</code>, and
+<code>last_line_num</code> for the subroutine. If these are not passed, their values are
+inferred (as much as possible) from <a href="../../lib/pods/perlfunc.html#caller"><code>caller</code></a> information.</p>
+<p>This is especially useful for debuggers and profilers, which use <code>%DB::sub</code> to
+determine where the source code for a subroutine can be found.  See
+<a href="http://perldoc.perl.org/perldebguts.html#Debugger-Internals">http://perldoc.perl.org/perldebguts.html#Debugger-Internals</a> for more
+information about <code>%DB::sub</code>.</p>
+<p>
+</p>
+<h2><a name="remove_glob__name">remove_glob $name</a></h2>
+<p>Removes all package variables with the given name, regardless of sigil.</p>
+<p>
+</p>
+<h2><a name="has_symbol__variable">has_symbol $variable</a></h2>
+<p>Returns whether or not the given package variable (including sigil) exists.</p>
+<p>
+</p>
+<h2><a name="get_symbol__variable">get_symbol $variable</a></h2>
+<p>Returns the value of the given package variable (including sigil).</p>
+<p>
+</p>
+<h2><a name="get_or_add_symbol__variable">get_or_add_symbol $variable</a></h2>
+<p>Like <code>get_symbol</code>, except that it will return an empty hashref or
+arrayref if the variable doesn't exist.</p>
+<p>
+</p>
+<h2><a name="remove_symbol__variable">remove_symbol $variable</a></h2>
+<p>Removes the package variable described by <code>$variable</code> (which includes the
+sigil); other variables with the same name but different sigils will be
+untouched.</p>
+<p>
+</p>
+<h2><a name="list_all_symbols__type_filter">list_all_symbols $type_filter</a></h2>
+<p>Returns a list of package variable names in the package, without sigils. If a
+<code>type_filter</code> is passed, it is used to select package variables of a given
+type, where valid types are the slots of a typeglob ('SCALAR', 'CODE', 'HASH',
+etc). Note that if the package contained any <code>BEGIN</code> blocks, perl will leave
+an empty typeglob in the <code>BEGIN</code> slot, so this will show up if no filter is
+used (and similarly for <a href="../../lib/pods/perlvar.html#init"><code>INIT</code></a>, <a href="../../lib/pods/perlvar.html#end"><code>END</code></a>, etc).</p>
+<p>
+</p>
+<h2><a name="get_all_symbols__type_filter">get_all_symbols $type_filter</a></h2>
+<p>Returns a hashref, keyed by the variable names in the package. If
+<code>$type_filter</code> is passed, the hash will contain every variable of that type in
+the package as values, otherwise, it will contain the typeglobs corresponding
+to the variable names (basically, a clone of the stash).</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs___caveats">BUGS / CAVEATS</a></h1>
+<ul>
+<li><strong><a name="prior_to_perl_5_10_scalar_slots_are_only_considered_to_exist_if_they_are_defined" class="item">Prior to perl 5.10, scalar slots are only considered to exist if they are defined</a></strong>
+
+<p>This is due to a shortcoming within perl itself. See
+<a href="../../lib/pods/perlref.html#making_references">Making References in the perlref manpage</a> point 7 for more information.</p>
+</li>
+<li><strong><a name="not" class="item">GLOB and FORMAT variables are not (yet) accessible through this module.</a></strong>
+
+</li>
+<li><strong><a name="backends" class="item">Also, see the BUGS section for the specific backends (<a href="../../lib/Package/Stash/XS.html">the Package::Stash::XS manpage</a> and <a href="../../lib/Package/Stash/PP.html">the Package::Stash::PP manpage</a>)</a></strong>
+
+</li>
+</ul>
+<p>Please report any bugs through RT: email
+<code>bug-package-stash at rt.cpan.org</code>, or browse to
+<a href="http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Package-Stash">http://rt.cpan.org/NoAuth/ReportBug.html</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>You can find this documentation for this module with the perldoc command.</p>
+<pre>
+    <a href="../../lib/pods/perldoc.html">perldoc</a> Package::Stash</pre>
+<p>You can also look for information at:</p>
+<ul>
+<li><strong><a name="annocpan_annotated_cpan_documentation8" class="item">AnnoCPAN: Annotated CPAN documentation</a></strong>
+
+<p><a href="http://annocpan.org/dist/Package-Stash">http://annocpan.org/dist/Package-Stash</a></p>
+</li>
+<li><strong><a name="cpan_ratings8" class="item">CPAN Ratings</a></strong>
+
+<p><a href="http://cpanratings.perl.org/d/Package-Stash">http://cpanratings.perl.org/d/Package-Stash</a></p>
+</li>
+<li><strong><a name="rt_cpan_s_request_tracker6" class="item">RT: CPAN's request tracker</a></strong>
+
+<p><a href="http://rt.cpan.org/NoAuth/Bugs.html?Dist=Package-Stash">http://rt.cpan.org/NoAuth/Bugs.html</a></p>
+</li>
+<li><strong><a name="search_cpan8" class="item">Search CPAN</a></strong>
+
+<p><a href="http://search.cpan.org/dist/Package-Stash">http://search.cpan.org/dist/Package-Stash</a></p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Jesse Luehrs &lt;doy at tozt dot net&gt;</p>
+<p>Based on code from <a href="../../lib/Class/MOP/Package.html">the Class::MOP::Package manpage</a>, by Stevan Little and the Moose
+Cabal.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<ul>
+<li><strong><a name="class_mop_package" class="item"><a href="../../lib/Class/MOP/Package.html">the Class::MOP::Package manpage</a></a></strong>
+
+<p>This module is a factoring out of code that used to live here</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Jesse Luehrs.</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

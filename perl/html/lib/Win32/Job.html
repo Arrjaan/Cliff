@@ -1,0 +1,354 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Win32::Job - Run sub-processes in a &quot;job&quot; environment</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Win32::Job - Run sub-processes in a &quot;job&quot; environment</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#platforms">PLATFORMS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#using_win32__job">Using Win32::Job</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Win32::Job - Run sub-processes in a &quot;job&quot; environment</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Win32::Job</span><span class="operator">;</span>
+   
+   <span class="keyword">my</span> <span class="variable">$job</span> <span class="operator">=</span> <span class="variable">Win32::Job</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="comment"># Run 'perl Makefile.PL' for 10 seconds</span>
+   <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">spawn</span><span class="operator">(</span><span class="variable">$Config</span><span class="operator">{</span><span class="string">perlpath</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"perl Makefile.PL"</span><span class="operator">);</span>
+   <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">run</span><span class="operator">(</span><span class="number">10</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="platforms">PLATFORMS</a></h1>
+<p>Win32::Job requires Windows 2000 or later. Windows 95, 98, NT, and Me are not
+supported.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Windows 2000 introduced the concept of a &quot;job&quot;: a collection of processes
+which can be controlled as a single unit. For example, you can reliably kill a
+process and all of its children by launching the process in a job, then
+telling Windows to kill all processes in the job.  Win32::Job makes this
+feature available to Perl.</p>
+<p>For example, imagine you want to allow 2 minutes for a process to complete.
+If you have control over the child process, you can probably just run it in
+the background, then poll every second to see if it has finished.</p>
+<p>That's fine as long as the child process doesn't spawn any child processes.
+What if it does? If you wrote the child process yourself and made an effort to
+clean up your child processes before terminating, you don't have to worry.
+If not, you will leave hanging processes (called &quot;zombie&quot; processes in Unix).</p>
+<p>With Win32::Job, just create a new Job, then use the job to spawn the child
+process. All <em>its</em> children will also be created in the new Job. When you
+time out, just call the job's <a href="../../lib/pods/perlfunc.html#kill"><code>kill()</code></a> method and the entire process tree will
+be terminated.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_win32__job">Using Win32::Job</a></h1>
+<p>The following methods are available:</p>
+<ol>
+<li>
+<p><code>new()</code></p>
+<pre>
+   <span class="variable">new</span><span class="operator">();</span>
+</pre>
+<p>Creates a new Job object using the Win32 API call <code>CreateJobObject()</code>. The job
+is created with a default security context, and is unnamed.</p>
+<p>Note: this method returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if <code>CreateJobObject()</code> fails. Look at <a href="../../lib/pods/perlvar.html#__e"><code>$^E</code></a>
+for more detailed error information.</p>
+</li>
+<li>
+<p><code>spawn()</code></p>
+<pre>
+   <span class="variable">spawn</span><span class="operator">(</span><span class="variable">$exe</span><span class="operator">,</span> <span class="variable">$args</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%opts</span><span class="operator">);</span>
+</pre>
+<p>Creates a new process and associates it with the Job. The process is initially
+suspended, and can be resumed with one of the other methods. Uses the Win32
+API call <code>CreateProcess()</code>. Returns the PID of the newly created process.</p>
+<p>Note: this method returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if <code>CreateProcess()</code> fails. See <a href="../../lib/pods/perlvar.html#__e"><code>$^E</code></a> for
+more detailed error information. One reason this will fail is if the calling
+process is itself part of a job, and the job's security context does not allow
+child processes to be created in a different job context than the parent.</p>
+<p>The arguments are described here:</p>
+<ol>
+<li>
+<p>$exe</p>
+<p>The executable program to run. This may be <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>, in which case the first
+argument in $args is the program to run.</p>
+<p>If this has path information in it, it is used &quot;as is&quot; and passed to
+<code>CreateProcess()</code>, which interprets it as either an absolute path, or a
+path relative to the current drive and directory. If you did not specify an
+extension, &quot;.exe&quot; is assumed.</p>
+<p>If there are no path separators (either backslashes or forward slashes),
+then Win32::Job will search the current directory and your PATH, looking
+for the file. In addition, if you did not specify an extension, then
+Win32::Job checks &quot;.exe&quot;, &quot;.com&quot;, and &quot;.bat&quot; in order. If it finds a &quot;.bat&quot;
+file, Win32::Job will actually call <em class="file">cmd.exe</em> and prepend &quot;cmd.exe&quot; to the
+$args.</p>
+<p>For example, assuming a fairly normal PATH:</p>
+<pre>
+   <span class="variable">spawn</span><span class="operator">(</span><span class="string">q{c:\winnt\system\cmd.exe}</span><span class="operator">,</span> <span class="string">q{cmd /C "echo %PATH%"}</span><span class="operator">)</span>
+   <span class="variable">exefile</span><span class="operator">:</span> <span class="variable">c</span><span class="operator">:\</span><span class="variable">winnt</span><span class="operator">\</span><span class="keyword">system</span><span class="operator">\</span><span class="variable">cmd</span><span class="operator">.</span><span class="variable">exe</span>
+   <span class="variable">cmdline</span><span class="operator">:</span> <span class="variable">cmd</span> <span class="operator">/</span><span class="variable">C</span> <span class="string">"echo %PATH%"</span>
+</pre>
+<pre>
+   <span class="variable">spawn</span><span class="operator">(</span><span class="string">"cmd.exe"</span><span class="operator">,</span> <span class="string">q{cmd /C "echo %PATH%"}</span><span class="operator">)</span>
+   <span class="variable">exefile</span><span class="operator">:</span> <span class="variable">c</span><span class="operator">:\</span><span class="variable">winnt</span><span class="operator">\</span><span class="keyword">system</span><span class="operator">\</span><span class="variable">cmd</span><span class="operator">.</span><span class="variable">exe</span>
+   <span class="variable">cmdline</span><span class="operator">:</span> <span class="variable">cmd</span> <span class="operator">/</span><span class="variable">C</span> <span class="string">"echo %PATH%"</span>
+</pre>
+</li>
+<li>
+<p>$args</p>
+<p>The commandline to pass to the executable program. The first word will be
+<code>argv[0]</code> to an EXE file, so you should repeat the command name in $args.</p>
+<p>For example:</p>
+<pre>
+   <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">spawn</span><span class="operator">(</span><span class="variable">$Config</span><span class="operator">{</span><span class="string">perlpath</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"perl foo.pl"</span><span class="operator">);</span>
+</pre>
+<p>In this case, the &quot;perl&quot; is ignored, since perl.exe doesn't use it.</p>
+</li>
+<li>
+<p>%opts</p>
+<p>A hash reference for advanced options. This parameter is optional.
+the following keys are recognized:</p>
+<dl>
+<dt><strong><a name="cwd" class="item">cwd</a></strong></dt>
+
+<dd>
+<p>A string specifying the current directory of the new process.</p>
+<p>By default, the process shares the parent's current directory, <code>.</code>.</p>
+</dd>
+<dt><strong><a name="new_console" class="item">new_console</a></strong></dt>
+
+<dd>
+<p>A boolean; if true, the process is started in a new console window.</p>
+<p>By default, the process shares the parent's console. This has no effect on GUI
+programs which do not interact with the console.</p>
+</dd>
+<dt><strong><a name="window_attr" class="item">window_attr</a></strong></dt>
+
+<dd>
+<p>Either <code>minimized</code>, which displays the new window minimized; <code>maximimzed</code>,
+which shows the new window maximized; or <code>hidden</code>, which does not display the
+new window.</p>
+<p>By default, the window is displayed using its application's defaults.</p>
+</dd>
+<dt><strong><a name="new_group" class="item">new_group</a></strong></dt>
+
+<dd>
+<p>A boolean; if true, the process is the root of a new process group. This
+process group includes all descendents of the child.</p>
+<p>By default, the process is in the parent's process group (but in a new job).</p>
+</dd>
+<dt><strong><a name="no_window" class="item">no_window</a></strong></dt>
+
+<dd>
+<p>A boolean; if true, the process is run without a console window. This flag is
+only valid when starting a console application, otherwise it is ignored. If you
+are launching a GUI application, use the <a href="#window_attr"><code>window_attr</code></a> tag instead.</p>
+<p>By default, the process shares its parent's console.</p>
+</dd>
+<dt><strong><a name="stdin" class="item">stdin</a></strong></dt>
+
+<dd>
+<p>An open input filehandle, or the name of an existing file. The resulting
+filehandle will be used for the child's standard input handle.</p>
+<p>By default, the child process shares the parent's standard input.</p>
+</dd>
+<dt><strong><a name="stdout" class="item">stdout</a></strong></dt>
+
+<dd>
+<p>An open output filehandle or filename (will be opened for append). The
+resulting filehandle will be used for the child's standard output handle.</p>
+<p>By default, the child process shares the parent's standard output.</p>
+</dd>
+<dt><strong><a name="stderr" class="item">stderr</a></strong></dt>
+
+<dd>
+<p>An open output filehandle or filename (will be opened for append). The
+resulting filehandle will be used for the child's standard error handle.</p>
+<p>By default, the child process shares the parent's standard error.</p>
+</dd>
+</dl>
+<p>Unrecognized keys are ignored.</p>
+</li>
+</ol>
+</li>
+<li>
+<p><code>run()</code></p>
+<pre>
+   <span class="variable">run</span><span class="operator">(</span><span class="variable">$timeout</span><span class="operator">,</span> <span class="variable">$which</span><span class="operator">);</span>
+</pre>
+<p>Provides a simple way to run the programs with a time limit. The
+$timeout is in seconds with millisecond accuracy. This call blocks for
+up to $timeout seconds, or until the processes finish.</p>
+<p>The $which parameter specifies whether to wait for <em>all</em> processes to
+complete within the $timeout, or whether to wait for <em>any</em> process to
+complete. You should set this to a boolean, where a true value means to
+wait for <em>all</em> the processes to complete, and a false value to wait
+for <em>any</em>. If you do not specify $which, it defaults to true (<code>all</code>).</p>
+<p>Returns a boolean indicating whether the processes exited by themselves,
+or whether the time expired. A true return value means the processes
+exited normally; a false value means one or more processes was killed
+will $timeout.</p>
+<p>You can get extended information on process exit codes using the
+<code>status()</code> method.</p>
+<p>For example, this is how to build two perl modules at the same time,
+with a 5 minute timeout:</p>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Win32::Job</span><span class="operator">;</span>
+   <span class="variable">$job</span> <span class="operator">=</span> <span class="variable">Win32::Job</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+   <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">spawn</span><span class="operator">(</span><span class="string">"cmd"</span><span class="operator">,</span> <span class="string">q{cmd /C "cd Mod1 &amp;&amp; nmake"}</span><span class="operator">);</span>
+   <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">spawn</span><span class="operator">(</span><span class="string">"cmd"</span><span class="operator">,</span> <span class="string">q{cmd /C "cd Mod2 &amp;&amp; nmake"}</span><span class="operator">);</span>
+   <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">run</span><span class="operator">(</span><span class="number">5</span> <span class="operator">*</span> <span class="number">60</span><span class="operator">);</span>
+   <span class="keyword">print</span> <span class="string">"Mod1 and Mod2 built ok!\n"</span> <span class="keyword">if</span> <span class="variable">$ok</span><span class="operator">;</span>
+</pre>
+</li>
+<li>
+<p><code>watch()</code></p>
+<pre>
+   <span class="variable">watch</span><span class="operator">(\&amp;</span><span class="variable">handler</span><span class="operator">,</span> <span class="variable">$interval</span><span class="operator">,</span> <span class="variable">$which</span><span class="operator">);</span>
+</pre>
+<pre>
+   <span class="variable">handler</span><span class="operator">(</span><span class="variable">$job</span><span class="operator">);</span>
+</pre>
+<p>Provides more fine-grained control over how to stop the programs.  You specify
+a callback and an interval in seconds, and Win32::Job will call the &quot;watchdog&quot;
+function at this interval, either until the processes finish or your watchdog
+tells Win32::Job to stop. You must return a value indicating whether to stop: a
+true value means to terminate the processes immediately.</p>
+<p>The $which parameter has the same meaning as run()'s.</p>
+<p>Returns a boolean with the same meaning as run()'s.</p>
+<p>The handler may do anything it wants. One useful application of the <code>watch()</code>
+method is to check the filesize of the output file, and terminate the Job if
+the file becomes larger than a certain limit:</p>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Win32::Job</span><span class="operator">;</span>
+   <span class="variable">$job</span> <span class="operator">=</span> <span class="variable">Win32::Job</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+   <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">spawn</span><span class="operator">(</span><span class="string">"cmd"</span><span class="operator">,</span> <span class="string">q{cmd /C "cd Mod1 &amp;&amp; nmake"}</span><span class="operator">,</span> <span class="operator">{</span>
+       <span class="string">stdin</span>  <span class="operator">=&gt;</span> <span class="string">'NUL'</span><span class="operator">,</span> <span class="comment"># the NUL device</span>
+       <span class="string">stdout</span> <span class="operator">=&gt;</span> <span class="string">'stdout.log'</span><span class="operator">,</span>
+       <span class="string">stderr</span> <span class="operator">=&gt;</span> <span class="string">'stdout.log'</span><span class="operator">,</span>
+   <span class="operator">}</span><span class="operator">);</span>
+   <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$job</span><span class="operator">-&gt;</span><span class="variable">watch</span><span class="operator">(</span><span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+       <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">if</span> <span class="keyword">-s</span> <span class="string">"stdout.log"</span> <span class="operator">&gt;</span> <span class="number">1_000_000</span><span class="operator">;</span>
+   <span class="operator">},</span> <span class="number">1</span><span class="operator">);</span>
+   <span class="keyword">print</span> <span class="string">"Mod1 built ok!\n"</span> <span class="keyword">if</span> <span class="variable">$ok</span><span class="operator">;</span>
+</pre>
+</li>
+<li>
+<p><code>status()</code></p>
+<pre>
+   status()</pre>
+<p>Returns a hash containing information about the processes in the job.
+Only returns valid information <em>after</em> calling either <code>run()</code> or <code>watch()</code>;
+returns an empty hash if you have not yet called them. May be called from a
+<code>watch()</code> callback, in which case the <a href="#exitcode"><code>exitcode</code></a> field should be ignored.</p>
+<p>The keys of the hash are the process IDs; the values are a subhash
+containing the following keys:</p>
+<dl>
+<dt><strong><a name="exitcode" class="item">exitcode</a></strong></dt>
+
+<dd>
+<p>The exit code returned by the process. If the process was killed because
+of a timeout, the value is 293.</p>
+</dd>
+<dt><strong><a name="time" class="item">time</a></strong></dt>
+
+<dd>
+<p>The time accumulated by the process. This is yet another subhash containing
+the subkeys (i) <code>user</code>, the amount of time the process spent in user
+space; (ii) <code>kernel</code>, the amount of time the process spent in kernel space;
+and (iii) <code>elapsed</code>, the total time the process was running.</p>
+</dd>
+</dl>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#kill"><code>kill()</code></a></p>
+<pre>
+   <span class="keyword">kill</span><span class="operator">();</span>
+</pre>
+<p>Kills all processes and subprocesses in the Job. Has no return value.
+Sets the exit code to all processes killed to 293, which you can check
+for in the <code>status()</code> return value.</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>For more information about jobs, see Microsoft's online help at</p>
+<pre>
+   <a href="http://msdn.microsoft.com/">http://msdn.microsoft.com/</a></pre>
+<p>For other modules which do similar things (but not as well), see:</p>
+<ol>
+<li>
+<p>Win32::Process</p>
+<p>Low-level access to creating processes in Win32. See <a href="../../lib/Win32/Process.html">the Win32::Process manpage</a>.</p>
+</li>
+<li>
+<p>Win32::Console</p>
+<p>Low-level access to consoles in Win32. See <a href="../../lib/Win32/Console.html">the Win32::Console manpage</a>.</p>
+</li>
+<li>
+<p>Win32::ProcFarm</p>
+<p>Manage pools of threads to perform CPU-intensive tasks on Windows. See
+<a href="../../Win32/ProcFarm.html">the Win32::ProcFarm manpage</a>.</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>ActiveState (<a href="mailto:support@ActiveState.com">support@ActiveState.com</a>)</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2002, ActiveState Corporation. All Rights Reserved.</p>
+
+</body>
+
+</html>

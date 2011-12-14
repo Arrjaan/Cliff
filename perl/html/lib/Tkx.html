@@ -1,0 +1,553 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>Tkx - Yet another Tk interface</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>Tkx - Yet another Tk interface</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#functions">Functions</a></li>
+		<li><a href="#calling_tcl_and_tk_commands">Calling Tcl and Tk Commands</a></li>
+		<ul>
+
+			<li><a href="#passing_arguments">Passing arguments</a></li>
+			<li><a href="#tracing">Tracing</a></li>
+		</ul>
+
+		<li><a href="#callbacks_to_perl">Callbacks to Perl</a></li>
+		<li><a href="#widget_handles">Widget handles</a></li>
+		<li><a href="#subclassing_tk_widgets">Subclassing Tk widgets</a></li>
+		<li><a href="#megawidgets">Megawidgets</a></li>
+	</ul>
+
+	<li><a href="#environment">ENVIRONMENT</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Tkx - Yet another Tk interface</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Tkx</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$mw</span> <span class="operator">=</span> <span class="variable">Tkx::widget</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"."</span><span class="operator">);</span>
+  <span class="variable">$mw</span><span class="operator">-&gt;</span><span class="variable">new_button</span><span class="operator">(</span>
+       <span class="string">-text</span> <span class="operator">=&gt;</span> <span class="string">"Hello, world"</span><span class="operator">,</span>
+       <span class="string">-command</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$mw</span><span class="operator">-&gt;</span><span class="variable">g_destroy</span><span class="operator">;</span> <span class="operator">},</span>
+  <span class="operator">)-&gt;</span><span class="variable">g_pack</span><span class="operator">;</span>
+  <span class="variable">Tkx::MainLoop</span><span class="operator">();</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>Tkx</code> module provides yet another Tk interface for Perl.  Tk is a
+GUI toolkit tied to the Tcl language, and <code>Tkx</code> provides a bridge to
+Tcl that allows Tk based applications to be written in Perl.</p>
+<p>The main idea behind Tkx is that it is a very thin wrapper on top of
+Tcl, i.e. that what you get is exactly the behaviour you read about in
+the Tcl/Tk documentation with no surprises added by the Perl layer.</p>
+<p>This is the &quot;reference manual&quot; for Tkx. For a gentle introduction please
+read the <a href="../lib/Tkx/Tutorial.html">the Tkx::Tutorial manpage</a>.  The tutorial at
+<a href="http://www.tkdocs.com/tutorial/">http://www.tkdocs.com/tutorial/</a> is also strongly recommended.</p>
+<p>
+</p>
+<h2><a name="functions">Functions</a></h2>
+<p>The following functions are provided:</p>
+<dl>
+<dt><strong><a name="autoload" class="item">Tkx::AUTOLOAD( @args )</a></strong></dt>
+
+<dd>
+<p>All calls into the <code>Tkx::</code> namespace not explicitly listed here are trapped
+by Perl's AUTOLOAD mechanism and turned into a call of the corresponding Tcl or
+Tk command.  The Tcl string result is returned as a single value in both scalar
+and list context.  Tcl errors are propagated as Perl exceptions.</p>
+<p>For example:</p>
+<pre>
+    $res = Tkx::expr(&quot;3 + 3&quot;)</pre>
+<p>This will call the Tcl command <code>expr</code> passing it the argument <code>&quot;3 + 3&quot;</code> and
+return the result back to Perl.  The value of <code>$res</code> after this call should be <code>6</code>.</p>
+<p>The exact rules for mapping functions names into the Tcl name space and the
+details of passing arguments to Tcl is described in <a href="#calling_tcl_and_tk_commands">Calling Tcl and Tk Commands</a> below.</p>
+<p>Don't call Tkx::AUTOLOAD() directly yourself.</p>
+<p>The available Tcl commands are documented at
+<a href="http://www.tcl.tk/man/tcl/TclCmd/contents.htm">http://www.tcl.tk/man/tcl/TclCmd/contents.htm</a>.  The available Tk commands are
+documented at <a href="http://www.tcl.tk/man/tcl/TkCmd/contents.htm">http://www.tcl.tk/man/tcl/TkCmd/contents.htm</a>.</p>
+</dd>
+<dt><strong><a name="ev" class="item">Tkx::Ev( $field, ... )</a></strong></dt>
+
+<dd>
+<p>This creates an object that if set up as the first argument to a callback will
+expand the corresponding Tcl template substitutions in the context of that
+callback.  <a href="#callbacks_to_perl">Callbacks to Perl</a> below explain how callback
+arguments are provided.</p>
+<p>The $field should be a string like &quot;%A&quot; or &quot;%x&quot;. The available
+substitutions are described in the Tcl documentation for the <a href="../lib/pods/perlfunc.html#bind"><code>bind</code></a>
+command; see <a href="http://www.tcl.tk/man/tcl/TkCmd/bind.htm">http://www.tcl.tk/man/tcl/TkCmd/bind.htm</a>.</p>
+</dd>
+<dt><strong><a name="mainloop" class="item">Tkx::MainLoop( )</a></strong></dt>
+
+<dd>
+<p>This will enter the Tk mainloop and start processing events.  The
+function returns when the main window has been destroyed.  There is no
+return value.</p>
+</dd>
+<dt><strong><a name="splitlist" class="item">Tkx::SplitList( $list )</a></strong></dt>
+
+<dd>
+<p>This will split up a Tcl list into a Perl list.  The individual elements of the
+list are returned as separate elements.  This function will croak if the
+argument is not a well formed list or if called in scalar context.</p>
+<p>Example:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">Tkx::SplitList</span><span class="operator">(</span><span class="string">"a {b c}"</span><span class="operator">);</span>
+    <span class="comment"># @list is now ("a", "b c")</span>
+</pre>
+<p>This function is needed because direct calls Tcl don't expand lists even if
+called in list context, so if you want to process the elements returned
+as a Tcl list you need to wrap the call in a call to SplitList:</p>
+<pre>
+    <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">(</span><span class="variable">Tkx::SplitList</span><span class="operator">(</span><span class="variable">Tkx::glob</span><span class="operator">(</span><span class="string">'*.pm'</span><span class="operator">)))</span> <span class="operator">{</span>
+        <span class="comment"># ...</span>
+    <span class="operator">}</span>
+</pre>
+<p>Since Perl also have a built in glob function there is no need to actually
+let Tcl do the globbing for you.  The example above is purely educational.</p>
+<p>The Tkx::list() function would invoke the Tcl command that does the reverse
+operation -- creating a list from the arguments passed in. You seldom need to
+call Tkx::list() explicitly as arrays are automatically converted to Tcl lists
+when passed as arguments to Tcl commands.</p>
+</dd>
+</dl>
+<p>All these functions, even the autoloaded ones, can be exported by Tkx if you
+grow tired of typing the <code>Tkx::</code> prefix.  Example:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Tkx</span> <span class="string">qw(MainLoop button pack destroy)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">pack</span><span class="operator">(</span><span class="variable">button</span><span class="operator">(</span><span class="string">".b"</span><span class="operator">,</span> <span class="string">-text</span> <span class="operator">=&gt;</span> <span class="string">"Press me!"</span><span class="operator">,</span> <span class="string">-command</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="operator">\&amp;</span><span class="variable">destroy</span><span class="operator">,</span> <span class="string">"."</span><span class="operator">]</span><span class="operator">));</span>
+    <span class="variable">MainLoop</span><span class="operator">;</span>
+</pre>
+<p>No functions are exported by default.</p>
+<p>
+</p>
+<h2><a name="calling_tcl_and_tk_commands">Calling Tcl and Tk Commands</a></h2>
+<p>Tcl and Tk commands are easily invoked by calling the corresponding function
+in the Tkx:: namespace.  Calling the function <code>Tkx::expr()</code> will invoke the
+<code>expr</code> command on the Tcl side.  Function names containing underlines are a bit
+special.  The name passed from the Perl side undergo the following
+substitutions:</p>
+<pre>
+    foo_bar   --&gt; &quot;foo&quot;, &quot;bar&quot;   # break into words
+    foo__bar  --&gt; &quot;foo::bar&quot;     # access Tcl namespaces
+    foo___bar --&gt; &quot;foo_bar&quot;      # when you actually need a '_'</pre>
+<p>This allow us conveniently to map the Tcl namespace to Perl.  If this mapping
+does not suit you, an alternative is to use <code>Tkx::i::call($cmd, @args)</code>.
+This will invoke the command named by <code>$cmd</code> with no name substitutions or magic.</p>
+<p>Examples:</p>
+<pre>
+    <span class="variable">Tkx::expr</span><span class="operator">(</span><span class="string">"3 + 3"</span><span class="operator">);</span>
+    <span class="variable">Tkx::package_require</span><span class="operator">(</span><span class="string">"BWidget"</span><span class="operator">);</span>
+    <span class="variable">Tkx::DynamicHelp__add</span><span class="operator">(</span><span class="string">"."</span><span class="operator">,</span> <span class="string">-text</span> <span class="operator">=&gt;</span> <span class="string">"Hi there"</span><span class="operator">);</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">Tkx::tk_windowingsystem</span><span class="operator">()</span> <span class="keyword">eq</span> <span class="string">"x11"</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">Tkx::tk___messageBox</span><span class="operator">(</span> <span class="operator">...</span> <span class="operator">)</span> <span class="keyword">eq</span> <span class="string">"yes"</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>One part of the Tcl namespace that is not conveniently mapped to Perl
+using the rules above are commands that use &quot;.&quot; as part of their name, mostly Tk
+widget instances.  If you insist you can invoke these by quoting the
+Perl function name</p>
+<pre>
+    <span class="operator">&amp;{</span><span class="string">"Tkx::._configure"</span><span class="operator">}(</span><span class="string">-background</span> <span class="operator">=&gt;</span> <span class="string">"black"</span><span class="operator">);</span>
+</pre>
+<p>or by invoking this as <code>Tkx::i::call(&quot;.&quot;, &quot;configure&quot;, &quot;-background&quot;,
+&quot;black&quot;)</code>; but the real solution is to use <code>Tkx::widget</code> objects to wrap
+these as described in <a href="#widget_handles">Widget handles</a> below.</p>
+<p>
+</p>
+<h3><a name="passing_arguments">Passing arguments</a></h3>
+<p>The arguments passed to Tcl can be plain scalars, array references, code
+references, scalar references, or hash references.</p>
+<p>Plain scalars (strings and numbers) as just passed on unchanged to Tcl.</p>
+<p>Array references, where the first element is not a code reference, are converted into Tcl
+lists and passed on.  The arrays can contain strings, numbers, and/or array
+references to form nested lists.</p>
+<p>Code references, and arrays where the first element is a code reference, are
+converted into special Tcl command names in the &quot;::perl&quot; Tcl namespace that
+will call back into the corresponding Perl function when invoked from Tcl.  See
+<a href="#callbacks_to_perl">Callbacks to Perl</a> for a description how how this is used.</p>
+<p>Scalar references are converted into special Tcl variables in the &quot;::perl&quot; Tcl
+namespace that is tied to the corresponding variable on the Perl side.
+Any changes to the variable on the Perl side will be reflected in the value
+on the Tcl side.  Any changes to the variable on the Tcl side will be reflected
+in the value on the Perl side.</p>
+<p>Hash references are converted into special Tcl array variables in the &quot;::perl&quot; Tcl
+namespace that is tied to the corresponding hash on the Perl side.  Any changes to
+the hash on the Perl side will be reflected in the array on the Tcl side. Any
+changes to the array on the Tcl side will be reflected in the hash on the Perl side.</p>
+<p>Anything else will just be converted to strings using the Perl rules for
+stringification and passed on to Tcl.</p>
+<p>
+</p>
+<h3><a name="tracing">Tracing</a></h3>
+<p>If the boolean variable $Tkx::TRACE is set to a true value, then a
+trace of all commands passed to Tcl will be printed on STDERR.  This
+variable is initialized from the <code>PERL_TKX_TRACE</code> environment
+variable.  The trace is useful for debugging and if you need to report
+errors to the Tcl/Tk maintainers in terms of Tcl statements.  The trace
+lines are prefixed with:</p>
+<pre>
+    Tkx-$seq-$ts-$file-$line:</pre>
+<p>where <code>$seq</code> is a sequence number, <code>$ts</code> is a timestamp in seconds since
+the first command was issued, and <code>$file</code> and <code>$line</code> indicate on which
+source line this call was triggered.</p>
+<p>
+</p>
+<h2><a name="callbacks_to_perl">Callbacks to Perl</a></h2>
+<p>For Tcl APIs that require callbacks you can provide a reference to a
+Perl subroutine:</p>
+<pre>
+    <span class="variable">Tkx::after</span><span class="operator">(</span><span class="number">3000</span><span class="operator">,</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Hi"</span> <span class="operator">});</span>
+</pre>
+<pre>
+    <span class="variable">$button</span> <span class="operator">=</span> <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">new_button</span><span class="operator">(</span>
+        <span class="string">-text</span>    <span class="operator">=&gt;</span> <span class="string">'Press Me'</span><span class="operator">,</span>
+        <span class="string">-command</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>Alternately, you can provide an array reference containing a subroutine
+reference and a list of values to be passed back to the subroutine as
+arguments when it is invoked:</p>
+<pre>
+    <span class="variable">Tkx::button</span><span class="operator">(</span><span class="string">".b"</span><span class="operator">,</span> <span class="string">-command</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="operator">\&amp;</span><span class="variable">Tkx::destroy</span><span class="operator">,</span> <span class="string">"."</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$button</span> <span class="operator">=</span> <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">new_button</span><span class="operator">(</span>
+        <span class="string">-text</span>    <span class="operator">=&gt;</span> <span class="string">'Press Me'</span><span class="operator">,</span>
+        <span class="string">-command</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="operator">\&amp;</span><span class="variable">foo</span><span class="operator">,</span> <span class="number">42</span><span class="operator">]</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>When using the array reference syntax, if the <em>second</em> element of the
+array (i.e. the first argument to the callback) is a Tkx::Ev() object
+the templates it contains will be expanded at the time of the callback.</p>
+<pre>
+    <span class="variable">Tkx::bind</span><span class="operator">(</span><span class="string">"."</span><span class="operator">,</span> <span class="string">"&lt;Key&gt;"</span><span class="operator">,</span> <span class="operator">[</span>
+        <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"</span><span class="variable">$_</span><span class="string">[0]\n"</span><span class="operator">;</span> <span class="operator">},</span> <span class="variable">Tkx::Ev</span><span class="operator">(</span><span class="string">"%A"</span><span class="operator">)</span>
+    <span class="operator">]</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$entry</span><span class="operator">-&gt;</span><span class="variable">configure</span><span class="operator">(</span><span class="string">-validatecommand</span> <span class="operator">=&gt;</span> <span class="operator">[</span>
+        <span class="operator">\&amp;</span><span class="variable">check</span><span class="operator">,</span> <span class="variable">Tkx::Ev</span><span class="operator">(</span><span class="string">'%P'</span><span class="operator">),</span> <span class="variable">$entry</span><span class="operator">,</span>
+    <span class="operator">]</span><span class="operator">);</span>
+</pre>
+<p>The order of the arguments to the Perl callback code is as follows:</p>
+<ol>
+<li>
+<p>The expanded results from Tkx::Ev(), if used.</p>
+</li>
+<li>
+<p>Any arguments that the command/function is called with from the Tcl
+side. For example, in callbacks to scrollbars Tcl provides values
+corresponding to the visible portion of a scrollable widget. Tcl
+arguments are passed regardless of the syntax used when specifying the
+callback.</p>
+</li>
+<li>
+<p>Any extra values provided when the callback defined; the values passed after
+the Tkx::Ev() object in the array.</p>
+</li>
+</ol>
+<p>
+</p>
+<h2><a name="widget_handles">Widget handles</a></h2>
+<p>The class <code>Tkx::widget</code> is used to wrap Tk widget paths.
+These objects stringify as the path they wrap.</p>
+<p>The following methods are provided:</p>
+<dl>
+<dt><strong><a name="new" class="item">$w = Tkx::widget-&gt;new( $path )</a></strong></dt>
+
+<dd>
+<p>This constructs a new widget handle for a given path.  It is not a
+problem to have multiple handle objects to the same path or to create
+handles for paths that do not yet exist.</p>
+</dd>
+<dt><strong><a name="_data" class="item">$w-&gt;_data</a></strong></dt>
+
+<dd>
+<p>Returns a hash that can be used to keep instance specific data.  This
+is useful for holding instance data for megawidgets.  The data is
+attached to the underlying widget, so if you create another handle to
+the same widget it will return the same hash via its <a href="#_data"><code>_data()</code></a> method.</p>
+<p>The data hash is automatically destroyed when the corresponding widget
+is destroyed.</p>
+</dd>
+<dt><strong><a name="_parent" class="item">$w-&gt;_parent</a></strong></dt>
+
+<dd>
+<p>Returns a handle for the parent widget.  Returns <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> if there is
+no parent, which will only happen if $w is &quot;.&quot;, the main window.</p>
+</dd>
+<dt><strong><a name="_kid" class="item">$w-&gt;_kid( $name )</a></strong></dt>
+
+<dd>
+<p>Returns a handle for a kid widget with the given name.  The $name can
+contain dots to access grandkids.  There is no check that a kid with
+the given name actually exists; which can be taken advantage of to construct
+names of Tk widgets to be created later.</p>
+</dd>
+<dt><strong><a name="_kids" class="item">$w-&gt;_kids</a></strong></dt>
+
+<dd>
+<p>Returns all existing kids as widget objects.</p>
+</dd>
+<dt><strong><a name="_class" class="item">$w-&gt;_class( $class )</a></strong></dt>
+
+<dd>
+<p>Sets the widget handle class for the current path.  This will both
+change the class of the current handle and make sure later handles
+created for the path belong to the given class.  The class should
+normally be a subclass of <code>Tkx::widget</code>.  Overriding the class for a
+path is useful for implementing megawidgets.  Kids of $w are not
+affected by this, unless the class overrides the <a href="#_nclass"><code>_nclass</code></a> method.</p>
+</dd>
+<dt><strong><a name="_nclass" class="item">$w-&gt;_nclass</a></strong></dt>
+
+<dd>
+<p>This returns the default widget handle class that will be used for
+kids and parent.  Subclasses might want to override this method.
+The default implementation always returns <code>Tkx::widget</code>.</p>
+</dd>
+<dt><strong><a name="_mpath" class="item">$w-&gt;_mpath( $method )</a></strong></dt>
+
+<dd>
+<p>This method determine the Tk widget path that will be invoked for
+m_<em>foo</em> method calls.  The argument passed in is the method name
+without the <code>m_</code> prefix.  Megawidget classes might want to override
+this method.  The default implementation always returns <code>$w</code>.</p>
+</dd>
+<dt><strong><a name="new_foo" class="item">$new_w = $w-&gt;new_<em>foo</em>( @args )</a></strong></dt>
+
+<dd>
+<p>This creates a new <em>foo</em> widget as a child of the current widget.  It
+will call the <em>foo</em> Tcl command and pass it a new unique subpath of
+the current path.  The handle to the new widget is returned.  Any
+double underscores in the name <em>foo</em> is expanded as described in
+<a href="#calling_tcl_and_tk_commands">Calling Tcl and Tk Commands</a> above.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">new_label</span><span class="operator">(</span><span class="string">-text</span> <span class="operator">=&gt;</span> <span class="string">"Hello"</span><span class="operator">,</span> <span class="string">-relief</span> <span class="operator">=&gt;</span> <span class="string">"sunken"</span><span class="operator">);</span>
+</pre>
+<p>The name selected for the child will be the first letter of the widget type;
+for the example above &quot;l&quot;.  If that name is not unique a number is
+appended to ensure uniqueness among the children.  If a <code>-name</code> argument is
+passed it is used as the name and then removed from the arglist passed on to
+Tcl.  Example:</p>
+<pre>
+    <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">new_iwidgets__calendar</span><span class="operator">(</span><span class="string">-name</span> <span class="operator">=&gt;</span> <span class="string">"cal"</span><span class="operator">);</span>
+</pre>
+<p>If a megawidget implementation class has be registered for <em>foo</em>,
+then its <code>_Populate</code> method is called instead of passing widget
+creation to Tcl.</p>
+</dd>
+<dt><strong><a name="m_foo" class="item">$w-&gt;m_<em>foo</em>( @args )</a></strong></dt>
+
+<dd>
+<p>This will invoke the <em>foo</em> subcommand for the current widget.  This
+is the same as:</p>
+<pre>
+    <span class="variable">$func</span> <span class="operator">=</span> <span class="string">"Tkx::</span><span class="variable">$w</span><span class="string">"</span><span class="operator">;</span>
+    <span class="operator">&amp;</span><span class="variable">$func</span><span class="operator">(</span><span class="variable">expand</span><span class="operator">(</span><span class="string">"foo"</span><span class="operator">),</span> <span class="variable">@args</span><span class="operator">);</span>
+</pre>
+<p>where the <code>expand()</code> function expands underscores as described in
+<a href="#calling_tcl_and_tk_commands">Calling Tcl and Tk Commands</a> above.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">m_configure</span><span class="operator">(</span><span class="string">-background</span> <span class="operator">=&gt;</span> <span class="string">"red"</span><span class="operator">);</span>
+</pre>
+<p>Subclasses might override the <a href="#_mpath"><code>_mpath()</code></a> method to have m_<em>foo</em> forward
+the subcommand somewhere else than the current widget.</p>
+</dd>
+<dt><strong><a name="g_foo" class="item">$w-&gt;g_<em>foo</em>( @args )</a></strong></dt>
+
+<dd>
+<p>This will invoke the <em>foo</em> Tcl command with the current widget as
+first argument.  This is the same as:</p>
+<pre>
+    <span class="variable">$func</span> <span class="operator">=</span> <span class="string">"Tkx::foo"</span><span class="operator">;</span>
+    <span class="operator">&amp;</span><span class="variable">$func</span><span class="operator">(</span><span class="variable">$w</span><span class="operator">,</span> <span class="variable">@args</span><span class="operator">);</span>
+</pre>
+<p>Any underscores in the name <em>foo</em> are expanded as described in
+<a href="#calling_tcl_and_tk_commands">Calling Tcl and Tk Commands</a> above.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">g_pack_forget</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="foo" class="item">$w-&gt;<em>foo</em>( @args )</a></strong></dt>
+
+<dd>
+<p>If the method does not start with &quot;new_&quot; or have a prefix of the form
+/^_/ or /^[a-zA-Z]_/, the call will just forward to the method &quot;m_<em>foo</em>&quot;
+(described above).  This is just a convenience for people that have
+grown tired of the &quot;m_&quot; prefix.</p>
+<p>The method names with prefix /^_/ and /^[a-zA-Z]_/ are reserved for
+future extensions to this API.</p>
+</dd>
+<dt><strong><a name="_mega" class="item">Tkx::widget-&gt;_Mega( $widget, $class )</a></strong></dt>
+
+<dd>
+<p>This register $class as the one implementing $widget widgets.  See
+<a href="#megawidgets">Megawidgets</a>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="subclassing_tk_widgets">Subclassing Tk widgets</a></h2>
+<p>You can't subclass a Tk widget in Perl, but you can emulate it by
+creating a megawidget.</p>
+<p>
+</p>
+<h2><a name="megawidgets">Megawidgets</a></h2>
+<p>Megawidgets can be implemented in Perl and used by Tkx.  To declare a
+megawidget make a Perl class like this one:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">base</span> <span class="string">'Tkx::widget'</span><span class="operator">;</span>
+    <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">_Mega</span><span class="operator">(</span><span class="string">"foo"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> _Populate </span><span class="operator">{</span>
+        <span class="keyword">my</span><span class="operator">(</span><span class="variable">$class</span><span class="operator">,</span> <span class="variable">$widget</span><span class="operator">,</span> <span class="variable">$path</span><span class="operator">,</span> <span class="variable">%opt</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>The megawidget class should inherit from <code>Tkx::widget</code> and will
+register itself by calling the <code>_Mega()</code> class method.  In the example
+above we tell Tkx that any &quot;foo&quot; widgets should be handled by the Perl
+class &quot;Foo&quot; instead of Tcl.  When a new &quot;foo&quot; widget is instantiated
+with:</p>
+<pre>
+    <span class="variable">$w</span><span class="operator">-&gt;</span><span class="variable">new_foo</span><span class="operator">(</span><span class="string">-text</span> <span class="operator">=&gt;</span> <span class="string">"Hi"</span><span class="operator">,</span> <span class="string">-foo</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>then the <code>_Populate()</code> class method of <code>Foo</code> is called.  It will be
+passed the widget type to create, the full path to use as widget
+name and any options passed in.  The widget name is passed in so that a
+single Perl class can implement multiple widget types.</p>
+<p>The <code>_Populate()</code> class should create a root object with the given $path
+as name and populate it with the internal widgets.  Normally the root
+object will be forced to belong to the implementation class so that it
+can trap various method calls on it.  By using the <a href="#_class"><code>_class()</code></a> method to
+set the class <code>_Populate()</code> can ensure that new handles to this megawidget
+also use this class.</p>
+<p>To make Tk aware of your megawidget you must register it by providing a
+<code>-class</code> argument when creating the root widget. Doing this sets the
+value returned by the <code>$w-&gt;g_winfo_class</code> method. It also makes it
+possible for your megawidget to have to have class-specific bindings and
+be configurable via Xdefaults and the options database. By convention
+class names start with a capital letter, so Tkx megawidgets should have
+names like &quot;Tkx_Foo&quot;. If you don't register your megawidget with Tk,
+<code>g_winfo_class</code> will return the class of whatever you use as a root
+widget and your megawidget will be subject to the bindings for that
+class.</p>
+<p>Of the standard Tk widgets only frames support <code>-class</code> which means
+that (practically speaking) Tkx megawidgets must use a frame as the root
+widget. The ttk widgets do support <code>-class</code>, so you may be able to
+dispense with the frame if your megawidget is really just subclassing
+one of them.</p>
+<p>The implementation class can (and probably should) define an <a href="#_mpath"><code>_mpath()</code></a>
+method to delegate any m_<em>foo</em> method calls to one of its subwidgets.
+It might want to override the <code>m_configure()</code> and <code>m_cget()</code> methods if it
+implements additional options or wants more control over delegation. The
+class <code>Tkx::MegaConfig</code> provide implementations of <code>m_configure()</code> and
+<code>m_cget()</code> that can be useful for controlling delegation of configuration
+options.</p>
+<p>Public methods defined by a megawidget should have an &quot;m_&quot; prefix. This
+serves two purposes:</p>
+<ul>
+<li>
+<p>It makes them behave the same as native widget methods. That is, they
+may be called either with or without the &quot;m_&quot; prefix as the user of the
+widget prefers.</p>
+</li>
+<li>
+<p>It enables the megawidget to accept method delegation from another
+widget via the parent widget's <a href="#_mpath"><code>_mpath()</code></a> method.</p>
+</li>
+</ul>
+<p>See <a href="../lib/Tkx/LabEntry.html">the Tkx::LabEntry manpage</a> for a trivial example megawidget.</p>
+<p>
+</p>
+<hr />
+<h1><a name="environment">ENVIRONMENT</a></h1>
+<p>The <code>PERL_TKX_TRACE</code> environment variable initialize the $Tkx::TRACE setting.</p>
+<p>The <code>PERL_TCL_DL_PATH</code> environment variable can be set to override
+the Tcl/Tk used.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>If you have questions about this code or want to report bugs send a
+message to the &lt;<a href="mailto:tcltk@perl.org">tcltk@perl.org</a>&gt; mailing list.  To subscribe to this
+list send an empty message to &lt;<a href="mailto:tcltk-subscribe@perl.org">tcltk-subscribe@perl.org</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+<p>Copyright 2005 ActiveState.  All rights reserved.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/Tkx/Tutorial.html">the Tkx::Tutorial manpage</a>, <a href="../lib/Tkx/MegaConfig.html">the Tkx::MegaConfig manpage</a>, <a href="../lib/Tcl.html">the Tcl manpage</a></p>
+<p>At <a href="http://www.tkdocs.com/tutorial/">http://www.tkdocs.com/tutorial/</a> you find a very nice Tk tutorial that
+uses Tkx for the Perl examples.</p>
+<p>More information about Tcl/Tk can be found at <a href="http://www.tcl.tk/">http://www.tcl.tk/</a>.
+Tk documentation is also available at <a href="http://aspn.activestate.com/ASPN/docs/ActiveTcl/at.pkg_index.html">http://aspn.activestate.com/ASPN/docs/ActiveTcl/at.pkg_index.html</a>.</p>
+<p>The official source repository for Tkx is <a href="http://github.com/gisle/tkx/">http://github.com/gisle/tkx/</a>.</p>
+<p>Alternative Tk bindings for Perl are described in <a href="../Tcl/Tk.html">the Tcl::Tk manpage</a> and <em>Tk</em>.</p>
+<p>ActivePerl bundles a Tcl interpreter and a selection of Tk widgets from
+ActiveTcl in order to provide a functional Tkx module out-of-box.
+<a href="../lib/Tcl/tkkit.html">the Tcl::tkkit manpage</a> documents the version of Tcl/Tk you get and whats available in
+addition to the core commands. You need to set the <code>PERL_TCL_DL_PATH</code>
+environment variable to make Tkx reference other Tcl installations.</p>
+
+</body>
+
+</html>

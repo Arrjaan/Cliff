@@ -1,0 +1,1211 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>CPAN::Meta::Spec - specification for CPAN distribution metadata</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>CPAN::Meta::Spec - specification for CPAN distribution metadata</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#terminology">TERMINOLOGY</a></li>
+	<li><a href="#data_types">DATA TYPES</a></li>
+	<ul>
+
+		<li><a href="#boolean">Boolean</a></li>
+		<li><a href="#string">String</a></li>
+		<li><a href="#list">List</a></li>
+		<li><a href="#map">Map</a></li>
+		<li><a href="#license_string">License String</a></li>
+		<li><a href="#url">URL</a></li>
+		<li><a href="#version">Version</a></li>
+		<li><a href="#version_range">Version Range</a></li>
+	</ul>
+
+	<li><a href="#structure">STRUCTURE</a></li>
+	<ul>
+
+		<li><a href="#required_fields">REQUIRED FIELDS</a></li>
+		<ul>
+
+			<li><a href="#abstract">abstract</a></li>
+			<li><a href="#author">author</a></li>
+			<li><a href="#dynamic_config">dynamic_config</a></li>
+			<li><a href="#generated_by">generated_by</a></li>
+			<li><a href="#license">license</a></li>
+			<li><a href="#meta_spec">meta-spec</a></li>
+			<li><a href="#name">name</a></li>
+			<li><a href="#release_status">release_status</a></li>
+			<li><a href="#version">version</a></li>
+		</ul>
+
+		<li><a href="#optional_fields">OPTIONAL FIELDS</a></li>
+		<ul>
+
+			<li><a href="#description">description</a></li>
+			<li><a href="#keywords">keywords</a></li>
+			<li><a href="#no_index">no_index</a></li>
+			<li><a href="#optional_features">optional_features</a></li>
+			<li><a href="#prereqs">prereqs</a></li>
+			<li><a href="#provides">provides</a></li>
+			<li><a href="#resources">resources</a></li>
+		</ul>
+
+		<li><a href="#deprecated_fields">DEPRECATED FIELDS</a></li>
+		<ul>
+
+			<li><a href="#build_requires">build_requires</a></li>
+			<li><a href="#configure_requires">configure_requires</a></li>
+			<li><a href="#conflicts">conflicts</a></li>
+			<li><a href="#distribution_type">distribution_type</a></li>
+			<li><a href="#license_uri">license_uri</a></li>
+			<li><a href="#private">private</a></li>
+			<li><a href="#recommends">recommends</a></li>
+			<li><a href="#requires">requires</a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#version_numbers">VERSION NUMBERS</a></li>
+	<ul>
+
+		<li><a href="#version_formats">Version Formats</a></li>
+		<li><a href="#version_ranges">Version Ranges</a></li>
+	</ul>
+
+	<li><a href="#prerequisites">PREREQUISITES</a></li>
+	<ul>
+
+		<li><a href="#prereq_spec">Prereq Spec</a></li>
+		<ul>
+
+			<li><a href="#phases">Phases</a></li>
+			<li><a href="#relationships">Relationships</a></li>
+		</ul>
+
+		<li><a href="#merging_and_resolving_prerequisites">Merging and Resolving Prerequisites</a></li>
+	</ul>
+
+	<li><a href="#serialization">SERIALIZATION</a></li>
+	<li><a href="#notes_for_implementors">NOTES FOR IMPLEMENTORS</a></li>
+	<ul>
+
+		<li><a href="#extracting_version_numbers_from_perl_modules">Extracting Version Numbers from Perl Modules</a></li>
+		<li><a href="#comparing_version_numbers">Comparing Version Numbers</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#contributors">CONTRIBUTORS</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>CPAN::Meta::Spec - specification for CPAN distribution metadata</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.112150</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$distmeta</span> <span class="operator">=</span> <span class="operator">{</span>
+    <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Module-Build'</span><span class="operator">,</span>
+    <span class="string">abstract</span> <span class="operator">=&gt;</span> <span class="string">'Build and install Perl modules'</span><span class="operator">,</span>
+    <span class="string">description</span> <span class="operator">=&gt;</span>  <span class="string">"Module::Build is a system for "</span>
+      <span class="operator">.</span> <span class="string">"building, testing, and installing Perl modules. "</span>
+      <span class="operator">.</span> <span class="string">"It is meant to ... blah blah blah ..."</span><span class="operator">,</span>
+    <span class="string">version</span>  <span class="operator">=&gt;</span> <span class="string">'0.36'</span><span class="operator">,</span>
+    <span class="string">release_status</span> <span class="operator">=&gt;</span> <span class="string">'stable'</span><span class="operator">,</span>
+    <span class="string">author</span>   <span class="operator">=&gt;</span> <span class="operator">[</span>
+      <span class="string">'Ken Williams &lt;kwilliams@cpan.org&gt;'</span><span class="operator">,</span>
+      <span class="string">'Module-Build List &lt;module-build@perl.org&gt;'</span><span class="operator">,</span> <span class="comment"># additional contact</span>
+    <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">license</span>  <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'perl_5'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">prereqs</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">runtime</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">'perl'</span>   <span class="operator">=&gt;</span> <span class="string">'5.006'</span><span class="operator">,</span>
+          <span class="string">'ExtUtils::Install'</span> <span class="operator">=&gt;</span> <span class="string">'0'</span><span class="operator">,</span>
+          <span class="string">'File::Basename'</span> <span class="operator">=&gt;</span> <span class="string">'0'</span><span class="operator">,</span>
+          <span class="string">'File::Compare'</span>  <span class="operator">=&gt;</span> <span class="string">'0'</span><span class="operator">,</span>
+          <span class="string">'IO::File'</span>   <span class="operator">=&gt;</span> <span class="string">'0'</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+        <span class="string">recommends</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">'Archive::Tar'</span> <span class="operator">=&gt;</span> <span class="string">'1.00'</span><span class="operator">,</span>
+          <span class="string">'ExtUtils::Install'</span> <span class="operator">=&gt;</span> <span class="string">'0.3'</span><span class="operator">,</span>
+          <span class="string">'ExtUtils::ParseXS'</span> <span class="operator">=&gt;</span> <span class="string">'2.02'</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">build</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">'Test::More'</span> <span class="operator">=&gt;</span> <span class="string">'0'</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+      <span class="operator">}</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">resources</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">license</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'http://dev.perl.org/licenses/'</span><span class="operator">]</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">optional_features</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">domination</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">description</span> <span class="operator">=&gt;</span> <span class="string">'Take over the world'</span><span class="operator">,</span>
+        <span class="string">prereqs</span>     <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">develop</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">'Genius::Evil'</span>     <span class="operator">=&gt;</span> <span class="string">'1.234'</span> <span class="operator">}</span> <span class="operator">}</span><span class="operator">,</span>
+          <span class="string">runtime</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">'Machine::Weather'</span> <span class="operator">=&gt;</span> <span class="string">'2.0'</span>   <span class="operator">}</span> <span class="operator">}</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">dynamic_config</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+    <span class="string">keywords</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw/ toolchain cpan dual-life /</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">'meta-spec'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">version</span> <span class="operator">=&gt;</span> <span class="string">'2'</span><span class="operator">,</span>
+      <span class="string">url</span>     <span class="operator">=&gt;</span> <span class="string">'http://search.cpan.org/perldoc?CPAN::Meta::Spec'</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">generated_by</span> <span class="operator">=&gt;</span> <span class="string">'Module::Build version 0.36'</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes version 2 of the CPAN distribution metadata
+specification, also known as the &quot;CPAN Meta Spec&quot;.</p>
+<p>Revisions of this specification for typo corrections and prose
+clarifications may be issued as CPAN::Meta::Spec 2.<em>x</em>.  These
+revisions will never change semantics or add or remove specified
+behavior.</p>
+<p>Distribution metadata describe important properties of Perl
+distributions. Distribution building tools like Module::Build,
+Module::Install, ExtUtils::MakeMaker or Dist::Zilla should create a
+metadata file in accordance with this specification and include it with
+the distribution for use by automated tools that index, examine, package
+or install Perl distributions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="terminology">TERMINOLOGY</a></h1>
+<dl>
+<dt><strong><a name="distribution" class="item">distribution</a></strong></dt>
+
+<dd>
+<p>This is the primary object described by the metadata. In the context of
+this document it usually refers to a collection of modules, scripts,
+and/or documents that are distributed together for other developers to
+use.  Examples of distributions are <code>Class-Container</code>, <code>libwww-perl</code>,
+or <code>DBI</code>.</p>
+</dd>
+<dt><strong><a name="module" class="item">module</a></strong></dt>
+
+<dd>
+<p>This refers to a reusable library of code contained in a single file.
+Modules usually contain one or more packages and are often referred
+to by the name of a primary package that can be mapped to the file
+name. For example, one might refer to <code>File::Spec</code> instead of
+<em class="file">File/Spec.pm</em></p>
+</dd>
+<dt><strong><a name="package" class="item">package</a></strong></dt>
+
+<dd>
+<p>This refers to a namespace declared with the Perl <a href="#package"><code>package</code></a> statement.
+In Perl, packages often have a version number property given by the
+<code>$VERSION</code> variable in the namespace.</p>
+</dd>
+<dt><strong><a name="consumer" class="item">consumer</a></strong></dt>
+
+<dd>
+<p>This refers to code that reads a metadata file, deserializes it into a
+data structure in memory, or interprets a data structure of metadata
+elements.</p>
+</dd>
+<dt><strong><a name="producer" class="item">producer</a></strong></dt>
+
+<dd>
+<p>This refers to code that constructs a metadata data structure,
+serializes into a bytestream and/or writes it to disk.</p>
+</dd>
+<dt><strong><a name="must_should_may_etc" class="item">must, should, may, etc.</a></strong></dt>
+
+<dd>
+<p>These terms are interpreted as described in IETF <a href="http://www.ietf.org/rfc/rfc2119.txt" class="rfc">RFC 2119</a>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="data_types">DATA TYPES</a></h1>
+<p>Fields in the <a href="#structure">STRUCTURE</a> section describe data elements, each of
+which has an associated data type as described herein.  There are four
+primitive types: Boolean, String, List and Map.  Other types are
+subtypes of primitives and define compound data structures or define
+constraints on the values of a data element.</p>
+<p>
+</p>
+<h2><a name="boolean">Boolean</a></h2>
+<p>A <em>Boolean</em> is used to provide a true or false value.  It <strong>must</strong> be
+represented as a defined value.</p>
+<p>
+</p>
+<h2><a name="string">String</a></h2>
+<p>A <em>String</em> is data element containing a non-zero length sequence of
+Unicode characters, such as an ordinary Perl scalar that is not a
+reference.</p>
+<p>
+</p>
+<h2><a name="list">List</a></h2>
+<p>A <em>List</em> is an ordered collection of zero or more data elements.
+Elements of a List may be of mixed types.</p>
+<p>Producers <strong>must</strong> represent List elements using a data structure which
+unambiguously indicates that multiple values are possible, such as a
+reference to a Perl array (an &quot;arrayref&quot;).</p>
+<p>Consumers expecting a List <strong>must</strong> consider a String as equivalent to a
+List of length 1.</p>
+<p>
+</p>
+<h2><a name="map">Map</a></h2>
+<p>A <em>Map</em> is an unordered collection of zero or more data elements
+(&quot;values&quot;), indexed by associated String elements (&quot;keys&quot;).  The Map's
+value elements may be of mixed types.</p>
+<p>
+</p>
+<h2><a name="license_string">License String</a></h2>
+<p>A <em>License String</em> is a subtype of String with a restricted set of
+values.  Valid values are described in detail in the description of
+the <a href="#license">license</a> field.</p>
+<p>
+</p>
+<h2><a name="url">URL</a></h2>
+<p><em>URL</em> is a subtype of String containing a Uniform Resource Locator or
+Identifier.  [ This type is called URL and not URI for historical reasons. ]</p>
+<p>
+</p>
+<h2><a name="version">Version</a></h2>
+<p>A <em>Version</em> is a subtype of String containing a value that describes
+the version number of packages or distributions.  Restrictions on format
+are described in detail in the <a href="#version_formats">Version Formats</a> section.</p>
+<p>
+</p>
+<h2><a name="version_range">Version Range</a></h2>
+<p>The <em>Version Range</em> type is a subtype of String.  It describes a range
+of Versions that may be present or installed to fulfill prerequisites.
+It is specified in detail in the <a href="#version_ranges">Version Ranges</a> section.</p>
+<p>
+</p>
+<hr />
+<h1><a name="structure">STRUCTURE</a></h1>
+<p>The metadata structure is a data element of type Map.  This section
+describes valid keys within the Map.</p>
+<p>Any keys not described in this specification document (whether top-level
+or within compound data structures described herein) are considered
+<em>custom keys</em> and <strong>must</strong> begin with an &quot;x&quot; or &quot;X&quot; and be followed by an
+underscore; i.e. they must match the pattern: <code>qr{\Ax_}i</code>.  If a
+custom key refers to a compound data structure, subkeys within it do not
+need an &quot;x_&quot; or &quot;X_&quot; prefix.</p>
+<p>Consumers of metadata may ignore any or all custom keys.  All other keys
+not described herein are invalid and should be ignored by consumers.
+Producers must not generate or output invalid keys.</p>
+<p>For each key, an example is provided followed by a description.  The
+description begins with the version of spec in which the key was added
+or in which the definition was modified, whether the key is <em>required</em>
+or <em>optional</em> and the data type of the corresponding data element.
+These items are in parentheses, brackets and braces, respectively.</p>
+<p>If a data type is a Map or Map subtype, valid subkeys will be described
+as well.</p>
+<p>Some fields are marked <em>Deprecated</em>.  These are shown for historical
+context and must not be produced in or consumed from any metadata structure
+of version 2 or higher.</p>
+<p>
+</p>
+<h2><a name="required_fields">REQUIRED FIELDS</a></h2>
+<p>
+</p>
+<h3><a name="abstract">abstract</a></h3>
+<p>Example:</p>
+<pre>
+  abstract =&gt; 'Build and install Perl modules'</pre>
+<p>(Spec 1.2) [required] {String}</p>
+<p>This is a short description of the purpose of the distribution.</p>
+<p>
+</p>
+<h3><a name="author">author</a></h3>
+<p>Example:</p>
+<pre>
+  author =&gt; [ 'Ken Williams &lt;kwilliams@cpan.org&gt;' ]</pre>
+<p>(Spec 1.2) [required] {List of one or more Strings}</p>
+<p>This List indicates the person(s) to contact concerning the
+distribution. The preferred form of the contact string is:</p>
+<pre>
+  contact-name &lt;email-address&gt;</pre>
+<p>This field provides a general contact list independent of other
+structured fields provided within the <a href="#resources">resources</a> field, such as
+<a href="#bugtracker"><code>bugtracker</code></a>.  The addressee(s) can be contacted for any purpose
+including but not limited to (security) problems with the distribution,
+questions about the distribution or bugs in the distribution.</p>
+<p>A distribution's original author is usually the contact listed within
+this field.  Co-maintainers, successor maintainers or mailing lists
+devoted to the distribution may also be listed in addition to or instead
+of the original author.</p>
+<p>
+</p>
+<h3><a name="dynamic_config">dynamic_config</a></h3>
+<p>Example:</p>
+<pre>
+  dynamic_config =&gt; 1</pre>
+<p>(Spec 2) [required] {Boolean}</p>
+<p>A boolean flag indicating whether a <em class="file">Build.PL</em> or <em class="file">Makefile.PL</em> (or
+similar) must be executed to determine prerequisites.</p>
+<p>This field should be set to a true value if the distribution performs
+some dynamic configuration (asking questions, sensing the environment,
+etc.) as part of its configuration.  This field should be set to a false
+value to indicate that prerequisites included in metadata may be
+considered final and valid for static analysis.</p>
+<p>This field explicitly <strong>does not</strong> indicate whether installation may be
+safely performed without using a Makefile or Build file, as there may be
+special files to install or custom installation targets (e.g. for
+dual-life modules that exist on CPAN as well as in the Perl core).  This
+field only defines whether prerequisites are complete as given in the
+metadata.</p>
+<p>
+</p>
+<h3><a name="generated_by">generated_by</a></h3>
+<p>Example:</p>
+<pre>
+  generated_by =&gt; 'Module::Build version 0.36'</pre>
+<p>(Spec 1.0) [required] {String}</p>
+<p>This field indicates the tool that was used to create this metadata.
+There are no defined semantics for this field, but it is traditional to
+use a string in the form &quot;Generating::Package version 1.23&quot; or the
+author's name, if the file was generated by hand.</p>
+<p>
+</p>
+<h3><a name="license">license</a></h3>
+<p>Example:</p>
+<pre>
+  license =&gt; [ 'perl_5' ]</pre>
+<pre>
+  license =&gt; [ 'apache_2', 'mozilla_1_0' ]</pre>
+<p>(Spec 2) [required] {List of one or more License Strings}</p>
+<p>One or more licenses that apply to some or all of the files in the
+distribution.  If multiple licenses are listed, the distribution
+documentation should be consulted to clarify the interpretation of
+multiple licenses.</p>
+<p>The following list of license strings are valid:</p>
+<pre>
+ string          description
+ -------------   -----------------------------------------------
+ agpl_3          GNU Affero General Public License, Version 3
+ apache_1_1      Apache Software License, Version 1.1
+ apache_2_0      Apache License, Version 2.0
+ artistic_1      Artistic License, (Version 1)
+ artistic_2      Artistic License, Version 2.0
+ bsd             BSD License (three-clause)
+ freebsd         FreeBSD License (two-clause)
+ gfdl_1_2        GNU Free Documentation License, Version 1.2
+ gfdl_1_3        GNU Free Documentation License, Version 1.3
+ gpl_1           GNU General Public License, Version 1
+ gpl_2           GNU General Public License, Version 2
+ gpl_3           GNU General Public License, Version 3
+ lgpl_2_1        GNU Lesser General Public License, Version 2.1
+ lgpl_3_0        GNU Lesser General Public License, Version 3.0
+ mit             MIT (aka X11) License
+ mozilla_1_0     Mozilla Public License, Version 1.0
+ mozilla_1_1     Mozilla Public License, Version 1.1
+ openssl         OpenSSL License
+ perl_5          The Perl 5 License (Artistic 1 &amp; GPL 1 or later)
+ qpl_1_0         Q Public License, Version 1.0
+ ssleay          Original SSLeay License
+ sun             Sun Internet Standards Source License (SISSL)
+ zlib            zlib License</pre>
+<p>The following license strings are also valid and indicate other
+licensing not described above:</p>
+<pre>
+ string          description
+ -------------   -----------------------------------------------
+ open_source     Other Open Source Initiative (OSI) approved license
+ restricted      Requires special permission from copyright holder
+ unrestricted    Not an OSI approved license, but not restricted
+ unknown         License not provided in metadata</pre>
+<p>All other strings are invalid in the license field.</p>
+<p>
+</p>
+<h3><a name="meta_spec">meta-spec</a></h3>
+<p>Example:</p>
+<pre>
+  <span class="string">'meta-spec'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">version</span> <span class="operator">=&gt;</span> <span class="string">'2'</span><span class="operator">,</span>
+    <span class="string">url</span>     <span class="operator">=&gt;</span> <span class="string">'http://search.cpan.org/perldoc?CPAN::Meta::Spec'</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>(Spec 1.2) [required] {Map}</p>
+<p>This field indicates the version of the CPAN Meta Spec that should be
+used to interpret the metadata.  Consumers must check this key as soon
+as possible and abort further metadata processing if the meta-spec
+version is not supported by the consumer.</p>
+<p>The following keys are valid, but only <a href="#version"><code>version</code></a> is required.</p>
+<dl>
+<dt><strong><a name="version" class="item">version</a></strong></dt>
+
+<dd>
+<p>This subkey gives the integer <em>Version</em> of the CPAN Meta Spec against
+which the document was generated.</p>
+</dd>
+<dt><strong><a name="url" class="item">url</a></strong></dt>
+
+<dd>
+<p>This is a <em>URL</em> of the metadata specification document corresponding to
+the given version.  This is strictly for human-consumption and should
+not impact the interpretation of the document.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h3><a name="name">name</a></h3>
+<p>Example:</p>
+<pre>
+  name =&gt; 'Module-Build'</pre>
+<p>(Spec 1.0) [required] {String}</p>
+<p>This field is the name of the distribution.  This is often created by
+taking the &quot;main package&quot; in the distribution and changing <code>::</code> to
+<code>-</code>, but the name may be completely unrelated to the packages within
+the distribution.  C.f. <a href="http://search.cpan.org/dist/libwww-perl/">http://search.cpan.org/dist/libwww-perl/</a>.</p>
+<p>
+</p>
+<h3><a name="release_status">release_status</a></h3>
+<p>Example:</p>
+<pre>
+  release_status =&gt; 'stable'</pre>
+<p>(Spec 2) [required] {String}</p>
+<p>This field provides the  release status of this distribution.  If the
+<a href="#version"><code>version</code></a> field contains an underscore character, then
+<code>release_status</code> <strong>must not</strong> be &quot;stable.&quot;</p>
+<p>The <code>release_status</code> field <strong>must</strong> have one of the following values:</p>
+<dl>
+<dt><strong><a name="stable" class="item">stable</a></strong></dt>
+
+<dd>
+<p>This indicates an ordinary, &quot;final&quot; release that should be indexed by PAUSE
+or other indexers.</p>
+</dd>
+<dt><strong><a name="testing" class="item">testing</a></strong></dt>
+
+<dd>
+<p>This indicates a &quot;beta&quot; release that is substantially complete, but has an
+elevated risk of bugs and requires additional testing.  The distribution
+should not be installed over a stable release without an explicit request
+or other confirmation from a user.  This release status may also be used
+for &quot;release candidate&quot; versions of a distribution.</p>
+</dd>
+<dt><strong><a name="unstable" class="item">unstable</a></strong></dt>
+
+<dd>
+<p>This indicates an &quot;alpha&quot; release that is under active development, but has
+been released for early feedback or testing and may be missing features or
+may have serious bugs.  The distribution should not be installed over a
+stable release without an explicit request or other confirmation from a
+user.</p>
+</dd>
+</dl>
+<p>Consumers <strong>may</strong> use this field to determine how to index the
+distribution for CPAN or other repositories in addition to or in
+replacement of heuristics based on version number or file name.</p>
+<p>
+</p>
+<h3><a name="version">version</a></h3>
+<p>Example:</p>
+<pre>
+  version =&gt; '0.36'</pre>
+<p>(Spec 1.0) [required] {Version}</p>
+<p>This field gives the version of the distribution to which the metadata
+structure refers.</p>
+<p>
+</p>
+<h2><a name="optional_fields">OPTIONAL FIELDS</a></h2>
+<p>
+</p>
+<h3><a name="description">description</a></h3>
+<p>Example:</p>
+<pre>
+    description =&gt;  &quot;Module::Build is a system for &quot;
+      . &quot;building, testing, and installing Perl modules. &quot;
+      . &quot;It is meant to ... blah blah blah ...&quot;,</pre>
+<p>(Spec 2) [optional] {String}</p>
+<p>A longer, more complete description of the purpose or intended use of
+the distribution than the one provided by the <code>abstract</code> key.</p>
+<p>
+</p>
+<h3><a name="keywords">keywords</a></h3>
+<p>Example:</p>
+<pre>
+  keywords =&gt; [ qw/ toolchain cpan dual-life / ]</pre>
+<p>(Spec 1.1) [optional] {List of zero or more Strings}</p>
+<p>A List of keywords that describe this distribution.  Keywords
+<strong>must not</strong> include whitespace.</p>
+<p>
+</p>
+<h3><a name="no_index">no_index</a></h3>
+<p>Example:</p>
+<pre>
+  <span class="string">no_index</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">file</span>      <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'My/Module.pm'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">directory</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'My/Private'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">package</span>   <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'My::Module::Secret'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">namespace</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'My::Module::Sample'</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>(Spec 1.2) [optional] {Map}</p>
+<p>This Map describes any files, directories, packages, and namespaces that
+are private to the packaging or implementation of the distribution and
+should be ignored by indexing or search tools.</p>
+<p>Valid subkeys are as follows:</p>
+<dl>
+<dt><strong><a name="file" class="item">file</a></strong></dt>
+
+<dd>
+<p>A <em>List</em> of relative paths to files.  Paths <strong>must be</strong> specified with
+unix convetions.</p>
+</dd>
+<dt><strong><a name="directory" class="item">directory</a></strong></dt>
+
+<dd>
+<p>A <em>List</em> of relative paths to directories.  Paths <strong>must be</strong> specified
+with unix convetions.</p>
+<p>[ Note: previous editions of the spec had <code>dir</code> instead of <a href="#directory"><code>directory</code></a> ]</p>
+</dd>
+<dt><strong>package</strong></dt>
+
+<dd>
+<p>A <em>List</em> of package names.</p>
+</dd>
+<dt><strong><a name="namespace" class="item">namespace</a></strong></dt>
+
+<dd>
+<p>A <em>List</em> of package namespaces, where anything below the namespace
+must be ignored, but <em>not</em> the namespace itself.</p>
+<p>In the example above for <code>no_index</code>, <code>My::Module::Sample::Foo</code> would
+be ignored, but <code>My::Module::Sample</code> would not.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h3><a name="optional_features">optional_features</a></h3>
+<p>Example:</p>
+<pre>
+  <span class="string">optional_features</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">sqlite</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">description</span> <span class="operator">=&gt;</span> <span class="string">'Provides SQLite support'</span><span class="operator">,</span>
+      <span class="string">prereqs</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">runtime</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+            <span class="string">'DBD::SQLite'</span> <span class="operator">=&gt;</span> <span class="string">'1.25'</span>
+          <span class="operator">}</span>
+        <span class="operator">}</span>
+      <span class="operator">}</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>(Spec 2) [optional] {Map}</p>
+<p>This Map describes optional features with incremental prerequisites.
+Each key of the <code>optional_features</code> Map is a String used to identify
+the feature and each value is a Map with additional information about
+the feature.  Valid subkeys include:</p>
+<dl>
+<dt><strong><a name="description" class="item">description</a></strong></dt>
+
+<dd>
+<p>This is a String describing the feature.  Every optional feature
+should provide a description</p>
+</dd>
+<dt><strong><a name="prereqs" class="item">prereqs</a></strong></dt>
+
+<dd>
+<p>This entry is required and has the same structure as that of the
+<a href="#prereqs"><code>/prereqs</code></a> key.  It provides a list of package requirements
+that must be satisfied for the feature to be supported or enabled.</p>
+<p>There is one crucial restriction:  the preqreqs of an optional feature
+<strong>must not</strong> include <a href="#configure"><code>configure</code></a> phase prereqs.</p>
+</dd>
+</dl>
+<p>Consumers <strong>must not</strong> include optional features as prerequisites without
+explict instruction from users (whether via interactive prompting,
+a function parameter or a configuration value, etc. ).</p>
+<p>If an optional feature is used by a consumer to add additional
+prerequisites, the consumer should merge the optional feature
+prerequisites into those given by the <a href="#prereqs"><code>prereqs</code></a> key using the same
+semantics.  See <a href="#merging_and_resolving_prerequisites">Merging and Resolving Prerequisites</a> for details on
+merging prerequisites.</p>
+<p><em>Suggestion for disuse:</em> Because there is currently no way for a
+distribution to specify a dependency on an optional feature of another
+dependency, the use of <code>optional_feature</code> is discouraged.  Instead,
+create a separate, installable distribution that ensures the desired
+feature is available.  For example, if <code>Foo::Bar</code> has a &quot;Baz&quot; feature,
+release a separate <code>Foo-Bar-Baz</code> distribution that satisfies
+requirements for the feature.</p>
+<p>
+</p>
+<h3><a name="prereqs">prereqs</a></h3>
+<p>Example:</p>
+<pre>
+  <span class="string">prereqs</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">runtime</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">'perl'</span>          <span class="operator">=&gt;</span> <span class="string">'5.006'</span><span class="operator">,</span>
+        <span class="string">'File::Spec'</span>    <span class="operator">=&gt;</span> <span class="string">'0.86'</span><span class="operator">,</span>
+        <span class="string">'JSON'</span>          <span class="operator">=&gt;</span> <span class="string">'2.16'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">recommends</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">'JSON::XS'</span>      <span class="operator">=&gt;</span> <span class="string">'2.26'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">suggests</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">'Archive::Tar'</span>  <span class="operator">=&gt;</span> <span class="string">'0'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">build</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">'Alien::SDL'</span>    <span class="operator">=&gt;</span> <span class="string">'1.00'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">test</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">recommends</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">'Test::Deep'</span>    <span class="operator">=&gt;</span> <span class="string">'0.10'</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>(Spec 2) [optional] {Map}</p>
+<p>This is a Map that describes all the prerequisites of the distribution.
+The keys are phases of activity, such as <a href="#configure"><code>configure</code></a>, <a href="#build"><code>build</code></a>, <a href="#test"><code>test</code></a>
+or <a href="#runtime"><code>runtime</code></a>.  Values are Maps in which the keys name the type of
+prerequisite relationship such as <a href="#requires"><code>requires</code></a>, <a href="#recommends"><code>recommends</code></a>, or
+<a href="#suggests"><code>suggests</code></a> and the value provides a set of prerequisite relations.  The
+set of relations <strong>must</strong> be specified as a Map of package names to
+version ranges.</p>
+<p>The full definition for this field is given in the <a href="#prereq_spec">Prereq Spec</a>
+section.</p>
+<p>
+</p>
+<h3><a name="provides">provides</a></h3>
+<p>Example:</p>
+<pre>
+  <span class="string">provides</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">'Foo::Bar'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">file</span>    <span class="operator">=&gt;</span> <span class="string">'lib/Foo/Bar.pm'</span><span class="operator">,</span>
+      <span class="string">version</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">.</span><span class="number">27_02</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">'Foo::Bar::Blah'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">file</span>    <span class="operator">=&gt;</span> <span class="string">'lib/Foo/Bar/Blah.pm'</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">'Foo::Bar::Baz'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">file</span>    <span class="operator">=&gt;</span> <span class="string">'lib/Foo/Bar/Baz.pm'</span><span class="operator">,</span>
+      <span class="string">version</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">.</span><span class="number">3</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>(Spec 1.2) [optional] {Map}</p>
+<p>This describes all packages provided by this distribution.  This
+information is used by distribution and automation mechanisms like
+PAUSE, CPAN, and search.cpan.org to build indexes saying in which
+distribution various packages can be found.</p>
+<p>The keys of <code>provides</code> are package names that can be found within
+the distribution.  The values are Maps with the following valid subkeys:</p>
+<dl>
+<dt><strong>file</strong></dt>
+
+<dd>
+<p>This field is required.  The value must contain a Unix-style relative
+file path from the root of the distribution to the module containing the
+package.</p>
+</dd>
+<dt><strong>version</strong></dt>
+
+<dd>
+<p>This field contains a <em>Version</em> String for the package, if one exists.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h3><a name="resources">resources</a></h3>
+<p>Example:</p>
+<pre>
+  <span class="string">resources</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">license</span>     <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'http://dev.perl.org/licenses/'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">homepage</span>    <span class="operator">=&gt;</span> <span class="string">'http://sourceforge.net/projects/module-build'</span><span class="operator">,</span>
+    <span class="string">bugtracker</span>  <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">web</span>    <span class="operator">=&gt;</span> <span class="string">'http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Meta'</span><span class="operator">,</span>
+      <span class="string">mailto</span> <span class="operator">=&gt;</span> <span class="string">'meta-bugs@example.com'</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">repository</span>  <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">url</span>  <span class="operator">=&gt;</span> <span class="string">'git://github.com/dagolden/cpan-meta.git'</span><span class="operator">,</span>
+      <span class="string">web</span>  <span class="operator">=&gt;</span> <span class="string">'http://github.com/dagolden/cpan-meta'</span><span class="operator">,</span>
+      <span class="string">type</span> <span class="operator">=&gt;</span> <span class="string">'git'</span><span class="operator">,</span>
+    <span class="operator">}</span><span class="operator">,</span>
+    <span class="string">x_twitter</span>   <span class="operator">=&gt;</span> <span class="string">'http://twitter.com/cpan_linked/'</span><span class="operator">,</span>
+  <span class="operator">}</span>
+</pre>
+<p>(Spec 2) [optional] {Map}</p>
+<p>This field describes resources related to this distribution.</p>
+<p>Valid subkeys include:</p>
+<dl>
+<dt><strong><a name="homepage" class="item">homepage</a></strong></dt>
+
+<dd>
+<p>The official home of this project on the web.</p>
+</dd>
+<dt><strong><a name="license" class="item">license</a></strong></dt>
+
+<dd>
+<p>A List of <em>URL</em>'s that relate to this distribution's license.  As with the
+top-level <a href="#license"><code>license</code></a> field, distribution documentation should be consulted
+to clarify the interpretation of multiple licenses provided here.</p>
+</dd>
+<dt><strong><a name="bugtracker" class="item">bugtracker</a></strong></dt>
+
+<dd>
+<p>This entry describes the bug tracking system for this distribution.  It
+is a Map with the following valid keys:</p>
+<pre>
+  web    - a URL pointing to a web front-end for the bug tracker
+  mailto - an email address to which bugs can be sent</pre>
+</dd>
+<dt><strong><a name="repository" class="item">repository</a></strong></dt>
+
+<dd>
+<p>This entry describes the source control repository for this distribution.  It
+is a Map with the following valid keys:</p>
+<pre>
+  url  - a URL pointing to the repository itself
+  web  - a URL pointing to a web front-end for the repository
+  type - a lowercase string indicating the VCS used</pre>
+<p>Because a url like <code>http://myrepo.example.com/</code> is ambiguous as to
+type, producers should provide a <code>type</code> whenever a <a href="#url"><code>url</code></a> key is given.
+The <code>type</code> field should be the name of the most common program used
+to work with the repository, e.g. git, svn, cvs, darcs, bzr or hg.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="deprecated_fields">DEPRECATED FIELDS</a></h2>
+<p>
+</p>
+<h3><a name="build_requires">build_requires</a></h3>
+<p><em>(Deprecated in Spec 2)</em> [optional] {String}</p>
+<p>Replaced by <a href="#prereqs"><code>prereqs</code></a></p>
+<p>
+</p>
+<h3><a name="configure_requires">configure_requires</a></h3>
+<p><em>(Deprecated in Spec 2)</em> [optional] {String}</p>
+<p>Replaced by <a href="#prereqs"><code>prereqs</code></a></p>
+<p>
+</p>
+<h3><a name="conflicts">conflicts</a></h3>
+<p><em>(Deprecated in Spec 2)</em> [optional] {String}</p>
+<p>Replaced by <a href="#prereqs"><code>prereqs</code></a></p>
+<p>
+</p>
+<h3><a name="distribution_type">distribution_type</a></h3>
+<p><em>(Deprecated in Spec 2)</em> [optional] {String}</p>
+<p>This field indicated 'module' or 'script' but was considered
+meaningless, since many distributions are hybrids of several kinds of
+things.</p>
+<p>
+</p>
+<h3><a name="license_uri">license_uri</a></h3>
+<p><em>(Deprecated in Spec 1.2)</em> [optional] {URL}</p>
+<p>Replaced by <a href="#license"><code>license</code></a> in <code>resources</code></p>
+<p>
+</p>
+<h3><a name="private">private</a></h3>
+<p><em>(Deprecated in Spec 1.2)</em> [optional] {Map}</p>
+<p>This field has been renamed to <a href="#no_index">no_index</a>.</p>
+<p>
+</p>
+<h3><a name="recommends">recommends</a></h3>
+<p><em>(Deprecated in Spec 2)</em> [optional] {String}</p>
+<p>Replaced by <a href="#prereqs"><code>prereqs</code></a></p>
+<p>
+</p>
+<h3><a name="requires">requires</a></h3>
+<p><em>(Deprecated in Spec 2)</em> [optional] {String}</p>
+<p>Replaced by <a href="#prereqs"><code>prereqs</code></a></p>
+<p>
+</p>
+<hr />
+<h1><a name="version_numbers">VERSION NUMBERS</a></h1>
+<p>
+</p>
+<h2><a name="version_formats">Version Formats</a></h2>
+<p>This section defines the Version type, used by several fields in the
+CPAN Meta Spec.</p>
+<p>Version numbers must be treated as strings, not numbers.  For
+example, <code>1.200</code> <strong>must not</strong> be serialized as <code>1.2</code>.  Version
+comparison should be delegated to the Perl <a href="../../../lib/version.html">the version manpage</a> module, version
+0.80 or newer.</p>
+<p>Unless otherwise specified, version numbers <strong>must</strong> appear in one of two
+formats:</p>
+<dl>
+<dt><strong><a name="decimal_versions" class="item">Decimal versions</a></strong></dt>
+
+<dd>
+<p>Decimal versions are regular &quot;decimal numbers&quot;, with some limitations.
+They <strong>must</strong> be non-negative and <strong>must</strong> begin and end with a digit.  A
+single underscore <strong>may</strong> be included, but <strong>must</strong> be between two digits.
+They <strong>must not</strong> use exponential notation (&quot;1.23e-2&quot;).</p>
+<pre>
+   version =&gt; '1.234'       # OK
+   version =&gt; '1.23_04'     # OK</pre>
+<pre>
+   version =&gt; '1.23_04_05'  # Illegal
+   version =&gt; '1.'          # Illegal
+   version =&gt; '.1'          # Illegal</pre>
+</dd>
+<dt><strong><a name="dotted_integer_versions" class="item">Dotted-integer versions</a></strong></dt>
+
+<dd>
+<p>Dotted-integer (also known as dotted-decimal) versions consist of
+positive integers separated by full stop characters (i.e. &quot;dots&quot;,
+&quot;periods&quot; or &quot;decimal points&quot;).  This are equivalent in format to Perl
+&quot;v-strings&quot;, with some additional restrictions on form.  They must be
+given in &quot;normal&quot; form, which has a leading &quot;v&quot; character and at least
+three integer components.  To retain a one-to-one mapping with decimal
+versions, all components after the first <strong>should</strong> be restricted to the
+range 0 to 999.  The final component <strong>may</strong> be separated by an
+underscore character instead of a period.</p>
+<pre>
+   version =&gt; 'v1.2.3'      # OK
+   version =&gt; 'v1.2_3'      # OK
+   version =&gt; 'v1.2.3.4'    # OK
+   version =&gt; 'v1.2.3_4'    # OK
+   version =&gt; 'v2009.10.31' # OK</pre>
+<pre>
+   version =&gt; 'v1.2'          # Illegal
+   version =&gt; '1.2.3'         # Illegal
+   version =&gt; 'v1.2_3_4'      # Illegal
+   version =&gt; 'v1.2009.10.31' # Not recommended</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="version_ranges">Version Ranges</a></h2>
+<p>Some fields (prereq, optional_features) indicate the particular
+version(s) of some other module that may be required as a prerequisite.
+This section details the Version Range type used to provide this
+information.</p>
+<p>The simplest format for a Version Range is just the version
+number itself, e.g. <code>2.4</code>.  This means that <strong>at least</strong> version 2.4
+must be present.  To indicate that <strong>any</strong> version of a prerequisite is
+okay, even if the prerequisite doesn't define a version at all, use
+the version <code>0</code>.</p>
+<p>Alternatively, a version range <strong>may</strong> use the operators &lt; (less than),
+&lt;= (less than or equal), &gt; (greater than), &gt;= (greater than
+or equal), == (equal), and != (not equal).  For example, the
+specification <code>&lt; 2.0</code> means that any version of the prerequisite
+less than 2.0 is suitable.</p>
+<p>For more complicated situations, version specifications <strong>may</strong> be AND-ed
+together using commas.  The specification <code>&gt;= 1.2, != 1.5, &lt;
+2.0</code> indicates a version that must be <strong>at least</strong> 1.2, <strong>less than</strong> 2.0,
+and <strong>not equal to</strong> 1.5.</p>
+<p>
+</p>
+<hr />
+<h1><a name="prerequisites">PREREQUISITES</a></h1>
+<p>
+</p>
+<h2><a name="prereq_spec">Prereq Spec</a></h2>
+<p>The <a href="#prereqs"><code>prereqs</code></a> key in the top-level metadata and within
+<code>optional_features</code> define the relationship between a distribution and
+other packages.  The prereq spec structure is a hierarchical data
+structure which divides prerequisites into <em>Phases</em> of activity in the
+installation process and <em>Relationships</em> that indicate how
+prerequisites should be resolved.</p>
+<p>For example, to specify that <code>Data::Dumper</code> is <code>required</code> during the
+<a href="#test"><code>test</code></a> phase, this entry would appear in the distribution metadata:</p>
+<pre>
+  <span class="string">prereqs</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">test</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">requires</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+        <span class="string">'Data::Dumper'</span> <span class="operator">=&gt;</span> <span class="string">'2.00'</span>
+      <span class="operator">}</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h3><a name="phases">Phases</a></h3>
+<p>Requirements for regular use must be listed in the <a href="#runtime"><code>runtime</code></a> phase.
+Other requirements should be listed in the earliest stage in which they
+are required and consumers must accumulate and satisfy requirements
+across phases before executing the activity. For example, <a href="#build"><code>build</code></a>
+requirements must also be available during the <a href="#test"><code>test</code></a> phase.</p>
+<pre>
+  before action       requirements that must be met
+  ----------------    --------------------------------
+  perl Build.PL       configure
+  perl Makefile.PL</pre>
+<pre>
+  make                configure, runtime, build
+  Build</pre>
+<pre>
+  make test           configure, runtime, build, test
+  Build test</pre>
+<p>Consumers that install the distribution must ensure that
+<em>runtime</em> requirements are also installed and may install
+dependencies from other phases.</p>
+<pre>
+  after action        requirements that must be met
+  ----------------    --------------------------------
+  make install        runtime
+  Build install</pre>
+<dl>
+<dt><strong><a name="configure" class="item">configure</a></strong></dt>
+
+<dd>
+<p>The configure phase occurs before any dynamic configuration has been
+attempted.  Libraries required by the configure phase <strong>must</strong> be
+available for use before the distribution building tool has been
+executed.</p>
+</dd>
+<dt><strong><a name="build" class="item">build</a></strong></dt>
+
+<dd>
+<p>The build phase is when the distribution's source code is compiled (if
+necessary) and otherwise made ready for installation.</p>
+</dd>
+<dt><strong><a name="test" class="item">test</a></strong></dt>
+
+<dd>
+<p>The test phase is when the distribution's automated test suite is run.
+Any library that is needed only for testing and not for subsequent use
+should be listed here.</p>
+</dd>
+<dt><strong><a name="runtime" class="item">runtime</a></strong></dt>
+
+<dd>
+<p>The runtime phase refers not only to when the distribution's contents
+are installed, but also to its continued use.  Any library that is a
+prerequisite for regular use of this distribution should be indicated
+here.</p>
+</dd>
+<dt><strong><a name="develop" class="item">develop</a></strong></dt>
+
+<dd>
+<p>The develop phase's prereqs are libraries needed to work on the
+distribution's source code as its author does.  These tools might be
+needed to build a release tarball, to run author-only tests, or to
+perform other tasks related to developing new versions of the
+distribution.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h3><a name="relationships">Relationships</a></h3>
+<dl>
+<dt><strong><a name="requires" class="item">requires</a></strong></dt>
+
+<dd>
+<p>These dependencies <strong>must</strong> be installed for proper completion of the
+phase.</p>
+</dd>
+<dt><strong><a name="recommends" class="item">recommends</a></strong></dt>
+
+<dd>
+<p>Recommended dependencies are <em>strongly</em> encouraged and should be
+satisfied except in resource constrained environments.</p>
+</dd>
+<dt><strong><a name="suggests" class="item">suggests</a></strong></dt>
+
+<dd>
+<p>These dependencies are optional, but are suggested for enhanced operation
+of the described distribution.</p>
+</dd>
+<dt><strong><a name="conflicts" class="item">conflicts</a></strong></dt>
+
+<dd>
+<p>These libraries cannot be installed when the phase is in operation.
+This is a very rare situation, and the <a href="#conflicts"><code>conflicts</code></a> relationship should
+be used with great caution, or not at all.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="merging_and_resolving_prerequisites">Merging and Resolving Prerequisites</a></h2>
+<p>Whenever metadata consumers merge prerequisites, either from different
+phases or from <code>optional_features</code>, they should merged in a way which
+preserves the intended semantics of the prerequisite structure.  Generally,
+this means concatenating the version specifications using commas, as
+described in the <a href="#version_ranges">Version Ranges</a> section.</p>
+<p>Another subtle error that can occur in resolving prerequisites comes from
+the way that modules in prerequisites are indexed to distribution files on
+CPAN.  When a module is deleted from a distribution, prerequisites calling
+for that module could indicate an older distribution should installed,
+potentially overwriting files from a newer distribution.</p>
+<p>For example, as of Oct 31, 2009, the CPAN index file contained these
+module-distribution mappings:</p>
+<pre>
+  Class::MOP                   0.94  D/DR/DROLSKY/Class-MOP-0.94.tar.gz
+  Class::MOP::Class            0.94  D/DR/DROLSKY/Class-MOP-0.94.tar.gz
+  Class::MOP::Class::Immutable 0.04  S/ST/STEVAN/Class-MOP-0.36.tar.gz</pre>
+<p>Consider the case where &quot;Class::MOP&quot; 0.94 is installed.  If a
+distribution specified &quot;Class::MOP::Class::Immutable&quot; as a prerequisite,
+it could result in Class-MOP-0.36.tar.gz being installed, overwriting
+any files from Class-MOP-0.94.tar.gz.</p>
+<p>Consumers of metadata <strong>should</strong> test whether prerequisites would result
+in installed module files being &quot;downgraded&quot; to an older version and
+<strong>may</strong> warn users or ignore the prerequisite that would cause such a
+result.</p>
+<p>
+</p>
+<hr />
+<h1><a name="serialization">SERIALIZATION</a></h1>
+<p>Distribution metadata should be serialized (as a hashref) as
+JSON-encoded data and packaged with distributions as the file
+<em class="file">META.json</em>.</p>
+<p>In the past, the distribution metadata structure had been packed with
+distributions as <em class="file">META.yml</em>, a file in the YAML Tiny format (for which,
+see <a href="../../../YAML/Tiny.html">the YAML::Tiny manpage</a>).  Tools that consume distribution metadata from disk
+should be capable of loading <em class="file">META.yml</em>, but should prefer <em class="file">META.json</em>
+if both are found.</p>
+<p>
+</p>
+<hr />
+<h1><a name="notes_for_implementors">NOTES FOR IMPLEMENTORS</a></h1>
+<p>
+</p>
+<h2><a name="extracting_version_numbers_from_perl_modules">Extracting Version Numbers from Perl Modules</a></h2>
+<p>To get the version number from a Perl module, consumers should use the
+<code>MM-&gt;parse_version($file)</code> method provided by
+<a href="../../../lib/ExtUtils/MakeMaker.html">the ExtUtils::MakeMaker manpage</a> or <a href="../../../lib/Module/Metadata.html">the Module::Metadata manpage</a>.  For example, for the
+module given by <code>$mod</code>, the version may be retrieved in one of the
+following ways:</p>
+<pre>
+  <span class="comment"># via ExtUtils::MakeMaker</span>
+  <span class="keyword">my</span> <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">MM</span><span class="operator">-&gt;</span><span class="variable">_installed_file_for_module</span><span class="operator">(</span><span class="variable">$mod</span><span class="operator">);</span>
+  <span class="keyword">my</span> <span class="variable">$version</span> <span class="operator">=</span> <span class="variable">MM</span><span class="operator">-&gt;</span><span class="variable">parse_version</span><span class="operator">(</span><span class="variable">$file</span><span class="operator">)</span>
+</pre>
+<p>The private <code>_installed_file_for_module</code> method may be replaced with
+other methods for locating a module in <a href="../../../lib/pods/perlvar.html#_inc"><code>@INC</code></a>.</p>
+<pre>
+  <span class="comment"># via Module::Metadata</span>
+  <span class="keyword">my</span> <span class="variable">$info</span> <span class="operator">=</span> <span class="variable">Module::Metadata</span><span class="operator">-&gt;</span><span class="variable">new_from_module</span><span class="operator">(</span><span class="variable">$mod</span><span class="operator">);</span>
+  <span class="keyword">my</span> <span class="variable">$version</span> <span class="operator">=</span> <span class="variable">$info</span><span class="operator">-&gt;</span><span class="variable">version</span><span class="operator">;</span>
+</pre>
+<p>If only a filename is available, the following approach may be used:</p>
+<pre>
+  <span class="comment"># via Module::Build</span>
+  <span class="keyword">my</span> <span class="variable">$info</span> <span class="operator">=</span> <span class="variable">Module::Metadata</span><span class="operator">-&gt;</span><span class="variable">new_from_file</span><span class="operator">(</span><span class="variable">$file</span><span class="operator">);</span>
+  <span class="keyword">my</span> <span class="variable">$version</span> <span class="operator">=</span> <span class="variable">$info</span><span class="operator">-&gt;</span><span class="variable">version</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="comparing_version_numbers">Comparing Version Numbers</a></h2>
+<p>The <a href="../../../lib/version.html">the version manpage</a> module provides the most reliable way to compare version
+numbers in all the various ways they might be provided or might exist
+within modules.  Given two strings containing version numbers, <code>$v1</code> and
+<code>$v2</code>, they should be converted to <a href="#version"><code>version</code></a> objects before using
+ordinary comparison operators.  For example:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">version</span><span class="operator">;</span>
+  <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">version</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$v1</span><span class="operator">)</span> <span class="operator">&lt;=&gt;</span> <span class="variable">version</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$v2</span><span class="operator">)</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">print</span> <span class="string">"Versions are not equal\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>If the only comparison needed is whether an installed module is of a
+sufficiently high version, a direct test may be done using the string
+form of <a href="../../../lib/pods/perlfunc.html#eval"><code>eval</code></a> and the <a href="../../../lib/pods/perlfunc.html#use"><code>use</code></a> function.  For example, for module <code>$mod</code>
+and version prerequisite <code>$prereq</code>:</p>
+<pre>
+  <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">eval</span> <span class="string">"use </span><span class="variable">$mod</span><span class="string"> </span><span class="variable">$prereq</span><span class="string"> (); 1"</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="keyword">print</span> <span class="string">"Module </span><span class="variable">$mod</span><span class="string"> version is OK.\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>If the values of <code>$mod</code> and <code>$prereq</code> have not been scrubbed, however,
+this presents security implications.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>CPAN, <a href="http://www.cpan.org/">http://www.cpan.org/</a></p>
+<p>CPAN.pm, <a href="http://search.cpan.org/dist/CPAN/">http://search.cpan.org/dist/CPAN/</a></p>
+<p>CPANPLUS, <a href="http://search.cpan.org/dist/CPANPLUS/">http://search.cpan.org/dist/CPANPLUS/</a></p>
+<p>ExtUtils::MakeMaker, <a href="http://search.cpan.org/dist/ExtUtils-MakeMaker/">http://search.cpan.org/dist/ExtUtils-MakeMaker/</a></p>
+<p>Module::Build, <a href="http://search.cpan.org/dist/Module-Build/">http://search.cpan.org/dist/Module-Build/</a></p>
+<p>Module::Install, <a href="http://search.cpan.org/dist/Module-Install/">http://search.cpan.org/dist/Module-Install/</a></p>
+<p>JSON, <a href="http://json.org/">http://json.org/</a></p>
+<p>YAML, <a href="http://www.yaml.org/">http://www.yaml.org/</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="contributors">CONTRIBUTORS</a></h1>
+<p>Ken Williams wrote the original CPAN Meta Spec (also known as the
+&quot;META.yml spec&quot;) in 2003 and maintained it through several revisions
+with input from various members of the community.  In 2005, Randy
+Sims redrafted it from HTML to POD for the version 1.2 release.  Ken
+continued to maintain the spec through version 1.4.</p>
+<p>In late 2009, David Golden organized the version 2 proposal review
+process.  David and Ricardo Signes drafted the final version 2 spec
+in April 2010 based on the version 1.4 spec and patches contributed
+during the proposal process.</p>
+<p>Several others have contributed patches over the years.  The full list
+of contributors in the repository history currently includes:</p>
+<pre>
+  2shortplanks
+  Avar Arnfjord Bjarmason
+  Christopher J. Madsen
+  Damyan Ivanov
+  David Golden
+  Eric Wilhelm
+  Ken Williams
+  Lars DIECKOW
+  Michael G. Schwern
+  Randy Sims
+  Ricardo Signes</pre>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<ul>
+<li>
+<p>David Golden &lt;<a href="mailto:dagolden@cpan.org">dagolden@cpan.org</a>&gt;</p>
+</li>
+<li>
+<p>Ricardo Signes &lt;<a href="mailto:rjbs@cpan.org">rjbs@cpan.org</a>&gt;</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2010 by David Golden and Ricardo Signes.</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

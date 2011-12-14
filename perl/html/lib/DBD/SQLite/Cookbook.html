@@ -1,0 +1,264 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>DBD::SQLite::Cookbook - The DBD::SQLite Cookbook</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>DBD::SQLite::Cookbook - The DBD::SQLite Cookbook</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#aggregate_functions">AGGREGATE FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#variance">Variance</a></li>
+		<li><a href="#variance__memory_efficient_">Variance (Memory Efficient)</a></li>
+		<li><a href="#variance__highly_scalable_">Variance (Highly Scalable)</a></li>
+	</ul>
+
+	<li><a href="#fts3_fulltext_indexing">FTS3 fulltext indexing</a></li>
+	<ul>
+
+		<li><a href="#sparing_database_disk_space">Sparing database disk space</a></li>
+	</ul>
+
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#to_do">TO DO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>DBD::SQLite::Cookbook - The DBD::SQLite Cookbook</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This is the <a href="../../../lib/DBD/SQLite.html">the DBD::SQLite manpage</a> cookbook.</p>
+<p>It is intended to provide a place to keep a variety of functions and
+formals for use in callback APIs in <a href="../../../lib/DBD/SQLite.html">the DBD::SQLite manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="aggregate_functions">AGGREGATE FUNCTIONS</a></h1>
+<p>
+</p>
+<h2><a name="variance">Variance</a></h2>
+<p>This is a simple aggregate function which returns a variance. It is
+adapted from an example implementation in pysqlite.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">variance</span><span class="operator">;</span>
+  
+  <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span> <span class="keyword">bless</span> <span class="operator">[]</span><span class="operator">,</span> <span class="keyword">shift</span><span class="operator">;</span> <span class="operator">}</span>
+  
+  <span class="keyword">sub</span><span class="variable"> step </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$value</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+  
+      <span class="keyword">push</span> <span class="variable">@$self</span><span class="operator">,</span> <span class="variable">$value</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  
+  <span class="keyword">sub</span><span class="variable"> finalize </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+  
+      <span class="keyword">my</span> <span class="variable">$n</span> <span class="operator">=</span> <span class="variable">@$self</span><span class="operator">;</span>
+  
+      <span class="comment"># Variance is NULL unless there is more than one row</span>
+      <span class="keyword">return</span> <span class="keyword">undef</span> <span class="keyword">unless</span> <span class="variable">$n</span> <span class="operator">||</span> <span class="variable">$n</span> <span class="operator">==</span> <span class="number">1</span><span class="operator">;</span>
+  
+      <span class="keyword">my</span> <span class="variable">$mu</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$v</span> <span class="operator">(</span> <span class="variable">@$self</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$mu</span> <span class="operator">+=</span> <span class="variable">$v</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="variable">$mu</span> <span class="operator">/=</span> <span class="variable">$n</span><span class="operator">;</span>
+  
+      <span class="keyword">my</span> <span class="variable">$sigma</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$v</span> <span class="operator">(</span> <span class="variable">@$self</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$sigma</span> <span class="operator">+=</span> <span class="operator">(</span><span class="variable">$x</span> <span class="operator">-</span> <span class="variable">$mu</span><span class="operator">)**</span><span class="number">2</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="variable">$sigma</span> <span class="operator">=</span> <span class="variable">$sigma</span> <span class="operator">/</span> <span class="operator">(</span><span class="variable">$n</span> <span class="operator">-</span> <span class="number">1</span><span class="operator">);</span>
+  
+      <span class="keyword">return</span> <span class="variable">$sigma</span><span class="operator">;</span>
+  <span class="operator">}</span>
+  
+  <span class="comment"># NOTE: If you use an older DBI (&lt; 1.608),</span>
+  <span class="comment"># use $dbh-&gt;func(..., "create_aggregate") instead.</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">sqlite_create_aggregate</span><span class="operator">(</span> <span class="string">"variance"</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="string">'variance'</span> <span class="operator">);</span>
+</pre>
+<p>The function can then be used as:</p>
+<pre>
+  <span class="variable">SELECT</span> <span class="variable">group_name</span><span class="operator">,</span> <span class="variable">variance</span><span class="operator">(</span><span class="variable">score</span><span class="operator">)</span>
+  <span class="variable">FROM</span> <span class="variable">results</span>
+  <span class="variable">GROUP</span> <span class="variable">BY</span> <span class="variable">group_name</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="variance__memory_efficient_">Variance (Memory Efficient)</a></h2>
+<p>A more efficient variance function, optimized for memory usage at the
+expense of precision:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">variance2</span><span class="operator">;</span>
+  
+  <span class="keyword">my</span> <span class="variable">$sum</span>   <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">%hash</span><span class="operator">;</span>
+  
+  <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span> <span class="keyword">bless</span> <span class="operator">[]</span><span class="operator">,</span> <span class="keyword">shift</span><span class="operator">;</span> <span class="operator">}</span>
+  
+  <span class="keyword">sub</span><span class="variable"> step </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$value</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+  
+      <span class="comment"># by truncating and hashing, we can comsume many more data points</span>
+      <span class="variable">$value</span> <span class="operator">=</span> <span class="keyword">int</span><span class="operator">(</span><span class="variable">$value</span><span class="operator">);</span> <span class="comment"># change depending on need for precision</span>
+                            <span class="comment"># use sprintf for arbitrary fp precision</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">defined</span> <span class="variable">$hash</span><span class="operator">{</span><span class="variable">$value</span><span class="operator">}</span><span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$hash</span><span class="operator">{</span><span class="variable">$value</span><span class="operator">}</span><span class="operator">++;</span>
+      <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+          <span class="variable">$hash</span><span class="operator">{</span><span class="variable">$value</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="variable">$sum</span> <span class="operator">+=</span> <span class="variable">$value</span><span class="operator">;</span>
+      <span class="variable">$count</span><span class="operator">++;</span>
+  <span class="operator">}</span>
+  
+  <span class="keyword">sub</span><span class="variable"> finalize </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+  
+      <span class="comment"># Variance is NULL unless there is more than one row</span>
+      <span class="keyword">return</span> <span class="keyword">undef</span> <span class="keyword">unless</span> <span class="variable">$count</span> <span class="operator">&gt;</span> <span class="number">1</span><span class="operator">;</span>
+  
+      <span class="comment"># calculate avg</span>
+      <span class="keyword">my</span> <span class="variable">$mu</span> <span class="operator">=</span> <span class="variable">$sum</span> <span class="operator">/</span> <span class="variable">$count</span><span class="operator">;</span>
+  
+      <span class="keyword">my</span> <span class="variable">$sigma</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$h</span> <span class="operator">(</span><span class="keyword">keys</span> <span class="variable">%hash</span><span class="operator">)</span> <span class="operator">{</span>
+          <span class="variable">$sigma</span> <span class="operator">+=</span> <span class="operator">((</span><span class="variable">$h</span> <span class="operator">-</span> <span class="variable">$mu</span><span class="operator">)**</span><span class="number">2</span><span class="operator">)</span> <span class="operator">*</span> <span class="variable">$hash</span><span class="operator">{</span><span class="variable">$h</span><span class="operator">}</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="variable">$sigma</span> <span class="operator">=</span> <span class="variable">$sigma</span> <span class="operator">/</span> <span class="operator">(</span><span class="variable">$count</span> <span class="operator">-</span> <span class="number">1</span><span class="operator">);</span>
+  
+      <span class="keyword">return</span> <span class="variable">$sigma</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>The function can then be used as:</p>
+<pre>
+  <span class="variable">SELECT</span> <span class="variable">group_name</span><span class="operator">,</span> <span class="variable">variance2</span><span class="operator">(</span><span class="variable">score</span><span class="operator">)</span>
+  <span class="variable">FROM</span> <span class="variable">results</span>
+  <span class="variable">GROUP</span> <span class="variable">BY</span> <span class="variable">group_name</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="variance__highly_scalable_">Variance (Highly Scalable)</a></h2>
+<p>A third variable implementation, designed for arbitrarily large data sets:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">variance</span><span class="operator">;</span>
+  
+  <span class="keyword">my</span> <span class="variable">$mu</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$S</span> <span class="operator">=</span> <span class="number">0</span>
+  
+  <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span> <span class="keyword">bless</span> <span class="operator">[]</span><span class="operator">,</span> <span class="keyword">shift</span><span class="operator">;</span> <span class="operator">}</span>
+  
+  <span class="keyword">sub</span><span class="variable"> step </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$value</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="variable">$count</span><span class="operator">++;</span>
+      <span class="variable">$delta</span> <span class="operator">=</span> <span class="variable">$value</span> <span class="operator">-</span> <span class="variable">$mu</span><span class="operator">;</span>
+      <span class="variable">$mu</span> <span class="operator">=</span> <span class="variable">$mu</span> <span class="operator">+</span> <span class="variable">$delta</span><span class="operator">/</span><span class="variable">$count</span>
+      <span class="variable">$S</span> <span class="operator">=</span> <span class="variable">$S</span> <span class="operator">+</span> <span class="variable">$delta</span><span class="operator">*(</span><span class="variable">$value</span> <span class="operator">-</span> <span class="variable">$mu</span><span class="operator">);</span>
+  <span class="operator">}</span>
+  
+  <span class="keyword">sub</span><span class="variable"> finalize </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$S</span> <span class="operator">/</span> <span class="operator">(</span><span class="variable">$count</span> <span class="operator">-</span> <span class="number">1</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>The function can then be used as:</p>
+<pre>
+  <span class="variable">SELECT</span> <span class="variable">group_name</span><span class="operator">,</span> <span class="variable">variance3</span><span class="operator">(</span><span class="variable">score</span><span class="operator">)</span>
+  <span class="variable">FROM</span> <span class="variable">results</span>
+  <span class="variable">GROUP</span> <span class="variable">BY</span> <span class="variable">group_name</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="fts3_fulltext_indexing">FTS3 fulltext indexing</a></h1>
+<p>
+</p>
+<h2><a name="sparing_database_disk_space">Sparing database disk space</a></h2>
+<p>As explained in <a href="http://www.sqlite.org/fts3.html#section_6">http://www.sqlite.org/fts3.html#section_6</a>, each
+FTS3 table <a href="../../../lib/pods/perlrun.html#t"><code>t</code></a> is stored internally within three regular tables
+<code>t_content</code>, <code>t_segments</code> and <code>t_segdir</code>.  The last two
+tables contain the fulltext index.  The first table <code>t_content</code>
+stores the complete documents being indexed ... but if copies of the
+same documents are already stored somewhere else, or can be computed
+from external resources (for example as HTML or MsWord files in the
+filesystem), then this is quite a waste of space. SQLite itself only
+needs the <code>t_content</code> table for implementing the <code>offsets()</code> and
+<code>snippet()</code> functions, which are not always usable anyway (in particular
+when using utf8 characters greater than 255).</p>
+<p>So an alternative strategy is to use SQLite only for the fulltext
+index and metadata, and to keep the full documents outside of SQLite :
+to do so, after each insert or update in the FTS3 table, do an update
+in the <code>t_content</code> table, setting the content column(s) to
+NULL. Of course your application will need an algorithm for finding
+the external resource corresponding to any <em>docid</em> stored within
+SQLite. Furthermore, SQLite <code>offsets()</code> and <code>snippet()</code> functions
+cannot be used, so if such functionality is needed, it has to be
+directly programmed within the Perl application.
+In short, this strategy is really a hack, because FTS3 was not originally
+programmed with that behaviour in mind; however it is workable
+and has a strong impact on the size of the database file.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>Bugs should be reported via the CPAN bug tracker at</p>
+<p><a href="http://rt.cpan.org/NoAuth/ReportBug.html?Queue=DBD-SQLite">http://rt.cpan.org/NoAuth/ReportBug.html</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="to_do">TO DO</a></h1>
+<p>* Add more and varied cookbook recipes, until we have enough to
+turn them into a separate CPAN distribution.</p>
+<p>* Create a series of tests scripts that validate the cookbook recipies.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Adam Kennedy &lt;<a href="mailto:adamk@cpan.org">adamk@cpan.org</a>&gt;</p>
+<p>Laurent Dami &lt;<a href="mailto:dami@cpan.org">dami@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2009 - 2011 Adam Kennedy.</p>
+<p>This program is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.</p>
+<p>The full text of the license can be found in the
+LICENSE file included with this module.</p>
+
+</body>
+
+</html>

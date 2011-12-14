@@ -1,0 +1,117 @@
+#!perl -w
+use strict;
+use warnings;
+use CGI;
+use CGI::Carp 'fatalsToBrowser';
+
+
+our %wordlist;
+our @checkwords;
+
+BEGIN {
+    # a mess to get around lack of vars provided by iPlanet
+    my $file = __FILE__;
+    $file =~ s/\//\\/g;
+    $file =~ /(.*)[\/|\\].*?[\/|\\]/;
+    my $datafile = "$1\\words";
+
+    if (open my $DATA, "<", $datafile) {
+	while (<$DATA>) {
+	    chomp;
+	    $wordlist{$_} = 1;
+	}
+	close $DATA;
+    }
+    else {
+	die "Unable to open the wordlist file '$datafile': $!\n";
+    }
+
+    @checkwords = (
+		    "Aarhus","Aaron","Ababa","aback",
+		    "abaft","abandon","abandoned",
+		    "abandoning","abandonment",
+		    "abandons","abase","abased",
+		    "abasement","abasements",
+		    "abases","abash","abashed","abashes",
+		    "abashing","abasing","abate","abated",
+		    "abatement","abatements","abater",
+		    "abates","abating","Abba",
+		    "abbe","abbey","abbeys","abbot",
+		    "abbots","Abbott",
+		    "abbreviate","abbreviated",
+		    "abbreviates","abbreviating",
+		    "abbreviation","abbreviations",
+		    "Abby","abdomen","abdomens",
+		    "abdominal","abduct","abducted",
+		    "abduction","abductions","abductor",
+		    "abductors","abducts","Abe","abed",
+		    "Abel","Abelian","Abelson","Aberdeen",
+		    "Abernathy","aberrant","aberration",
+		    "aberrations","abet","abets",
+		    "abetted","abetter",
+		    "abetting","abeyance","abhor",
+		    "abhorred","abhorrent","abhorrer",
+		    "abhorring","abhors","abide","abided",
+		    "abides","abiding","Abidjan","Abigail",
+		    "Abilene","abilities","ability","abject",
+		    "abjection","abjections","abjectly",
+		    "abjectness","abjure","abjured",
+		    "abjures","abjuring","ablate",
+		    "ablated","ablates","ablating",
+		    "ablation","ablative","ablaze",
+		    "able","abler",""
+		   );
+}
+
+sub spell_check {
+    my $word = shift;
+    return exists $wordlist{$word};
+}
+
+
+
+my $cgi = new CGI;
+my $counter = $cgi->param('counter') || 1;
+if ($counter < 1) { $counter = 1; }
+my $next = $counter + 1;
+
+my $url = "spell.pl?counter=$next";
+if ($next > 25) {
+    $url = "frame_done.plex?runs=25";
+}
+
+
+# we never spell check $checkwords[0] :(
+# sanity check: make sure the word is actually in the wordlist
+unless ( spell_check($checkwords[$counter]) ) {
+    die "$checkwords[$counter] not found in dictionary?";
+}
+
+print "Content-Type: text/html\r\n\r\n";
+print <<EOF;
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<HTML>
+<HEAD>
+	<TITLE>PerlEx Performance</TITLE>
+
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<META HTTP-EQUIV="Refresh" CONTENT="0; URL=$url">
+</HEAD>
+
+<BODY bgcolor="00ff00">
+<font face="verdana, arial, helvetica size="2">
+<center>
+<H1>
+<font size="+9">$counter</font>
+<p>
+Perl CGI
+<p>
+</H1>
+</center>
+</font>
+</BODY>
+</HTML>
+
+EOF
+

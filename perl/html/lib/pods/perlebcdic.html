@@ -1,0 +1,1554 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlebcdic - Considerations for running Perl on EBCDIC platforms</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlebcdic - Considerations for running Perl on EBCDIC platforms</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#common_character_code_sets">COMMON CHARACTER CODE SETS</a></li>
+	<ul>
+
+		<li><a href="#ascii">ASCII</a></li>
+		<li><a href="#iso_8859">ISO 8859</a></li>
+		<li><a href="#latin_1__iso_8859_1_">Latin 1 (ISO 8859-1)</a></li>
+		<li><a href="#ebcdic">EBCDIC</a></li>
+		<li><a href="#the_13_variant_characters">The 13 variant characters</a></li>
+		<li><a href="#0037">0037</a></li>
+		<li><a href="#1047">1047</a></li>
+		<li><a href="#posix_bc">POSIX-BC</a></li>
+		<li><a href="#unicode_code_points_versus_ebcdic_code_points">Unicode code points versus EBCDIC code points</a></li>
+		<li><a href="#remaining_perl_unicode_problems_in_ebcdic">Remaining Perl Unicode problems in EBCDIC</a></li>
+		<li><a href="#unicode_and_utf">Unicode and UTF</a></li>
+		<li><a href="#using_encode">Using Encode</a></li>
+	</ul>
+
+	<li><a href="#single_octet_tables">SINGLE OCTET TABLES</a></li>
+	<li><a href="#identifying_character_code_sets">IDENTIFYING CHARACTER CODE SETS</a></li>
+	<li><a href="#conversions">CONVERSIONS</a></li>
+	<ul>
+
+		<li><a href="#tr___">tr///</a></li>
+		<li><a href="#iconv">iconv</a></li>
+		<li><a href="#c_rtl">C RTL</a></li>
+	</ul>
+
+	<li><a href="#operator_differences">OPERATOR DIFFERENCES</a></li>
+	<li><a href="#function_differences">FUNCTION DIFFERENCES</a></li>
+	<li><a href="#regular_expression_differences">REGULAR EXPRESSION DIFFERENCES</a></li>
+	<li><a href="#sockets">SOCKETS</a></li>
+	<li><a href="#sorting">SORTING</a></li>
+	<ul>
+
+		<li><a href="#ignore_ascii_vs__ebcdic_sort_differences_">Ignore ASCII vs. EBCDIC sort differences.</a></li>
+		<li><a href="#mono_case_then_sort_data_">MONO CASE then sort data.</a></li>
+		<li><a href="#convert__sort_data__then_re_convert_">Convert, sort data, then re convert.</a></li>
+		<li><a href="#perform_sorting_on_one_type_of_platform_only_">Perform sorting on one type of platform only.</a></li>
+	</ul>
+
+	<li><a href="#transformation_formats">TRANSFORMATION FORMATS</a></li>
+	<ul>
+
+		<li><a href="#url_decoding_and_encoding">URL decoding and encoding</a></li>
+		<li><a href="#uu_encoding_and_decoding">uu encoding and decoding</a></li>
+		<li><a href="#quoted_printable_encoding_and_decoding">Quoted-Printable encoding and decoding</a></li>
+		<li><a href="#caesarean_ciphers">Caesarean ciphers</a></li>
+	</ul>
+
+	<li><a href="#hashing_order_and_checksums">Hashing order and checksums</a></li>
+	<li><a href="#i18n_and_l10n">I18N AND L10N</a></li>
+	<li><a href="#multi_octet_character_sets">MULTI-OCTET CHARACTER SETS</a></li>
+	<li><a href="#os_issues">OS ISSUES</a></li>
+	<ul>
+
+		<li><a href="#os_400">OS/400</a></li>
+		<li><a href="#os_390__z_os">OS/390, z/OS</a></li>
+		<li><a href="#vm_esa">VM/ESA?</a></li>
+		<li><a href="#posix_bc">POSIX-BC?</a></li>
+	</ul>
+
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#references">REFERENCES</a></li>
+	<li><a href="#history">HISTORY</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perlebcdic - Considerations for running Perl on EBCDIC platforms</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>An exploration of some of the issues facing Perl programmers
+on EBCDIC based computers.  We do not cover localization, 
+internationalization, or multi-byte character set issues other
+than some discussion of UTF-8 and UTF-EBCDIC.</p>
+<p>Portions that are still incomplete are marked with XXX.</p>
+<p>Perl used to work on EBCDIC machines, but there are now areas of the code where
+it doesn't.  If you want to use Perl on an EBCDIC machine, please let us know
+by sending mail to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="common_character_code_sets">COMMON CHARACTER CODE SETS</a></h1>
+<p>
+</p>
+<h2><a name="ascii">ASCII</a></h2>
+<p>The American Standard Code for Information Interchange (ASCII or US-ASCII) is a
+set of
+integers running from 0 to 127 (decimal) that imply character 
+interpretation by the display and other systems of computers.  
+The range 0..127 can be covered by setting the bits in a 7-bit binary 
+digit, hence the set is sometimes referred to as &quot;7-bit ASCII&quot;.  
+ASCII was described by the American National Standards Institute 
+document ANSI X3.4-1986.  It was also described by ISO 646:1991 
+(with localization for currency symbols).  The full ASCII set is 
+given in the table below as the first 128 elements.  Languages that 
+can be written adequately with the characters in ASCII include 
+English, Hawaiian, Indonesian, Swahili and some Native American 
+languages.</p>
+<p>There are many character sets that extend the range of integers
+from 0..2**7-1 up to 2**8-1, or 8 bit bytes (octets if you prefer).
+One common one is the ISO 8859-1 character set.</p>
+<p>
+</p>
+<h2><a name="iso_8859">ISO 8859</a></h2>
+<p>The ISO 8859-$n are a collection of character code sets from the 
+International Organization for Standardization (ISO) each of which 
+adds characters to the ASCII set that are typically found in European 
+languages many of which are based on the Roman, or Latin, alphabet.</p>
+<p>
+</p>
+<h2><a name="latin_1__iso_8859_1_">Latin 1 (ISO 8859-1)</a></h2>
+<p>A particular 8-bit extension to ASCII that includes grave and acute 
+accented Latin characters.  Languages that can employ ISO 8859-1 
+include all the languages covered by ASCII as well as Afrikaans, 
+Albanian, Basque, Catalan, Danish, Faroese, Finnish, Norwegian, 
+Portuguese, Spanish, and Swedish.  Dutch is covered albeit without 
+the ij ligature.  French is covered too but without the oe ligature. 
+German can use ISO 8859-1 but must do so without German-style
+quotation marks.  This set is based on Western European extensions 
+to ASCII and is commonly encountered in world wide web work.
+In IBM character code set identification terminology ISO 8859-1 is
+also known as CCSID 819 (or sometimes 0819 or even 00819).</p>
+<p>
+</p>
+<h2><a name="ebcdic">EBCDIC</a></h2>
+<p>The Extended Binary Coded Decimal Interchange Code refers to a 
+large collection of single- and multi-byte coded character sets that are
+different from ASCII or ISO 8859-1 and are all slightly different from each
+other; they typically run on host computers.  The EBCDIC encodings derive from
+8-bit byte extensions of Hollerith punched card encodings.  The layout on the
+cards was such that high bits were set for the upper and lower case alphabet
+characters [a-z] and [A-Z], but there were gaps within each Latin alphabet
+range.</p>
+<p>Some IBM EBCDIC character sets may be known by character code set 
+identification numbers (CCSID numbers) or code page numbers.</p>
+<p>Perl can be compiled on platforms that run any of three commonly used EBCDIC
+character sets, listed below.</p>
+<p>
+</p>
+<h2><a name="the_13_variant_characters">The 13 variant characters</a></h2>
+<p>Among IBM EBCDIC character code sets there are 13 characters that
+are often mapped to different integer values.  Those characters
+are known as the 13 &quot;variant&quot; characters and are:</p>
+<pre>
+    <span class="operator">\</span> <span class="operator">[</span> <span class="operator">]</span> <span class="operator">{</span> <span class="operator">}</span> <span class="operator">^</span> <span class="operator">~</span> <span class="operator">!</span> <span class="comment"># | $ @ `</span>
+</pre>
+<p>When Perl is compiled for a platform, it looks at some of these characters to
+guess which EBCDIC character set the platform uses, and adapts itself
+accordingly to that platform.  If the platform uses a character set that is not
+one of the three Perl knows about, Perl will either fail to compile, or
+mistakenly and silently choose one of the three.
+They are:</p>
+<p>
+</p>
+<h2><a name="0037">0037</a></h2>
+<p>Character code set ID 0037 is a mapping of the ASCII plus Latin-1 
+characters (i.e. ISO 8859-1) to an EBCDIC set.  0037 is used 
+in North American English locales on the OS/400 operating system 
+that runs on AS/400 computers.  CCSID 0037 differs from ISO 8859-1 
+in 237 places, in other words they agree on only 19 code point values.</p>
+<p>
+</p>
+<h2><a name="1047">1047</a></h2>
+<p>Character code set ID 1047 is also a mapping of the ASCII plus 
+Latin-1 characters (i.e. ISO 8859-1) to an EBCDIC set.  1047 is 
+used under Unix System Services for OS/390 or z/OS, and OpenEdition 
+for VM/ESA.  CCSID 1047 differs from CCSID 0037 in eight places.</p>
+<p>
+</p>
+<h2><a name="posix_bc">POSIX-BC</a></h2>
+<p>The EBCDIC code page in use on Siemens' BS2000 system is distinct from
+1047 and 0037.  It is identified below as the POSIX-BC set.</p>
+<p>
+</p>
+<h2><a name="unicode_code_points_versus_ebcdic_code_points">Unicode code points versus EBCDIC code points</a></h2>
+<p>In Unicode terminology a <em>code point</em> is the number assigned to a
+character: for example, in EBCDIC the character &quot;A&quot; is usually assigned
+the number 193.  In Unicode the character &quot;A&quot; is assigned the number 65.
+This causes a problem with the semantics of the pack/unpack &quot;U&quot;, which
+are supposed to pack Unicode code points to characters and back to numbers.
+The problem is: which code points to use for code points less than 256?
+(for 256 and over there's no problem: Unicode code points are used)
+In EBCDIC, for the low 256 the EBCDIC code points are used.  This
+means that the equivalences</p>
+<pre>
+    pack(&quot;U&quot;, ord($character)) eq $character
+    unpack(&quot;U&quot;, $character) == ord $character</pre>
+<p>will hold.  (If Unicode code points were applied consistently over
+all the possible code points, pack(&quot;U&quot;,ord(&quot;A&quot;)) would in EBCDIC
+equal <em>A with acute</em> or chr(101), and unpack(&quot;U&quot;, &quot;A&quot;) would equal
+65, or <em>non-breaking space</em>, not 193, or ord &quot;A&quot;.)</p>
+<p>
+</p>
+<h2><a name="remaining_perl_unicode_problems_in_ebcdic">Remaining Perl Unicode problems in EBCDIC</a></h2>
+<ul>
+<li>
+<p>Many of the remaining problems seem to be related to case-insensitive matching</p>
+</li>
+<li>
+<p>The extensions Unicode::Collate and Unicode::Normalized are not
+supported under EBCDIC, likewise for the encoding pragma.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="unicode_and_utf">Unicode and UTF</a></h2>
+<p>UTF stands for <code>Unicode Transformation Format</code>.
+UTF-8 is an encoding of Unicode into a sequence of 8-bit byte chunks, based on
+ASCII and Latin-1.
+The length of a sequence required to represent a Unicode code point
+depends on the ordinal number of that code point,
+with larger numbers requiring more bytes.
+UTF-EBCDIC is like UTF-8, but based on EBCDIC.</p>
+<p>You may see the term <code>invariant</code> character or code point.
+This simply means that the character has the same numeric
+value when encoded as when not.
+(Note that this is a very different concept from <a href="#the_13_variant_characters">The 13 variant characters</a>
+mentioned above.)
+For example, the ordinal value of 'A' is 193 in most EBCDIC code pages,
+and also is 193 when encoded in UTF-EBCDIC.
+All variant code points occupy at least two bytes when encoded.
+In UTF-8, the code points corresponding to the lowest 128
+ordinal numbers (0 - 127: the ASCII characters) are invariant.
+In UTF-EBCDIC, there are 160 invariant characters.
+(If you care, the EBCDIC invariants are those characters
+which have ASCII equivalents, plus those that correspond to
+the C1 controls (80..9f on ASCII platforms).)</p>
+<p>A string encoded in UTF-EBCDIC may be longer (but never shorter) than
+one encoded in UTF-8.</p>
+<p>
+</p>
+<h2><a name="using_encode">Using Encode</a></h2>
+<p>Starting from Perl 5.8 you can use the standard new module Encode
+to translate from EBCDIC to Latin-1 code points.
+Encode knows about more EBCDIC character sets than Perl can currently
+be compiled to run on.</p>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Encode</span> <span class="string">'from_to'</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="keyword">my</span> <span class="variable">%ebcdic</span> <span class="operator">=</span> <span class="operator">(</span> <span class="number">176</span> <span class="operator">=&gt;</span> <span class="string">'cp37'</span><span class="operator">,</span> <span class="number">95</span> <span class="operator">=&gt;</span> <span class="string">'cp1047'</span><span class="operator">,</span> <span class="number">106</span> <span class="operator">=&gt;</span> <span class="string">'posix-bc'</span> <span class="operator">);</span>
+</pre>
+<pre>
+   <span class="comment"># $a is in EBCDIC code points</span>
+   <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$a</span><span class="operator">,</span> <span class="variable">$ebcdic</span><span class="operator">{</span><span class="keyword">ord</span> <span class="string">'^'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">'latin1'</span><span class="operator">);</span>
+   <span class="comment"># $a is ISO 8859-1 code points</span>
+</pre>
+<p>and from Latin-1 code points to EBCDIC code points</p>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Encode</span> <span class="string">'from_to'</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="keyword">my</span> <span class="variable">%ebcdic</span> <span class="operator">=</span> <span class="operator">(</span> <span class="number">176</span> <span class="operator">=&gt;</span> <span class="string">'cp37'</span><span class="operator">,</span> <span class="number">95</span> <span class="operator">=&gt;</span> <span class="string">'cp1047'</span><span class="operator">,</span> <span class="number">106</span> <span class="operator">=&gt;</span> <span class="string">'posix-bc'</span> <span class="operator">);</span>
+</pre>
+<pre>
+   <span class="comment"># $a is ISO 8859-1 code points</span>
+   <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$a</span><span class="operator">,</span> <span class="string">'latin1'</span><span class="operator">,</span> <span class="variable">$ebcdic</span><span class="operator">{</span><span class="keyword">ord</span> <span class="string">'^'</span><span class="operator">}</span><span class="operator">);</span>
+   <span class="comment"># $a is in EBCDIC code points</span>
+</pre>
+<p>For doing I/O it is suggested that you use the autotranslating features
+of PerlIO, see <a href="../../lib/pods/perluniintro.html">the perluniintro manpage</a>.</p>
+<p>Since version 5.8 Perl uses the new PerlIO I/O library.  This enables
+you to use different encodings per IO channel.  For example you may use</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Encode</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">$f</span><span class="operator">,</span> <span class="string">"&gt;:encoding(ascii)"</span><span class="operator">,</span> <span class="string">"test.ascii"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$f</span> <span class="string">"Hello World!\n"</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">$f</span><span class="operator">,</span> <span class="string">"&gt;:encoding(cp37)"</span><span class="operator">,</span> <span class="string">"test.ebcdic"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$f</span> <span class="string">"Hello World!\n"</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">$f</span><span class="operator">,</span> <span class="string">"&gt;:encoding(latin1)"</span><span class="operator">,</span> <span class="string">"test.latin1"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$f</span> <span class="string">"Hello World!\n"</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">$f</span><span class="operator">,</span> <span class="string">"&gt;:encoding(utf8)"</span><span class="operator">,</span> <span class="string">"test.utf8"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$f</span> <span class="string">"Hello World!\n"</span><span class="operator">;</span>
+</pre>
+<p>to get four files containing &quot;Hello World!\n&quot; in ASCII, CP 0037 EBCDIC,
+ISO 8859-1 (Latin-1) (in this example identical to ASCII since only ASCII
+characters were printed), and 
+UTF-EBCDIC (in this example identical to normal EBCDIC since only characters
+that don't differ between EBCDIC and UTF-EBCDIC were printed).  See the
+documentation of Encode::PerlIO for details.</p>
+<p>As the PerlIO layer uses raw IO (bytes) internally, all this totally
+ignores things like the type of your filesystem (ASCII or EBCDIC).</p>
+<p>
+</p>
+<hr />
+<h1><a name="single_octet_tables">SINGLE OCTET TABLES</a></h1>
+<p>The following tables list the ASCII and Latin 1 ordered sets including
+the subsets: C0 controls (0..31), ASCII graphics (32..7e), delete (7f),
+C1 controls (80..9f), and Latin-1 (a.k.a. ISO 8859-1) (a0..ff).  In the 
+table non-printing control character names as well as the Latin 1 
+extensions to ASCII have been labelled with character names roughly 
+corresponding to <em>The Unicode Standard, Version 3.0</em> albeit with 
+substitutions such as s/LATIN// and s/VULGAR// in all cases, 
+s/CAPITAL LETTER// in some cases, and s/SMALL LETTER ([A-Z])/\l$1/ 
+in some other cases.  The &quot;names&quot; of the controls listed here are 
+the Unicode Version 1 names, except for the few that don't have names, in which
+case the names in the Wikipedia article were used
+(<a href="http://en.wikipedia.org/wiki/C0_and_C1_control_codes">http://en.wikipedia.org/wiki/C0_and_C1_control_codes</a>).
+The differences between the 0037 and 1047 sets are 
+flagged with ***.  The differences between the 1047 and POSIX-BC sets 
+are flagged with ###.  All <a href="#ord"><code>ord()</code></a> numbers listed are decimal.  If you 
+would rather see this table listing octal values then run the table 
+(that is, the pod version of this document since this recipe may not 
+work with a pod2_other_format translation) through:</p>
+<dl>
+<dt><strong><a name="recipe_0" class="item">recipe 0</a></strong></dt>
+
+</dl>
+<pre>
+    <span class="variable">perl</span> <span class="operator">-</span><span class="keyword">ne</span> <span class="string">'if(/(.{43})(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'{printf("%s%-9.03o%-9.03o%-9.03o%.03o\n",$1,$2,$3,$4,$5)}'</span> <span class="operator">\</span>
+     <span class="variable">perlebcdic</span><span class="operator">.</span><span class="variable">pod</span>
+</pre>
+<p>If you want to retain the UTF-x code points then in script form you
+might want to write:</p>
+<dl>
+<dt><strong><a name="recipe_1" class="item">recipe 1</a></strong></dt>
+
+</dl>
+<pre>
+ <span class="keyword">open</span><span class="operator">(</span><span class="variable">FH</span><span class="operator">,</span><span class="string">"&lt;perlebcdic.pod"</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Could not open perlebcdic.pod: $!"</span><span class="operator">;</span>
+ <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">FH</span><span class="operator">&gt;)</span> <span class="operator">{</span>
+     <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/(.{43})(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\.?(\d*)\s+(\d+)\.?(\d*)/</span><span class="operator">)</span>
+     <span class="operator">{</span>
+         <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$7</span> <span class="keyword">ne</span> <span class="string">''</span> <span class="operator">&amp;&amp;</span> <span class="variable">$9</span> <span class="keyword">ne</span> <span class="string">''</span><span class="operator">)</span> <span class="operator">{</span>
+             <span class="keyword">printf</span><span class="operator">(</span>
+                <span class="string">"%s%-9.03o%-9.03o%-9.03o%-9.03o%-3o.%-5o%-3o.%.03o\n"</span><span class="operator">,</span>
+                                            <span class="variable">$1</span><span class="operator">,</span><span class="variable">$2</span><span class="operator">,</span><span class="variable">$3</span><span class="operator">,</span><span class="variable">$4</span><span class="operator">,</span><span class="variable">$5</span><span class="operator">,</span><span class="variable">$6</span><span class="operator">,</span><span class="variable">$7</span><span class="operator">,</span><span class="variable">$8</span><span class="operator">,</span><span class="variable">$9</span><span class="operator">);</span>
+         <span class="operator">}</span>
+         <span class="keyword">elsif</span> <span class="operator">(</span><span class="variable">$7</span> <span class="keyword">ne</span> <span class="string">''</span><span class="operator">)</span> <span class="operator">{</span>
+             <span class="keyword">printf</span><span class="operator">(</span><span class="string">"%s%-9.03o%-9.03o%-9.03o%-9.03o%-3o.%-5o%.03o\n"</span><span class="operator">,</span>
+                                           <span class="variable">$1</span><span class="operator">,</span><span class="variable">$2</span><span class="operator">,</span><span class="variable">$3</span><span class="operator">,</span><span class="variable">$4</span><span class="operator">,</span><span class="variable">$5</span><span class="operator">,</span><span class="variable">$6</span><span class="operator">,</span><span class="variable">$7</span><span class="operator">,</span><span class="variable">$8</span><span class="operator">);</span>
+         <span class="operator">}</span>
+         <span class="keyword">else</span> <span class="operator">{</span>
+             <span class="keyword">printf</span><span class="operator">(</span><span class="string">"%s%-9.03o%-9.03o%-9.03o%-9.03o%-9.03o%.03o\n"</span><span class="operator">,</span>
+                                                <span class="variable">$1</span><span class="operator">,</span><span class="variable">$2</span><span class="operator">,</span><span class="variable">$3</span><span class="operator">,</span><span class="variable">$4</span><span class="operator">,</span><span class="variable">$5</span><span class="operator">,</span><span class="variable">$6</span><span class="operator">,</span><span class="variable">$8</span><span class="operator">);</span>
+         <span class="operator">}</span>
+     <span class="operator">}</span>
+ <span class="operator">}</span>
+</pre>
+<p>If you would rather see this table listing hexadecimal values then
+run the table through:</p>
+<dl>
+<dt><strong><a name="recipe_2" class="item">recipe 2</a></strong></dt>
+
+</dl>
+<pre>
+    <span class="variable">perl</span> <span class="operator">-</span><span class="keyword">ne</span> <span class="string">'if(/(.{43})(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'{printf("%s%-9.02X%-9.02X%-9.02X%.02X\n",$1,$2,$3,$4,$5)}'</span> <span class="operator">\</span>
+     <span class="variable">perlebcdic</span><span class="operator">.</span><span class="variable">pod</span>
+</pre>
+<p>Or, in order to retain the UTF-x code points in hexadecimal:</p>
+<dl>
+<dt><strong><a name="recipe_3" class="item">recipe 3</a></strong></dt>
+
+</dl>
+<pre>
+ <span class="keyword">open</span><span class="operator">(</span><span class="variable">FH</span><span class="operator">,</span><span class="string">"&lt;perlebcdic.pod"</span><span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Could not open perlebcdic.pod: $!"</span><span class="operator">;</span>
+ <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">FH</span><span class="operator">&gt;)</span> <span class="operator">{</span>
+     <span class="keyword">if</span> <span class="operator">(</span><span class="regex">/(.{43})(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\.?(\d*)\s+(\d+)\.?(\d*)/</span><span class="operator">)</span>
+     <span class="operator">{</span>
+         <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$7</span> <span class="keyword">ne</span> <span class="string">''</span> <span class="operator">&amp;&amp;</span> <span class="variable">$9</span> <span class="keyword">ne</span> <span class="string">''</span><span class="operator">)</span> <span class="operator">{</span>
+             <span class="keyword">printf</span><span class="operator">(</span>
+                <span class="string">"%s%-9.02X%-9.02X%-9.02X%-9.02X%-2X.%-6.02X%02X.%02X\n"</span><span class="operator">,</span>
+                                           <span class="variable">$1</span><span class="operator">,</span><span class="variable">$2</span><span class="operator">,</span><span class="variable">$3</span><span class="operator">,</span><span class="variable">$4</span><span class="operator">,</span><span class="variable">$5</span><span class="operator">,</span><span class="variable">$6</span><span class="operator">,</span><span class="variable">$7</span><span class="operator">,</span><span class="variable">$8</span><span class="operator">,</span><span class="variable">$9</span><span class="operator">);</span>
+         <span class="operator">}</span>
+         <span class="keyword">elsif</span> <span class="operator">(</span><span class="variable">$7</span> <span class="keyword">ne</span> <span class="string">''</span><span class="operator">)</span> <span class="operator">{</span>
+             <span class="keyword">printf</span><span class="operator">(</span><span class="string">"%s%-9.02X%-9.02X%-9.02X%-9.02X%-2X.%-6.02X%02X\n"</span><span class="operator">,</span>
+                                              <span class="variable">$1</span><span class="operator">,</span><span class="variable">$2</span><span class="operator">,</span><span class="variable">$3</span><span class="operator">,</span><span class="variable">$4</span><span class="operator">,</span><span class="variable">$5</span><span class="operator">,</span><span class="variable">$6</span><span class="operator">,</span><span class="variable">$7</span><span class="operator">,</span><span class="variable">$8</span><span class="operator">);</span>
+         <span class="operator">}</span>
+         <span class="keyword">else</span> <span class="operator">{</span>
+             <span class="keyword">printf</span><span class="operator">(</span><span class="string">"%s%-9.02X%-9.02X%-9.02X%-9.02X%-9.02X%02X\n"</span><span class="operator">,</span>
+                                                  <span class="variable">$1</span><span class="operator">,</span><span class="variable">$2</span><span class="operator">,</span><span class="variable">$3</span><span class="operator">,</span><span class="variable">$4</span><span class="operator">,</span><span class="variable">$5</span><span class="operator">,</span><span class="variable">$6</span><span class="operator">,</span><span class="variable">$8</span><span class="operator">);</span>
+         <span class="operator">}</span>
+     <span class="operator">}</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+                                      ISO 8859-1  CCSID    CCSID                    CCSID 1047
+ chr                                  CCSID 0819  0037     1047    POSIX-BC  UTF-8  UTF-EBCDIC
+ ----------------------------------------------------------------------------------------------
+ &lt;NULL&gt;                                    0        0        0        0        0        0 
+ &lt;START OF HEADING&gt;                        1        1        1        1        1        1
+ &lt;START OF TEXT&gt;                           2        2        2        2        2        2
+ &lt;END OF TEXT&gt;                             3        3        3        3        3        3
+ &lt;END OF TRANSMISSION&gt;                     4        55       55       55       4        55 
+ &lt;ENQUIRY&gt;                                 5        45       45       45       5        45 
+ &lt;ACKNOWLEDGE&gt;                             6        46       46       46       6        46 
+ &lt;BELL&gt;                                    7        47       47       47       7        47 
+ &lt;BACKSPACE&gt;                               8        22       22       22       8        22 
+ &lt;HORIZONTAL TABULATION&gt;                   9        5        5        5        9        5 
+ &lt;LINE FEED&gt;                               10       37       21       21       10       21       ***
+ &lt;VERTICAL TABULATION&gt;                     11       11       11       11       11       11
+ &lt;FORM FEED&gt;                               12       12       12       12       12       12
+ &lt;CARRIAGE RETURN&gt;                         13       13       13       13       13       13
+ &lt;SHIFT OUT&gt;                               14       14       14       14       14       14
+ &lt;SHIFT IN&gt;                                15       15       15       15       15       15
+ &lt;DATA LINK ESCAPE&gt;                        16       16       16       16       16       16
+ &lt;DEVICE CONTROL ONE&gt;                      17       17       17       17       17       17
+ &lt;DEVICE CONTROL TWO&gt;                      18       18       18       18       18       18
+ &lt;DEVICE CONTROL THREE&gt;                    19       19       19       19       19       19
+ &lt;DEVICE CONTROL FOUR&gt;                     20       60       60       60       20       60
+ &lt;NEGATIVE ACKNOWLEDGE&gt;                    21       61       61       61       21       61
+ &lt;SYNCHRONOUS IDLE&gt;                        22       50       50       50       22       50
+ &lt;END OF TRANSMISSION BLOCK&gt;               23       38       38       38       23       38
+ &lt;CANCEL&gt;                                  24       24       24       24       24       24
+ &lt;END OF MEDIUM&gt;                           25       25       25       25       25       25
+ &lt;SUBSTITUTE&gt;                              26       63       63       63       26       63
+ &lt;ESCAPE&gt;                                  27       39       39       39       27       39
+ &lt;FILE SEPARATOR&gt;                          28       28       28       28       28       28
+ &lt;GROUP SEPARATOR&gt;                         29       29       29       29       29       29
+ &lt;RECORD SEPARATOR&gt;                        30       30       30       30       30       30
+ &lt;UNIT SEPARATOR&gt;                          31       31       31       31       31       31
+ &lt;SPACE&gt;                                   32       64       64       64       32       64
+ !                                         33       90       90       90       33       90
+ &quot;                                         34       127      127      127      34       127
+ #                                         35       123      123      123      35       123
+ $                                         36       91       91       91       36       91
+ %                                         37       108      108      108      37       108
+ &amp;                                         38       80       80       80       38       80
+ '                                         39       125      125      125      39       125
+ (                                         40       77       77       77       40       77
+ )                                         41       93       93       93       41       93
+ *                                         42       92       92       92       42       92
+ +                                         43       78       78       78       43       78
+ ,                                         44       107      107      107      44       107
+ -                                         45       96       96       96       45       96
+ .                                         46       75       75       75       46       75
+ /                                         47       97       97       97       47       97
+ 0                                         48       240      240      240      48       240
+ 1                                         49       241      241      241      49       241
+ 2                                         50       242      242      242      50       242
+ 3                                         51       243      243      243      51       243
+ 4                                         52       244      244      244      52       244
+ 5                                         53       245      245      245      53       245
+ 6                                         54       246      246      246      54       246
+ 7                                         55       247      247      247      55       247
+ 8                                         56       248      248      248      56       248
+ 9                                         57       249      249      249      57       249
+ :                                         58       122      122      122      58       122
+ ;                                         59       94       94       94       59       94
+ &lt;                                         60       76       76       76       60       76
+ =                                         61       126      126      126      61       126
+ &gt;                                         62       110      110      110      62       110
+ ?                                         63       111      111      111      63       111
+ @                                         64       124      124      124      64       124
+ A                                         65       193      193      193      65       193
+ B                                         66       194      194      194      66       194
+ C                                         67       195      195      195      67       195
+ D                                         68       196      196      196      68       196
+ E                                         69       197      197      197      69       197
+ F                                         70       198      198      198      70       198
+ G                                         71       199      199      199      71       199
+ H                                         72       200      200      200      72       200
+ I                                         73       201      201      201      73       201
+ J                                         74       209      209      209      74       209
+ K                                         75       210      210      210      75       210
+ L                                         76       211      211      211      76       211
+ M                                         77       212      212      212      77       212
+ N                                         78       213      213      213      78       213
+ O                                         79       214      214      214      79       214
+ P                                         80       215      215      215      80       215
+ Q                                         81       216      216      216      81       216
+ R                                         82       217      217      217      82       217
+ S                                         83       226      226      226      83       226
+ T                                         84       227      227      227      84       227
+ U                                         85       228      228      228      85       228
+ V                                         86       229      229      229      86       229
+ W                                         87       230      230      230      87       230
+ X                                         88       231      231      231      88       231
+ Y                                         89       232      232      232      89       232
+ Z                                         90       233      233      233      90       233
+ [                                         91       186      173      187      91       173      *** ###
+ \                                         92       224      224      188      92       224      ### 
+ ]                                         93       187      189      189      93       189      ***
+ ^                                         94       176      95       106      94       95       *** ###
+ _                                         95       109      109      109      95       109
+ `                                         96       121      121      74       96       121      ###
+ a                                         97       129      129      129      97       129
+ b                                         98       130      130      130      98       130
+ c                                         99       131      131      131      99       131
+ d                                         100      132      132      132      100      132
+ e                                         101      133      133      133      101      133
+ f                                         102      134      134      134      102      134
+ g                                         103      135      135      135      103      135
+ h                                         104      136      136      136      104      136
+ i                                         105      137      137      137      105      137
+ j                                         106      145      145      145      106      145
+ k                                         107      146      146      146      107      146
+ l                                         108      147      147      147      108      147
+ m                                         109      148      148      148      109      148
+ n                                         110      149      149      149      110      149
+ o                                         111      150      150      150      111      150
+ p                                         112      151      151      151      112      151
+ q                                         113      152      152      152      113      152
+ r                                         114      153      153      153      114      153
+ s                                         115      162      162      162      115      162
+ t                                         116      163      163      163      116      163
+ u                                         117      164      164      164      117      164
+ v                                         118      165      165      165      118      165
+ w                                         119      166      166      166      119      166
+ x                                         120      167      167      167      120      167
+ y                                         121      168      168      168      121      168
+ z                                         122      169      169      169      122      169
+ {                                         123      192      192      251      123      192      ###
+ |                                         124      79       79       79       124      79
+ }                                         125      208      208      253      125      208      ###
+ ~                                         126      161      161      255      126      161      ###
+ &lt;DELETE&gt;                                  127      7        7        7        127      7
+ &lt;PADDING CHARACTER&gt;                       128      32       32       32       194.128  32
+ &lt;HIGH OCTET PRESET&gt;                       129      33       33       33       194.129  33
+ &lt;BREAK PERMITTED HERE&gt;                    130      34       34       34       194.130  34
+ &lt;NO BREAK HERE&gt;                           131      35       35       35       194.131  35
+ &lt;INDEX&gt;                                   132      36       36       36       194.132  36
+ &lt;NEXT LINE&gt;                               133      21       37       37       194.133  37       ***
+ &lt;START OF SELECTED AREA&gt;                  134      6        6        6        194.134  6
+ &lt;END OF SELECTED AREA&gt;                    135      23       23       23       194.135  23
+ &lt;CHARACTER TABULATION SET&gt;                136      40       40       40       194.136  40
+ &lt;CHARACTER TABULATION WITH JUSTIFICATION&gt; 137      41       41       41       194.137  41
+ &lt;LINE TABULATION SET&gt;                     138      42       42       42       194.138  42
+ &lt;PARTIAL LINE FORWARD&gt;                    139      43       43       43       194.139  43
+ &lt;PARTIAL LINE BACKWARD&gt;                   140      44       44       44       194.140  44
+ &lt;REVERSE LINE FEED&gt;                       141      9        9        9        194.141  9
+ &lt;SINGLE SHIFT TWO&gt;                        142      10       10       10       194.142  10
+ &lt;SINGLE SHIFT THREE&gt;                      143      27       27       27       194.143  27
+ &lt;DEVICE CONTROL STRING&gt;                   144      48       48       48       194.144  48
+ &lt;PRIVATE USE ONE&gt;                         145      49       49       49       194.145  49
+ &lt;PRIVATE USE TWO&gt;                         146      26       26       26       194.146  26
+ &lt;SET TRANSMIT STATE&gt;                      147      51       51       51       194.147  51
+ &lt;CANCEL CHARACTER&gt;                        148      52       52       52       194.148  52
+ &lt;MESSAGE WAITING&gt;                         149      53       53       53       194.149  53
+ &lt;START OF GUARDED AREA&gt;                   150      54       54       54       194.150  54
+ &lt;END OF GUARDED AREA&gt;                     151      8        8        8        194.151  8
+ &lt;START OF STRING&gt;                         152      56       56       56       194.152  56
+ &lt;SINGLE GRAPHIC CHARACTER INTRODUCER&gt;     153      57       57       57       194.153  57
+ &lt;SINGLE CHARACTER INTRODUCER&gt;             154      58       58       58       194.154  58
+ &lt;CONTROL SEQUENCE INTRODUCER&gt;             155      59       59       59       194.155  59
+ &lt;STRING TERMINATOR&gt;                       156      4        4        4        194.156  4
+ &lt;OPERATING SYSTEM COMMAND&gt;                157      20       20       20       194.157  20
+ &lt;PRIVACY MESSAGE&gt;                         158      62       62       62       194.158  62
+ &lt;APPLICATION PROGRAM COMMAND&gt;             159      255      255      95       194.159  255      ###
+ &lt;NON-BREAKING SPACE&gt;                      160      65       65       65       194.160  128.65
+ &lt;INVERTED EXCLAMATION MARK&gt;               161      170      170      170      194.161  128.66
+ &lt;CENT SIGN&gt;                               162      74       74       176      194.162  128.67   ###
+ &lt;POUND SIGN&gt;                              163      177      177      177      194.163  128.68
+ &lt;CURRENCY SIGN&gt;                           164      159      159      159      194.164  128.69
+ &lt;YEN SIGN&gt;                                165      178      178      178      194.165  128.70
+ &lt;BROKEN BAR&gt;                              166      106      106      208      194.166  128.71   ###
+ &lt;SECTION SIGN&gt;                            167      181      181      181      194.167  128.72
+ &lt;DIAERESIS&gt;                               168      189      187      121      194.168  128.73   *** ###
+ &lt;COPYRIGHT SIGN&gt;                          169      180      180      180      194.169  128.74
+ &lt;FEMININE ORDINAL INDICATOR&gt;              170      154      154      154      194.170  128.81
+ &lt;LEFT POINTING GUILLEMET&gt;                 171      138      138      138      194.171  128.82
+ &lt;NOT SIGN&gt;                                172      95       176      186      194.172  128.83   *** ###
+ &lt;SOFT HYPHEN&gt;                             173      202      202      202      194.173  128.84
+ &lt;REGISTERED TRADE MARK SIGN&gt;              174      175      175      175      194.174  128.85
+ &lt;MACRON&gt;                                  175      188      188      161      194.175  128.86   ###
+ &lt;DEGREE SIGN&gt;                             176      144      144      144      194.176  128.87
+ &lt;PLUS-OR-MINUS SIGN&gt;                      177      143      143      143      194.177  128.88
+ &lt;SUPERSCRIPT TWO&gt;                         178      234      234      234      194.178  128.89
+ &lt;SUPERSCRIPT THREE&gt;                       179      250      250      250      194.179  128.98
+ &lt;ACUTE ACCENT&gt;                            180      190      190      190      194.180  128.99
+ &lt;MICRO SIGN&gt;                              181      160      160      160      194.181  128.100
+ &lt;PARAGRAPH SIGN&gt;                          182      182      182      182      194.182  128.101
+ &lt;MIDDLE DOT&gt;                              183      179      179      179      194.183  128.102
+ &lt;CEDILLA&gt;                                 184      157      157      157      194.184  128.103
+ &lt;SUPERSCRIPT ONE&gt;                         185      218      218      218      194.185  128.104
+ &lt;MASC. ORDINAL INDICATOR&gt;                 186      155      155      155      194.186  128.105
+ &lt;RIGHT POINTING GUILLEMET&gt;                187      139      139      139      194.187  128.106
+ &lt;FRACTION ONE QUARTER&gt;                    188      183      183      183      194.188  128.112
+ &lt;FRACTION ONE HALF&gt;                       189      184      184      184      194.189  128.113
+ &lt;FRACTION THREE QUARTERS&gt;                 190      185      185      185      194.190  128.114
+ &lt;INVERTED QUESTION MARK&gt;                  191      171      171      171      194.191  128.115
+ &lt;A WITH GRAVE&gt;                            192      100      100      100      195.128  138.65
+ &lt;A WITH ACUTE&gt;                            193      101      101      101      195.129  138.66
+ &lt;A WITH CIRCUMFLEX&gt;                       194      98       98       98       195.130  138.67
+ &lt;A WITH TILDE&gt;                            195      102      102      102      195.131  138.68
+ &lt;A WITH DIAERESIS&gt;                        196      99       99       99       195.132  138.69
+ &lt;A WITH RING ABOVE&gt;                       197      103      103      103      195.133  138.70
+ &lt;CAPITAL LIGATURE AE&gt;                     198      158      158      158      195.134  138.71
+ &lt;C WITH CEDILLA&gt;                          199      104      104      104      195.135  138.72
+ &lt;E WITH GRAVE&gt;                            200      116      116      116      195.136  138.73
+ &lt;E WITH ACUTE&gt;                            201      113      113      113      195.137  138.74
+ &lt;E WITH CIRCUMFLEX&gt;                       202      114      114      114      195.138  138.81
+ &lt;E WITH DIAERESIS&gt;                        203      115      115      115      195.139  138.82
+ &lt;I WITH GRAVE&gt;                            204      120      120      120      195.140  138.83
+ &lt;I WITH ACUTE&gt;                            205      117      117      117      195.141  138.84
+ &lt;I WITH CIRCUMFLEX&gt;                       206      118      118      118      195.142  138.85
+ &lt;I WITH DIAERESIS&gt;                        207      119      119      119      195.143  138.86
+ &lt;CAPITAL LETTER ETH&gt;                      208      172      172      172      195.144  138.87
+ &lt;N WITH TILDE&gt;                            209      105      105      105      195.145  138.88
+ &lt;O WITH GRAVE&gt;                            210      237      237      237      195.146  138.89
+ &lt;O WITH ACUTE&gt;                            211      238      238      238      195.147  138.98
+ &lt;O WITH CIRCUMFLEX&gt;                       212      235      235      235      195.148  138.99
+ &lt;O WITH TILDE&gt;                            213      239      239      239      195.149  138.100
+ &lt;O WITH DIAERESIS&gt;                        214      236      236      236      195.150  138.101
+ &lt;MULTIPLICATION SIGN&gt;                     215      191      191      191      195.151  138.102
+ &lt;O WITH STROKE&gt;                           216      128      128      128      195.152  138.103
+ &lt;U WITH GRAVE&gt;                            217      253      253      224      195.153  138.104  ###
+ &lt;U WITH ACUTE&gt;                            218      254      254      254      195.154  138.105
+ &lt;U WITH CIRCUMFLEX&gt;                       219      251      251      221      195.155  138.106  ###
+ &lt;U WITH DIAERESIS&gt;                        220      252      252      252      195.156  138.112
+ &lt;Y WITH ACUTE&gt;                            221      173      186      173      195.157  138.113  *** ###
+ &lt;CAPITAL LETTER THORN&gt;                    222      174      174      174      195.158  138.114
+ &lt;SMALL LETTER SHARP S&gt;                    223      89       89       89       195.159  138.115
+ &lt;a WITH GRAVE&gt;                            224      68       68       68       195.160  139.65
+ &lt;a WITH ACUTE&gt;                            225      69       69       69       195.161  139.66
+ &lt;a WITH CIRCUMFLEX&gt;                       226      66       66       66       195.162  139.67
+ &lt;a WITH TILDE&gt;                            227      70       70       70       195.163  139.68
+ &lt;a WITH DIAERESIS&gt;                        228      67       67       67       195.164  139.69
+ &lt;a WITH RING ABOVE&gt;                       229      71       71       71       195.165  139.70
+ &lt;SMALL LIGATURE ae&gt;                       230      156      156      156      195.166  139.71
+ &lt;c WITH CEDILLA&gt;                          231      72       72       72       195.167  139.72
+ &lt;e WITH GRAVE&gt;                            232      84       84       84       195.168  139.73
+ &lt;e WITH ACUTE&gt;                            233      81       81       81       195.169  139.74
+ &lt;e WITH CIRCUMFLEX&gt;                       234      82       82       82       195.170  139.81
+ &lt;e WITH DIAERESIS&gt;                        235      83       83       83       195.171  139.82
+ &lt;i WITH GRAVE&gt;                            236      88       88       88       195.172  139.83
+ &lt;i WITH ACUTE&gt;                            237      85       85       85       195.173  139.84
+ &lt;i WITH CIRCUMFLEX&gt;                       238      86       86       86       195.174  139.85
+ &lt;i WITH DIAERESIS&gt;                        239      87       87       87       195.175  139.86
+ &lt;SMALL LETTER eth&gt;                        240      140      140      140      195.176  139.87
+ &lt;n WITH TILDE&gt;                            241      73       73       73       195.177  139.88
+ &lt;o WITH GRAVE&gt;                            242      205      205      205      195.178  139.89
+ &lt;o WITH ACUTE&gt;                            243      206      206      206      195.179  139.98
+ &lt;o WITH CIRCUMFLEX&gt;                       244      203      203      203      195.180  139.99
+ &lt;o WITH TILDE&gt;                            245      207      207      207      195.181  139.100
+ &lt;o WITH DIAERESIS&gt;                        246      204      204      204      195.182  139.101
+ &lt;DIVISION SIGN&gt;                           247      225      225      225      195.183  139.102
+ &lt;o WITH STROKE&gt;                           248      112      112      112      195.184  139.103
+ &lt;u WITH GRAVE&gt;                            249      221      221      192      195.185  139.104  ###
+ &lt;u WITH ACUTE&gt;                            250      222      222      222      195.186  139.105
+ &lt;u WITH CIRCUMFLEX&gt;                       251      219      219      219      195.187  139.106
+ &lt;u WITH DIAERESIS&gt;                        252      220      220      220      195.188  139.112
+ &lt;y WITH ACUTE&gt;                            253      141      141      141      195.189  139.113
+ &lt;SMALL LETTER thorn&gt;                      254      142      142      142      195.190  139.114
+ &lt;y WITH DIAERESIS&gt;                        255      223      223      223      195.191  139.115</pre>
+<p>If you would rather see the above table in CCSID 0037 order rather than
+ASCII + Latin-1 order then run the table through:</p>
+<dl>
+<dt><strong><a name="recipe_4" class="item">recipe 4</a></strong></dt>
+
+</dl>
+<pre>
+ <span class="variable">perl</span> <span class="operator">\</span>
+    <span class="operator">-</span><span class="keyword">ne</span> <span class="string">'if(/.{43}\d{1,3}\s{6,8}\d{1,3}\s{6,8}\d{1,3}\s{6,8}\d{1,3}/)'</span><span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'{push(@l,$_)}'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'END{print map{$_-&gt;[0]}'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'          sort{$a-&gt;[1] &lt;=&gt; $b-&gt;[1]}'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'          map{[$_,substr($_,52,3)]}@l;}'</span> <span class="variable">perlebcdic</span><span class="operator">.</span><span class="variable">pod</span>
+</pre>
+<p>If you would rather see it in CCSID 1047 order then change the number
+52 in the last line to 61, like this:</p>
+<dl>
+<dt><strong><a name="recipe_5" class="item">recipe 5</a></strong></dt>
+
+</dl>
+<pre>
+ <span class="variable">perl</span> <span class="operator">\</span>
+    <span class="operator">-</span><span class="keyword">ne</span> <span class="string">'if(/.{43}\d{1,3}\s{6,8}\d{1,3}\s{6,8}\d{1,3}\s{6,8}\d{1,3}/)'</span><span class="operator">\</span>
+    <span class="keyword">-e</span> <span class="string">'{push(@l,$_)}'</span> <span class="operator">\</span>
+    <span class="keyword">-e</span> <span class="string">'END{print map{$_-&gt;[0]}'</span> <span class="operator">\</span>
+    <span class="keyword">-e</span> <span class="string">'          sort{$a-&gt;[1] &lt;=&gt; $b-&gt;[1]}'</span> <span class="operator">\</span>
+    <span class="keyword">-e</span> <span class="string">'          map{[$_,substr($_,61,3)]}@l;}'</span> <span class="variable">perlebcdic</span><span class="operator">.</span><span class="variable">pod</span>
+</pre>
+<p>If you would rather see it in POSIX-BC order then change the number
+61 in the last line to 70, like this:</p>
+<dl>
+<dt><strong><a name="recipe_6" class="item">recipe 6</a></strong></dt>
+
+</dl>
+<pre>
+ <span class="variable">perl</span> <span class="operator">\</span>
+    <span class="operator">-</span><span class="keyword">ne</span> <span class="string">'if(/.{43}\d{1,3}\s{6,8}\d{1,3}\s{6,8}\d{1,3}\s{6,8}\d{1,3}/)'</span><span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'{push(@l,$_)}'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'END{print map{$_-&gt;[0]}'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'          sort{$a-&gt;[1] &lt;=&gt; $b-&gt;[1]}'</span> <span class="operator">\</span>
+     <span class="keyword">-e</span> <span class="string">'          map{[$_,substr($_,70,3)]}@l;}'</span> <span class="variable">perlebcdic</span><span class="operator">.</span><span class="variable">pod</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="identifying_character_code_sets">IDENTIFYING CHARACTER CODE SETS</a></h1>
+<p>To determine the character set you are running under from perl one 
+could use the return value of <a href="#ord"><code>ord()</code></a> or <a href="#chr"><code>chr()</code></a> to test one or more 
+character values.  For example:</p>
+<pre>
+    <span class="variable">$is_ascii</span>  <span class="operator">=</span> <span class="string">"A"</span> <span class="keyword">eq</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">65</span><span class="operator">);</span>
+    <span class="variable">$is_ebcdic</span> <span class="operator">=</span> <span class="string">"A"</span> <span class="keyword">eq</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">193</span><span class="operator">);</span>
+</pre>
+<p>Also, &quot;\t&quot; is a <code>HORIZONTAL TABULATION</code> character so that:</p>
+<pre>
+    <span class="variable">$is_ascii</span>  <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">"\t"</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">9</span><span class="operator">;</span>
+    <span class="variable">$is_ebcdic</span> <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">"\t"</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">5</span><span class="operator">;</span>
+</pre>
+<p>To distinguish EBCDIC code pages try looking at one or more of
+the characters that differ between them.  For example:</p>
+<pre>
+    <span class="variable">$is_ebcdic_37</span>   <span class="operator">=</span> <span class="string">"\n"</span> <span class="keyword">eq</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">37</span><span class="operator">);</span>
+    <span class="variable">$is_ebcdic_1047</span> <span class="operator">=</span> <span class="string">"\n"</span> <span class="keyword">eq</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">21</span><span class="operator">);</span>
+</pre>
+<p>Or better still choose a character that is uniquely encoded in any
+of the code sets, e.g.:</p>
+<pre>
+    <span class="variable">$is_ascii</span>           <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">'['</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">91</span><span class="operator">;</span>
+    <span class="variable">$is_ebcdic_37</span>       <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">'['</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">186</span><span class="operator">;</span>
+    <span class="variable">$is_ebcdic_1047</span>     <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">'['</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">173</span><span class="operator">;</span>
+    <span class="variable">$is_ebcdic_POSIX_BC</span> <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">'['</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">187</span><span class="operator">;</span>
+</pre>
+<p>However, it would be unwise to write tests such as:</p>
+<pre>
+    <span class="variable">$is_ascii</span> <span class="operator">=</span> <span class="string">"\r"</span> <span class="keyword">ne</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">13</span><span class="operator">);</span>  <span class="comment">#  WRONG</span>
+    <span class="variable">$is_ascii</span> <span class="operator">=</span> <span class="string">"\n"</span> <span class="keyword">ne</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">10</span><span class="operator">);</span>  <span class="comment">#  ILL ADVISED</span>
+</pre>
+<p>Obviously the first of these will fail to distinguish most ASCII platforms
+from either a CCSID 0037, a 1047, or a POSIX-BC EBCDIC platform since &quot;\r&quot; eq 
+chr(13) under all of those coded character sets.  But note too that 
+because &quot;\n&quot; is chr(13) and &quot;\r&quot; is chr(10) on the Macintosh (which is an 
+ASCII platform) the second <code>$is_ascii</code> test will lead to trouble there.</p>
+<p>To determine whether or not perl was built under an EBCDIC 
+code page you can use the Config module like so:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Config</span><span class="operator">;</span>
+    <span class="variable">$is_ebcdic</span> <span class="operator">=</span> <span class="variable">$Config</span><span class="operator">{</span><span class="string">'ebcdic'</span><span class="operator">}</span> <span class="keyword">eq</span> <span class="string">'define'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="conversions">CONVERSIONS</a></h1>
+<p>
+</p>
+<h2><a name="tr___">tr///</a></h2>
+<p>In order to convert a string of characters from one character set to 
+another a simple list of numbers, such as in the right columns in the
+above table, along with perl's tr/// operator is all that is needed.  
+The data in the table are in ASCII/Latin1 order, hence the EBCDIC columns
+provide easy-to-use ASCII/Latin1 to EBCDIC operations that are also easily 
+reversed.</p>
+<p>For example, to convert ASCII/Latin1 to code page 037 take the output of the
+second numbers column from the output of recipe 2 (modified to add '\'
+characters) and use it in tr/// like so:</p>
+<pre>
+    <span class="variable">$cp_037</span> <span class="operator">=</span> 
+    <span class="string">'\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F'</span> <span class="operator">.</span>
+    <span class="string">'\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F'</span> <span class="operator">.</span>
+    <span class="string">'\x40\x5A\x7F\x7B\x5B\x6C\x50\x7D\x4D\x5D\x5C\x4E\x6B\x60\x4B\x61'</span> <span class="operator">.</span>
+    <span class="string">'\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\x7A\x5E\x4C\x7E\x6E\x6F'</span> <span class="operator">.</span>
+    <span class="string">'\x7C\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xD1\xD2\xD3\xD4\xD5\xD6'</span> <span class="operator">.</span>
+    <span class="string">'\xD7\xD8\xD9\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xBA\xE0\xBB\xB0\x6D'</span> <span class="operator">.</span>
+    <span class="string">'\x79\x81\x82\x83\x84\x85\x86\x87\x88\x89\x91\x92\x93\x94\x95\x96'</span> <span class="operator">.</span>
+    <span class="string">'\x97\x98\x99\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xC0\x4F\xD0\xA1\x07'</span> <span class="operator">.</span>
+    <span class="string">'\x20\x21\x22\x23\x24\x15\x06\x17\x28\x29\x2A\x2B\x2C\x09\x0A\x1B'</span> <span class="operator">.</span>
+    <span class="string">'\x30\x31\x1A\x33\x34\x35\x36\x08\x38\x39\x3A\x3B\x04\x14\x3E\xFF'</span> <span class="operator">.</span>
+    <span class="string">'\x41\xAA\x4A\xB1\x9F\xB2\x6A\xB5\xBD\xB4\x9A\x8A\x5F\xCA\xAF\xBC'</span> <span class="operator">.</span>
+    <span class="string">'\x90\x8F\xEA\xFA\xBE\xA0\xB6\xB3\x9D\xDA\x9B\x8B\xB7\xB8\xB9\xAB'</span> <span class="operator">.</span>
+    <span class="string">'\x64\x65\x62\x66\x63\x67\x9E\x68\x74\x71\x72\x73\x78\x75\x76\x77'</span> <span class="operator">.</span>
+    <span class="string">'\xAC\x69\xED\xEE\xEB\xEF\xEC\xBF\x80\xFD\xFE\xFB\xFC\xAD\xAE\x59'</span> <span class="operator">.</span>
+    <span class="string">'\x44\x45\x42\x46\x43\x47\x9C\x48\x54\x51\x52\x53\x58\x55\x56\x57'</span> <span class="operator">.</span>
+    <span class="string">'\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF'</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$ebcdic_string</span> <span class="operator">=</span> <span class="variable">$ascii_string</span><span class="operator">;</span>
+    <span class="keyword">eval</span> <span class="string">'$ebcdic_string =~ tr/\000-\377/'</span> <span class="operator">.</span> <span class="variable">$cp_037</span> <span class="operator">.</span> <span class="string">'/'</span><span class="operator">;</span>
+</pre>
+<p>To convert from EBCDIC 037 to ASCII just reverse the order of the tr///
+arguments like so:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$ascii_string</span> <span class="operator">=</span> <span class="variable">$ebcdic_string</span><span class="operator">;</span>
+    <span class="keyword">eval</span> <span class="string">'$ascii_string =~ tr/'</span> <span class="operator">.</span> <span class="variable">$cp_037</span> <span class="operator">.</span> <span class="string">'/\000-\377/'</span><span class="operator">;</span>
+</pre>
+<p>Similarly one could take the output of the third numbers column from recipe 2
+to obtain a <code>$cp_1047</code> table.  The fourth numbers column of the output from
+recipe 2 could provide a <code>$cp_posix_bc</code> table suitable for transcoding as
+well.</p>
+<p>If you wanted to see the inverse tables, you would first have to sort on the
+desired numbers column as in recipes 4, 5 or 6, then take the output of the
+first numbers column.</p>
+<p>
+</p>
+<h2><a name="iconv">iconv</a></h2>
+<p>XPG operability often implies the presence of an <em>iconv</em> utility
+available from the shell or from the C library.  Consult your system's
+documentation for information on iconv.</p>
+<p>On OS/390 or z/OS see the <code>iconv(1)</code> manpage.  One way to invoke the iconv 
+shell utility from within perl would be to:</p>
+<pre>
+    # OS/390 or z/OS example
+    $ascii_data = `echo '$ebcdic_data'| iconv -f IBM-1047 -t ISO8859-1`</pre>
+<p>or the inverse map:</p>
+<pre>
+    # OS/390 or z/OS example
+    $ebcdic_data = `echo '$ascii_data'| iconv -f ISO8859-1 -t IBM-1047`</pre>
+<p>For other perl-based conversion options see the Convert::* modules on CPAN.</p>
+<p>
+</p>
+<h2><a name="c_rtl">C RTL</a></h2>
+<p>The OS/390 and z/OS C run-time libraries provide <code>_atoe()</code> and <code>_etoa()</code> functions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="operator_differences">OPERATOR DIFFERENCES</a></h1>
+<p>The <code>..</code> range operator treats certain character ranges with 
+care on EBCDIC platforms.  For example the following array
+will have twenty six elements on either an EBCDIC platform
+or an ASCII platform:</p>
+<pre>
+    <span class="variable">@alphabet</span> <span class="operator">=</span> <span class="operator">(</span><span class="string">'A'</span><span class="operator">..</span><span class="string">'Z'</span><span class="operator">);</span>   <span class="comment">#  $#alphabet == 25</span>
+</pre>
+<p>The bitwise operators such as &amp; ^ | may return different results
+when operating on string or character data in a perl program running 
+on an EBCDIC platform than when run on an ASCII platform.  Here is
+an example adapted from the one in <a href="../../lib/pods/perlop.html">the perlop manpage</a>:</p>
+<pre>
+    <span class="comment"># EBCDIC-based examples</span>
+    <span class="keyword">print</span> <span class="string">"j p \n"</span> <span class="operator">^</span> <span class="string">" a h"</span><span class="operator">;</span>                      <span class="comment"># prints "JAPH\n"</span>
+    <span class="keyword">print</span> <span class="string">"JA"</span> <span class="operator">|</span> <span class="string">"  ph\n"</span><span class="operator">;</span>                        <span class="comment"># prints "japh\n" </span>
+    <span class="keyword">print</span> <span class="string">"JAPH\nJunk"</span> <span class="operator">&amp;</span> <span class="string">"\277\277\277\277\277"</span><span class="operator">;</span>  <span class="comment"># prints "japh\n";</span>
+    <span class="keyword">print</span> <span class="string">'p N$'</span> <span class="operator">^</span> <span class="string">" E&lt;H\n"</span><span class="operator">;</span>                      <span class="comment"># prints "Perl\n";</span>
+</pre>
+<p>An interesting property of the 32 C0 control characters
+in the ASCII table is that they can &quot;literally&quot; be constructed
+as control characters in perl, e.g. <a href="#chr"><code>(chr(0)</code></a> eq <a href="../../lib/pods/perlrun.html#c"><code>\c@</code></a>)&gt;
+<a href="#chr"><code>(chr(1)</code></a> eq <code>\cA</code>)&gt;, and so on.  Perl on EBCDIC platforms has been
+ported to take <a href="../../lib/pods/perlrun.html#c"><code>\c@</code></a> to <a href="#chr"><code>chr(0)</code></a> and <code>\cA</code> to <a href="#chr"><code>chr(1)</code></a>, etc. as well, but the
+thirty three characters that result depend on which code page you are
+using.  The table below uses the standard acronyms for the controls.
+The POSIX-BC and 1047 sets are
+identical throughout this range and differ from the 0037 set at only 
+one spot (21 decimal).  Note that the <code>LINE FEED</code> character
+may be generated by <code>\cJ</code> on ASCII platforms but by <code>\cU</code> on 1047 or POSIX-BC 
+platforms and cannot be generated as a <code>&quot;\c.letter.&quot;</code> control character on 
+0037 platforms.  Note also that <a href="../../lib/pods/perlrun.html#c"><code>\c\</code></a> cannot be the final element in a string
+or regex, as it will absorb the terminator.   But <code>\c\X</code> is a <code>FILE
+SEPARATOR</code> concatenated with <em>X</em> for all <em>X</em>.</p>
+<pre>
+ chr   ord   8859-1    0037    1047 &amp;&amp; POSIX-BC     
+ -----------------------------------------------------------------------
+ \c?   127   &lt;DEL&gt;       &quot;            &quot;    
+ \c@     0   &lt;NUL&gt;     &lt;NUL&gt;        &lt;NUL&gt;
+ \cA     1   &lt;SOH&gt;     &lt;SOH&gt;        &lt;SOH&gt; 
+ \cB     2   &lt;STX&gt;     &lt;STX&gt;        &lt;STX&gt;
+ \cC     3   &lt;ETX&gt;     &lt;ETX&gt;        &lt;ETX&gt;
+ \cD     4   &lt;EOT&gt;     &lt;ST&gt;         &lt;ST&gt;    
+ \cE     5   &lt;ENQ&gt;     &lt;HT&gt;         &lt;HT&gt;    
+ \cF     6   &lt;ACK&gt;     &lt;SSA&gt;        &lt;SSA&gt;    
+ \cG     7   &lt;BEL&gt;     &lt;DEL&gt;        &lt;DEL&gt;   
+ \cH     8   &lt;BS&gt;      &lt;EPA&gt;        &lt;EPA&gt;  
+ \cI     9   &lt;HT&gt;      &lt;RI&gt;         &lt;RI&gt;   
+ \cJ    10   &lt;LF&gt;      &lt;SS2&gt;        &lt;SS2&gt;  
+ \cK    11   &lt;VT&gt;      &lt;VT&gt;         &lt;VT&gt;
+ \cL    12   &lt;FF&gt;      &lt;FF&gt;         &lt;FF&gt;    
+ \cM    13   &lt;CR&gt;      &lt;CR&gt;         &lt;CR&gt; 
+ \cN    14   &lt;SO&gt;      &lt;SO&gt;         &lt;SO&gt;
+ \cO    15   &lt;SI&gt;      &lt;SI&gt;         &lt;SI&gt;
+ \cP    16   &lt;DLE&gt;     &lt;DLE&gt;        &lt;DLE&gt; 
+ \cQ    17   &lt;DC1&gt;     &lt;DC1&gt;        &lt;DC1&gt;
+ \cR    18   &lt;DC2&gt;     &lt;DC2&gt;        &lt;DC2&gt;
+ \cS    19   &lt;DC3&gt;     &lt;DC3&gt;        &lt;DC3&gt; 
+ \cT    20   &lt;DC4&gt;     &lt;OSC&gt;        &lt;OSC&gt;   
+ \cU    21   &lt;NAK&gt;     &lt;NEL&gt;        &lt;LF&gt;              ***
+ \cV    22   &lt;SYN&gt;     &lt;BS&gt;         &lt;BS&gt;
+ \cW    23   &lt;ETB&gt;     &lt;ESA&gt;        &lt;ESA&gt; 
+ \cX    24   &lt;CAN&gt;     &lt;CAN&gt;        &lt;CAN&gt;
+ \cY    25   &lt;EOM&gt;     &lt;EOM&gt;        &lt;EOM&gt;
+ \cZ    26   &lt;SUB&gt;     &lt;PU2&gt;        &lt;PU2&gt;  
+ \c[    27   &lt;ESC&gt;     &lt;SS3&gt;        &lt;SS3&gt;  
+ \c\X   28   &lt;FS&gt;X     &lt;FS&gt;X        &lt;FS&gt;X
+ \c]    29   &lt;GS&gt;      &lt;GS&gt;         &lt;GS&gt;
+ \c^    30   &lt;RS&gt;      &lt;RS&gt;         &lt;RS&gt;
+ \c_    31   &lt;US&gt;      &lt;US&gt;         &lt;US&gt;</pre>
+<p>
+</p>
+<hr />
+<h1><a name="function_differences">FUNCTION DIFFERENCES</a></h1>
+<dl>
+<dt><strong><a name="chr" class="item"><code>chr()</code></a></strong></dt>
+
+<dd>
+<p><a href="#chr"><code>chr()</code></a> must be given an EBCDIC code number argument to yield a desired 
+character return value on an EBCDIC platform.  For example:</p>
+<pre>
+    <span class="variable">$CAPITAL_LETTER_A</span> <span class="operator">=</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">193</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="ord" class="item"><code>ord()</code></a></strong></dt>
+
+<dd>
+<p><a href="#ord"><code>ord()</code></a> will return EBCDIC code number values on an EBCDIC platform.
+For example:</p>
+<pre>
+    <span class="variable">$the_number_193</span> <span class="operator">=</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">"A"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="pack" class="item"><code>pack()</code></a></strong></dt>
+
+<dd>
+<p>The c and C templates for <a href="#pack"><code>pack()</code></a> are dependent upon character set 
+encoding.  Examples of usage on EBCDIC include:</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"CCCC"</span><span class="operator">,</span><span class="number">193</span><span class="operator">,</span><span class="number">194</span><span class="operator">,</span><span class="number">195</span><span class="operator">,</span><span class="number">196</span><span class="operator">);</span>
+    <span class="comment"># $foo eq "ABCD"</span>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"C4"</span><span class="operator">,</span><span class="number">193</span><span class="operator">,</span><span class="number">194</span><span class="operator">,</span><span class="number">195</span><span class="operator">,</span><span class="number">196</span><span class="operator">);</span>
+    <span class="comment"># same thing</span>
+</pre>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">"ccxxcc"</span><span class="operator">,</span><span class="number">193</span><span class="operator">,</span><span class="number">194</span><span class="operator">,</span><span class="number">195</span><span class="operator">,</span><span class="number">196</span><span class="operator">);</span>
+    <span class="comment"># $foo eq "AB\0\0CD"</span>
+</pre>
+</dd>
+<dt><strong><a name="print" class="item"><code>print()</code></a></strong></dt>
+
+<dd>
+<p>One must be careful with scalars and strings that are passed to
+print that contain ASCII encodings.  One common place
+for this to occur is in the output of the MIME type header for
+CGI script writing.  For example, many perl programming guides 
+recommend something similar to:</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Content-type:\ttext/html\015\012\015\012"</span><span class="operator">;</span> 
+    <span class="comment"># this may be wrong on EBCDIC</span>
+</pre>
+<p>Under the IBM OS/390 USS Web Server or WebSphere on z/OS for example 
+you should instead write that as:</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Content-type:\ttext/html\r\n\r\n"</span><span class="operator">;</span> <span class="comment"># OK for DGW et al</span>
+</pre>
+<p>That is because the translation from EBCDIC to ASCII is done
+by the web server in this case (such code will not be appropriate for
+the Macintosh however).  Consult your web server's documentation for 
+further details.</p>
+</dd>
+<dt><strong><a name="printf" class="item"><code>printf()</code></a></strong></dt>
+
+<dd>
+<p>The formats that can convert characters to numbers and vice versa
+will be different from their ASCII counterparts when executed
+on an EBCDIC platform.  Examples include:</p>
+<pre>
+    <span class="keyword">printf</span><span class="operator">(</span><span class="string">"%c%c%c"</span><span class="operator">,</span><span class="number">193</span><span class="operator">,</span><span class="number">194</span><span class="operator">,</span><span class="number">195</span><span class="operator">);</span>  <span class="comment"># prints ABC</span>
+</pre>
+</dd>
+<dt><strong><a name="sort" class="item"><code>sort()</code></a></strong></dt>
+
+<dd>
+<p>EBCDIC sort results may differ from ASCII sort results especially for 
+mixed case strings.  This is discussed in more detail below.</p>
+</dd>
+<dt><strong><a name="sprintf" class="item"><code>sprintf()</code></a></strong></dt>
+
+<dd>
+<p>See the discussion of <a href="#printf"><code>printf()</code></a> above.  An example of the use
+of sprintf would be:</p>
+<pre>
+    <span class="variable">$CAPITAL_LETTER_A</span> <span class="operator">=</span> <span class="keyword">sprintf</span><span class="operator">(</span><span class="string">"%c"</span><span class="operator">,</span><span class="number">193</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="unpack" class="item"><code>unpack()</code></a></strong></dt>
+
+<dd>
+<p>See the discussion of <a href="#pack"><code>pack()</code></a> above.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="regular_expression_differences">REGULAR EXPRESSION DIFFERENCES</a></h1>
+<p>As of perl 5.005_03 the letter range regular expressions such as 
+[A-Z] and [a-z] have been especially coded to not pick up gap 
+characters.  For example, characters such as &ocirc; <a href="../../lib/pods/perlguts.html#o"><code>o WITH CIRCUMFLEX</code></a> 
+that lie between I and J would not be matched by the 
+regular expression range <code>/[H-K]/</code>.  This works in
+the other direction, too, if either of the range end points is
+explicitly numeric: <code>[\x89-\x91]</code> will match <code>\x8e</code>, even
+though <code>\x89</code> is <code>i</code> and <code>\x91 </code> is <code>j</code>, and <code>\x8e</code>
+is a gap character from the alphabetic viewpoint.</p>
+<p>If you do want to match the alphabet gap characters in a single octet 
+regular expression try matching the hex or octal code such 
+as <code>/\313/</code> on EBCDIC or <code>/\364/</code> on ASCII platforms to 
+have your regular expression match <a href="../../lib/pods/perlguts.html#o"><code>o WITH CIRCUMFLEX</code></a>.</p>
+<p>Another construct to be wary of is the inappropriate use of hex or
+octal constants in regular expressions.  Consider the following
+set of subs:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> is_c0 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\000-\037]/</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> is_print_ascii </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\040-\176]/</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> is_delete </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="keyword">eq</span> <span class="string">"\177"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> is_c1 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\200-\237]/</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> is_latin_1 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\240-\377]/</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>The above would be adequate if the concern was only with numeric code points.
+However, the concern may be with characters rather than code points 
+and on an EBCDIC platform it may be desirable for constructs such as 
+<code>if (is_print_ascii(&quot;A&quot;)) {print &quot;A is a printable character\n&quot;;}</code> to print
+out the expected message.  One way to represent the above collection
+of character classification subs that is capable of working across the
+four coded character sets discussed in this document is as follows:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Is_c0 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">94</span><span class="operator">)</span>  <span class="operator">{</span> <span class="comment"># ascii</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\000-\037]/</span><span class="operator">;</span>
+        <span class="operator">}</span> 
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">176</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># 0037</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\000-\003\067\055-\057\026\005\045\013-\023\074\075\062\046\030\031\077\047\034-\037]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">95</span> <span class="operator">||</span> <span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">106</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># 1047 || posix-bc</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\000-\003\067\055-\057\026\005\025\013-\023\074\075\062\046\030\031\077\047\034-\037]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Is_print_ascii </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[ !"\#\$%&amp;'()*+,\-.\/0-9:;&lt;=&gt;?\@A-Z[\\\]^_`a-z{|}~]/</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Is_delete </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">94</span><span class="operator">)</span>  <span class="operator">{</span> <span class="comment"># ascii</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="keyword">eq</span> <span class="string">"\177"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">else</span>  <span class="operator">{</span>              <span class="comment"># ebcdic</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="keyword">eq</span> <span class="string">"\007"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Is_c1 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">94</span><span class="operator">)</span>  <span class="operator">{</span> <span class="comment"># ascii</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\200-\237]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">176</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># 0037</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\040-\044\025\006\027\050-\054\011\012\033\060\061\032\063-\066\010\070-\073\040\024\076\377]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">95</span><span class="operator">)</span>  <span class="operator">{</span> <span class="comment"># 1047</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\040-\045\006\027\050-\054\011\012\033\060\061\032\063-\066\010\070-\073\040\024\076\377]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">106</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># posix-bc</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> 
+              <span class="regex">/[\040-\045\006\027\050-\054\011\012\033\060\061\032\063-\066\010\070-\073\040\024\076\137]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Is_latin_1 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">94</span><span class="operator">)</span>  <span class="operator">{</span> <span class="comment"># ascii</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[\240-\377]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">176</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># 0037</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> 
+              <span class="regex">/[\101\252\112\261\237\262\152\265\275\264\232\212\137\312\257\274\220\217\352\372\276\240\266\263\235\332\233\213\267\270\271\253\144\145\142\146\143\147\236\150\164\161-\163\170\165-\167\254\151\355\356\353\357\354\277\200\375\376\373\374\255\256\131\104\105\102\106\103\107\234\110\124\121-\123\130\125-\127\214\111\315\316\313\317\314\341\160\335\336\333\334\215\216\337]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">95</span><span class="operator">)</span>  <span class="operator">{</span> <span class="comment"># 1047</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span>
+              <span class="regex">/[\101\252\112\261\237\262\152\265\273\264\232\212\260\312\257\274\220\217\352\372\276\240\266\263\235\332\233\213\267\270\271\253\144\145\142\146\143\147\236\150\164\161-\163\170\165-\167\254\151\355\356\353\357\354\277\200\375\376\373\374\272\256\131\104\105\102\106\103\107\234\110\124\121-\123\130\125-\127\214\111\315\316\313\317\314\341\160\335\336\333\334\215\216\337]/</span><span class="operator">;</span> 
+        <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'^'</span><span class="operator">)==</span><span class="number">106</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># posix-bc</span>
+            <span class="keyword">return</span> <span class="variable">$char</span> <span class="operator">=~</span> 
+              <span class="regex">/[\101\252\260\261\237\262\320\265\171\264\232\212\272\312\257\241\220\217\352\372\276\240\266\263\235\332\233\213\267\270\271\253\144\145\142\146\143\147\236\150\164\161-\163\170\165-\167\254\151\355\356\353\357\354\277\200\340\376\335\374\255\256\131\104\105\102\106\103\107\234\110\124\121-\123\130\125-\127\214\111\315\316\313\317\314\341\160\300\336\333\334\215\216\337]/</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>Note however that only the <code>Is_ascii_print()</code> sub is really independent 
+of coded character set.  Another way to write <code>Is_latin_1()</code> would be 
+to use the characters in the range explicitly:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> Is_latin_1 </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$char</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="keyword">shift</span><span class="operator">,</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span>
+        <span class="variable">$char</span> <span class="operator">=~</span> <span class="regex">/[ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ]/</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Although that form may run into trouble in network transit (due to the 
+presence of 8 bit characters) or on non ISO-Latin character sets.</p>
+<p>
+</p>
+<hr />
+<h1><a name="sockets">SOCKETS</a></h1>
+<p>Most socket programming assumes ASCII character encodings in network
+byte order.  Exceptions can include CGI script writing under a
+host web server where the server may take care of translation for you.
+Most host web servers convert EBCDIC data to ISO-8859-1 or Unicode on
+output.</p>
+<p>
+</p>
+<hr />
+<h1><a name="sorting">SORTING</a></h1>
+<p>One big difference between ASCII-based character sets and EBCDIC ones
+are the relative positions of upper and lower case letters and the
+letters compared to the digits.  If sorted on an ASCII-based platform the
+two-letter abbreviation for a physician comes before the two letter
+abbreviation for drive; that is:</p>
+<pre>
+ <span class="variable">@sorted</span> <span class="operator">=</span> <span class="keyword">sort</span><span class="operator">(</span><span class="string">qw(Dr. dr.)</span><span class="operator">);</span>  <span class="comment"># @sorted holds ('Dr.','dr.') on ASCII,</span>
+                                  <span class="comment"># but ('dr.','Dr.') on EBCDIC</span>
+</pre>
+<p>The property of lowercase before uppercase letters in EBCDIC is
+even carried to the Latin 1 EBCDIC pages such as 0037 and 1047.
+An example would be that &Euml; <code>E WITH DIAERESIS</code> (203) comes 
+before &euml; <code>e WITH DIAERESIS</code> (235) on an ASCII platform, but 
+the latter (83) comes before the former (115) on an EBCDIC platform.  
+(Astute readers will note that the uppercase version of &szlig; 
+<code>SMALL LETTER SHARP S</code> is simply &quot;SS&quot; and that the upper case version of 
+&yuml; <code>y WITH DIAERESIS</code> is not in the 0..255 range but it is 
+at U+x0178 in Unicode, or <code>&quot;\x{178}&quot;</code> in a Unicode enabled Perl).</p>
+<p>The sort order will cause differences between results obtained on
+ASCII platforms versus EBCDIC platforms.  What follows are some suggestions
+on how to deal with these differences.</p>
+<p>
+</p>
+<h2><a name="ignore_ascii_vs__ebcdic_sort_differences_">Ignore ASCII vs. EBCDIC sort differences.</a></h2>
+<p>This is the least computationally expensive strategy.  It may require
+some user education.</p>
+<p>
+</p>
+<h2><a name="mono_case_then_sort_data_">MONO CASE then sort data.</a></h2>
+<p>In order to minimize the expense of mono casing mixed-case text, try to
+<a href="../../lib/pods/perlfunc.html#tr_"><code>tr///</code></a> towards the character set case most employed within the data.
+If the data are primarily UPPERCASE non Latin 1 then apply tr/[a-z]/[A-Z]/
+then <a href="#sort"><code>sort()</code></a>.  If the data are primarily lowercase non Latin 1 then
+apply tr/[A-Z]/[a-z]/ before sorting.  If the data are primarily UPPERCASE
+and include Latin-1 characters then apply:</p>
+<pre>
+    <span class="regex">tr/[a-z]/[A-Z]/</span><span class="operator">;</span>
+    <span class="regex">tr/[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ]/[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ/</span><span class="operator">;</span>
+    <span class="regex">s/ß/SS/g</span><span class="operator">;</span>
+</pre>
+<p>then <a href="#sort"><code>sort()</code></a>.  Do note however that such Latin-1 manipulation does not 
+address the &yuml; <code>y WITH DIAERESIS</code> character that will remain at 
+code point 255 on ASCII platforms, but 223 on most EBCDIC platforms 
+where it will sort to a place less than the EBCDIC numerals.  With a 
+Unicode-enabled Perl you might try:</p>
+<pre>
+    <span class="regex">tr/^?/\x{178}/</span><span class="operator">;</span>
+</pre>
+<p>The strategy of mono casing data before sorting does not preserve the case 
+of the data and may not be acceptable for that reason.</p>
+<p>
+</p>
+<h2><a name="convert__sort_data__then_re_convert_">Convert, sort data, then re convert.</a></h2>
+<p>This is the most expensive proposition that does not employ a network
+connection.</p>
+<p>
+</p>
+<h2><a name="perform_sorting_on_one_type_of_platform_only_">Perform sorting on one type of platform only.</a></h2>
+<p>This strategy can employ a network connection.  As such
+it would be computationally expensive.</p>
+<p>
+</p>
+<hr />
+<h1><a name="transformation_formats">TRANSFORMATION FORMATS</a></h1>
+<p>There are a variety of ways of transforming data with an intra character set 
+mapping that serve a variety of purposes.  Sorting was discussed in the 
+previous section and a few of the other more popular mapping techniques are 
+discussed next.</p>
+<p>
+</p>
+<h2><a name="url_decoding_and_encoding">URL decoding and encoding</a></h2>
+<p>Note that some URLs have hexadecimal ASCII code points in them in an
+attempt to overcome character or protocol limitation issues.  For example 
+the tilde character is not on every keyboard hence a URL of the form:</p>
+<pre>
+    <a href="http://www.pvhp.com/~pvhp/">http://www.pvhp.com/~pvhp/</a></pre>
+<p>may also be expressed as either of:</p>
+<pre>
+    <a href="http://www.pvhp.com/%7Epvhp/">http://www.pvhp.com/%7Epvhp/</a></pre>
+<pre>
+    <a href="http://www.pvhp.com/%7epvhp/">http://www.pvhp.com/%7epvhp/</a></pre>
+<p>where 7E is the hexadecimal ASCII code point for '~'.  Here is an example
+of decoding such a URL under CCSID 1047:</p>
+<pre>
+    <span class="variable">$url</span> <span class="operator">=</span> <span class="string">'http://www.pvhp.com/%7Epvhp/'</span><span class="operator">;</span>
+    <span class="comment"># this array assumes code page 1047</span>
+    <span class="keyword">my</span> <span class="variable">@a2e_1047</span> <span class="operator">=</span> <span class="operator">(</span>
+          <span class="number">0</span><span class="operator">,</span>  <span class="number">1</span><span class="operator">,</span>  <span class="number">2</span><span class="operator">,</span>  <span class="number">3</span><span class="operator">,</span> <span class="number">55</span><span class="operator">,</span> <span class="number">45</span><span class="operator">,</span> <span class="number">46</span><span class="operator">,</span> <span class="number">47</span><span class="operator">,</span> <span class="number">22</span><span class="operator">,</span>  <span class="number">5</span><span class="operator">,</span> <span class="number">21</span><span class="operator">,</span> <span class="number">11</span><span class="operator">,</span> <span class="number">12</span><span class="operator">,</span> <span class="number">13</span><span class="operator">,</span> <span class="number">14</span><span class="operator">,</span> <span class="number">15</span><span class="operator">,</span>
+         <span class="number">16</span><span class="operator">,</span> <span class="number">17</span><span class="operator">,</span> <span class="number">18</span><span class="operator">,</span> <span class="number">19</span><span class="operator">,</span> <span class="number">60</span><span class="operator">,</span> <span class="number">61</span><span class="operator">,</span> <span class="number">50</span><span class="operator">,</span> <span class="number">38</span><span class="operator">,</span> <span class="number">24</span><span class="operator">,</span> <span class="number">25</span><span class="operator">,</span> <span class="number">63</span><span class="operator">,</span> <span class="number">39</span><span class="operator">,</span> <span class="number">28</span><span class="operator">,</span> <span class="number">29</span><span class="operator">,</span> <span class="number">30</span><span class="operator">,</span> <span class="number">31</span><span class="operator">,</span>
+         <span class="number">64</span><span class="operator">,</span> <span class="number">90</span><span class="operator">,</span><span class="number">127</span><span class="operator">,</span><span class="number">123</span><span class="operator">,</span> <span class="number">91</span><span class="operator">,</span><span class="number">108</span><span class="operator">,</span> <span class="number">80</span><span class="operator">,</span><span class="number">125</span><span class="operator">,</span> <span class="number">77</span><span class="operator">,</span> <span class="number">93</span><span class="operator">,</span> <span class="number">92</span><span class="operator">,</span> <span class="number">78</span><span class="operator">,</span><span class="number">107</span><span class="operator">,</span> <span class="number">96</span><span class="operator">,</span> <span class="number">75</span><span class="operator">,</span> <span class="number">97</span><span class="operator">,</span>
+        <span class="number">240</span><span class="operator">,</span><span class="number">241</span><span class="operator">,</span><span class="number">242</span><span class="operator">,</span><span class="number">243</span><span class="operator">,</span><span class="number">244</span><span class="operator">,</span><span class="number">245</span><span class="operator">,</span><span class="number">246</span><span class="operator">,</span><span class="number">247</span><span class="operator">,</span><span class="number">248</span><span class="operator">,</span><span class="number">249</span><span class="operator">,</span><span class="number">122</span><span class="operator">,</span> <span class="number">94</span><span class="operator">,</span> <span class="number">76</span><span class="operator">,</span><span class="number">126</span><span class="operator">,</span><span class="number">110</span><span class="operator">,</span><span class="number">111</span><span class="operator">,</span>
+        <span class="number">124</span><span class="operator">,</span><span class="number">193</span><span class="operator">,</span><span class="number">194</span><span class="operator">,</span><span class="number">195</span><span class="operator">,</span><span class="number">196</span><span class="operator">,</span><span class="number">197</span><span class="operator">,</span><span class="number">198</span><span class="operator">,</span><span class="number">199</span><span class="operator">,</span><span class="number">200</span><span class="operator">,</span><span class="number">201</span><span class="operator">,</span><span class="number">209</span><span class="operator">,</span><span class="number">210</span><span class="operator">,</span><span class="number">211</span><span class="operator">,</span><span class="number">212</span><span class="operator">,</span><span class="number">213</span><span class="operator">,</span><span class="number">214</span><span class="operator">,</span>
+        <span class="number">215</span><span class="operator">,</span><span class="number">216</span><span class="operator">,</span><span class="number">217</span><span class="operator">,</span><span class="number">226</span><span class="operator">,</span><span class="number">227</span><span class="operator">,</span><span class="number">228</span><span class="operator">,</span><span class="number">229</span><span class="operator">,</span><span class="number">230</span><span class="operator">,</span><span class="number">231</span><span class="operator">,</span><span class="number">232</span><span class="operator">,</span><span class="number">233</span><span class="operator">,</span><span class="number">173</span><span class="operator">,</span><span class="number">224</span><span class="operator">,</span><span class="number">189</span><span class="operator">,</span> <span class="number">95</span><span class="operator">,</span><span class="number">109</span><span class="operator">,</span>
+        <span class="number">121</span><span class="operator">,</span><span class="number">129</span><span class="operator">,</span><span class="number">130</span><span class="operator">,</span><span class="number">131</span><span class="operator">,</span><span class="number">132</span><span class="operator">,</span><span class="number">133</span><span class="operator">,</span><span class="number">134</span><span class="operator">,</span><span class="number">135</span><span class="operator">,</span><span class="number">136</span><span class="operator">,</span><span class="number">137</span><span class="operator">,</span><span class="number">145</span><span class="operator">,</span><span class="number">146</span><span class="operator">,</span><span class="number">147</span><span class="operator">,</span><span class="number">148</span><span class="operator">,</span><span class="number">149</span><span class="operator">,</span><span class="number">150</span><span class="operator">,</span>
+        <span class="number">151</span><span class="operator">,</span><span class="number">152</span><span class="operator">,</span><span class="number">153</span><span class="operator">,</span><span class="number">162</span><span class="operator">,</span><span class="number">163</span><span class="operator">,</span><span class="number">164</span><span class="operator">,</span><span class="number">165</span><span class="operator">,</span><span class="number">166</span><span class="operator">,</span><span class="number">167</span><span class="operator">,</span><span class="number">168</span><span class="operator">,</span><span class="number">169</span><span class="operator">,</span><span class="number">192</span><span class="operator">,</span> <span class="number">79</span><span class="operator">,</span><span class="number">208</span><span class="operator">,</span><span class="number">161</span><span class="operator">,</span>  <span class="number">7</span><span class="operator">,</span>
+         <span class="number">32</span><span class="operator">,</span> <span class="number">33</span><span class="operator">,</span> <span class="number">34</span><span class="operator">,</span> <span class="number">35</span><span class="operator">,</span> <span class="number">36</span><span class="operator">,</span> <span class="number">37</span><span class="operator">,</span>  <span class="number">6</span><span class="operator">,</span> <span class="number">23</span><span class="operator">,</span> <span class="number">40</span><span class="operator">,</span> <span class="number">41</span><span class="operator">,</span> <span class="number">42</span><span class="operator">,</span> <span class="number">43</span><span class="operator">,</span> <span class="number">44</span><span class="operator">,</span>  <span class="number">9</span><span class="operator">,</span> <span class="number">10</span><span class="operator">,</span> <span class="number">27</span><span class="operator">,</span>
+         <span class="number">48</span><span class="operator">,</span> <span class="number">49</span><span class="operator">,</span> <span class="number">26</span><span class="operator">,</span> <span class="number">51</span><span class="operator">,</span> <span class="number">52</span><span class="operator">,</span> <span class="number">53</span><span class="operator">,</span> <span class="number">54</span><span class="operator">,</span>  <span class="number">8</span><span class="operator">,</span> <span class="number">56</span><span class="operator">,</span> <span class="number">57</span><span class="operator">,</span> <span class="number">58</span><span class="operator">,</span> <span class="number">59</span><span class="operator">,</span>  <span class="number">4</span><span class="operator">,</span> <span class="number">20</span><span class="operator">,</span> <span class="number">62</span><span class="operator">,</span><span class="number">255</span><span class="operator">,</span>
+         <span class="number">65</span><span class="operator">,</span><span class="number">170</span><span class="operator">,</span> <span class="number">74</span><span class="operator">,</span><span class="number">177</span><span class="operator">,</span><span class="number">159</span><span class="operator">,</span><span class="number">178</span><span class="operator">,</span><span class="number">106</span><span class="operator">,</span><span class="number">181</span><span class="operator">,</span><span class="number">187</span><span class="operator">,</span><span class="number">180</span><span class="operator">,</span><span class="number">154</span><span class="operator">,</span><span class="number">138</span><span class="operator">,</span><span class="number">176</span><span class="operator">,</span><span class="number">202</span><span class="operator">,</span><span class="number">175</span><span class="operator">,</span><span class="number">188</span><span class="operator">,</span>
+        <span class="number">144</span><span class="operator">,</span><span class="number">143</span><span class="operator">,</span><span class="number">234</span><span class="operator">,</span><span class="number">250</span><span class="operator">,</span><span class="number">190</span><span class="operator">,</span><span class="number">160</span><span class="operator">,</span><span class="number">182</span><span class="operator">,</span><span class="number">179</span><span class="operator">,</span><span class="number">157</span><span class="operator">,</span><span class="number">218</span><span class="operator">,</span><span class="number">155</span><span class="operator">,</span><span class="number">139</span><span class="operator">,</span><span class="number">183</span><span class="operator">,</span><span class="number">184</span><span class="operator">,</span><span class="number">185</span><span class="operator">,</span><span class="number">171</span><span class="operator">,</span>
+        <span class="number">100</span><span class="operator">,</span><span class="number">101</span><span class="operator">,</span> <span class="number">98</span><span class="operator">,</span><span class="number">102</span><span class="operator">,</span> <span class="number">99</span><span class="operator">,</span><span class="number">103</span><span class="operator">,</span><span class="number">158</span><span class="operator">,</span><span class="number">104</span><span class="operator">,</span><span class="number">116</span><span class="operator">,</span><span class="number">113</span><span class="operator">,</span><span class="number">114</span><span class="operator">,</span><span class="number">115</span><span class="operator">,</span><span class="number">120</span><span class="operator">,</span><span class="number">117</span><span class="operator">,</span><span class="number">118</span><span class="operator">,</span><span class="number">119</span><span class="operator">,</span>
+        <span class="number">172</span><span class="operator">,</span><span class="number">105</span><span class="operator">,</span><span class="number">237</span><span class="operator">,</span><span class="number">238</span><span class="operator">,</span><span class="number">235</span><span class="operator">,</span><span class="number">239</span><span class="operator">,</span><span class="number">236</span><span class="operator">,</span><span class="number">191</span><span class="operator">,</span><span class="number">128</span><span class="operator">,</span><span class="number">253</span><span class="operator">,</span><span class="number">254</span><span class="operator">,</span><span class="number">251</span><span class="operator">,</span><span class="number">252</span><span class="operator">,</span><span class="number">186</span><span class="operator">,</span><span class="number">174</span><span class="operator">,</span> <span class="number">89</span><span class="operator">,</span>
+         <span class="number">68</span><span class="operator">,</span> <span class="number">69</span><span class="operator">,</span> <span class="number">66</span><span class="operator">,</span> <span class="number">70</span><span class="operator">,</span> <span class="number">67</span><span class="operator">,</span> <span class="number">71</span><span class="operator">,</span><span class="number">156</span><span class="operator">,</span> <span class="number">72</span><span class="operator">,</span> <span class="number">84</span><span class="operator">,</span> <span class="number">81</span><span class="operator">,</span> <span class="number">82</span><span class="operator">,</span> <span class="number">83</span><span class="operator">,</span> <span class="number">88</span><span class="operator">,</span> <span class="number">85</span><span class="operator">,</span> <span class="number">86</span><span class="operator">,</span> <span class="number">87</span><span class="operator">,</span>
+        <span class="number">140</span><span class="operator">,</span> <span class="number">73</span><span class="operator">,</span><span class="number">205</span><span class="operator">,</span><span class="number">206</span><span class="operator">,</span><span class="number">203</span><span class="operator">,</span><span class="number">207</span><span class="operator">,</span><span class="number">204</span><span class="operator">,</span><span class="number">225</span><span class="operator">,</span><span class="number">112</span><span class="operator">,</span><span class="number">221</span><span class="operator">,</span><span class="number">222</span><span class="operator">,</span><span class="number">219</span><span class="operator">,</span><span class="number">220</span><span class="operator">,</span><span class="number">141</span><span class="operator">,</span><span class="number">142</span><span class="operator">,</span><span class="number">223</span>
+    <span class="operator">);</span>
+    <span class="variable">$url</span> <span class="operator">=~</span> <span class="regex">s/%([0-9a-fA-F]{2})/pack("c",$a2e_1047[hex($1)])/ge</span><span class="operator">;</span>
+</pre>
+<p>Conversely, here is a partial solution for the task of encoding such 
+a URL under the 1047 code page:</p>
+<pre>
+    <span class="variable">$url</span> <span class="operator">=</span> <span class="string">'http://www.pvhp.com/~pvhp/'</span><span class="operator">;</span>
+    <span class="comment"># this array assumes code page 1047</span>
+    <span class="keyword">my</span> <span class="variable">@e2a_1047</span> <span class="operator">=</span> <span class="operator">(</span>
+          <span class="number">0</span><span class="operator">,</span>  <span class="number">1</span><span class="operator">,</span>  <span class="number">2</span><span class="operator">,</span>  <span class="number">3</span><span class="operator">,</span><span class="number">156</span><span class="operator">,</span>  <span class="number">9</span><span class="operator">,</span><span class="number">134</span><span class="operator">,</span><span class="number">127</span><span class="operator">,</span><span class="number">151</span><span class="operator">,</span><span class="number">141</span><span class="operator">,</span><span class="number">142</span><span class="operator">,</span> <span class="number">11</span><span class="operator">,</span> <span class="number">12</span><span class="operator">,</span> <span class="number">13</span><span class="operator">,</span> <span class="number">14</span><span class="operator">,</span> <span class="number">15</span><span class="operator">,</span>
+         <span class="number">16</span><span class="operator">,</span> <span class="number">17</span><span class="operator">,</span> <span class="number">18</span><span class="operator">,</span> <span class="number">19</span><span class="operator">,</span><span class="number">157</span><span class="operator">,</span> <span class="number">10</span><span class="operator">,</span>  <span class="number">8</span><span class="operator">,</span><span class="number">135</span><span class="operator">,</span> <span class="number">24</span><span class="operator">,</span> <span class="number">25</span><span class="operator">,</span><span class="number">146</span><span class="operator">,</span><span class="number">143</span><span class="operator">,</span> <span class="number">28</span><span class="operator">,</span> <span class="number">29</span><span class="operator">,</span> <span class="number">30</span><span class="operator">,</span> <span class="number">31</span><span class="operator">,</span>
+        <span class="number">128</span><span class="operator">,</span><span class="number">129</span><span class="operator">,</span><span class="number">130</span><span class="operator">,</span><span class="number">131</span><span class="operator">,</span><span class="number">132</span><span class="operator">,</span><span class="number">133</span><span class="operator">,</span> <span class="number">23</span><span class="operator">,</span> <span class="number">27</span><span class="operator">,</span><span class="number">136</span><span class="operator">,</span><span class="number">137</span><span class="operator">,</span><span class="number">138</span><span class="operator">,</span><span class="number">139</span><span class="operator">,</span><span class="number">140</span><span class="operator">,</span>  <span class="number">5</span><span class="operator">,</span>  <span class="number">6</span><span class="operator">,</span>  <span class="number">7</span><span class="operator">,</span>
+        <span class="number">144</span><span class="operator">,</span><span class="number">145</span><span class="operator">,</span> <span class="number">22</span><span class="operator">,</span><span class="number">147</span><span class="operator">,</span><span class="number">148</span><span class="operator">,</span><span class="number">149</span><span class="operator">,</span><span class="number">150</span><span class="operator">,</span>  <span class="number">4</span><span class="operator">,</span><span class="number">152</span><span class="operator">,</span><span class="number">153</span><span class="operator">,</span><span class="number">154</span><span class="operator">,</span><span class="number">155</span><span class="operator">,</span> <span class="number">20</span><span class="operator">,</span> <span class="number">21</span><span class="operator">,</span><span class="number">158</span><span class="operator">,</span> <span class="number">26</span><span class="operator">,</span>
+         <span class="number">32</span><span class="operator">,</span><span class="number">160</span><span class="operator">,</span><span class="number">226</span><span class="operator">,</span><span class="number">228</span><span class="operator">,</span><span class="number">224</span><span class="operator">,</span><span class="number">225</span><span class="operator">,</span><span class="number">227</span><span class="operator">,</span><span class="number">229</span><span class="operator">,</span><span class="number">231</span><span class="operator">,</span><span class="number">241</span><span class="operator">,</span><span class="number">162</span><span class="operator">,</span> <span class="number">46</span><span class="operator">,</span> <span class="number">60</span><span class="operator">,</span> <span class="number">40</span><span class="operator">,</span> <span class="number">43</span><span class="operator">,</span><span class="number">124</span><span class="operator">,</span>
+         <span class="number">38</span><span class="operator">,</span><span class="number">233</span><span class="operator">,</span><span class="number">234</span><span class="operator">,</span><span class="number">235</span><span class="operator">,</span><span class="number">232</span><span class="operator">,</span><span class="number">237</span><span class="operator">,</span><span class="number">238</span><span class="operator">,</span><span class="number">239</span><span class="operator">,</span><span class="number">236</span><span class="operator">,</span><span class="number">223</span><span class="operator">,</span> <span class="number">33</span><span class="operator">,</span> <span class="number">36</span><span class="operator">,</span> <span class="number">42</span><span class="operator">,</span> <span class="number">41</span><span class="operator">,</span> <span class="number">59</span><span class="operator">,</span> <span class="number">94</span><span class="operator">,</span>
+         <span class="number">45</span><span class="operator">,</span> <span class="number">47</span><span class="operator">,</span><span class="number">194</span><span class="operator">,</span><span class="number">196</span><span class="operator">,</span><span class="number">192</span><span class="operator">,</span><span class="number">193</span><span class="operator">,</span><span class="number">195</span><span class="operator">,</span><span class="number">197</span><span class="operator">,</span><span class="number">199</span><span class="operator">,</span><span class="number">209</span><span class="operator">,</span><span class="number">166</span><span class="operator">,</span> <span class="number">44</span><span class="operator">,</span> <span class="number">37</span><span class="operator">,</span> <span class="number">95</span><span class="operator">,</span> <span class="number">62</span><span class="operator">,</span> <span class="number">63</span><span class="operator">,</span>
+        <span class="number">248</span><span class="operator">,</span><span class="number">201</span><span class="operator">,</span><span class="number">202</span><span class="operator">,</span><span class="number">203</span><span class="operator">,</span><span class="number">200</span><span class="operator">,</span><span class="number">205</span><span class="operator">,</span><span class="number">206</span><span class="operator">,</span><span class="number">207</span><span class="operator">,</span><span class="number">204</span><span class="operator">,</span> <span class="number">96</span><span class="operator">,</span> <span class="number">58</span><span class="operator">,</span> <span class="number">35</span><span class="operator">,</span> <span class="number">64</span><span class="operator">,</span> <span class="number">39</span><span class="operator">,</span> <span class="number">61</span><span class="operator">,</span> <span class="number">34</span><span class="operator">,</span>
+        <span class="number">216</span><span class="operator">,</span> <span class="number">97</span><span class="operator">,</span> <span class="number">98</span><span class="operator">,</span> <span class="number">99</span><span class="operator">,</span><span class="number">100</span><span class="operator">,</span><span class="number">101</span><span class="operator">,</span><span class="number">102</span><span class="operator">,</span><span class="number">103</span><span class="operator">,</span><span class="number">104</span><span class="operator">,</span><span class="number">105</span><span class="operator">,</span><span class="number">171</span><span class="operator">,</span><span class="number">187</span><span class="operator">,</span><span class="number">240</span><span class="operator">,</span><span class="number">253</span><span class="operator">,</span><span class="number">254</span><span class="operator">,</span><span class="number">177</span><span class="operator">,</span>
+        <span class="number">176</span><span class="operator">,</span><span class="number">106</span><span class="operator">,</span><span class="number">107</span><span class="operator">,</span><span class="number">108</span><span class="operator">,</span><span class="number">109</span><span class="operator">,</span><span class="number">110</span><span class="operator">,</span><span class="number">111</span><span class="operator">,</span><span class="number">112</span><span class="operator">,</span><span class="number">113</span><span class="operator">,</span><span class="number">114</span><span class="operator">,</span><span class="number">170</span><span class="operator">,</span><span class="number">186</span><span class="operator">,</span><span class="number">230</span><span class="operator">,</span><span class="number">184</span><span class="operator">,</span><span class="number">198</span><span class="operator">,</span><span class="number">164</span><span class="operator">,</span>
+        <span class="number">181</span><span class="operator">,</span><span class="number">126</span><span class="operator">,</span><span class="number">115</span><span class="operator">,</span><span class="number">116</span><span class="operator">,</span><span class="number">117</span><span class="operator">,</span><span class="number">118</span><span class="operator">,</span><span class="number">119</span><span class="operator">,</span><span class="number">120</span><span class="operator">,</span><span class="number">121</span><span class="operator">,</span><span class="number">122</span><span class="operator">,</span><span class="number">161</span><span class="operator">,</span><span class="number">191</span><span class="operator">,</span><span class="number">208</span><span class="operator">,</span> <span class="number">91</span><span class="operator">,</span><span class="number">222</span><span class="operator">,</span><span class="number">174</span><span class="operator">,</span>
+        <span class="number">172</span><span class="operator">,</span><span class="number">163</span><span class="operator">,</span><span class="number">165</span><span class="operator">,</span><span class="number">183</span><span class="operator">,</span><span class="number">169</span><span class="operator">,</span><span class="number">167</span><span class="operator">,</span><span class="number">182</span><span class="operator">,</span><span class="number">188</span><span class="operator">,</span><span class="number">189</span><span class="operator">,</span><span class="number">190</span><span class="operator">,</span><span class="number">221</span><span class="operator">,</span><span class="number">168</span><span class="operator">,</span><span class="number">175</span><span class="operator">,</span> <span class="number">93</span><span class="operator">,</span><span class="number">180</span><span class="operator">,</span><span class="number">215</span><span class="operator">,</span>
+        <span class="number">123</span><span class="operator">,</span> <span class="number">65</span><span class="operator">,</span> <span class="number">66</span><span class="operator">,</span> <span class="number">67</span><span class="operator">,</span> <span class="number">68</span><span class="operator">,</span> <span class="number">69</span><span class="operator">,</span> <span class="number">70</span><span class="operator">,</span> <span class="number">71</span><span class="operator">,</span> <span class="number">72</span><span class="operator">,</span> <span class="number">73</span><span class="operator">,</span><span class="number">173</span><span class="operator">,</span><span class="number">244</span><span class="operator">,</span><span class="number">246</span><span class="operator">,</span><span class="number">242</span><span class="operator">,</span><span class="number">243</span><span class="operator">,</span><span class="number">245</span><span class="operator">,</span>
+        <span class="number">125</span><span class="operator">,</span> <span class="number">74</span><span class="operator">,</span> <span class="number">75</span><span class="operator">,</span> <span class="number">76</span><span class="operator">,</span> <span class="number">77</span><span class="operator">,</span> <span class="number">78</span><span class="operator">,</span> <span class="number">79</span><span class="operator">,</span> <span class="number">80</span><span class="operator">,</span> <span class="number">81</span><span class="operator">,</span> <span class="number">82</span><span class="operator">,</span><span class="number">185</span><span class="operator">,</span><span class="number">251</span><span class="operator">,</span><span class="number">252</span><span class="operator">,</span><span class="number">249</span><span class="operator">,</span><span class="number">250</span><span class="operator">,</span><span class="number">255</span><span class="operator">,</span>
+         <span class="number">92</span><span class="operator">,</span><span class="number">247</span><span class="operator">,</span> <span class="number">83</span><span class="operator">,</span> <span class="number">84</span><span class="operator">,</span> <span class="number">85</span><span class="operator">,</span> <span class="number">86</span><span class="operator">,</span> <span class="number">87</span><span class="operator">,</span> <span class="number">88</span><span class="operator">,</span> <span class="number">89</span><span class="operator">,</span> <span class="number">90</span><span class="operator">,</span><span class="number">178</span><span class="operator">,</span><span class="number">212</span><span class="operator">,</span><span class="number">214</span><span class="operator">,</span><span class="number">210</span><span class="operator">,</span><span class="number">211</span><span class="operator">,</span><span class="number">213</span><span class="operator">,</span>
+         <span class="number">48</span><span class="operator">,</span> <span class="number">49</span><span class="operator">,</span> <span class="number">50</span><span class="operator">,</span> <span class="number">51</span><span class="operator">,</span> <span class="number">52</span><span class="operator">,</span> <span class="number">53</span><span class="operator">,</span> <span class="number">54</span><span class="operator">,</span> <span class="number">55</span><span class="operator">,</span> <span class="number">56</span><span class="operator">,</span> <span class="number">57</span><span class="operator">,</span><span class="number">179</span><span class="operator">,</span><span class="number">219</span><span class="operator">,</span><span class="number">220</span><span class="operator">,</span><span class="number">217</span><span class="operator">,</span><span class="number">218</span><span class="operator">,</span><span class="number">159</span>
+    <span class="operator">);</span>
+    <span class="comment"># The following regular expression does not address the </span>
+    <span class="comment"># mappings for: ('.' =&gt; '%2E', '/' =&gt; '%2F', ':' =&gt; '%3A') </span>
+    <span class="variable">$url</span> <span class="operator">=~</span> <span class="regex">s/([\t "#%&amp;\(\),;&lt;=&gt;\?\@\[\\\]^`{|}~])/sprintf("%%%02X",$e2a_1047[ord($1)])/ge</span><span class="operator">;</span>
+</pre>
+<p>where a more complete solution would split the URL into components 
+and apply a full s/// substitution only to the appropriate parts.</p>
+<p>In the remaining examples a @e2a or @a2e array may be employed
+but the assignment will not be shown explicitly.  For code page 1047
+you could use the @a2e_1047 or @e2a_1047 arrays just shown.</p>
+<p>
+</p>
+<h2><a name="uu_encoding_and_decoding">uu encoding and decoding</a></h2>
+<p>The <a href="../../lib/pods/perlrun.html#u"><code>u</code></a> template to <a href="#pack"><code>pack()</code></a> or <a href="#unpack"><code>unpack()</code></a> will render EBCDIC data in EBCDIC 
+characters equivalent to their ASCII counterparts.  For example, the 
+following will print &quot;Yes indeed\n&quot; on either an ASCII or EBCDIC computer:</p>
+<pre>
+    <span class="variable">$all_byte_chrs</span> <span class="operator">=</span> <span class="string">''</span><span class="operator">;</span>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="number">0</span><span class="operator">..</span><span class="number">255</span><span class="operator">)</span> <span class="operator">{</span> <span class="variable">$all_byte_chrs</span> <span class="operator">.=</span> <span class="keyword">chr</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">);</span> <span class="operator">}</span>
+    <span class="variable">$uuencode_byte_chrs</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">'u'</span><span class="operator">,</span> <span class="variable">$all_byte_chrs</span><span class="operator">);</span>
+    <span class="operator">(</span><span class="variable">$uu</span> <span class="operator">=</span> <span class="operator">&lt;&lt;</span><span class="default">'ENDOFHEREDOC'</span><span class="operator">)</span> <span class="operator">=~</span> <span class="regex">s/^\s*//gm</span><span class="operator">;</span><span class="string">
+    M``$"`P0%!@&lt;("0H+#`T.#Q`1$A,4%187&amp;!D:&amp;QP='A\@(2(C)"4F)R@I*BLL
+    M+2XO,#$R,S0U-C&lt;X.3H[/#T^/T!!0D-$149'2$E*2TQ-3D]045)35%565UA9
+    M6EM&lt;75Y?8&amp;%B8V1E9F=H:6IK;&amp;UN;W!Q&lt;G-T=79W&gt;'EZ&gt;WQ]?G^`@8*#A(6&amp;
+    MAXB)BHN,C8Z/D)&amp;2DY25EI&gt;8F9J;G)V&gt;GZ"AHJ.DI::GJ*FJJZRMKJ^PL;*S
+    MM+6VM[BYNKN\O;Z_P,'"P\3%QL?(R&lt;K+S,W.S]#1TM/4U=;7V-G:V]S=WM_@
+    ?X&gt;+CY.7FY^CIZNOL[&gt;[O\/'R\_3U]O?X^?K[_/W^_P``
+    </span><span class="default">ENDOFHEREDOC</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$uuencode_byte_chrs</span> <span class="keyword">eq</span> <span class="variable">$uu</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"Yes "</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="variable">$uudecode_byte_chrs</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'u'</span><span class="operator">,</span> <span class="variable">$uuencode_byte_chrs</span><span class="operator">);</span>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$uudecode_byte_chrs</span> <span class="keyword">eq</span> <span class="variable">$all_byte_chrs</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"indeed\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Here is a very spartan uudecoder that will work on EBCDIC provided
+that the @e2a array is filled in appropriately:</p>
+<pre>
+    <span class="comment">#!/usr/local/bin/perl</span>
+    <span class="variable">@e2a</span> <span class="operator">=</span> <span class="operator">(</span> <span class="comment"># this must be filled in</span>
+           <span class="operator">);</span>
+    <span class="variable">$_</span> <span class="operator">=</span> <span class="operator">&lt;&gt;</span> <span class="keyword">until</span> <span class="operator">(</span><span class="variable">$mode</span><span class="operator">,</span><span class="variable">$file</span><span class="operator">)</span> <span class="operator">=</span> <span class="regex">/^begin\s*(\d*)\s*(\S*)/</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">OUT</span><span class="operator">,</span> <span class="string">"&gt; </span><span class="variable">$file</span><span class="string">"</span><span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$file</span> <span class="keyword">ne</span> <span class="string">""</span><span class="operator">;</span>
+    <span class="keyword">while</span><span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+        <span class="keyword">last</span> <span class="keyword">if</span> <span class="regex">/^end/</span><span class="operator">;</span>
+        <span class="keyword">next</span> <span class="keyword">if</span> <span class="regex">/[a-z]/</span><span class="operator">;</span>
+        <span class="keyword">next</span> <span class="keyword">unless</span> <span class="keyword">int</span><span class="operator">((((</span><span class="variable">$e2a</span><span class="operator">[</span><span class="keyword">ord</span><span class="operator">()</span><span class="operator">]</span> <span class="operator">-</span> <span class="number">32</span> <span class="operator">)</span> <span class="operator">&amp;</span> <span class="number">077</span><span class="operator">)</span> <span class="operator">+</span> <span class="number">2</span><span class="operator">)</span> <span class="operator">/</span> <span class="number">3</span><span class="operator">)</span> <span class="operator">==</span>
+            <span class="keyword">int</span><span class="operator">(</span><span class="keyword">length</span><span class="operator">()</span> <span class="operator">/</span> <span class="number">4</span><span class="operator">);</span>
+        <span class="keyword">print</span> <span class="variable">OUT</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">"u"</span><span class="operator">,</span> <span class="variable">$_</span><span class="operator">);</span>
+    <span class="operator">}</span>
+    <span class="keyword">close</span><span class="operator">(</span><span class="variable">OUT</span><span class="operator">);</span>
+    <span class="keyword">chmod</span> <span class="keyword">oct</span><span class="operator">(</span><span class="variable">$mode</span><span class="operator">),</span> <span class="variable">$file</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="quoted_printable_encoding_and_decoding">Quoted-Printable encoding and decoding</a></h2>
+<p>On ASCII-encoded platforms it is possible to strip characters outside of
+the printable set using:</p>
+<pre>
+    <span class="comment"># This QP encoder works on ASCII only</span>
+    <span class="variable">$qp_string</span> <span class="operator">=~</span> <span class="regex">s/([=\x00-\x1F\x80-\xFF])/sprintf("=%02X",ord($1))/ge</span><span class="operator">;</span>
+</pre>
+<p>Whereas a QP encoder that works on both ASCII and EBCDIC platforms 
+would look somewhat like the following (where the EBCDIC branch @e2a 
+array is omitted for brevity):</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">ord</span><span class="operator">(</span><span class="string">'A'</span><span class="operator">)</span> <span class="operator">==</span> <span class="number">65</span><span class="operator">)</span> <span class="operator">{</span>    <span class="comment"># ASCII</span>
+        <span class="variable">$delete</span> <span class="operator">=</span> <span class="string">"\x7F"</span><span class="operator">;</span>    <span class="comment"># ASCII</span>
+        <span class="variable">@e2a</span> <span class="operator">=</span> <span class="operator">(</span><span class="number">0</span> <span class="operator">..</span> <span class="number">255</span><span class="operator">)</span>    <span class="comment"># ASCII to ASCII identity map</span>
+    <span class="operator">}</span>
+    <span class="keyword">else</span> <span class="operator">{</span>                   <span class="comment"># EBCDIC</span>
+        <span class="variable">$delete</span> <span class="operator">=</span> <span class="string">"\x07"</span><span class="operator">;</span>    <span class="comment"># EBCDIC</span>
+        <span class="variable">@e2a</span> <span class="operator">=</span>               <span class="comment"># EBCDIC to ASCII map (as shown above)</span>
+    <span class="operator">}</span>
+    <span class="variable">$qp_string</span> <span class="operator">=~</span>
+      <span class="regex">s/([^ !"\#\$%&amp;'()*+,\-.\/0-9:;&lt;&gt;?\@A-Z[\\\]^_`a-z{|}~</span><span class="variable">$delete</span><span class="regex">])/sprintf("=%02X",$e2a[ord($1)])/ge</span><span class="operator">;</span>
+</pre>
+<p>(although in production code the substitutions might be done
+in the EBCDIC branch with the @e2a array and separately in the 
+ASCII branch without the expense of the identity map).</p>
+<p>Such QP strings can be decoded with:</p>
+<pre>
+    <span class="comment"># This QP decoder is limited to ASCII only</span>
+    <span class="variable">$string</span> <span class="operator">=~</span> <span class="regex">s/=([0-9A-Fa-f][0-9A-Fa-f])/chr hex $1/ge</span><span class="operator">;</span>
+    <span class="variable">$string</span> <span class="operator">=~</span> <span class="regex">s/=[\n\r]+$//</span><span class="operator">;</span>
+</pre>
+<p>Whereas a QP decoder that works on both ASCII and EBCDIC platforms 
+would look somewhat like the following (where the @a2e array is
+omitted for brevity):</p>
+<pre>
+    <span class="variable">$string</span> <span class="operator">=~</span> <span class="regex">s/=([0-9A-Fa-f][0-9A-Fa-f])/chr $a2e[hex $1]/ge</span><span class="operator">;</span>
+    <span class="variable">$string</span> <span class="operator">=~</span> <span class="regex">s/=[\n\r]+$//</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="caesarean_ciphers">Caesarean ciphers</a></h2>
+<p>The practice of shifting an alphabet one or more characters for encipherment
+dates back thousands of years and was explicitly detailed by Gaius Julius
+Caesar in his <strong>Gallic Wars</strong> text.  A single alphabet shift is sometimes 
+referred to as a rotation and the shift amount is given as a number $n after
+the string 'rot' or &quot;rot$n&quot;.  Rot0 and rot26 would designate identity maps 
+on the 26-letter English version of the Latin alphabet.  Rot13 has the 
+interesting property that alternate subsequent invocations are identity maps 
+(thus rot13 is its own non-trivial inverse in the group of 26 alphabet 
+rotations).  Hence the following is a rot13 encoder and decoder that will 
+work on ASCII and EBCDIC platforms:</p>
+<pre>
+    <span class="comment">#!/usr/local/bin/perl</span>
+</pre>
+<pre>
+    <span class="keyword">while</span><span class="operator">(&lt;&gt;){</span>
+        <span class="regex">tr/n-za-mN-ZA-M/a-zA-Z/</span><span class="operator">;</span>
+        <span class="keyword">print</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>In one-liner form:</p>
+<pre>
+    <span class="variable">perl</span> <span class="operator">-</span><span class="keyword">ne</span> <span class="string">'tr/n-za-mN-ZA-M/a-zA-Z/;print'</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="hashing_order_and_checksums">Hashing order and checksums</a></h1>
+<p>To the extent that it is possible to write code that depends on 
+hashing order there may be differences between hashes as stored
+on an ASCII-based platform and hashes stored on an EBCDIC-based platform.
+XXX</p>
+<p>
+</p>
+<hr />
+<h1><a name="i18n_and_l10n">I18N AND L10N</a></h1>
+<p>Internationalization (I18N) and localization (L10N) are supported at least 
+in principle even on EBCDIC platforms.  The details are system-dependent 
+and discussed under the <a href="../../lib/pods/perlebcdic.html#os_issues">OS ISSUES in the perlebcdic manpage</a> section below.</p>
+<p>
+</p>
+<hr />
+<h1><a name="multi_octet_character_sets">MULTI-OCTET CHARACTER SETS</a></h1>
+<p>Perl may work with an internal UTF-EBCDIC encoding form for wide characters 
+on EBCDIC platforms in a manner analogous to the way that it works with 
+the UTF-8 internal encoding form on ASCII based platforms.</p>
+<p>Legacy multi byte EBCDIC code pages XXX.</p>
+<p>
+</p>
+<hr />
+<h1><a name="os_issues">OS ISSUES</a></h1>
+<p>There may be a few system-dependent issues 
+of concern to EBCDIC Perl programmers.</p>
+<p>
+</p>
+<h2><a name="os_400">OS/400</a></h2>
+<dl>
+<dt><strong><a name="pase" class="item">PASE</a></strong></dt>
+
+<dd>
+<p>The PASE environment is a runtime environment for OS/400 that can run
+executables built for PowerPC AIX in OS/400; see <a href="../../lib/pods/perlos400.html">the perlos400 manpage</a>.  PASE
+is ASCII-based, not EBCDIC-based as the ILE.</p>
+</dd>
+<dt><strong><a name="ifs_access" class="item">IFS access</a></strong></dt>
+
+<dd>
+<p>XXX.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="os_390__z_os">OS/390, z/OS</a></h2>
+<p>Perl runs under Unix Systems Services or USS.</p>
+<dl>
+<dt><strong><a name="chcp" class="item">chcp</a></strong></dt>
+
+<dd>
+<p><strong>chcp</strong> is supported as a shell utility for displaying and changing 
+one's code page.  See also <a href="#chcp">chcp</a>.</p>
+</dd>
+<dt><strong><a name="dataset_access" class="item">dataset access</a></strong></dt>
+
+<dd>
+<p>For sequential data set access try:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@ds_records</span> <span class="operator">=</span> <span class="string">`cat //DSNAME`</span><span class="operator">;</span>
+</pre>
+<p>or:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@ds_records</span> <span class="operator">=</span> <span class="string">`cat //'HLQ.DSNAME'`</span><span class="operator">;</span>
+</pre>
+<p>See also the OS390::Stdio module on CPAN.</p>
+</dd>
+<dt><strong><a name="os_390_z_os_iconv" class="item">OS/390, z/OS iconv</a></strong></dt>
+
+<dd>
+<p><strong>iconv</strong> is supported as both a shell utility and a C RTL routine.
+See also the <code>iconv(1)</code> and <code>iconv(3)</code> manual pages.</p>
+</dd>
+<dt><strong><a name="locales" class="item">locales</a></strong></dt>
+
+<dd>
+<p>On OS/390 or z/OS see <a href="../../lib/locale.html">the locale manpage</a> for information on locales.  The L10N files
+are in <em class="file">/usr/nls/locale</em>.  $Config{d_setlocale} is 'define' on OS/390
+or z/OS.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="vm_esa">VM/ESA?</a></h2>
+<p>XXX.</p>
+<p>
+</p>
+<h2><a name="posix_bc">POSIX-BC?</a></h2>
+<p>XXX.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>This pod document contains literal Latin 1 characters and may encounter 
+translation difficulties.  In particular one popular nroff implementation 
+was known to strip accented characters to their unaccented counterparts 
+while attempting to view this document through the <strong>pod2man</strong> program 
+(for example, you may see a plain <code>y</code> rather than one with a diaeresis 
+as in &yuml;).  Another nroff truncated the resultant manpage at
+the first occurrence of 8 bit characters.</p>
+<p>Not all shells will allow multiple <code>-e</code> string arguments to perl to
+be concatenated together properly as recipes 0, 2, 4, 5, and 6 might 
+seem to imply.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/pods/perllocale.html">the perllocale manpage</a>, <a href="../../lib/pods/perlfunc.html">the perlfunc manpage</a>, <a href="../../lib/pods/perlunicode.html">the perlunicode manpage</a>, <a href="../../lib/utf8.html">the utf8 manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="references">REFERENCES</a></h1>
+<p><a href="http://anubis.dkuug.dk/i18n/charmaps">http://anubis.dkuug.dk/i18n/charmaps</a></p>
+<p><a href="http://www.unicode.org/">http://www.unicode.org/</a></p>
+<p><a href="http://www.unicode.org/unicode/reports/tr16/">http://www.unicode.org/unicode/reports/tr16/</a></p>
+<p><a href="http://www.wps.com/projects/codes/">http://www.wps.com/projects/codes/</a>
+<strong>ASCII: American Standard Code for Information Infiltration</strong> Tom Jennings,
+September 1999.</p>
+<p><strong>The Unicode Standard, Version 3.0</strong> The Unicode Consortium, Lisa Moore ed., 
+ISBN 0-201-61633-5, Addison Wesley Developers Press, February 2000.</p>
+<p><strong>CDRA: IBM - Character Data Representation Architecture - 
+Reference and Registry</strong>, IBM SC09-2190-00, December 1996.</p>
+<p>&quot;Demystifying Character Sets&quot;, Andrea Vine, Multilingual Computing 
+&amp; Technology, <strong>#26 Vol. 10 Issue 4</strong>, August/September 1999;
+ISSN 1523-0309; Multilingual Computing Inc. Sandpoint ID, USA.</p>
+<p><strong>Codes, Ciphers, and Other Cryptic and Clandestine Communication</strong>
+Fred B. Wrixon, ISBN 1-57912-040-7, Black Dog &amp; Leventhal Publishers,
+1998.</p>
+<p><a href="http://www.bobbemer.com/P-BIT.HTM">http://www.bobbemer.com/P-BIT.HTM</a>
+<strong>IBM - EBCDIC and the P-bit; The biggest Computer Goof Ever</strong> Robert Bemer.</p>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p>15 April 2001: added UTF-8 and UTF-EBCDIC to main table, pvhp.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Peter Prymmer <a href="mailto:pvhp@best.com">pvhp@best.com</a> wrote this in 1999 and 2000 
+with CCSID 0819 and 0037 help from Chris Leach and 
+Andr&eacute; Pirard <a href="mailto:A.Pirard@ulg.ac.be">A.Pirard@ulg.ac.be</a> as well as POSIX-BC 
+help from Thomas Dorner <a href="mailto:Thomas.Dorner@start.de.">Thomas.Dorner@start.de.</a>
+Thanks also to Vickie Cooper, Philip Newton, William Raffloer, and 
+Joe Smith.  Trademarks, registered trademarks, service marks and 
+registered service marks used in this document are the property of 
+their respective owners.</p>
+
+</body>
+
+</html>

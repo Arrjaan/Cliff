@@ -1,0 +1,393 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Bit::Vector::String - Generic string import/export for Bit::Vector</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Bit::Vector::String - Generic string import/export for Bit::Vector</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#disclaimer">DISCLAIMER</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Bit::Vector::String - Generic string import/export for Bit::Vector</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Bit::Vector::String</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">to_Oct</span>
+      <span class="variable">$string</span> <span class="operator">=</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Oct</span><span class="operator">();</span>
+</pre>
+<pre>
+  <span class="variable">from_Oct</span>
+      <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">from_Oct</span><span class="operator">(</span><span class="variable">$string</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">new_Oct</span>
+      <span class="variable">$vector</span> <span class="operator">=</span> <span class="variable">Bit::Vector</span><span class="operator">-&gt;</span><span class="variable">new_Oct</span><span class="operator">(</span><span class="variable">$bits</span><span class="operator">,</span><span class="variable">$string</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">String_Export</span>
+      <span class="variable">$string</span> <span class="operator">=</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">String_Export</span><span class="operator">(</span><span class="variable">$type</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">String_Import</span>
+      <span class="variable">$type</span> <span class="operator">=</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">String_Import</span><span class="operator">(</span><span class="variable">$string</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">new_String</span>
+      <span class="variable">$vector</span> <span class="operator">=</span> <span class="variable">Bit::Vector</span><span class="operator">-&gt;</span><span class="variable">new_String</span><span class="operator">(</span><span class="variable">$bits</span><span class="operator">,</span><span class="variable">$string</span><span class="operator">);</span>
+      <span class="operator">(</span><span class="variable">$vector</span><span class="operator">,</span><span class="variable">$type</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">Bit::Vector</span><span class="operator">-&gt;</span><span class="variable">new_String</span><span class="operator">(</span><span class="variable">$bits</span><span class="operator">,</span><span class="variable">$string</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<ul>
+<li>
+<p><code>$string = $vector-&gt;to_Oct();</code></p>
+<p>Returns an octal string representing the given bit vector.</p>
+<p>Note that this method is not particularly efficient, since it
+is almost completely realized in Perl, and moreover internally
+operates on a Perl list of individual octal digits which it
+concatenates into the final string using &quot;<a href="../../../lib/pods/perlfunc.html#join"><code>join('', ...)</code></a>&quot;.</p>
+<p>A benchmark reveals that this method is about 40 times slower
+than the method &quot;<code>to_Bin()</code>&quot; (which is realized in C):</p>
+<pre>
+ Benchmark: timing 10000 iterations of to_Bin, to_Hex, to_Oct...
+     to_Bin:  1 wallclock secs ( 1.09 usr +  0.00 sys =  1.09 CPU)
+     to_Hex:  1 wallclock secs ( 0.53 usr +  0.00 sys =  0.53 CPU)
+     to_Oct: 40 wallclock secs (40.16 usr +  0.05 sys = 40.21 CPU)</pre>
+<p>Note that since an octal digit is always worth three bits,
+the length of the resulting string is always a multiple of
+three bits, regardless of the true length (in bits) of the
+given bit vector.</p>
+<p>Also note that the <strong>LEAST</strong> significant octal digit is
+located at the <strong>RIGHT</strong> end of the resulting string, and
+the <strong>MOST</strong> significant digit at the <strong>LEFT</strong> end.</p>
+<p>Finally, note that this method does <strong>NOT</strong> prepend any uniquely
+identifying format prefix (such as &quot;0o&quot;) to the resulting string
+(which means that the result of this method only contains valid
+octal digits, i.e., [0-7]).</p>
+<p>However, this can of course most easily be done as needed,
+as follows:</p>
+<pre>
+  <span class="variable">$string</span> <span class="operator">=</span> <span class="string">'0o'</span> <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Oct</span><span class="operator">();</span>
+</pre>
+</li>
+<li>
+<p><code>$vector-&gt;from_Oct($string);</code></p>
+<p>Allows to read in the contents of a bit vector from an octal string,
+such as returned by the method &quot;<code>to_Oct()</code>&quot; (see above).</p>
+<p>Note that this method is not particularly efficient, since it is
+almost completely realized in Perl, and moreover chops the input
+string into individual characters using &quot;<a href="../../../lib/pods/perlfunc.html#split"><code>split(//, $string)</code></a>&quot;.</p>
+<p>Remember also that the least significant bits are always to the
+right of an octal string, and the most significant bits to the left.
+Therefore, the string is actually reversed internally before storing
+it in the given bit vector using the method &quot;<code>Chunk_List_Store()</code>&quot;,
+which expects the least significant chunks of data at the beginning
+of a list.</p>
+<p>A benchmark reveals that this method is about 40 times slower than
+the method &quot;<code>from_Bin()</code>&quot; (which is realized in C):</p>
+<pre>
+ Benchmark: timing 10000 iterations of from_Bin, from_Hex, from_Oct...
+   from_Bin:  1 wallclock secs ( 1.13 usr +  0.00 sys =  1.13 CPU)
+   from_Hex:  1 wallclock secs ( 0.80 usr +  0.00 sys =  0.80 CPU)
+   from_Oct: 46 wallclock secs (44.95 usr +  0.00 sys = 44.95 CPU)</pre>
+<p>If the given string contains any character which is not an octal digit
+(i.e., [0-7]), a fatal syntax error ensues (&quot;unknown string type&quot;).</p>
+<p>Note especially that this method does <strong>NOT</strong> accept any uniquely
+identifying format prefix (such as &quot;0o&quot;) in the given string; the
+presence of such a prefix will also lead to the fatal &quot;unknown
+string type&quot; error.</p>
+<p>If the given string contains less octal digits than are needed to
+completely fill the given bit vector, the remaining (most significant)
+bits all remain cleared (i.e., set to zero).</p>
+<p>This also means that, even if the given string does not contain
+enough digits to completely fill the given bit vector, the previous
+contents of the bit vector are erased completely.</p>
+<p>If the given string is longer than it needs to fill the given bit
+vector, the superfluous characters are simply ignored.</p>
+<p>This behaviour is intentional so that you may read in the string
+representing one bit vector into another bit vector of different
+size, i.e., as much of it as will fit.</p>
+</li>
+<li>
+<p><code>$vector = Bit::Vector-&gt;new_Oct($bits,$string);</code></p>
+<p>This method is an alternative constructor which allows you to create
+a new bit vector object (with &quot;<code>$bits</code>&quot; bits) and to initialize it
+all in one go.</p>
+<p>The method internally first calls the bit vector constructor method
+&quot;<code>new()</code>&quot; and then stores the given string in the newly created
+bit vector using the same approach as the method &quot;<code>from_Oct()</code>&quot;
+(described above).</p>
+<p>Note that this approach is not particularly efficient, since it
+is almost completely realized in Perl, and moreover chops the input
+string into individual characters using &quot;<a href="../../../lib/pods/perlfunc.html#split"><code>split(//, $string)</code></a>&quot;.</p>
+<p>An exception will be raised if the necessary memory cannot be allocated
+(see the description of the method &quot;<code>new()</code>&quot; in <a href="../../../Bit/Vector(3).html">the Bit::Vector(3) manpage</a> for
+possible causes) or if the given string cannot be converted successfully
+(see the description of the method &quot;<code>from_Oct()</code>&quot; above for details).</p>
+<p>Note especially that this method does <strong>NOT</strong> accept any uniquely
+identifying format prefix (such as &quot;0o&quot;) in the given string and that
+such a prefix will lead to a fatal &quot;unknown string type&quot; error.</p>
+<p>In case of an error, the memory occupied by the new bit vector is
+released again before the exception is actually thrown.</p>
+<p>If the number of bits &quot;<code>$bits</code>&quot; given has the value &quot;<a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>&quot;,
+the method will automatically allocate a bit vector with a size
+(i.e., number of bits) of three times the length of the given string
+(since every octal digit is worth three bits).</p>
+<p>Note that this behaviour is different from that of the methods
+&quot;<code>new_Hex()</code>&quot;, &quot;<code>new_Bin()</code>&quot;, &quot;<code>new_Dec()</code>&quot; and &quot;<code>new_Enum()</code>&quot;
+(which are realized in C, internally); these methods will silently
+assume a value of 0 bits if &quot;<a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>&quot; is given (and may warn
+about the &quot;Use of uninitialized value&quot; if warnings are enabled).</p>
+</li>
+<li>
+<p><code>$string = $vector-&gt;String_Export($type);</code></p>
+<p>Returns a string representing the given bit vector in the
+format specified by &quot;<code>$type</code>&quot;:</p>
+<pre>
+  1 | b | bin      =&gt;  binary        (using &quot;to_Bin()&quot;)
+  2 | o | oct      =&gt;  octal         (using &quot;to_Oct()&quot;)
+  3 | d | dec      =&gt;  decimal       (using &quot;to_Dec()&quot;)
+  4 | h | hex | x  =&gt;  hexadecimal   (using &quot;to_Hex()&quot;)
+  5 | e | enum     =&gt;  enumeration   (using &quot;to_Enum()&quot;)
+  6 | p | pack     =&gt;  packed binary (using &quot;Block_Read()&quot;)</pre>
+<p>The case (lower/upper/mixed case) of &quot;<code>$type</code>&quot; is ignored.</p>
+<p>If &quot;<code>$type</code>&quot; is omitted or &quot;<a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>&quot; or false (&quot;0&quot;
+or the empty string), a hexadecimal string is returned
+as the default format.</p>
+<p>If &quot;<code>$type</code>&quot; does not have any of the values described
+above, a fatal &quot;unknown string type&quot; will occur.</p>
+<p>Beware that in order to guarantee that the strings can
+be correctly parsed and read in by the methods
+&quot;<code>String_Import()</code>&quot; and &quot;<code>new_String()</code>&quot; (described
+below), the method &quot;<code>String_Export()</code>&quot; provides
+uniquely identifying prefixes (and, in one case,
+a suffix) as follows:</p>
+<pre>
+  <span class="number">1</span> <span class="operator">|</span> <span class="variable">b</span> <span class="operator">|</span> <span class="string">bin</span>      <span class="operator">=&gt;</span>  <span class="string">'0b'</span> <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Bin</span><span class="operator">();</span>
+  <span class="number">2</span> <span class="operator">|</span> <span class="variable">o</span> <span class="operator">|</span> <span class="string">oct</span>      <span class="operator">=&gt;</span>  <span class="string">'0o'</span> <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Oct</span><span class="operator">();</span>
+  <span class="number">3</span> <span class="operator">|</span> <span class="variable">d</span> <span class="operator">|</span> <span class="string">dec</span>      <span class="operator">=&gt;</span>         <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Dec</span><span class="operator">();</span> <span class="comment"># prefix is [+-]</span>
+  <span class="number">4</span> <span class="operator">|</span> <span class="variable">h</span> <span class="operator">|</span> <span class="keyword">hex</span> <span class="operator">|</span> <span class="string">x</span>  <span class="operator">=&gt;</span>  <span class="string">'0x'</span> <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Hex</span><span class="operator">();</span>
+  <span class="number">5</span> <span class="operator">|</span> <span class="variable">e</span> <span class="operator">|</span> <span class="string">enum</span>     <span class="operator">=&gt;</span>  <span class="string">'{'</span>  <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">to_Enum</span><span class="operator">()</span> <span class="operator">.</span> <span class="string">'}'</span><span class="operator">;</span>
+  <span class="number">6</span> <span class="operator">|</span> <span class="variable">p</span> <span class="operator">|</span> <span class="string">pack</span>     <span class="operator">=&gt;</span>  <span class="string">':'</span>  <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">Size</span><span class="operator">()</span> <span class="operator">.</span>
+                       <span class="string">':'</span>  <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">Block_Read</span><span class="operator">();</span>
+</pre>
+<p>This is necessary because certain strings can be valid
+representations in more than one format.</p>
+<p>All strings in binary format, i.e., which only contain &quot;0&quot;
+and &quot;1&quot;, are also valid number representations (of a different
+value, of course) in octal, decimal and hexadecimal.</p>
+<p>Likewise, a string in octal format is also valid in decimal
+and hexadecimal, and a string in decimal format is also valid
+in hexadecimal.</p>
+<p>Moreover, if the enumeration of set bits (as returned by
+&quot;<code>to_Enum()</code>&quot;) only contains one element, this element could
+be mistaken for a representation of the entire bit vector
+(instead of just one bit) in decimal.</p>
+<p>Beware also that the string returned by format &quot;6&quot; (&quot;packed
+binary&quot;) will in general <strong>NOT BE PRINTABLE</strong>, because it will
+usually consist of many unprintable characters!</p>
+</li>
+<li>
+<p><code>$type = $vector-&gt;String_Import($string);</code></p>
+<p>Allows to read in the contents of a bit vector from a string
+which has previously been produced by &quot;<code>String_Export()</code>&quot;,
+&quot;<code>to_Bin()</code>&quot;, &quot;<code>to_Oct()</code>&quot;, &quot;<code>to_Dec()</code>&quot;, &quot;<code>to_Hex()</code>&quot;,
+&quot;<code>to_Enum()</code>&quot;, &quot;<code>Block_Read()</code>&quot; or manually or by another
+program.</p>
+<p>Beware however that the string must have the correct format;
+otherwise a fatal &quot;unknown string type&quot; error will occur.</p>
+<p>The correct format is the one returned by &quot;<code>String_Export()</code>&quot;
+(see immediately above).</p>
+<p>The method will also try to automatically recognize formats
+without identifying prefix such as returned by the methods
+&quot;<code>to_Bin()</code>&quot;, &quot;<code>to_Oct()</code>&quot;, &quot;<code>to_Dec()</code>&quot;, &quot;<code>to_Hex()</code>&quot;
+and &quot;<code>to_Enum()</code>&quot;.</p>
+<p>However, as explained above for the method &quot;<code>String_Export()</code>&quot;,
+due to the fact that a string may be a valid representation in
+more than one format, this may lead to unwanted results.</p>
+<p>The method will try to match the format of the given string
+in the following order:</p>
+<p>If the string consists only of [01], it will be considered
+to be in binary format (although it could be in octal, decimal
+or hexadecimal format or even be an enumeration with only
+one element as well).</p>
+<p>If the string consists only of [0-7], it will be considered
+to be in octal format (although it could be in decimal or
+hexadecimal format or even be an enumeration with only
+one element as well).</p>
+<p>If the string consists only of [0-9], it will be considered
+to be in decimal format (although it could be in hexadecimal
+format or even be an enumeration with only one element as well).</p>
+<p>If the string consists only of [0-9A-Fa-f], it will be considered
+to be in hexadecimal format.</p>
+<p>If the string only contains numbers in decimal format, separated
+by commas (&quot;,&quot;) or dashes (&quot;-&quot;), it is considered to be an
+enumeration (a single decimal number also qualifies).</p>
+<p>And if the string starts with &quot;:[0-9]:&quot;, the remainder of the
+string is read in with &quot;<code>Block_Store()</code>&quot;.</p>
+<p>To avoid misinterpretations, it is therefore recommendable to
+always either use the method &quot;<code>String_Export()</code>&quot; or to provide
+some uniquely identifying prefix (and suffix, in one case)
+yourself:</p>
+<pre>
+  <span class="string">binary</span>         <span class="operator">=&gt;</span>  <span class="string">'0b'</span> <span class="operator">.</span> <span class="variable">$string</span><span class="operator">;</span>
+  <span class="string">octal</span>          <span class="operator">=&gt;</span>  <span class="string">'0o'</span> <span class="operator">.</span> <span class="variable">$string</span><span class="operator">;</span>
+  <span class="string">decimal</span>        <span class="operator">=&gt;</span>  <span class="string">'+'</span>  <span class="operator">.</span> <span class="variable">$string</span><span class="operator">;</span> <span class="comment"># in case "$string"</span>
+                 <span class="operator">=&gt;</span>  <span class="string">'-'</span>  <span class="operator">.</span> <span class="variable">$string</span><span class="operator">;</span> <span class="comment"># has no sign yet</span>
+  <span class="string">hexadecimal</span>    <span class="operator">=&gt;</span>  <span class="string">'0x'</span> <span class="operator">.</span> <span class="variable">$string</span><span class="operator">;</span>
+                 <span class="operator">=&gt;</span>  <span class="string">'0h'</span> <span class="operator">.</span> <span class="variable">$string</span><span class="operator">;</span>
+  <span class="string">enumeration</span>    <span class="operator">=&gt;</span>  <span class="string">'{'</span>  <span class="operator">.</span> <span class="variable">$string</span> <span class="operator">.</span> <span class="string">'}'</span><span class="operator">;</span>
+                 <span class="operator">=&gt;</span>  <span class="string">'['</span>  <span class="operator">.</span> <span class="variable">$string</span> <span class="operator">.</span> <span class="string">']'</span><span class="operator">;</span>
+                 <span class="operator">=&gt;</span>  <span class="string">'&lt;'</span>  <span class="operator">.</span> <span class="variable">$string</span> <span class="operator">.</span> <span class="string">'&gt;'</span><span class="operator">;</span>
+                 <span class="operator">=&gt;</span>  <span class="string">'('</span>  <span class="operator">.</span> <span class="variable">$string</span> <span class="operator">.</span> <span class="string">')'</span><span class="operator">;</span>
+  <span class="variable">packed</span> <span class="string">binary</span>  <span class="operator">=&gt;</span>  <span class="string">':'</span>  <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">Size</span><span class="operator">()</span> <span class="operator">.</span>
+                     <span class="string">':'</span>  <span class="operator">.</span> <span class="variable">$vector</span><span class="operator">-&gt;</span><span class="variable">Block_Read</span><span class="operator">();</span>
+</pre>
+<p>Note that case (lower/upper/mixed case) is not important
+and will be ignored by this method.</p>
+<p>Internally, the method uses the methods &quot;<code>from_Bin()</code>&quot;,
+&quot;<code>from_Oct()</code>&quot;, &quot;<code>from_Dec()</code>&quot;, &quot;<code>from_Hex()</code>&quot;,
+&quot;<code>from_Enum()</code>&quot; and &quot;<code>Block_Store()</code>&quot; for actually
+importing the contents of the string into the given
+bit vector. See their descriptions here in this document
+and in <a href="../../../Bit/Vector(3).html">the Bit::Vector(3) manpage</a> for any further conditions that
+must be met and corresponding possible fatal error messages.</p>
+<p>The method returns the number of the format that has been
+recognized:</p>
+<pre>
+                1    =&gt;    binary
+                2    =&gt;    octal
+                3    =&gt;    decimal
+                4    =&gt;    hexadecimal
+                5    =&gt;    enumeration
+                6    =&gt;    packed binary</pre>
+</li>
+<li>
+<p><code>$vector = Bit::Vector-&gt;new_String($bits,$string);</code></p>
+<p><code>($vector,$type) = Bit::Vector-&gt;new_String($bits,$string);</code></p>
+<p>This method is an alternative constructor which allows you to create
+a new bit vector object (with &quot;<code>$bits</code>&quot; bits) and to initialize it
+all in one go.</p>
+<p>The method internally first calls the bit vector constructor method
+&quot;<code>new()</code>&quot; and then stores the given string in the newly created
+bit vector using the same approach as the method &quot;<code>String_Import()</code>&quot;
+(described immediately above).</p>
+<p>An exception will be raised if the necessary memory cannot be allocated
+(see the description of the method &quot;<code>new()</code>&quot; in <a href="../../../Bit/Vector(3).html">the Bit::Vector(3) manpage</a> for
+possible causes) or if the given string cannot be converted successfully
+(see the description of the method &quot;<code>String_Import()</code>&quot; above for details).</p>
+<p>In case of an error, the memory occupied by the new bit vector is
+released again before the exception is actually thrown.</p>
+<p>If the number of bits &quot;<code>$bits</code>&quot; given has the value &quot;<a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>&quot;, the
+method will automatically determine this value for you and allocate
+a bit vector of the calculated size.</p>
+<p>Note that this behaviour is different from that of the methods
+&quot;<code>new_Hex()</code>&quot;, &quot;<code>new_Bin()</code>&quot;, &quot;<code>new_Dec()</code>&quot; and &quot;<code>new_Enum()</code>&quot;
+(which are realized in C, internally); these methods will silently
+assume a value of 0 bits if &quot;<a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a>&quot; is given (and may warn
+about the &quot;Use of uninitialized value&quot; if warnings are enabled).</p>
+<p>The necessary number of bits is calculated as follows:</p>
+<pre>
+  <span class="string">binary</span>         <span class="operator">=&gt;</span>       <span class="keyword">length</span><span class="operator">(</span><span class="variable">$string</span><span class="operator">);</span>
+  <span class="string">octal</span>          <span class="operator">=&gt;</span>   <span class="number">3</span> <span class="operator">*</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">$string</span><span class="operator">);</span>
+  <span class="string">decimal</span>        <span class="operator">=&gt;</span>  <span class="keyword">int</span><span class="operator">(</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">$string</span><span class="operator">)</span> <span class="operator">*</span> <span class="keyword">log</span><span class="operator">(</span><span class="number">10</span><span class="operator">)</span> <span class="operator">/</span> <span class="keyword">log</span><span class="operator">(</span><span class="number">2</span><span class="operator">)</span> <span class="operator">+</span> <span class="number">1</span> <span class="operator">);</span>
+  <span class="string">hexadecimal</span>    <span class="operator">=&gt;</span>   <span class="number">4</span> <span class="operator">*</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">$string</span><span class="operator">);</span>
+  <span class="string">enumeration</span>    <span class="operator">=&gt;</span>  <span class="variable">maximum</span> <span class="variable">of</span> <span class="keyword">values</span> <span class="variable">found</span> <span class="variable">in</span> <span class="variable">$string</span> <span class="operator">+</span> <span class="number">1</span>
+  <span class="variable">packed</span> <span class="string">binary</span>  <span class="operator">=&gt;</span>  <span class="variable">$string</span> <span class="operator">=~</span> <span class="regex">/^:(\d+):/</span><span class="operator">;</span>
+</pre>
+<p>If called in scalar context, the method returns the newly created
+bit vector object.</p>
+<p>If called in list context, the method additionally returns the
+number of the format which has been recognized, as explained
+above for the method &quot;<code>String_Import()</code>&quot;.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Bit::Vector(3), Bit::Vector::Overload(3).</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>This man page documents &quot;Bit::Vector::String&quot; version 7.1.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<pre>
+  Steffen Beyer
+  <a href="mailto:STBEY@cpan.org">mailto:STBEY@cpan.org</a>
+  <a href="http://www.engelschall.com/u/sb/download/">http://www.engelschall.com/u/sb/download/</a></pre>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2004 - 2009 by Steffen Beyer. All rights reserved.</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This package is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself, i.e., under the
+terms of the &quot;Artistic License&quot; or the &quot;GNU General Public License&quot;.</p>
+<p>The C library at the core of this Perl module can additionally
+be redistributed and/or modified under the terms of the &quot;GNU
+Library General Public License&quot;.</p>
+<p>Please refer to the files &quot;Artistic.txt&quot;, &quot;GNU_GPL.txt&quot; and
+&quot;GNU_LGPL.txt&quot; in this distribution for details!</p>
+<p>
+</p>
+<hr />
+<h1><a name="disclaimer">DISCLAIMER</a></h1>
+<p>This package is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
+<p>See the &quot;GNU General Public License&quot; for more details.</p>
+
+</body>
+
+</html>

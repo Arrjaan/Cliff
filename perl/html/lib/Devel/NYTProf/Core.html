@@ -1,0 +1,155 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Devel::NYTProf::Core - load internals of Devel::NYTProf</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Devel::NYTProf::Core - load internals of Devel::NYTProf</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#subroutine_profiler">SUBROUTINE PROFILER</a></li>
+	<ul>
+
+		<li><a href="#before_the_subroutine_call">Before the subroutine call</a></li>
+		<li><a href="#make_the_subroutine_call">Make the subroutine call</a></li>
+		<ul>
+
+			<li><a href="#calling_a_perl_subroutine">Calling a perl subroutine</a></li>
+			<li><a href="#calling_an_xsub">Calling an xsub</a></li>
+		</ul>
+
+		<li><a href="#completing_the_measurement">Completing the measurement</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Devel::NYTProf::Core - load internals of Devel::NYTProf</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module is not meant to be used directly.
+See <a href="../../../lib/Devel/NYTProf.html">the Devel::NYTProf manpage</a>, <a href="../../../lib/Devel/NYTProf/Data.html">the Devel::NYTProf::Data manpage</a>, and <a href="../../../lib/Devel/NYTProf/Reader.html">the Devel::NYTProf::Reader manpage</a>.</p>
+<p>While it's not meant to be used directly, it is a handy place to document some
+internals.</p>
+<p>
+</p>
+<hr />
+<h1><a name="subroutine_profiler">SUBROUTINE PROFILER</a></h1>
+<p>The subroutine profiler intercepts the <code>entersub</code> opcode which perl uses to
+invoke a subroutine, both XS subs (henceforth xsubs) and pure perl subs.</p>
+<p>The following sections outline the way the subroutine profiler works:</p>
+<p>
+</p>
+<h2><a name="before_the_subroutine_call">Before the subroutine call</a></h2>
+<p>The profiler records the current time, the current value of
+cumulative_subr_secs (as initial_subr_secs), and the current
+cumulative_overhead_ticks (as initial_overhead_ticks).</p>
+<p>The statement profiler measures time at the start and end of processing for
+each statement (so time spent in the profiler, writing to the file for example,
+is excluded.) It accumulates the measured overhead into the
+cumulative_overhead_ticks variable.</p>
+<p>In a similar way, the subroutine profiler measures the <em>exclusive</em> time spent
+in subroutines and accumulates it into the cumulative_subr_secs global.</p>
+<p>
+</p>
+<h2><a name="make_the_subroutine_call">Make the subroutine call</a></h2>
+<p>The call is made by executing the original perl internal code for the
+<code>entersub</code> opcode.</p>
+<p>
+</p>
+<h3><a name="calling_a_perl_subroutine">Calling a perl subroutine</a></h3>
+<p>If the sub being called is a perl sub then when the entersub opcode returns,
+back into the subroutine profiler, the subroutine has been 'entered' but the
+first opcode of the subroutine hasn't been executed yet.
+Crucially though, a new scope has been entered by the entersub opcode.</p>
+<p>The subroutine profiler then pushes a destructor onto the context stack.
+The destructor is effectively just <em>inside</em> the sub, like a <a href="../../../lib/pods/perlfunc.html#local"><code>local</code></a>, and so will be
+triggered when the subroutine exits by <em>any</em> means. Also, because it was the
+first thing push onto the context stack, it will be triggered <em>after</em> any
+activity caused by the subroutines scope exiting.</p>
+<p>When the destructor is invoked it calls a function which completes the
+measurement of the time spent in the sub (see below).</p>
+<p>In this way the profiling of perl subroutines is very accurate and robust.</p>
+<p>
+</p>
+<h3><a name="calling_an_xsub">Calling an xsub</a></h3>
+<p>If the sub being called is an xsub, then control doesn't return from the
+entersub opcode until the xsub has returned. The profiler detects this and
+calls the function which completes the measurement of the time spent in the
+xsub.</p>
+<p>So far so good, but there's a problem. What if the xsub doesn't return normally
+but throws an exception instead?</p>
+<p>In that case (currently) the profiler acts as if the xsub was never called.
+Time spent inside the xsub will be allocated to the calling sub.</p>
+<p>
+</p>
+<h2><a name="completing_the_measurement">Completing the measurement</a></h2>
+<p>The function which completes the timing of a subroutine call does the following:</p>
+<p>It calculates the time spent in the statement profiler:</p>
+<pre>
+    overhead_ticks  = cumulative_overhead_ticks - initial_overhead_ticks</pre>
+<p>and subtracts that from the total time spent 'inside' the subroutine:</p>
+<pre>
+    incl_subr_sec = (time now - time call was made) - overhead_ticks</pre>
+<p>That gives us an accurate <em>inclusive</em> time. To get the <em>exclusive</em> time
+it calculates the time spent in subroutines called from the subroutine call
+we're measuring:</p>
+<pre>
+    called_sub_secs = cumulative_subr_secs - initial_subr_secs</pre>
+<p>and subtracts that from the incl_subr_sec:</p>
+<pre>
+    excl_subr_sec = incl_subr_sec - called_sub_secs</pre>
+<p>To make that easier to follow, consider a call to a sub that calls no others.
+In that case cumulative_subr_secs remains unchanged during the call, so
+called_sub_secs is zero, and excl_subr_sec is the same as incl_subr_sec.</p>
+<p>Finally, it adds the exclusive time to the cumulative exclusive time:</p>
+<pre>
+    cumulative_subr_secs += excl_subr_sec</pre>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p><strong>Tim Bunce</strong>, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a> and <a href="http://blog.timbunce.org">http://blog.timbunce.org</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<pre>
+  Copyright (C) 2008, 2009 by Tim Bunce.</pre>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.</p>
+
+</body>
+
+</html>

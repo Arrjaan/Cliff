@@ -1,0 +1,290 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Moose::Exporter - make an import just like Moose.pm</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Moose::Exporter - make an import just like Moose.pm</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<li><a href="#importing_and_init_meta">IMPORTING AND init_meta</a></li>
+	<li><a href="#metaclass_traits">METACLASS TRAITS</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Exporter - make an <a href="../../lib/pods/perlfunc.html#import"><code>import()</code></a> and <code>unimport()</code> just like Moose.pm</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span>
+      <span class="string">with_meta</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'has_rw'</span><span class="operator">,</span> <span class="string">'sugar2'</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="string">as_is</span>     <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'sugar3'</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">Some::Random::thing</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="string">also</span>      <span class="operator">=&gt;</span> <span class="string">'Moose'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> has_rw </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$meta</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">,</span> <span class="variable">%options</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">add_attribute</span><span class="operator">(</span>
+          <span class="variable">$name</span><span class="operator">,</span>
+          <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+          <span class="variable">%options</span><span class="operator">,</span>
+      <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># then later ...</span>
+  <span class="keyword">package</span> <span class="variable">MyApp::User</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MyApp::Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'name'</span><span class="operator">;</span>
+  <span class="variable">has_rw</span> <span class="string">'size'</span><span class="operator">;</span>
+  <span class="variable">thing</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">no</span> <span class="variable">MyApp::Moose</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module encapsulates the exporting of sugar functions in a
+<code>Moose.pm</code>-like manner. It does this by building custom <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a>,
+<code>unimport</code>, and <code>init_meta</code> methods for your module, based on a spec you
+provide.</p>
+<p>It also lets you &quot;stack&quot; Moose-alike modules so you can export Moose's sugar
+as well as your own, along with sugar from any random <code>MooseX</code> module, as
+long as they all use <code>Moose::Exporter</code>. This feature exists to let you bundle
+a set of MooseX modules into a policy module that developers can use directly
+instead of using Moose itself.</p>
+<p>To simplify writing exporter modules, <code>Moose::Exporter</code> also imports
+<code>strict</code> and <code>warnings</code> into your exporter module, as well as into
+modules that use it.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>This module provides two public methods:</p>
+<dl>
+<dt><strong><a name="setup_import_methods" class="item"><strong>Moose::Exporter-</strong>setup_import_methods(...) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>When you call this method, <code>Moose::Exporter</code> builds custom <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a>,
+<code>unimport</code>, and <code>init_meta</code> methods for your module. The <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> method
+will export the functions you specify, and can also re-export functions
+exported by some other module (like <code>Moose.pm</code>).</p>
+<p>The <code>unimport</code> method cleans the caller's namespace of all the exported
+functions. This includes any functions you re-export from other
+packages. However, if the consumer of your package also imports those
+functions from the original package, they will <em>not</em> be cleaned.</p>
+<p>If you pass any parameters for <a href="../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a>, this method will
+generate an <code>init_meta</code> for you as well (see below for details). This
+<code>init_meta</code> will call <code>Moose::Util::MetaRole::apply_metaroles</code> and
+<code>Moose::Util::MetaRole::apply_base_class_roles</code> as needed.</p>
+<p>Note that if any of these methods already exist, they will not be
+overridden, you will have to use <a href="#build_import_methods"><code>build_import_methods</code></a> to get the
+coderef that would be installed.</p>
+<p>This method accepts the following parameters:</p>
+<ul>
+<li><strong><a name="with_meta" class="item">with_meta =&gt; [ ... ]</a></strong>
+
+<p>This list of function <em>names only</em> will be wrapped and then exported. The
+wrapper will pass the metaclass object for the caller as its first argument.</p>
+<p>Many sugar functions will need to use this metaclass object to do something to
+the calling package.</p>
+</li>
+<li><strong><a name="as_is" class="item">as_is =&gt; [ ... ]</a></strong>
+
+<p>This list of function names or sub references will be exported as-is. You can
+identify a subroutine by reference, which is handy to re-export some other
+module's functions directly by reference (<code>\&amp;Some::Package::function</code>).</p>
+<p>If you do export some other package's function, this function will never be
+removed by the <code>unimport</code> method. The reason for this is we cannot know if
+the caller <em>also</em> explicitly imported the sub themselves, and therefore wants
+to keep it.</p>
+</li>
+<li><strong><a name="trait_aliases" class="item">trait_aliases =&gt; [ ... ]</a></strong>
+
+<p>This is a list of package names which should have shortened aliases exported,
+similar to the functionality of <em>aliased</em>. Each element in the list can be
+either a package name, in which case the export will be named as the last
+namespace component of the package, or an arrayref, whose first element is the
+package to alias to, and second element is the alias to export.</p>
+</li>
+<li><strong><a name="also_name_or_names" class="item">also =&gt; $name or \@names</a></strong>
+
+<p>This is a list of modules which contain functions that the caller
+wants to export. These modules must also use <code>Moose::Exporter</code>. The
+most common use case will be to export the functions from <code>Moose.pm</code>.
+Functions specified by <a href="#with_meta"><code>with_meta</code></a> or <a href="#as_is"><code>as_is</code></a> take precedence over
+functions exported by modules specified by <code>also</code>, so that a module
+can selectively override functions exported by another module.</p>
+<p><code>Moose::Exporter</code> also makes sure all these functions get removed
+when <code>unimport</code> is called.</p>
+</li>
+</ul>
+<p>You can also provide parameters for <code>Moose::Util::MetaRole::apply_metaroles</code>
+and <code>Moose::Util::MetaRole::base_class_roles</code>. Specifically, valid parameters
+are &quot;class_metaroles&quot;, &quot;role_metaroles&quot;, and &quot;base_class_roles&quot;.</p>
+</dd>
+<dt><strong><a name="build_import_methods" class="item"><strong>Moose::Exporter-</strong>build_import_methods(...) &gt;&gt;</a></strong></dt>
+
+<dd>
+<p>Returns two or three code refs, one for <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a>, one for
+<code>unimport</code>, and optionally one for <code>init_meta</code>, if the appropriate
+options are passed in.</p>
+<p>Accepts the additional <code>install</code> option, which accepts an arrayref of method
+names to install into your exporting package. The valid options are <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a>,
+<code>unimport</code>, and <code>init_meta</code>. Calling <a href="#setup_import_methods"><code>setup_import_methods</code></a> is equivalent
+to calling <a href="#build_import_methods"><code>build_import_methods</code></a> with <code>install =&gt; [qw(import unimport
+init_meta)]</code> except that it doesn't also return the methods.</p>
+<p>The <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> method is built using <a href="../../lib/Sub/Exporter.html">the Sub::Exporter manpage</a>. This means that it can
+take a hashref of the form <code>{ into =&gt; $package }</code> to specify the package
+it operates on.</p>
+<p>Used by <a href="#setup_import_methods"><code>setup_import_methods</code></a>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="importing_and_init_meta">IMPORTING AND init_meta</a></h1>
+<p>If you want to set an alternative base object class or metaclass class, see
+above for details on how this module can call <a href="../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a> for
+you.</p>
+<p>If you want to do something that is not supported by this module, simply
+define an <code>init_meta</code> method in your class. The <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> method that
+<code>Moose::Exporter</code> generates for you will call this method (if it exists). It
+will always pass the caller to this method via the <code>for_class</code> parameter.</p>
+<p>Most of the time, your <code>init_meta</code> method will probably just call <code>&lt;
+Moose-</code>init_meta &gt;&gt; to do the real work:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init_meta </span><span class="operator">{</span>
+      <span class="keyword">shift</span><span class="operator">;</span> <span class="comment"># our class name</span>
+      <span class="keyword">return</span> <span class="variable">Moose</span><span class="operator">-&gt;</span><span class="variable">init_meta</span><span class="operator">(</span> <span class="variable">@_</span><span class="operator">,</span> <span class="string">metaclass</span> <span class="operator">=&gt;</span> <span class="string">'My::Metaclass'</span> <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>Keep in mind that <a href="#build_import_methods"><code>build_import_methods</code></a> will return an <code>init_meta</code>
+method for you, which you can also call from within your custom
+<code>init_meta</code>:</p>
+<pre>
+  <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$import</span><span class="operator">,</span> <span class="variable">$unimport</span><span class="operator">,</span> <span class="variable">$init_meta</span> <span class="operator">)</span>
+      <span class="operator">=</span> <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">build_import_methods</span><span class="operator">(...);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> import </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      ...</pre>
+<pre>
+      <span class="comment"># You can either pass an explicit package to import into ...</span>
+      <span class="variable">$class</span><span class="operator">-&gt;</span><span class="variable">$import</span><span class="operator">(</span> <span class="operator">{</span> <span class="string">into</span> <span class="operator">=&gt;</span> <span class="keyword">scalar</span><span class="operator">(</span><span class="keyword">caller</span><span class="operator">)</span> <span class="operator">}</span><span class="operator">,</span> <span class="operator">...</span> <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="operator">...;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># ... or you can use 'goto' to provide the correct caller info to the</span>
+  <span class="comment"># generated method</span>
+  <span class="keyword">sub</span><span class="variable"> unimport </span><span class="operator">{</span> <span class="keyword">goto</span> <span class="operator">&amp;</span><span class="variable">$unimport</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init_meta </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$class</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      ...</pre>
+<pre>
+      <span class="variable">$class</span><span class="operator">-&gt;</span><span class="variable">$init_meta</span><span class="operator">(...);</span>
+</pre>
+<pre>
+      ...
+  }</pre>
+<p>
+</p>
+<hr />
+<h1><a name="metaclass_traits">METACLASS TRAITS</a></h1>
+<p>The <a href="../../lib/pods/perlfunc.html#import"><code>import</code></a> method generated by <code>Moose::Exporter</code> will allow the
+user of your module to specify metaclass traits in a <code>-traits</code>
+parameter passed as part of the import:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">-</span><span class="string">traits</span> <span class="operator">=&gt;</span> <span class="string">'My::Meta::Trait'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">-</span><span class="string">traits</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'My::Meta::Trait'</span><span class="operator">,</span> <span class="string">'My::Other::Trait'</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>These traits will be applied to the caller's metaclass
+instance. Providing traits for an exporting class that does not create
+a metaclass for the caller is an error.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>See <a href="../../lib/Moose/bugs.html">BUGS in the Moose manpage</a> for details on reporting bugs.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

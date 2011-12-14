@@ -1,0 +1,190 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Locale::Maketext::Cookbook - recipes for using Locale::Maketext</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Locale::Maketext::Cookbook - recipes for using Locale::Maketext</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#introduction">INTRODUCTION</a></li>
+	<li><a href="#onesided_lexicons">ONESIDED LEXICONS</a></li>
+	<li><a href="#decimal_places_in_number_formatting">DECIMAL PLACES IN NUMBER FORMATTING</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Locale::Maketext::Cookbook - recipes for using Locale::Maketext</p>
+<p>
+</p>
+<hr />
+<h1><a name="introduction">INTRODUCTION</a></h1>
+<p>This is a work in progress. Not much progress by now :-)</p>
+<p>
+</p>
+<hr />
+<h1><a name="onesided_lexicons">ONESIDED LEXICONS</a></h1>
+<p><em>Adapted from a suggestion by Dan Muey</em></p>
+<p>It may be common (for example at your main lexicon) that
+the hash keys and values coincide. Like that</p>
+<pre>
+    <span class="string">q{Hello, tell me your name}</span> 
+      <span class="operator">=&gt;</span> <span class="string">q{Hello, tell me your name}</span>
+</pre>
+<p>It would be nice to just write:</p>
+<pre>
+    <span class="string">q{Hello, tell me your name}</span> <span class="operator">=&gt;</span> <span class="string">''</span>
+</pre>
+<p>and have this magically inflated to the first form.
+Among the advantages of such representation, that would
+lead to  
+smaller files, less prone to mistyping or mispasting, 
+and handy to someone translating it which can simply 
+copy the main lexicon and enter the translation 
+instead of having to remove the value first.</p>
+<p>That can be achieved by overriding <code>init</code>
+in your class and working on the main lexicon
+with code like that:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">My::I18N</span><span class="operator">;</span>
+    <span class="operator">...</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> init </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span> <span class="comment"># a newborn handle</span>
+        <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">SUPER::init</span><span class="operator">();</span>
+        <span class="variable">inflate_lexicon</span><span class="operator">(\</span><span class="variable">%My::I18N::en::Lexicon</span><span class="operator">);</span>
+        <span class="keyword">return</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> inflate_lexicon </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$lex</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="operator">(</span><span class="variable">$k</span><span class="operator">,</span> <span class="variable">$v</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">each</span> <span class="variable">%$lex</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="variable">$v</span> <span class="operator">=</span> <span class="variable">$k</span> <span class="keyword">if</span> <span class="operator">!</span><span class="keyword">defined</span> <span class="variable">$v</span> <span class="operator">||</span> <span class="variable">$v</span> <span class="keyword">eq</span> <span class="string">''</span><span class="operator">;</span>
+        <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>Here we are assuming <code>My::I18N::en</code> to own the
+main lexicon.</p>
+<p>There are some downsides here: the size economy
+will not stand at runtime after this <code>init()</code>
+runs. But it should not be that critical, since
+if you don't have space for that, you won't have
+space for any other language besides the main one
+as well. You could do that too with ties,
+expanding the value at lookup time which
+should be more time expensive as an option.</p>
+<p>
+</p>
+<hr />
+<h1><a name="decimal_places_in_number_formatting">DECIMAL PLACES IN NUMBER FORMATTING</a></h1>
+<p><em>After CPAN RT #36136 (https://rt.cpan.org/Ticket/Display.html?id=36136)</em></p>
+<p>The documentation of <a href="../../../lib/Locale/Maketext.html">the Locale::Maketext manpage</a> advises that 
+the standard bracket method <code>numf</code> is limited and that
+you must override that for better results. It even
+suggests the use of <a href="../../../Number/Format.html">the Number::Format manpage</a>.</p>
+<p>One such defect of standard <code>numf</code> is to not be
+able to use a certain decimal precision.
+For example,</p>
+<pre>
+    <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">'pi is [numf,_1]'</span><span class="operator">,</span> <span class="number">355</span><span class="operator">/</span><span class="number">113</span><span class="operator">);</span>
+</pre>
+<p>outputs</p>
+<pre>
+    pi is 3.14159292035398</pre>
+<p>Since pi ≈ 355/116 is only accurate 
+to 6 decimal places, you would want to say:</p>
+<pre>
+    <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">'pi is [numf,_1,6]'</span><span class="operator">,</span> <span class="number">355</span><span class="operator">/</span><span class="number">113</span><span class="operator">);</span>
+</pre>
+<p>and get &quot;pi is 3.141592&quot;.</p>
+<p>One solution for that could use <code>Number::Format</code>
+like that:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Wuu</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw(Locale::Maketext)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Number::Format</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># can be overridden according to language conventions</span>
+    <span class="keyword">sub</span><span class="variable"> _numf_params </span><span class="operator">{</span>
+        <span class="keyword">return</span> <span class="operator">(</span>
+            <span class="string">-thousands_sep</span>  <span class="operator">=&gt;</span> <span class="string">'.'</span><span class="operator">,</span>
+            <span class="string">-decimal_point</span>  <span class="operator">=&gt;</span> <span class="string">','</span><span class="operator">,</span>
+            <span class="string">-decimal_digits</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">,</span>
+        <span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># builds a Number::Format</span>
+    <span class="keyword">sub</span><span class="variable"> _numf_formatter </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$lh</span><span class="operator">,</span> <span class="variable">$scale</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">@params</span> <span class="operator">=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">_numf_params</span><span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$scale</span><span class="operator">)</span> <span class="operator">{</span> <span class="comment"># use explicit scale rather than default</span>
+            <span class="keyword">push</span> <span class="variable">@params</span><span class="operator">,</span> <span class="operator">(</span><span class="string">-decimal_digits</span> <span class="operator">=&gt;</span> <span class="variable">$scale</span><span class="operator">);</span>
+        <span class="operator">}</span>
+        <span class="keyword">return</span> <span class="variable">Number::Format</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">@params</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> numf </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$lh</span><span class="operator">,</span> <span class="variable">$n</span><span class="operator">,</span> <span class="variable">$scale</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+        <span class="comment"># get the (cached) formatter</span>
+        <span class="keyword">my</span> <span class="variable">$nf</span> <span class="operator">=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">__nf</span><span class="operator">}{</span><span class="variable">$scale</span><span class="operator">}</span> <span class="operator">||=</span> <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">_numf_formatter</span><span class="operator">(</span><span class="variable">$scale</span><span class="operator">);</span>
+        <span class="comment"># format the number itself</span>
+        <span class="keyword">return</span> <span class="variable">$nf</span><span class="operator">-&gt;</span><span class="variable">format_number</span><span class="operator">(</span><span class="variable">$n</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Wuu::pt</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw(Wuu)</span><span class="operator">;</span>
+</pre>
+<p>and then</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$lh</span> <span class="operator">=</span> <span class="variable">Wuu</span><span class="operator">-&gt;</span><span class="variable">get_handle</span><span class="operator">(</span><span class="string">'pt'</span><span class="operator">);</span>
+    <span class="variable">$lh</span><span class="operator">-&gt;</span><span class="variable">maketext</span><span class="operator">(</span><span class="string">'A [numf,_1,3] km de distância'</span><span class="operator">,</span> <span class="number">1550.2222</span><span class="operator">);</span>
+</pre>
+<p>would return &quot;A 1.550,222 km de distância&quot;.</p>
+<p>Notice that the standard utility methods of 
+<code>Locale::Maketext</code> are irremediably limited
+because they could not aim to do everything
+that could be expected from them in different languages,
+cultures and applications. So extending <code>numf</code>,
+<code>quant</code>, and <a href="../../../lib/pods/perlfunc.html#sprintf"><code>sprintf</code></a> is natural as soon
+as your needs exceed what the standard ones do.</p>
+
+</body>
+
+</html>

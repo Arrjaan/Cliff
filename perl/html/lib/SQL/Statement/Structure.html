@@ -1,0 +1,444 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>SQL::Statement::Structure - parse and examine structure of SQL queries</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>SQL::Statement::Structure - parse and examine structure of SQL queries</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#creating_a_parser_object"><strong>Creating a parser object</strong></a></li>
+	<li><a href="#parsing_sql_statements"><strong>Parsing SQL statements</strong></a></li>
+	<li><a href="#examining_the_structure_of_sql_statements">Examining the structure of SQL statements</a></li>
+	<ul>
+
+		<li><a href="#command"><strong>command</strong></a></li>
+		<li><a href="#column_definitions"><strong>column definitions</strong></a></li>
+		<li><a href="#tables"><strong>tables</strong></a></li>
+		<li><a href="#params"><strong>params</strong></a></li>
+		<li><a href="#row_values"><strong>row_values</strong></a></li>
+		<li><a href="#order"><strong>order</strong></a></li>
+		<li><a href="#limit"><strong>limit</strong></a></li>
+		<li><a href="#offset"><strong>offset</strong></a></li>
+		<li><a href="#where_hash"><strong>where_hash</strong></a></li>
+		<li><a href="#where"><strong>where</strong></a></li>
+	</ul>
+
+	<li><a href="#executing_and_fetching_data_from_sql_statements">Executing and fetching data from SQL statements</a></li>
+	<ul>
+
+		<li><a href="#execute">execute</a></li>
+		<li><a href="#fetch">fetch</a></li>
+		<li><a href="#an_example_of_executing_and_fetching">an example of executing and fetching</a></li>
+	</ul>
+
+	<li><a href="#author___copyright">AUTHOR &amp; COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>SQL::Statement::Structure - parse and examine structure of SQL queries</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">SQL::Statement</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$sql</span>    <span class="operator">=</span> <span class="string">"SELECT a FROM b JOIN c WHERE c=? AND e=7 ORDER BY f DESC LIMIT 5,2"</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$parser</span> <span class="operator">=</span> <span class="variable">SQL::Parser</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">RaiseError</span><span class="operator">}</span><span class="operator">=</span><span class="number">1</span><span class="operator">;</span>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">PrintError</span><span class="operator">}</span><span class="operator">=</span><span class="number">0</span><span class="operator">;</span>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="string">"LOAD 'MyLib::MySyntax' "</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$stmt</span> <span class="operator">=</span> <span class="variable">SQL::Statement</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">,</span><span class="variable">$parser</span><span class="operator">);</span>
+    <span class="keyword">printf</span> <span class="string">"Command             %s\n"</span><span class="operator">,</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">command</span><span class="operator">;</span>
+    <span class="keyword">printf</span> <span class="string">"Num of Placeholders %s\n"</span><span class="operator">,</span><span class="keyword">scalar</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">params</span><span class="operator">;</span>
+    <span class="keyword">printf</span> <span class="string">"Columns             %s\n"</span><span class="operator">,</span><span class="keyword">join</span><span class="operator">(</span> <span class="string">','</span><span class="operator">,</span> <span class="keyword">map</span> <span class="operator">{</span><span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">}</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">column_defs</span><span class="operator">()</span> <span class="operator">);</span>
+    <span class="keyword">printf</span> <span class="string">"Tables              %s\n"</span><span class="operator">,</span><span class="keyword">join</span><span class="operator">(</span> <span class="string">','</span><span class="operator">,</span> <span class="keyword">map</span> <span class="operator">{</span><span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">}</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">tables</span><span class="operator">()</span> <span class="operator">);</span>
+    <span class="keyword">printf</span> <span class="string">"Where operator      %s\n"</span><span class="operator">,</span><span class="keyword">join</span><span class="operator">(</span> <span class="string">','</span><span class="operator">,</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">where</span><span class="operator">-&gt;</span><span class="variable">op</span><span class="operator">()</span> <span class="operator">);</span>
+    <span class="keyword">printf</span> <span class="string">"Limit               %s\n"</span><span class="operator">,</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">limit</span><span class="operator">();</span>
+    <span class="keyword">printf</span> <span class="string">"Offset              %s\n"</span><span class="operator">,</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">offset</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># these will work not before $stmt-&gt;execute()</span>
+    <span class="keyword">printf</span> <span class="string">"Order Columns       %s\n"</span><span class="operator">,</span><span class="keyword">join</span><span class="operator">(</span><span class="string">','</span><span class="operator">,</span> <span class="keyword">map</span> <span class="operator">{</span><span class="variable">$_</span><span class="operator">-&gt;</span><span class="variable">column</span><span class="operator">}</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">order</span><span class="operator">()</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <a href="../../../lib/SQL/Statement.html">the SQL::Statement manpage</a> module can be used by itself, without DBI and without
+a subclass to parse SQL statements and to allow you to examine the structure
+of the statement (table names, column names, where clause predicates, etc.).
+It will also execute statements using in-memory tables.  That means that
+you can create and populate some tables, then query them and fetch the
+results of the queries as well as examine the differences between statement
+metadata during different phases of prepare, execute, fetch. See the
+remainder of this document for a description of how to create and modify
+a parser object and how to use it to parse and examine SQL statements.
+See <a href="../../../lib/SQL/Statement.html">the SQL::Statement manpage</a> for other uses of the module.</p>
+<p>
+</p>
+<hr />
+<h1><a name="creating_a_parser_object"><strong>Creating a parser object</strong></a></h1>
+<p>The parser object only needs to be created once per script. It can
+then be reused to parse any number of SQL statements. The basic
+creation of a parser is this:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$parser</span> <span class="operator">=</span> <span class="variable">SQL::Parser</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+</pre>
+<p>You can set the error-reporting for the parser the same way you do in DBI:</p>
+<pre>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">RaiseError</span><span class="operator">}</span><span class="operator">=</span><span class="number">1</span><span class="operator">;</span>   <span class="comment"># turn on die-on-error behaviour</span>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">PrinteError</span><span class="operator">}</span><span class="operator">=</span><span class="number">1</span><span class="operator">;</span>  <span class="comment"># turn on warnings-on-error behaviour</span>
+</pre>
+<p>As with DBI, RaiseError defaults to 0 (off) and PrintError defaults to 1 (on).</p>
+<p>For many purposes, the built-in SQL syntax should be sufficient. However, if
+you need to, you can change the behaviour of the parser by extending the
+supported SQL syntax either by loading a file containing definitions; or by
+issuing SQL commands that modify the way the parser treats types, keywords,
+functions, and operators.</p>
+<pre>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="string">"LOAD MyLib::MySyntax"</span><span class="operator">);</span>
+    <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">parse</span><span class="operator">(</span><span class="string">"CREATE TYPE myDataType"</span><span class="operator">);</span>
+</pre>
+<p>See <a href="../../../lib/SQL/Statement/Syntax.html">the SQL::Statement::Syntax manpage</a> for details of the supported SQL syntax and
+for methods of extending the syntax.</p>
+<p>
+</p>
+<hr />
+<h1><a name="parsing_sql_statements"><strong>Parsing SQL statements</strong></a></h1>
+<p>While you only need to define a new SQL::Parser object once per script, you
+need to define a new SQL::Statment object once for each statement you want
+to parse.</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$stmt</span> <span class="operator">=</span> <span class="variable">SQL::Statement</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">,</span> <span class="variable">$parser</span><span class="operator">);</span>
+</pre>
+<p>The call to <code>new()</code> takes two arguments - the SQL string you want to parse,
+and the SQL::Parser object you previously created.  The call to new is the
+equivalent of a DBI call to <code>prepare()</code> - it parses the SQL into a structure
+but does not attempt to execute the SQL unless you explicitly call <code>execute()</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examining_the_structure_of_sql_statements">Examining the structure of SQL statements</a></h1>
+<p>The following methods can be used to obtain information about a query:</p>
+<p>
+</p>
+<h2><a name="command"><strong>command</strong></a></h2>
+<p>Returns the SQL command. See <a href="../../../lib/SQL/Statement/Syntax.html">the SQL::Statement::Syntax manpage</a> for supported
+command. Example:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$command</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">command</span><span class="operator">();</span>
+</pre>
+<p>
+</p>
+<h2><a name="column_definitions"><strong>column definitions</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$numColumns</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">column_defs</span><span class="operator">();</span>  <span class="comment"># Scalar context</span>
+    <span class="keyword">my</span> <span class="variable">@columnList</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">column_defs</span><span class="operator">();</span>  <span class="comment"># Array context</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$col1</span><span class="operator">,</span> <span class="variable">$col2</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">column_defs</span><span class="operator">(</span><span class="number">0</span><span class="operator">),</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">column_defs</span><span class="operator">(</span><span class="number">1</span><span class="operator">));</span>
+</pre>
+<p>This method is used to retrieve column lists. The meaning depends on
+the query command:</p>
+<pre>
+    SELECT $col1, $col2, ... $colN FROM $table WHERE ...
+    UPDATE $table SET $col1 = $val1, $col2 = $val2, ...
+        $colN = $valN WHERE ...
+    INSERT INTO $table ($col1, $col2, ..., $colN) VALUES (...)</pre>
+<p>When used without arguments, the method returns a list of the columns
+<code>$col1</code>, <code>$col2</code>, ..., <code>$colN</code>, you may alternatively use a column number
+as argument. Note that the column list may be empty as in</p>
+<pre>
+    INSERT INTO $table VALUES (...)</pre>
+<p>and in <em>CREATE</em> or <em>DROP</em> statements.</p>
+<p>But what does &quot;returning a column&quot; mean? It is returning an
+<code>SQL::Statement::Util::Column</code> instance, a class that implements the methods
+<code>table</code> and <code>name</code>, both returning the respective scalar. For example,
+consider the following statements:</p>
+<pre>
+    INSERT INTO foo (bar) VALUES (1)
+    SELECT bar FROM foo WHERE ...
+    SELECT foo.bar FROM foo WHERE ...</pre>
+<p>In all these cases exactly one column instance would be returned with</p>
+<pre>
+    $col-&gt;name() eq 'bar'
+    $col-&gt;table() eq 'foo'</pre>
+<p>
+</p>
+<h2><a name="tables"><strong>tables</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$tableNum</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">tables</span><span class="operator">();</span>  <span class="comment"># Scalar context</span>
+    <span class="keyword">my</span> <span class="variable">@tables</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">tables</span><span class="operator">();</span>    <span class="comment"># Array context</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$table1</span><span class="operator">,</span> <span class="variable">$table2</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">tables</span><span class="operator">(</span><span class="number">0</span><span class="operator">),</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">tables</span><span class="operator">(</span><span class="number">1</span><span class="operator">));</span>
+</pre>
+<p>Similar to <code>columns</code>, this method returns instances of
+<code>SQL::Statement::Table</code>. For <em>UPDATE</em>, <em>DELETE</em>, <em>INSERT</em>,
+<em>CREATE</em> and <em>DROP</em>, a single table will always be returned.
+<em>SELECT</em> statements can return more than one table, in case
+of joins. Table objects offer a single method, <code>name</code> which
+returns the table name.</p>
+<p>
+</p>
+<h2><a name="params"><strong>params</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$paramNum</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">params</span><span class="operator">();</span>  <span class="comment"># Scalar context</span>
+    <span class="keyword">my</span> <span class="variable">@params</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">params</span><span class="operator">();</span>    <span class="comment"># Array context</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$p1</span><span class="operator">,</span> <span class="variable">$p2</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">params</span><span class="operator">(</span><span class="number">0</span><span class="operator">),</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">params</span><span class="operator">(</span><span class="number">1</span><span class="operator">));</span>
+</pre>
+<p>The <code>params</code> method returns information about the input parameters
+used in a statement. For example, consider the following:</p>
+<pre>
+    INSERT INTO foo VALUES (?, ?)</pre>
+<p>This would return two instances of <code>SQL::Statement::Param</code>. Param objects
+implement a single method, <code>$param-</code>num()&gt;, which retrieves the parameter
+number. (0 and 1, in the above example). As of now, not very useful ... :-)</p>
+<p>
+</p>
+<h2><a name="row_values"><strong>row_values</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$rowValueNum</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">row_values</span><span class="operator">();</span> <span class="comment"># Scalar context</span>
+    <span class="keyword">my</span> <span class="variable">@rowValues</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">row_values</span><span class="operator">(</span><span class="number">0</span><span class="operator">);</span>  <span class="comment"># Array context</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$rval1</span><span class="operator">,</span> <span class="variable">$rval2</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">row_values</span><span class="operator">(</span><span class="number">0</span><span class="operator">,</span><span class="number">0</span><span class="operator">),</span>
+                          <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">row_values</span><span class="operator">(</span><span class="number">0</span><span class="operator">,</span><span class="number">1</span><span class="operator">));</span>
+</pre>
+<p>This method is used for statements like</p>
+<pre>
+    UPDATE $table SET $col1 = $val1, $col2 = $val2, ...
+        $colN = $valN WHERE ...
+    INSERT INTO $table (...) VALUES ($val1, $val2, ..., $valN),
+                                    ($val1, $val2, ..., $valN)</pre>
+<p>to read the values <code>$val1</code>, <code>$val2</code>, ... <code>$valN</code>. It returns (lists of)
+scalar values or <code>SQL::Statement::Param</code> instances.</p>
+<p>
+</p>
+<h2><a name="order"><strong>order</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$orderNum</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">order</span><span class="operator">();</span>   <span class="comment"># Scalar context</span>
+    <span class="keyword">my</span> <span class="variable">@order</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">order</span><span class="operator">();</span>      <span class="comment"># Array context</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$o1</span><span class="operator">,</span> <span class="variable">$o2</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">order</span><span class="operator">(</span><span class="number">0</span><span class="operator">),</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">order</span><span class="operator">(</span><span class="number">1</span><span class="operator">));</span>
+</pre>
+<p>In <em>SELECT</em> statements you can use this for looking at the ORDER clause.
+Example:</p>
+<pre>
+    SELECT * FROM FOO ORDER BY id DESC, name</pre>
+<p>In this case, <code>order</code> could return 2 instances of <code>SQL::Statement::Order</code>.
+You can use the methods <code>$o-&gt;table()</code>, <code>$o-&gt;column()</code>,
+<code>$o-&gt;direction()</code> and <code>$o-&gt;desc()</code> to examine the order object.</p>
+<p>
+</p>
+<h2><a name="limit"><strong>limit</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$limit</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">limit</span><span class="operator">();</span>
+</pre>
+<p>In a SELECT statement you can use a <code>LIMIT</code> clause to implement
+cursoring:</p>
+<pre>
+    SELECT * FROM FOO LIMIT 5
+    SELECT * FROM FOO LIMIT 5, 5
+    SELECT * FROM FOO LIMIT 10, 5</pre>
+<p>These three statements would retrieve the rows <code>0..4</code>, <code>5..9</code>, <code>10..14</code>
+of the table FOO, respectively. If no <code>LIMIT</code> clause is used, then the
+method <code>$stmt-&gt;limit</code> returns undef. Otherwise it returns the limit
+number (the maximum number of rows) from the statement (<code>5</code> or <code>10</code> for
+the statements above).</p>
+<p>
+</p>
+<h2><a name="offset"><strong>offset</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$offset</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">offset</span><span class="operator">();</span>
+</pre>
+<p>If no <code>LIMIT</code> clause is used, then the method <code>$stmt-&gt;limit</code> returns
+<em>undef</em>. Otherwise it returns the offset number (the index of the first row
+to be included in the limit clause).</p>
+<p>
+</p>
+<h2><a name="where_hash"><strong>where_hash</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$where_hash</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">where_hash</span><span class="operator">();</span>
+</pre>
+<p>To manually evaluate the <em>WHERE</em> clause, fetch the topmost where clause node
+with the <code>where_hash</code> method. Then evaluate the left-hand and right-hand side
+of the operation, perhaps recursively. Once that is done, apply the operator
+and finally negate the result, if required.</p>
+<p>The where clause nodes have (up to) 4 attributes:</p>
+<pre>
+
+=item op</pre>
+<pre>
+
+contains the operator, one of C&lt;AND&gt;, C&lt;OR&gt;, C&lt;=&gt;, C&lt;E&lt;lt&gt;E&lt;gt&gt;&gt;, C&lt;E&lt;gt&gt;=&gt;,
+C&lt;E&lt;gt&gt;&gt;, C&lt;E&lt;lt&gt;=&gt;, C&lt;E&lt;lt&gt;&gt;, C&lt;LIKE&gt;, C&lt;CLIKE&gt;, C&lt;IS&gt;, C&lt;IN&gt;, C&lt;BETWEEN&gt; or
+a user defined operator, if any.</pre>
+<pre>
+
+=item arg1</pre>
+<p>contains the left-hand side of the operator. This can be a scalar value, a
+hash containing column or function definition, a parameter definition (hash has
+attribute <code>type</code> defined) or another operation (hash has attribute <code>op</code>
+defined).</p>
+<dl>
+<dt><strong><a name="arg2" class="item">arg2</a></strong></dt>
+
+<dd>
+<p>contains the right-hand side of the operator. This can be a scalar value, a
+hash containing column or function definition, a parameter definition (hash has
+attribute <code>type</code> defined) or another operation (hash has attribute <code>op</code>
+defined).</p>
+</dd>
+<dt><strong><a name="neg" class="item">neg</a></strong></dt>
+
+<dd>
+<p>contains a TRUE value, if the operation result must be negated after evalution.</p>
+</dd>
+</dl>
+<p>To illustrate the above, consider the following WHERE clause:</p>
+<pre>
+    WHERE NOT (id &gt; 2 AND name = 'joe') OR name IS NULL</pre>
+<p>We can represent this clause by the following tree:</p>
+<pre>
+              (id &gt; 2)   (name = 'joe')
+                     \   /
+          NOT         AND
+                         \      (name IS NULL)
+                          \    /
+                            OR</pre>
+<p>Thus the WHERE clause would return an SQL::Statement::Op instance with
+the <code>op()</code> field set to 'OR'. The arg2() field would return another
+SQL::Statement::Op instance with arg1() being the SQL::Statement::Column
+instance representing id, the arg2() field containing the value undef
+(NULL) and the <code>op()</code> field being 'IS'.</p>
+<p>The arg1() field of the topmost Op instance would return an Op instance
+with <code>op()</code> eq 'AND' and <a href="#neg"><code>neg()</code></a> returning TRUE. The arg1() and arg2()
+fields would be Op's representing &quot;id &gt; 2&quot; and &quot;name = 'joe'&quot;.</p>
+<p>Of course there's a ready-for-use method for WHERE clause evaluation:</p>
+<p>The WHERE clause evaluation depends on an object being used for
+fetching parameter and column values. Usually this can be an
+SQL::Statement::RAM::Table object or SQL::Eval object, but in fact it
+can be any object that supplies the methods</p>
+<pre>
+    <span class="variable">$val</span> <span class="operator">=</span> <span class="variable">$eval</span><span class="operator">-&gt;</span><span class="variable">param</span><span class="operator">(</span><span class="variable">$paramNum</span><span class="operator">);</span>
+    <span class="variable">$val</span> <span class="operator">=</span> <span class="variable">$eval</span><span class="operator">-&gt;</span><span class="variable">column</span><span class="operator">(</span><span class="variable">$table</span><span class="operator">,</span> <span class="variable">$column</span><span class="operator">);</span>
+</pre>
+<p>Once you have such an object, you can call eval_where;</p>
+<pre>
+    <span class="variable">$match</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">eval_where</span><span class="operator">(</span><span class="variable">$eval</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="where"><strong>where</strong></a></h2>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$where</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">where</span><span class="operator">();</span>
+</pre>
+<p>This method is used to examine the syntax tree of the <code>WHERE</code> clause. It
+returns <em>undef</em> (if no <code>WHERE</code> clause was used) or an instance of
+<a href="../../../lib/SQL/Statement/Term.html">the SQL::Statement::Term manpage</a>.</p>
+<p>The where clause is evaluated automatically on the current selected row of
+the table currently worked on when it's <code>value()</code> method is invoked.</p>
+<p><code>SQL::Statement</code> creates the object tree for where clause evaluation
+directly after successfully parsing a statement from the given
+<code>where_clause</code>, if any.</p>
+<p>
+</p>
+<hr />
+<h1><a name="executing_and_fetching_data_from_sql_statements">Executing and fetching data from SQL statements</a></h1>
+<p>
+</p>
+<h2><a name="execute">execute</a></h2>
+<p>When called from a DBD or other subclass of SQL::Statement, the <code>execute()</code>
+method will be executed against whatever datasource (persistent storage) is
+supplied by the DBD or the subclass (e.g. CSV files for <a href="../../../lib/Bundle/DBD/CSV.html">the DBD::CSV manpage</a>, or
+BerkeleyDB for <a href="../../../lib/DBD/DBM.html">the DBD::DBM manpage</a>). If you are using <a href="../../../lib/SQL/Statement.html">the SQL::Statement manpage</a> directly
+rather than as a subclass, you can call the <code>execute()</code> method and the
+statements will be <code>executed()</code> using temporary in-memory tables. When used
+directly, like that, you need to create a cache hashref and pass it as the
+first argument to execute:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$cache</span>  <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$parser</span> <span class="operator">=</span> <span class="variable">SQL::Parser</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+  <span class="keyword">my</span> <span class="variable">$stmt</span>   <span class="operator">=</span> <span class="variable">SQL::Statement</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'CREATE TABLE x (id INT)'</span><span class="operator">,</span><span class="variable">$parser</span><span class="operator">);</span>
+  <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span> <span class="variable">$cache</span> <span class="operator">);</span>
+</pre>
+<p>If you are using a statement with placeholders, those can be passed to
+execute after the <code>$cache</code>:</p>
+<pre>
+  <span class="variable">$stmt</span>      <span class="operator">=</span> <span class="variable">SQL::Statement</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'INSERT INTO y VALUES(?,?)'</span><span class="operator">,</span><span class="variable">$parser</span><span class="operator">);</span>
+  <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span> <span class="variable">$cache</span><span class="operator">,</span> <span class="number">7</span><span class="operator">,</span> <span class="string">'foo'</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="fetch">fetch</a></h2>
+<p>Only a single <code>fetch()</code> method is provided - it returns a single row of
+data as an arrayref. Use a loop to fetch all rows:</p>
+<pre>
+ <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$row</span> <span class="operator">=</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">())</span> <span class="operator">{</span>
+     <span class="comment"># ...</span>
+ <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="an_example_of_executing_and_fetching">an example of executing and fetching</a></h2>
+<pre>
+ <span class="comment">#!/usr/bin/perl -w</span>
+ <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+ <span class="keyword">use</span> <span class="variable">SQL::Statement</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$cache</span><span class="operator">=</span><span class="operator">{}</span><span class="operator">;</span>
+ <span class="keyword">my</span> <span class="variable">$parser</span> <span class="operator">=</span> <span class="variable">SQL::Parser</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+ <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$sql</span><span class="operator">(</span><span class="keyword">split</span> <span class="regex">/\n/</span><span class="operator">,</span>
+ <span class="string">"  CREATE TABLE a (b INT)
+    INSERT INTO a VALUES(1)
+    INSERT INTO a VALUES(2)
+    SELECT MAX(b) FROM a  "</span>
+ <span class="operator">)</span>
+ <span class="operator">{</span>
+    <span class="variable">$stmt</span> <span class="operator">=</span> <span class="variable">SQL::Statement</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">,</span><span class="variable">$parser</span><span class="operator">);</span>
+    <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span><span class="variable">$cache</span><span class="operator">);</span>
+    <span class="keyword">next</span> <span class="keyword">unless</span> <span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">command</span> <span class="keyword">eq</span> <span class="string">'SELECT'</span><span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">$row</span><span class="operator">=</span><span class="variable">$stmt</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">)</span>
+    <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"@</span><span class="variable">$row</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+ <span class="operator">}</span>
+ <span class="comment">__END__
+ </span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="author___copyright">AUTHOR &amp; COPYRIGHT</a></h1>
+<p>Copyright (c) 2005, Jeff Zucker &lt;jzuckerATcpan.org&gt;, all rights reserved.
+Copyright (c) 2009, Jens Rehsack &lt;rehsackATcpan.org&gt;, all rights reserved.</p>
+<p>This document may be freely modified and distributed under the same terms
+as Perl itself.</p>
+
+</body>
+
+</html>

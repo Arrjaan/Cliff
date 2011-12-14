@@ -1,0 +1,468 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>bigint - Transparent BigInteger support for Perl</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>bigint - Transparent BigInteger support for Perl</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#use_integer_vs__use_bigint">use integer vs. use bigint</a></li>
+		<li><a href="#options">Options</a></li>
+		<li><a href="#math_library">Math Library</a></li>
+		<li><a href="#internal_format">Internal Format</a></li>
+		<li><a href="#sign">Sign</a></li>
+		<li><a href="#methods">Methods</a></li>
+		<li><a href="#math_library">MATH LIBRARY</a></li>
+		<li><a href="#caveat">Caveat</a></li>
+	</ul>
+
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#modules_used">MODULES USED</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>bigint - Transparent BigInteger support for Perl</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">bigint</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">$x</span> <span class="operator">=</span> <span class="number">2</span> <span class="operator">+</span> <span class="number">4.5</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>                    <span class="comment"># BigInt 6</span>
+  <span class="keyword">print</span> <span class="number">2</span> <span class="operator">**</span> <span class="number">512</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>                  <span class="comment"># really is what you think it is</span>
+  <span class="keyword">print</span> <span class="variable">inf</span> <span class="operator">+</span> <span class="number">42</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>                  <span class="comment"># inf</span>
+  <span class="keyword">print</span> <span class="variable">NaN</span> <span class="operator">*</span> <span class="number">7</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>                   <span class="comment"># NaN</span>
+  <span class="keyword">print</span> <span class="keyword">hex</span><span class="operator">(</span><span class="string">"0x1234567890123490"</span><span class="operator">),</span><span class="string">"\n"</span><span class="operator">;</span> <span class="comment"># Perl v5.9.4 or later</span>
+</pre>
+<pre>
+  <span class="operator">{</span>
+    <span class="keyword">no</span> <span class="variable">bigint</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="number">2</span> <span class="operator">**</span> <span class="number">256</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>                <span class="comment"># a normal Perl scalar now</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="comment"># Note that this will be global:</span>
+  <span class="keyword">use</span> <span class="variable">bigint</span> <span class="string">qw/hex oct/</span><span class="operator">;</span>
+  <span class="keyword">print</span> <span class="keyword">hex</span><span class="operator">(</span><span class="string">"0x1234567890123490"</span><span class="operator">),</span><span class="string">"\n"</span><span class="operator">;</span>
+  <span class="keyword">print</span> <span class="keyword">oct</span><span class="operator">(</span><span class="string">"01234567890123490"</span><span class="operator">),</span><span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>All operators (including basic math operations) are overloaded. Integer
+constants are created as proper BigInts.</p>
+<p>Floating point constants are truncated to integer. All parts and results of
+expressions are also truncated.</p>
+<p>Unlike <a href="../lib/integer.html">the integer manpage</a>, this pragma creates integer constants that are only
+limited in their size by the available memory and CPU time.</p>
+<p>
+</p>
+<h2><a name="use_integer_vs__use_bigint">use integer vs. use bigint</a></h2>
+<p>There is one small difference between <code>use integer</code> and <code>use bigint</code>: the
+former will not affect assignments to variables and the return value of
+some functions. <code>bigint</code> truncates these results to integer too:</p>
+<pre>
+        # perl -Minteger -wle 'print 3.2'
+        3.2
+        # perl -Minteger -wle 'print 3.2 + 0'
+        3
+        # perl -Mbigint -wle 'print 3.2'
+        3
+        # perl -Mbigint -wle 'print 3.2 + 0'
+        3</pre>
+<pre>
+        # perl -Mbigint -wle 'print exp(1) + 0'
+        2
+        # perl -Mbigint -wle 'print exp(1)'
+        2
+        # perl -Minteger -wle 'print exp(1)'
+        2.71828182845905
+        # perl -Minteger -wle 'print exp(1) + 0'
+        2</pre>
+<p>In practice this makes seldom a difference as <strong>parts and results</strong> of
+expressions will be truncated anyway, but this can, for instance, affect the
+return value of subroutines:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> three_integer </span><span class="operator">{</span> <span class="keyword">use</span> <span class="variable">integer</span><span class="operator">;</span> <span class="keyword">return</span> <span class="number">3.2</span><span class="operator">;</span> <span class="operator">}</span>
+    <span class="keyword">sub</span><span class="variable"> three_bigint </span><span class="operator">{</span> <span class="keyword">use</span> <span class="variable">bigint</span><span class="operator">;</span> <span class="keyword">return</span> <span class="number">3.2</span><span class="operator">;</span> <span class="operator">}</span>
+     
+    <span class="keyword">print</span> <span class="variable">three_integer</span><span class="operator">(),</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">three_bigint</span><span class="operator">(),</span><span class="string">"\n"</span><span class="operator">;</span>    <span class="comment"># prints "3.2 3"</span>
+</pre>
+<p>
+</p>
+<h2><a name="options">Options</a></h2>
+<p>bigint recognizes some options that can be passed while loading it via use.
+The options can (currently) be either a single letter form, or the long form.
+The following options exist:</p>
+<dl>
+<dt><strong><a name="a_or_accuracy" class="item">a or accuracy</a></strong></dt>
+
+<dd>
+<p>This sets the accuracy for all math operations. The argument must be greater
+than or equal to zero. See Math::BigInt's <code>bround()</code> function for details.</p>
+<pre>
+        perl -Mbigint=a,2 -le 'print 12345+1'</pre>
+<p>Note that setting precision and accuracy at the same time is not possible.</p>
+</dd>
+<dt><strong><a name="p_or_precision" class="item">p or precision</a></strong></dt>
+
+<dd>
+<p>This sets the precision for all math operations. The argument can be any
+integer. Negative values mean a fixed number of digits after the dot, and
+are &lt;B&gt;ignored&lt;/B&gt; since all operations happen in integer space.
+A positive value rounds to this digit left from the dot. 0 or 1 mean round to
+integer and are ignore like negative values.</p>
+<p>See Math::BigInt's <code>bfround()</code> function for details.</p>
+<pre>
+        perl -Mbignum=p,5 -le 'print 123456789+123'</pre>
+<p>Note that setting precision and accuracy at the same time is not possible.</p>
+</dd>
+<dt><strong><a name="t_or_trace" class="item">t or trace</a></strong></dt>
+
+<dd>
+<p>This enables a trace mode and is primarily for debugging bigint or
+Math::BigInt.</p>
+</dd>
+<dt><strong><a name="hex" class="item">hex</a></strong></dt>
+
+<dd>
+<p>Override the built-in <a href="#hex"><code>hex()</code></a> method with a version that can handle big
+integers. Note that under Perl v5.9.4 or ealier, this will be global
+and cannot be disabled with &quot;no bigint;&quot;.</p>
+</dd>
+<dt><strong><a name="oct" class="item">oct</a></strong></dt>
+
+<dd>
+<p>Override the built-in <a href="#oct"><code>oct()</code></a> method with a version that can handle big
+integers. Note that under Perl v5.9.4 or ealier, this will be global
+and cannot be disabled with &quot;no bigint;&quot;.</p>
+</dd>
+<dt><strong><a name="l_lib_try_or_only" class="item">l, lib, try or only</a></strong></dt>
+
+<dd>
+<p>Load a different math lib, see <a href="#math_library">Math Library</a>.</p>
+<pre>
+        perl -Mbigint=lib,GMP -e 'print 2 ** 512'
+        perl -Mbigint=try,GMP -e 'print 2 ** 512'
+        perl -Mbigint=only,GMP -e 'print 2 ** 512'</pre>
+<p>Currently there is no way to specify more than one library on the command
+line. This means the following does not work:</p>
+<pre>
+        perl -Mbignum=l,GMP,Pari -e 'print 2 ** 512'</pre>
+<p>This will be hopefully fixed soon ;)</p>
+</dd>
+<dt><strong><a name="v_or_version" class="item">v or version</a></strong></dt>
+
+<dd>
+<p>This prints out the name and version of all modules used and then exits.</p>
+<pre>
+        perl -Mbigint=v</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="math_library">Math Library</a></h2>
+<p>Math with the numbers is done (by default) by a module called
+Math::BigInt::Calc. This is equivalent to saying:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bigint</span> <span class="string">lib</span> <span class="operator">=&gt;</span> <span class="string">'Calc'</span><span class="operator">;</span>
+</pre>
+<p>You can change this by using:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bignum</span> <span class="string">lib</span> <span class="operator">=&gt;</span> <span class="string">'GMP'</span><span class="operator">;</span>
+</pre>
+<p>The following would first try to find Math::BigInt::Foo, then
+Math::BigInt::Bar, and when this also fails, revert to Math::BigInt::Calc:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bigint</span> <span class="string">lib</span> <span class="operator">=&gt;</span> <span class="string">'Foo,Math::BigInt::Bar'</span><span class="operator">;</span>
+</pre>
+<p>Using <code>lib</code> warns if none of the specified libraries can be found and
+<a href="../lib/Math/BigInt.html">the Math::BigInt manpage</a> did fall back to one of the default libraries.
+To suppress this warning, use <code>try</code> instead:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bignum</span> <span class="string">try</span> <span class="operator">=&gt;</span> <span class="string">'GMP'</span><span class="operator">;</span>
+</pre>
+<p>If you want the code to die instead of falling back, use <code>only</code> instead:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bignum</span> <span class="string">only</span> <span class="operator">=&gt;</span> <span class="string">'GMP'</span><span class="operator">;</span>
+</pre>
+<p>Please see respective module documentation for further details.</p>
+<p>
+</p>
+<h2><a name="internal_format">Internal Format</a></h2>
+<p>The numbers are stored as objects, and their internals might change at anytime,
+especially between math operations. The objects also might belong to different
+classes, like Math::BigInt, or Math::BigInt::Lite. Mixing them together, even
+with normal scalars is not extraordinary, but normal and expected.</p>
+<p>You should not depend on the internal format, all accesses must go through
+accessor methods. E.g. looking at $x-&gt;{sign} is not a good idea since there
+is no guaranty that the object in question has such a hash key, nor is a hash
+underneath at all.</p>
+<p>
+</p>
+<h2><a name="sign">Sign</a></h2>
+<p>The sign is either '+', '-', 'NaN', '+inf' or '-inf'.
+You can access it with the <code>sign()</code> method.</p>
+<p>A sign of 'NaN' is used to represent the result when input arguments are not
+numbers or as a result of 0/0. '+inf' and '-inf' represent plus respectively
+minus infinity. You will get '+inf' when dividing a positive number by 0, and
+'-inf' when dividing any negative number by 0.</p>
+<p>
+</p>
+<h2><a name="methods">Methods</a></h2>
+<p>Since all numbers are now objects, you can use all functions that are part of
+the BigInt API. You can only use the <code>bxxx()</code> notation, and not the <code>fxxx()</code>
+notation, though.</p>
+<dl>
+<dt><strong><a name="inf" class="item"><code>inf()</code></a></strong></dt>
+
+<dd>
+<p>A shortcut to return Math::BigInt-&gt;<code>binf()</code>. Useful because Perl does not always
+handle bareword <a href="#inf"><code>inf</code></a> properly.</p>
+</dd>
+<dt><strong><a name="nan" class="item"><code>NaN()</code></a></strong></dt>
+
+<dd>
+<p>A shortcut to return Math::BigInt-&gt;<code>bnan()</code>. Useful because Perl does not always
+handle bareword <a href="#nan"><code>NaN</code></a> properly.</p>
+</dd>
+<dt><strong><a name="e" class="item">e</a></strong></dt>
+
+<dd>
+<pre>
+        <span class="comment"># perl -Mbigint=e -wle 'print e'</span>
+</pre>
+<p>Returns Euler's number <a href="#e"><code>e</code></a>, aka <a href="../lib/pods/perlfunc.html#exp"><code>exp(1)</code></a>. Note that under bigint, this is
+truncated to an integer, and hence simple '2'.</p>
+</dd>
+<dt><strong><a name="pi3" class="item">PI</a></strong></dt>
+
+<dd>
+<pre>
+        <span class="comment"># perl -Mbigint=PI -wle 'print PI'</span>
+</pre>
+<p>Returns PI. Note that under bigint, this is truncated to an integer, and hence
+simple '3'.</p>
+</dd>
+<dt><strong><a name="bexp" class="item"><code>bexp()</code></a></strong></dt>
+
+<dd>
+<pre>
+        <span class="variable">bexp</span><span class="operator">(</span><span class="variable">$power</span><span class="operator">,</span><span class="variable">$accuracy</span><span class="operator">);</span>
+</pre>
+<p>Returns Euler's number <a href="#e"><code>e</code></a> raised to the appropriate power, to
+the wanted accuracy.</p>
+<p>Note that under bigint, the result is truncated to an integer.</p>
+<p>Example:</p>
+<pre>
+        <span class="comment"># perl -Mbigint=bexp -wle 'print bexp(1,80)'</span>
+</pre>
+</dd>
+<dt><strong><a name="bpi" class="item"><code>bpi()</code></a></strong></dt>
+
+<dd>
+<pre>
+        <span class="variable">bpi</span><span class="operator">(</span><span class="variable">$accuracy</span><span class="operator">);</span>
+</pre>
+<p>Returns PI to the wanted accuracy. Note that under bigint, this is truncated
+to an integer, and hence simple '3'.</p>
+<p>Example:</p>
+<pre>
+        <span class="comment"># perl -Mbigint=bpi -wle 'print bpi(80)'</span>
+</pre>
+</dd>
+<dt><strong><a name="upgrade" class="item"><code>upgrade()</code></a></strong></dt>
+
+<dd>
+<p>Return the class that numbers are upgraded to, is in fact returning
+<code>$Math::BigInt::upgrade</code>.</p>
+</dd>
+<dt><strong><a name="in_effect" class="item"><code>in_effect()</code></a></strong></dt>
+
+<dd>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bigint</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="string">"in effect\n"</span> <span class="keyword">if</span> <span class="variable">bigint::in_effect</span><span class="operator">;</span>       <span class="comment"># true</span>
+        <span class="operator">{</span>
+          <span class="keyword">no</span> <span class="variable">bigint</span><span class="operator">;</span>
+          <span class="keyword">print</span> <span class="string">"in effect\n"</span> <span class="keyword">if</span> <span class="variable">bigint::in_effect</span><span class="operator">;</span>     <span class="comment"># false</span>
+        <span class="operator">}</span>
+</pre>
+<p>Returns true or false if <code>bigint</code> is in effect in the current scope.</p>
+<p>This method only works on Perl v5.9.4 or later.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="math_library">MATH LIBRARY</a></h2>
+<p>Math with the numbers is done (by default) by a module called</p>
+<p>
+</p>
+<h2><a name="caveat">Caveat</a></h2>
+<p>But a warning is in order. When using the following to make a copy of a number,
+only a shallow copy will be made.</p>
+<pre>
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="number">7</span><span class="operator">;</span>
+</pre>
+<p>Using the copy or the original with overloaded math is okay, e.g. the
+following work:</p>
+<pre>
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$x</span> <span class="operator">+</span> <span class="number">1</span><span class="operator">,</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">$y</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>     <span class="comment"># prints 10 9</span>
+</pre>
+<p>but calling any method that modifies the number directly will result in
+<strong>both</strong> the original and the copy being destroyed:</p>
+<pre>
+
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">badd</span><span class="operator">(</span><span class="number">1</span><span class="operator">),</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">$y</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>        <span class="comment"># prints 10 10</span>
+</pre>
+<pre>
+
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">binc</span><span class="operator">(</span><span class="number">1</span><span class="operator">),</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">$y</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>        <span class="comment"># prints 10 10</span>
+</pre>
+<pre>
+
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">bmul</span><span class="operator">(</span><span class="number">2</span><span class="operator">),</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">$y</span><span class="operator">,</span><span class="string">"\n"</span><span class="operator">;</span>        <span class="comment"># prints 18 18</span>
+</pre>
+<pre>
+
+Using methods that do not modify, but testthe contents works:</pre>
+<pre>
+        <span class="variable">$x</span> <span class="operator">=</span> <span class="number">9</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">=</span> <span class="variable">$x</span><span class="operator">;</span>
+        <span class="variable">$z</span> <span class="operator">=</span> <span class="number">9</span> <span class="keyword">if</span> <span class="variable">$x</span><span class="operator">-&gt;</span><span class="variable">is_zero</span><span class="operator">();</span>                <span class="comment"># works fine</span>
+</pre>
+<p>See the documentation about the copy constructor and <code>=</code> in overload, as
+well as the documentation in BigInt for further details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<dl>
+<dt><strong><code>in_effect()</code></strong></dt>
+
+<dd>
+<p>This method only works on Perl v5.9.4 or later.</p>
+</dd>
+<dt><strong>hex()/oct()</strong></dt>
+
+<dd>
+<p><code>bigint</code> overrides these routines with versions that can also handle
+big integer values. Under Perl prior to version v5.9.4, however, this
+will not happen unless you specifically ask for it with the two
+import tags &quot;hex&quot; and &quot;oct&quot; - and then it will be global and cannot be
+disabled inside a scope with &quot;no bigint&quot;:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bigint</span> <span class="string">qw/hex oct/</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="keyword">hex</span><span class="operator">(</span><span class="string">"0x1234567890123456"</span><span class="operator">);</span>
+        <span class="operator">{</span>
+                <span class="keyword">no</span> <span class="variable">bigint</span><span class="operator">;</span>
+                <span class="keyword">print</span> <span class="keyword">hex</span><span class="operator">(</span><span class="string">"0x1234567890123456"</span><span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>The second call to <a href="#hex"><code>hex()</code></a> will warn about a non-portable constant.</p>
+<p>Compare this to:</p>
+<pre>
+        <span class="keyword">use</span> <span class="variable">bigint</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># will warn only under Perl older than v5.9.4</span>
+        <span class="keyword">print</span> <span class="keyword">hex</span><span class="operator">(</span><span class="string">"0x1234567890123456"</span><span class="operator">);</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="modules_used">MODULES USED</a></h1>
+<p><code>bigint</code> is just a thin wrapper around various modules of the Math::BigInt
+family. Think of it as the head of the family, who runs the shop, and orders
+the others to do the work.</p>
+<p>The following modules are currently used by bigint:</p>
+<pre>
+        Math::BigInt::Lite      (for speed, and only if it is loadable)
+        Math::BigInt</pre>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>Some cool command line examples to impress the Python crowd ;) You might want
+to compare them to the results under -Mbignum or -Mbigrat:</p>
+<pre>
+
+        perl -Mbigint -le 'print sqrt(33)'
+        perl -Mbigint -le 'print 2*255'
+        perl -Mbigint -le 'print 4.5+2*255'
+        perl -Mbigint -le 'print 3/7 + 5/7 + 8/3'
+        perl -Mbigint -le 'print 123-&gt;is_odd()'
+        perl -Mbigint -le 'print log(2)'
+        perl -Mbigint -le 'print 2 ** 0.5'
+        perl -Mbigint=a,65 -le 'print 2 ** 0.2'
+        perl -Mbignum=a,65,l,GMP -le 'print 7 ** 7777'</pre>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This program is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Especially <a href="../lib/bigrat.html">the bigrat manpage</a> as in <code>perl -Mbigrat -le 'print 1/3+1/4'</code> and
+<a href="../lib/bignum.html">the bignum manpage</a> as in <a href="../lib/pods/perlfunc.html#sqrt"><code>perl -Mbignum -le 'print sqrt(2)'</code></a>.</p>
+<p><a href="../lib/Math/BigInt.html">the Math::BigInt manpage</a>, <a href="../lib/Math/BigRat.html">the Math::BigRat manpage</a> and <a href="../Math/Big.html">the Math::Big manpage</a> as well
+as <a href="../Math/BigInt/BitVect.html">the Math::BigInt::BitVect manpage</a>, <a href="../Math/BigInt/Pari.html">the Math::BigInt::Pari manpage</a> and  <a href="../Math/BigInt/GMP.html">the Math::BigInt::GMP manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p>(C) by Tels <a href="http://bloodgate.com/">http://bloodgate.com/</a> in early 2002 - 2007.</p>
+
+</body>
+
+</html>

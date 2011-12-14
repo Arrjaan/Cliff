@@ -1,0 +1,691 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>WWW::Mechanize::Examples - Sample programs that use WWW::Mechanize</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>WWW::Mechanize::Examples - Sample programs that use WWW::Mechanize</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<ul>
+
+		<li><a href="#starbucks_density_calculator__by_nat_torkington">Starbucks Density Calculator, by Nat Torkington</a></li>
+		<li><a href="#pb_upload__by_john_beppu">pb-upload, by John Beppu</a></li>
+		<li><a href="#listmod__by_ian_langworth">listmod, by Ian Langworth</a></li>
+		<li><a href="#ccdl__by_andy_lester">ccdl, by Andy Lester</a></li>
+		<li><a href="#quotes_pl__by_andy_lester">quotes.pl, by Andy Lester</a></li>
+		<li><a href="#cpansearch_pl__by_ed_silva">cpansearch.pl, by Ed Silva</a></li>
+		<li><a href="#lj_friends_cgi__by_matt_cashner">lj_friends.cgi, by Matt Cashner</a></li>
+		<li><a href="#hacking_movable_type__by_dan_rinzel">Hacking Movable Type, by Dan Rinzel</a></li>
+		<li><a href="#get_despair__by_randal_schwartz">get-despair, by Randal Schwartz</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>WWW::Mechanize::Examples - Sample programs that use WWW::Mechanize</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>Plenty of people have learned WWW::Mechanize, and now, you can too!</p>
+<p>Following are user-supplied samples of WWW::Mechanize in action.
+If you have samples you'd like to contribute, please send 'em to
+<code>&lt;andy@petdance.com&gt;</code>.</p>
+<p>You can also look at the <em class="file">t/*.t</em> files in the distribution.</p>
+<p>Please note that these examples are not intended to do any specific task.
+For all I know, they're no longer functional because the sites they
+hit have changed.  They're here to give examples of how people have
+used WWW::Mechanize.</p>
+<p>Note that the examples are in reverse order of my having received them,
+so the freshest examples are always at the top.</p>
+<p>
+</p>
+<h2><a name="starbucks_density_calculator__by_nat_torkington">Starbucks Density Calculator, by Nat Torkington</a></h2>
+<p>Here's a pair of programs from Nat Torkington, editor for O'Reilly Media
+and co-author of the <em>Perl Cookbook</em>.</p>
+<p>Rael [Dornfest] discovered that you can easily find out how many Starbucks
+there are in an area by searching for &quot;Starbucks&quot;.  So I wrote a silly
+scraper for some old census data and came up with some Starbucks density
+figures.  There's no meaning to these numbers thanks to errors from using
+old census data coupled with false positives in Yahoo search (e.g.,
+&quot;Dodie Starbuck-Your Style Desgn&quot; in Portland OR).  But it was fun to
+waste a night on.</p>
+<p>Here are the top twenty cities in descending order of population,
+with the amount of territory each Starbucks has.  E.g., A New York NY
+Starbucks covers 1.7 square miles of ground.</p>
+<pre>
+    New York, NY        1.7
+    Los Angeles, CA     1.2
+    Chicago, IL         1.0
+    Houston, TX         4.6
+    Philadelphia, PA    6.8
+    San Diego, CA       2.7
+    Detroit, MI        19.9
+    Dallas, TX          2.7
+    Phoenix, AZ         4.1
+    San Antonio, TX    12.3
+    San Jose, CA        1.1
+    Baltimore, MD       3.9
+    Indianapolis, IN   12.1
+    San Francisco, CA   0.5
+    Jacksonville, FL   39.9
+    Columbus, OH        7.3
+    Milwaukee, WI       5.1
+    Memphis, TN        15.1
+    Washington, DC      1.4
+    Boston, MA          0.5</pre>
+<p><code>get_pop_data</code></p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -w</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Storable</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$url</span> <span class="operator">=</span> <span class="string">'http://www.census.gov/population/www/documentation/twps0027.html'</span><span class="operator">;</span>
+    <span class="variable">$m</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$c</span> <span class="operator">=</span> <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">content</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$c</span> <span class="operator">=~</span> <span class="regex">m{&lt;A NAME=.tabA.&gt;(.*?)&lt;/TABLE&gt;}s</span>
+      <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Can't find the population table\n"</span><span class="operator">;</span>
+    <span class="variable">$t</span> <span class="operator">=</span> <span class="variable">$1</span><span class="operator">;</span>
+    <span class="variable">@outer</span> <span class="operator">=</span> <span class="variable">$t</span> <span class="operator">=~</span> <span class="regex">m{&lt;TR.*?&gt;(.*?)&lt;/TR&gt;}gs</span><span class="operator">;</span>
+    <span class="keyword">shift</span> <span class="variable">@outer</span><span class="operator">;</span>
+    <span class="keyword">foreach</span> <span class="variable">$r</span> <span class="operator">(</span><span class="variable">@outer</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="variable">@bits</span> <span class="operator">=</span> <span class="variable">$r</span> <span class="operator">=~</span> <span class="regex">m{&lt;TD.*?&gt;(.*?)&lt;/TD&gt;}gs</span><span class="operator">;</span>
+      <span class="keyword">for</span> <span class="operator">(</span><span class="variable">$x</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span> <span class="variable">$x</span> <span class="operator">&lt;</span> <span class="variable">@bits</span><span class="operator">;</span> <span class="variable">$x</span><span class="operator">++)</span> <span class="operator">{</span>
+        <span class="variable">$b</span> <span class="operator">=</span> <span class="variable">$bits</span><span class="operator">[</span><span class="variable">$x</span><span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@v</span> <span class="operator">=</span> <span class="keyword">split</span> <span class="regex">/\s*&lt;BR&gt;\s*/</span><span class="operator">,</span> <span class="variable">$b</span><span class="operator">;</span>
+        <span class="keyword">foreach</span> <span class="operator">(</span><span class="variable">@v</span><span class="operator">)</span> <span class="operator">{</span> <span class="regex">s/^\s+//</span><span class="operator">;</span> <span class="regex">s/\s+$//</span> <span class="operator">}</span>
+        <span class="keyword">push</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$data</span><span class="operator">[</span><span class="variable">$x</span><span class="operator">]}</span><span class="operator">,</span> <span class="variable">@v</span><span class="operator">;</span>
+      <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="variable">$y</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span> <span class="variable">$y</span> <span class="operator">&lt;</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$data</span><span class="operator">[</span><span class="number">0</span><span class="operator">]}</span><span class="operator">;</span> <span class="variable">$y</span><span class="operator">++)</span> <span class="operator">{</span>
+        <span class="variable">$data</span><span class="operator">{</span><span class="variable">$data</span><span class="operator">[</span><span class="number">1</span><span class="operator">][</span><span class="variable">$y</span><span class="operator">]}</span> <span class="operator">=</span> <span class="operator">{</span>
+            <span class="string">NAME</span> <span class="operator">=&gt;</span> <span class="variable">$data</span><span class="operator">[</span><span class="number">1</span><span class="operator">][</span><span class="variable">$y</span><span class="operator">]</span><span class="operator">,</span>
+            <span class="string">RANK</span> <span class="operator">=&gt;</span> <span class="variable">$data</span><span class="operator">[</span><span class="number">0</span><span class="operator">][</span><span class="variable">$y</span><span class="operator">]</span><span class="operator">,</span>
+            <span class="string">POP</span>  <span class="operator">=&gt;</span> <span class="variable">comma_free</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">[</span><span class="number">2</span><span class="operator">][</span><span class="variable">$y</span><span class="operator">]</span><span class="operator">),</span>
+            <span class="string">AREA</span> <span class="operator">=&gt;</span> <span class="variable">comma_free</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">[</span><span class="number">3</span><span class="operator">][</span><span class="variable">$y</span><span class="operator">]</span><span class="operator">),</span>
+            <span class="string">DENS</span> <span class="operator">=&gt;</span> <span class="variable">comma_free</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">[</span><span class="number">4</span><span class="operator">][</span><span class="variable">$y</span><span class="operator">]</span><span class="operator">),</span>
+        <span class="operator">}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="variable">store</span><span class="operator">(\</span><span class="variable">%data</span><span class="operator">,</span> <span class="string">"cities.dat"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> comma_free </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$n</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="variable">$n</span> <span class="operator">=~</span> <span class="regex">s/,//</span><span class="operator">;</span>
+      <span class="keyword">return</span> <span class="variable">$n</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p><code>plague_of_coffee</code></p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -w</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Storable</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$SIG</span><span class="operator">{</span><span class="string">__WARN__</span><span class="operator">}</span> <span class="operator">=</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{}</span> <span class="operator">;</span>  <span class="comment"># ssssssh</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$Cities</span> <span class="operator">=</span> <span class="variable">retrieve</span><span class="operator">(</span><span class="string">"cities.dat"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$m</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">"http://local.yahoo.com/"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@cities</span> <span class="operator">=</span> <span class="keyword">sort</span> <span class="operator">{</span> <span class="variable">$Cities</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$a</span><span class="operator">}{</span><span class="string">RANK</span><span class="operator">}</span> <span class="operator">&lt;=&gt;</span> <span class="variable">$Cities</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$b</span><span class="operator">}{</span><span class="string">RANK</span><span class="operator">}</span> <span class="operator">}</span> <span class="keyword">keys</span> <span class="variable">%$Cities</span><span class="operator">;</span>
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">(</span> <span class="variable">@cities</span> <span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$fields</span> <span class="operator">=</span> <span class="operator">{</span>
+        <span class="string">'stx'</span> <span class="operator">=&gt;</span> <span class="string">"starbucks"</span><span class="operator">,</span>
+        <span class="string">'csz'</span> <span class="operator">=&gt;</span> <span class="variable">$c</span><span class="operator">,</span>
+      <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$r</span> <span class="operator">=</span> <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">submit_form</span><span class="operator">(</span><span class="string">form_number</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">,</span>
+                              <span class="string">fields</span> <span class="operator">=&gt;</span> <span class="variable">$fields</span><span class="operator">);</span>
+      <span class="keyword">die</span> <span class="string">"Couldn't submit form"</span> <span class="keyword">unless</span> <span class="variable">$r</span><span class="operator">-&gt;</span><span class="variable">is_success</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$hits</span> <span class="operator">=</span> <span class="variable">number_of_hits</span><span class="operator">(</span><span class="variable">$r</span><span class="operator">);</span>
+      <span class="comment">#  my $ppl  = sprintf("%d", 1000 * $Cities-&gt;{$c}{POP} / $hits);</span>
+      <span class="comment">#  print "$c has $hits Starbucks.  That's one for every $ppl people.\n";</span>
+      <span class="keyword">my</span> <span class="variable">$density</span> <span class="operator">=</span> <span class="keyword">sprintf</span><span class="operator">(</span><span class="string">"%.1f"</span><span class="operator">,</span> <span class="variable">$Cities</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$c</span><span class="operator">}{</span><span class="string">AREA</span><span class="operator">}</span> <span class="operator">/</span> <span class="variable">$hits</span><span class="operator">);</span>
+      <span class="keyword">print</span> <span class="string">"</span><span class="variable">$c</span><span class="string"> : </span><span class="variable">$density</span><span class="string">\n"</span><span class="operator">;</span>
+          <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> number_of_hits </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$r</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="variable">$r</span><span class="operator">-&gt;</span><span class="variable">content</span><span class="operator">;</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$c</span> <span class="operator">=~</span> <span class="regex">m{\d+ out of &lt;b&gt;(\d+)&lt;/b&gt; total results for}</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">return</span> <span class="variable">$1</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$c</span> <span class="operator">=~</span> <span class="regex">m{Sorry, no .*? found in or near}</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">return</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$c</span> <span class="operator">=~</span> <span class="regex">m{Your search matched multiple cities}</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">warn</span> <span class="string">"Your search matched multiple cities\n"</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$c</span> <span class="operator">=~</span> <span class="regex">m{Sorry we couldn.t find that location}</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">warn</span> <span class="string">"No cities\n"</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$c</span> <span class="operator">=~</span> <span class="regex">m{Could not find.*?, showing results for}</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">warn</span> <span class="string">"No matches\n"</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="number">0</span><span class="operator">;</span>
+      <span class="operator">}</span>
+      <span class="keyword">die</span> <span class="string">"Unknown response\n</span><span class="variable">$c</span><span class="string">\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="pb_upload__by_john_beppu">pb-upload, by John Beppu</a></h2>
+<p>This program takes filenames of images from the command line and
+uploads them to a www.photobucket.com folder.  John Beppu, the author, says:</p>
+<p>I had 92 pictures I wanted to upload, and doing it through a browser
+would've been torture.  But thanks to mech, all I had to do was
+`./pb.upload *.jpg` and watch it do its thing.  It felt good.
+If I had more time, I'd implement WWW::Photobucket on top of
+WWW::Mechanize.</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -w -T</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$login</span>    <span class="operator">=</span> <span class="string">"login_name"</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$password</span> <span class="operator">=</span> <span class="string">"password"</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$folder</span>   <span class="operator">=</span> <span class="string">"folder"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$url</span> <span class="operator">=</span> <span class="string">"http://img78.photobucket.com/albums/v281/</span><span class="variable">$login</span><span class="string">/</span><span class="variable">$folder</span><span class="string">/"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># login to your photobucket.com account</span>
+    <span class="keyword">my</span> <span class="variable">$mech</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$url</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">submit_form</span><span class="operator">(</span>
+        <span class="string">form_number</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+        <span class="string">fields</span>      <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">password</span> <span class="operator">=&gt;</span> <span class="variable">$password</span> <span class="operator">}</span><span class="operator">,</span>
+    <span class="operator">);</span>
+    <span class="keyword">die</span> <span class="keyword">unless</span> <span class="operator">(</span><span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">success</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># upload image files specified on command line</span>
+    <span class="keyword">foreach</span> <span class="operator">(</span><span class="variable">@ARGV</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$_</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">form_number</span><span class="operator">(</span><span class="number">2</span><span class="operator">);</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'the_file[]'</span> <span class="operator">=&gt;</span> <span class="variable">$_</span><span class="operator">);</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">submit</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="listmod__by_ian_langworth">listmod, by Ian Langworth</a></h2>
+<p>Ian Langworth contributes this little gem that will bring joy to
+beleagured mailing list admins.  It discards spam messages through
+mailman's web interface.</p>
+<pre>
+    <span class="comment">#!/arch/unix/bin/perl</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="comment">#</span>
+    <span class="comment"># listmod - fast alternative to mailman list interface</span>
+    <span class="comment">#</span>
+    <span class="comment"># usage: listmod crew XXXXXXXX</span>
+    <span class="comment">#</span>
+</pre>
+<pre>
+    <span class="keyword">die</span> <span class="string">"usage: </span><span class="variable">$0</span><span class="string"> &lt;listname&gt; &lt;password&gt;\n"</span> <span class="keyword">unless</span> <span class="variable">@ARGV</span> <span class="operator">==</span> <span class="number">2</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$listname</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@ARGV</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">CGI</span> <span class="string">qw(unescape)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$m</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">autocheck</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Term::ReadLine</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$term</span> <span class="operator">=</span> <span class="variable">Term::ReadLine</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">$0</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># submit the form, get the cookie, go to the list admin page</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">"https://lists.ccs.neu.edu/bin/admindb/</span><span class="variable">$listname</span><span class="string">"</span><span class="operator">);</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">set_visible</span><span class="operator">(</span> <span class="variable">$password</span> <span class="operator">);</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">click</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># exit if nothing to do</span>
+    <span class="keyword">print</span> <span class="string">"There are no pending requests.\n"</span> <span class="keyword">and</span> <span class="keyword">exit</span>
+        <span class="keyword">if</span> <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">content</span> <span class="operator">=~</span> <span class="regex">/There are no pending requests/</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># select the first form and examine its contents</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">form_number</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$f</span> <span class="operator">=</span> <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">current_form</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Couldn't get first form!\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># get me the base form element for each email item</span>
+    <span class="keyword">my</span> <span class="variable">@items</span> <span class="operator">=</span> <span class="keyword">map</span> <span class="operator">{</span><span class="regex">m/^.+?-(.+)/</span><span class="operator">}</span> <span class="keyword">grep</span> <span class="operator">{</span><span class="regex">m/senderbanp/</span><span class="operator">}</span> <span class="variable">$f</span><span class="operator">-&gt;</span><span class="variable">param</span>
+        <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Couldn't get items in first form!\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># iterate through items, prompt user, commit actions</span>
+    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$item</span> <span class="operator">(</span><span class="variable">@items</span><span class="operator">)</span> <span class="operator">{</span>
+</pre>
+<pre>
+        <span class="comment"># show item info</span>
+        <span class="keyword">my</span> <span class="variable">$sender</span> <span class="operator">=</span> <span class="variable">unescape</span><span class="operator">(</span><span class="variable">$item</span><span class="operator">);</span>
+        <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$subject</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">[</span><span class="variable">$f</span><span class="operator">-&gt;</span><span class="variable">find_input</span><span class="operator">(</span><span class="string">"senderbanp-</span><span class="variable">$item</span><span class="string">"</span><span class="operator">)-&gt;</span><span class="variable">value_names</span><span class="operator">]</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> 
+            <span class="operator">=~</span> <span class="regex">/Subject:\s+(.+?)\s+Size:/g</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># prompt user</span>
+        <span class="keyword">my</span> <span class="variable">$choice</span> <span class="operator">=</span> <span class="string">''</span><span class="operator">;</span>
+        <span class="keyword">while</span> <span class="operator">(</span> <span class="variable">$choice</span> <span class="operator">!~</span> <span class="regex">/^[DAX]$/</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">print</span> <span class="string">"</span><span class="variable">$sender</span><span class="string">\: '</span><span class="variable">$subject</span><span class="string">'\n"</span><span class="operator">;</span>
+            <span class="variable">$choice</span> <span class="operator">=</span> <span class="keyword">uc</span> <span class="variable">$term</span><span class="operator">-&gt;</span><span class="variable">readline</span><span class="operator">(</span><span class="string">"Action: defer/accept/discard [dax]: "</span><span class="operator">);</span>
+            <span class="keyword">print</span> <span class="string">"\n\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="comment"># set button</span>
+        <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">"senderaction-</span><span class="variable">$item</span><span class="string">"</span> <span class="operator">=&gt;</span> <span class="operator">{</span><span class="string">D</span><span class="operator">=&gt;</span><span class="number">0</span><span class="operator">,</span><span class="string">A</span><span class="operator">=&gt;</span><span class="number">1</span><span class="operator">,</span><span class="string">X</span><span class="operator">=&gt;</span><span class="number">3</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="variable">$choice</span><span class="operator">}</span><span class="operator">);</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># submit actions</span>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">click</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="ccdl__by_andy_lester">ccdl, by Andy Lester</a></h2>
+<p>Steve McConnell, author of the landmark <em>Code Complete</em> has put
+up the chapters for the 2nd edition in PDF format on his website.
+I needed to download them to take to Kinko's to have printed.  This
+little program did it for me.</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -w</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$start</span> <span class="operator">=</span> <span class="string">"http://www.stevemcconnell.com/cc2/cc.htm"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$mech</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">autocheck</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span> <span class="variable">$start</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@links</span> <span class="operator">=</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">find_all_links</span><span class="operator">(</span> <span class="string">url_regex</span> <span class="operator">=&gt;</span> <span class="string">qr/\d+.+\.pdf$/</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$link</span> <span class="operator">(</span> <span class="variable">@links</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$url</span> <span class="operator">=</span> <span class="variable">$link</span><span class="operator">-&gt;</span><span class="variable">url_abs</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$filename</span> <span class="operator">=</span> <span class="variable">$url</span><span class="operator">;</span>
+        <span class="variable">$filename</span> <span class="operator">=~</span> <span class="regex">s[^.+/][]</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="string">"Fetching </span><span class="variable">$url</span><span class="string">"</span><span class="operator">;</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span> <span class="variable">$url</span><span class="operator">,</span> <span class="string">':content_file'</span> <span class="operator">=&gt;</span> <span class="variable">$filename</span> <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="string">"   "</span><span class="operator">,</span> <span class="keyword">-s</span> <span class="variable">$filename</span><span class="operator">,</span> <span class="string">" bytes\n"</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="quotes_pl__by_andy_lester">quotes.pl, by Andy Lester</a></h2>
+<p>This was a program that was going to get a hack in <em>Spidering Hacks</em>,
+but got cut at the last minute, probably because it's against IMDB's TOS
+to scrape from it.  I present it here as an example, not a suggestion
+that you break their TOS.</p>
+<p>Last I checked, it didn't work because their HTML didn't match, but it's
+still good as sample code.</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl -w</span>
+    
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Getopt::Long</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Text::Wrap</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">$match</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$random</span> <span class="operator">=</span> <span class="keyword">undef</span><span class="operator">;</span>
+    <span class="variable">GetOptions</span><span class="operator">(</span>
+        <span class="string">"match=s"</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$match</span><span class="operator">,</span>
+        <span class="string">"random"</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">$random</span><span class="operator">,</span>
+    <span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">exit</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$movie</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="variable">@ARGV</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Must specify a movie\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$quotes_page</span> <span class="operator">=</span> <span class="variable">get_quotes_page</span><span class="operator">(</span> <span class="variable">$movie</span> <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@quotes</span> <span class="operator">=</span> <span class="variable">extract_quotes</span><span class="operator">(</span> <span class="variable">$quotes_page</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$match</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$match</span> <span class="operator">=</span> <span class="keyword">quotemeta</span><span class="operator">(</span><span class="variable">$match</span><span class="operator">);</span>
+        <span class="variable">@quotes</span> <span class="operator">=</span> <span class="keyword">grep</span> <span class="regex">/</span><span class="variable">$match</span><span class="regex">/i</span><span class="operator">,</span> <span class="variable">@quotes</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$random</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="variable">$quotes</span><span class="operator">[</span><span class="keyword">rand</span> <span class="variable">@quotes</span><span class="operator">]</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="keyword">join</span><span class="operator">(</span> <span class="string">"\n"</span><span class="operator">,</span> <span class="variable">@quotes</span> <span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> get_quotes_page </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$movie</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$mech</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span> <span class="string">"http://www.imdb.com/search"</span> <span class="operator">);</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">success</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Can't get the search page"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">submit_form</span><span class="operator">(</span>
+            <span class="string">form_number</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">,</span>
+            <span class="string">fields</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+                <span class="string">title</span>   <span class="operator">=&gt;</span> <span class="variable">$movie</span><span class="operator">,</span>
+                <span class="string">restrict</span>    <span class="operator">=&gt;</span> <span class="string">"Movies only"</span><span class="operator">,</span>
+            <span class="operator">}</span><span class="operator">,</span>
+        <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">@links</span> <span class="operator">=</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">find_all_links</span><span class="operator">(</span> <span class="string">url_regex</span> <span class="operator">=&gt;</span> <span class="string">qr[^/Title]</span> <span class="operator">)</span>
+            <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"No matches for \"</span><span class="variable">$movie</span><span class="string">\" were found.\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Use the first link</span>
+        <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$url</span><span class="operator">,</span> <span class="variable">$title</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$links</span><span class="operator">[</span><span class="number">0</span><span class="operator">]}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">warn</span> <span class="string">"Checking </span><span class="variable">$title</span><span class="string">...\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span> <span class="variable">$url</span> <span class="operator">);</span>
+        <span class="keyword">my</span> <span class="variable">$link</span> <span class="operator">=</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">find_link</span><span class="operator">(</span> <span class="string">text_regex</span> <span class="operator">=&gt;</span> <span class="string">qr/Memorable Quotes/i</span> <span class="operator">)</span>
+            <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">qq{"</span><span class="variable">$title</span><span class="string">" has no quotes in IMDB!\n}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">warn</span> <span class="string">"Fetching quotes...\n\n"</span><span class="operator">;</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span> <span class="variable">$link</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">return</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">content</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> extract_quotes </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$page</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Nibble away at the unwanted HTML at the beginnning...</span>
+        <span class="variable">$page</span> <span class="operator">=~</span> <span class="regex">s/.+Memorable Quotes//si</span><span class="operator">;</span>
+        <span class="variable">$page</span> <span class="operator">=~</span> <span class="regex">s/.+?(&lt;a name)/$1/si</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># ... and the end of the page</span>
+        <span class="variable">$page</span> <span class="operator">=~</span> <span class="regex">s/Browse titles in the movie quotes.+$//si</span><span class="operator">;</span>
+        <span class="variable">$page</span> <span class="operator">=~</span> <span class="regex">s/&lt;p.+$//g</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="comment"># Quotes separated by an &lt;HR&gt; tag</span>
+        <span class="keyword">my</span> <span class="variable">@quotes</span> <span class="operator">=</span> <span class="keyword">split</span><span class="operator">(</span> <span class="regex">/&lt;hr.+?&gt;/</span><span class="operator">,</span> <span class="variable">$page</span> <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$quote</span> <span class="operator">(</span> <span class="variable">@quotes</span> <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">my</span> <span class="variable">@lines</span> <span class="operator">=</span> <span class="keyword">split</span><span class="operator">(</span> <span class="regex">/&lt;br&gt;/</span><span class="operator">,</span> <span class="variable">$quote</span> <span class="operator">);</span>
+            <span class="keyword">for</span> <span class="operator">(</span> <span class="variable">@lines</span> <span class="operator">)</span> <span class="operator">{</span>
+                <span class="regex">s/&lt;[^&gt;]+&gt;//g</span><span class="operator">;</span>   <span class="comment"># Strip HTML tags</span>
+                <span class="regex">s/\s+/ /g</span><span class="operator">;</span>          <span class="comment"># Squash whitespace</span>
+                <span class="regex">s/^ //</span><span class="operator">;</span>     <span class="comment"># Strip leading space</span>
+                <span class="regex">s/ $//</span><span class="operator">;</span>     <span class="comment"># Strip trailing space</span>
+                <span class="regex">s/&amp;#34;/"/g</span><span class="operator">;</span>    <span class="comment"># Replace HTML entity quotes</span>
+</pre>
+<pre>
+                <span class="comment"># Word-wrap to fit in 72 columns</span>
+                <span class="variable">$Text::Wrap::columns</span> <span class="operator">=</span> <span class="number">72</span><span class="operator">;</span>
+                <span class="variable">$_</span> <span class="operator">=</span> <span class="variable">wrap</span><span class="operator">(</span> <span class="string">''</span><span class="operator">,</span> <span class="string">'    '</span><span class="operator">,</span> <span class="variable">$_</span> <span class="operator">);</span>
+                            <span class="operator">}</span>
+                            <span class="variable">$quote</span> <span class="operator">=</span> <span class="keyword">join</span><span class="operator">(</span> <span class="string">"\n"</span><span class="operator">,</span> <span class="variable">@lines</span> <span class="operator">);</span>
+                        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">return</span> <span class="variable">@quotes</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="cpansearch_pl__by_ed_silva">cpansearch.pl, by Ed Silva</a></h2>
+<p>A quick little utility to search the CPAN and fire up a browser
+with a results page.</p>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="comment"># turn on perl's safety features</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># work out the name of the module we're looking for</span>
+    <span class="keyword">my</span> <span class="variable">$module_name</span> <span class="operator">=</span> <span class="variable">$ARGV</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span>
+      <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Must specify module name on command line"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># create a new browser</span>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$browser</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># tell it to get the main page</span>
+    <span class="variable">$browser</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">"http://search.cpan.org/"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># okay, fill in the box with the name of the</span>
+    <span class="comment"># module we want to look up</span>
+    <span class="variable">$browser</span><span class="operator">-&gt;</span><span class="variable">form_number</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="variable">$browser</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">"query"</span><span class="operator">,</span> <span class="variable">$module_name</span><span class="operator">);</span>
+    <span class="variable">$browser</span><span class="operator">-&gt;</span><span class="variable">click</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># click on the link that matches the module name</span>
+    <span class="variable">$browser</span><span class="operator">-&gt;</span><span class="variable">follow_link</span><span class="operator">(</span> <span class="string">text_regex</span> <span class="operator">=&gt;</span> <span class="variable">$module_name</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$url</span> <span class="operator">=</span> <span class="variable">$browser</span><span class="operator">-&gt;</span><span class="variable">uri</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># launch a browser...</span>
+    <span class="keyword">system</span><span class="operator">(</span><span class="string">'galeon'</span><span class="operator">,</span> <span class="variable">$url</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">exit</span><span class="operator">(</span><span class="number">0</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="lj_friends_cgi__by_matt_cashner">lj_friends.cgi, by Matt Cashner</a></h2>
+<pre>
+    <span class="comment">#!/usr/bin/perl</span>
+</pre>
+<pre>
+    <span class="comment"># Provides an rss feed of a paid user's LiveJournal friends list</span>
+    <span class="comment"># Full entries, protected entries, etc.</span>
+    <span class="comment"># Add to your favorite rss reader as</span>
+    <span class="comment"># http://your.site.com/cgi-bin/lj_friends.cgi?user=USER&amp;password=PASSWORD</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">warnings</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">CGI</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$cgi</span> <span class="operator">=</span> <span class="variable">CGI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="keyword">my</span> <span class="variable">$form</span> <span class="operator">=</span> <span class="variable">$cgi</span><span class="operator">-&gt;</span><span class="variable">Vars</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$agent</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">'http://www.livejournal.com/login.bml'</span><span class="operator">);</span>
+    <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">form_number</span><span class="operator">(</span><span class="string">'3'</span><span class="operator">);</span>
+    <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'user'</span><span class="operator">,</span><span class="variable">$form</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">user</span><span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'password'</span><span class="operator">,</span><span class="variable">$form</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">password</span><span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">submit</span><span class="operator">();</span>
+    <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">'http://www.livejournal.com/customview.cgi?user='</span><span class="operator">.</span><span class="variable">$form</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">user</span><span class="operator">}</span><span class="operator">.</span><span class="string">'&amp;styleid=225596&amp;checkcookies=1'</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"Content-type: text/plain\n\n"</span><span class="operator">;</span>
+    <span class="keyword">print</span> <span class="variable">$agent</span><span class="operator">-&gt;</span><span class="variable">content</span><span class="operator">();</span>
+</pre>
+<p>
+</p>
+<h2><a name="hacking_movable_type__by_dan_rinzel">Hacking Movable Type, by Dan Rinzel</a></h2>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># a tool to automatically post entries to a moveable type weblog, and set arbitrary creation dates</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$mech</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+    <span class="keyword">my</span> <span class="variable">$entry</span><span class="operator">;</span>
+    <span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">title</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"Test AutoEntry Title"</span><span class="operator">;</span>
+    <span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">btext</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"Test AutoEntry Body"</span><span class="operator">;</span>
+    <span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">date</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">'2002-04-15 14:18:00'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$start</span> <span class="operator">=</span> <span class="string">qq|http://my.blog.site/mt.cgi|</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$start</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'username'</span><span class="operator">,</span><span class="string">'und3f1n3d'</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'password'</span><span class="operator">,</span><span class="string">'obscur3d'</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">submit</span><span class="operator">();</span> <span class="comment"># to get login cookie</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">qq|</span><span class="variable">$start</span><span class="string">?__mode=view&amp;_type=entry&amp;blog_id=1|</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">form_name</span><span class="operator">(</span><span class="string">'entry_form'</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'title'</span><span class="operator">,</span><span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">title</span><span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'category_id'</span><span class="operator">,</span><span class="number">1</span><span class="operator">);</span> <span class="comment"># adjust as needed</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'text'</span><span class="operator">,</span><span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">btext</span><span class="operator">}</span><span class="operator">);</span>
+    <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'status'</span><span class="operator">,</span><span class="number">2</span><span class="operator">);</span> <span class="comment"># publish, or 1 = draft</span>
+    <span class="variable">$results</span> <span class="operator">=</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">submit</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># if we're ok with this entry being datestamped "NOW" (no {date} in %entry)</span>
+    <span class="comment"># we're done. Otherwise, time to be tricksy</span>
+    <span class="comment"># MT returns a 302 redirect from this form. the redirect itself contains a &lt;body onload=""&gt; handler</span>
+    <span class="comment"># which takes the user to an editable version of the form where the create date can be edited       </span>
+    <span class="comment"># MT date format of YYYY-MM-DD HH:MI:SS is the only one that won't error out</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">date</span><span class="operator">}</span> <span class="operator">&amp;&amp;</span> <span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">date</span><span class="operator">}</span> <span class="operator">=~</span> <span class="regex">/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="comment"># travel the redirect</span>
+        <span class="variable">$results</span> <span class="operator">=</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$results</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_headers</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">location</span><span class="operator">}</span><span class="operator">);</span>
+        <span class="variable">$results</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">_content</span><span class="operator">}</span> <span class="operator">=~</span> <span class="regex">/&lt;body onLoad="([^\"]+)"/is</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$js</span> <span class="operator">=</span> <span class="variable">$1</span><span class="operator">;</span>
+        <span class="variable">$js</span> <span class="operator">=~</span> <span class="regex">/\'([^']+)\'/</span><span class="operator">;</span>
+        <span class="variable">$results</span> <span class="operator">=</span> <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$start</span><span class="operator">.</span><span class="variable">$1</span><span class="operator">);</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">form_name</span><span class="operator">(</span><span class="string">'entry_form'</span><span class="operator">);</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">field</span><span class="operator">(</span><span class="string">'created_on_manual'</span><span class="operator">,</span><span class="variable">$entry</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">date</span><span class="operator">}</span><span class="operator">);</span>
+        <span class="variable">$mech</span><span class="operator">-&gt;</span><span class="variable">submit</span><span class="operator">();</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="get_despair__by_randal_schwartz">get-despair, by Randal Schwartz</a></h2>
+<p>Randal submitted this bot that walks the despair.com site sucking down
+all the pictures.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span> 
+    <span class="variable">$|</span><span class="operator">++;</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">WWW::Mechanize</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">File::Basename</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$m</span> <span class="operator">=</span> <span class="variable">WWW::Mechanize</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">"http://www.despair.com/indem.html"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@top_links</span> <span class="operator">=</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">links</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$top_link_num</span> <span class="operator">(</span><span class="number">0</span><span class="operator">..</span><span class="variable">$#top_links</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">next</span> <span class="keyword">unless</span> <span class="variable">$top_links</span><span class="operator">[</span><span class="variable">$top_link_num</span><span class="operator">][</span><span class="number">0</span><span class="operator">]</span> <span class="operator">=~</span> <span class="regex">/^http:/</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">follow_link</span><span class="operator">(</span> <span class="string">n</span><span class="operator">=&gt;</span><span class="variable">$top_link_num</span> <span class="operator">)</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"can't follow </span><span class="variable">$top_link_num</span><span class="string">"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">print</span> <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">uri</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+        <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$image</span> <span class="operator">(</span><span class="keyword">grep</span> <span class="regex">m{^http://store4}</span><span class="operator">,</span> <span class="keyword">map</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">,</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">links</span><span class="operator">}</span><span class="operator">)</span> <span class="operator">{</span> 
+            <span class="keyword">my</span> <span class="variable">$local</span> <span class="operator">=</span> <span class="variable">basename</span> <span class="variable">$image</span><span class="operator">;</span>
+            <span class="keyword">print</span> <span class="string">" </span><span class="variable">$image</span><span class="string">..."</span><span class="operator">,</span> <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">mirror</span><span class="operator">(</span><span class="variable">$image</span><span class="operator">,</span> <span class="variable">$local</span><span class="operator">)-&gt;</span><span class="variable">message</span><span class="operator">,</span> <span class="string">"\n"</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="variable">$m</span><span class="operator">-&gt;</span><span class="variable">back</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"can't go back"</span><span class="operator">;</span>
+            <span class="operator">}</span>
+</pre>
+
+</body>
+
+</html>

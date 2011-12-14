@@ -1,0 +1,186 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>feature - Perl pragma to enable new features</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>feature - Perl pragma to enable new features</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#lexical_effect">Lexical effect</a></li>
+		<li><a href="#no_feature"><code>no feature</code></a></li>
+		<li><a href="#the__switch__feature">The 'switch' feature</a></li>
+		<li><a href="#the__say__feature">The 'say' feature</a></li>
+		<li><a href="#the__state__feature">the 'state' feature</a></li>
+		<li><a href="#the__unicode_strings__feature">the 'unicode_strings' feature</a></li>
+	</ul>
+
+	<li><a href="#feature_bundles">FEATURE BUNDLES</a></li>
+	<li><a href="#implicit_loading">IMPLICIT LOADING</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>feature - Perl pragma to enable new features</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">qw(switch say)</span><span class="operator">;</span>
+    <span class="keyword">given</span> <span class="operator">(</span><span class="variable">$foo</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="number">1</span><span class="operator">)</span>          <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"\$foo == 1"</span> <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="operator">[</span><span class="number">2</span><span class="operator">,</span><span class="number">3</span><span class="operator">]</span><span class="operator">)</span>      <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"\$foo == 2 || \$foo == 3"</span> <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="regex">/^a[bc]d$/</span><span class="operator">)</span> <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"\$foo eq 'abd' || \$foo eq 'acd'"</span> <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="variable">$_</span> <span class="operator">&gt;</span> <span class="number">100</span><span class="operator">)</span>   <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"\$foo &gt; 100"</span> <span class="operator">}</span>
+        <span class="keyword">default</span>           <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"None of the above"</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">':5.10'</span><span class="operator">;</span> <span class="comment"># loads all features available in perl 5.10</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>It is usually impossible to add new syntax to Perl without breaking
+some existing programs. This pragma provides a way to minimize that
+risk. New syntactic constructs, or new semantic meanings to older
+constructs, can be enabled by <code>use feature 'foo'</code>, and will be parsed
+only when the appropriate feature pragma is in scope.</p>
+<p>
+</p>
+<h2><a name="lexical_effect">Lexical effect</a></h2>
+<p>Like other pragmas (<code>use strict</code>, for example), features have a lexical
+effect. <code>use feature qw(foo)</code> will only make the feature &quot;foo&quot; available
+from that point to the end of the enclosing block.</p>
+<pre>
+    <span class="operator">{</span>
+        <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">'say'</span><span class="operator">;</span>
+        <span class="keyword">say</span> <span class="string">"say is available here"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">print</span> <span class="string">"But not here.\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="no_feature"><code>no feature</code></a></h2>
+<p>Features can also be turned off by using <code>no feature &quot;foo&quot;</code>. This too
+has lexical effect.</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">'say'</span><span class="operator">;</span>
+    <span class="keyword">say</span> <span class="string">"say is available here"</span><span class="operator">;</span>
+    <span class="operator">{</span>
+        <span class="keyword">no</span> <span class="variable">feature</span> <span class="string">'say'</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"But not here.\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">say</span> <span class="string">"Yet it is here."</span><span class="operator">;</span>
+</pre>
+<p><code>no feature</code> with no features specified will turn off all features.</p>
+<p>
+</p>
+<h2><a name="the__switch__feature">The 'switch' feature</a></h2>
+<p><code>use feature 'switch'</code> tells the compiler to enable the Perl 6
+given/when construct.</p>
+<p>See <a href="../lib/pods/perlsyn.html#switch_statements">Switch statements in the perlsyn manpage</a> for details.</p>
+<p>
+</p>
+<h2><a name="the__say__feature">The 'say' feature</a></h2>
+<p><code>use feature 'say'</code> tells the compiler to enable the Perl 6
+<a href="../lib/pods/perlfunc.html#say"><code>say</code></a> function.</p>
+<p>See <a href="../lib/pods/perlfunc.html#say">say in the perlfunc manpage</a> for details.</p>
+<p>
+</p>
+<h2><a name="the__state__feature">the 'state' feature</a></h2>
+<p><code>use feature 'state'</code> tells the compiler to enable <a href="../lib/pods/perlfunc.html#state"><code>state</code></a>
+variables.</p>
+<p>See <a href="../lib/pods/perlsub.html#persistent_private_variables">Persistent Private Variables in the perlsub manpage</a> for details.</p>
+<p>
+</p>
+<h2><a name="the__unicode_strings__feature">the 'unicode_strings' feature</a></h2>
+<p><code>use feature 'unicode_strings'</code> tells the compiler to use Unicode semantics
+in all string operations executed within its scope (unless they are also
+within the scope of either <code>use locale</code> or <code>use bytes</code>).  The same applies
+to all regular expressions compiled within the scope, even if executed outside
+it.</p>
+<p><code>no feature 'unicode_strings'</code> tells the compiler to use the traditional
+Perl semantics wherein the native character set semantics is used unless it is
+clear to Perl that Unicode is desired.  This can lead to some surprises
+when the behavior suddenly changes.  (See
+<a href="../lib/pods/perlunicode.html#the_unicode_bug">The &quot;Unicode Bug&quot; in the perlunicode manpage</a> for details.)  For this reason, if you are
+potentially using Unicode in your program, the
+<code>use feature 'unicode_strings'</code> subpragma is <strong>strongly</strong> recommended.</p>
+<p>This subpragma is available starting with Perl 5.11.3, but was not fully
+implemented until 5.13.8.</p>
+<p>
+</p>
+<hr />
+<h1><a name="feature_bundles">FEATURE BUNDLES</a></h1>
+<p>It's possible to load a whole slew of features in one go, using
+a <em>feature bundle</em>. The name of a feature bundle is prefixed with
+a colon, to distinguish it from an actual feature. At present, the
+only feature bundle is <code>use feature &quot;:5.10&quot;</code> which is equivalent
+to <code>use feature qw(switch say state)</code>.</p>
+<p>Specifying sub-versions such as the <code>0</code> in <code>5.10.0</code> in feature bundles has
+no effect: feature bundles are guaranteed to be the same for all sub-versions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="implicit_loading">IMPLICIT LOADING</a></h1>
+<p>There are two ways to load the <code>feature</code> pragma implicitly :</p>
+<ul>
+<li>
+<p>By using the <a href="../lib/pods/perlguts.html#e"><code>-E</code></a> switch on the command-line instead of <code>-e</code>. It enables
+all available features in the main compilation unit (that is, the one-liner.)</p>
+</li>
+<li>
+<p>By requiring explicitly a minimal Perl version number for your program, with
+the <a href="../lib/pods/perlfunc.html#use"><code>use VERSION</code></a> construct, and when the version is higher than or equal to
+5.10.0. That is,</p>
+<pre>
+    <span class="keyword">use</span> <span class="number">5.10</span><span class="operator">.</span><span class="number">0</span><span class="operator">;</span>
+</pre>
+<p>will do an implicit</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">':5.10'</span><span class="operator">;</span>
+</pre>
+<p>and so on. Note how the trailing sub-version is automatically stripped from the
+version.</p>
+<p>But to avoid portability warnings (see <a href="../lib/pods/perlfunc.html#use">use in the perlfunc manpage</a>), you may prefer:</p>
+<pre>
+    <span class="keyword">use</span> <span class="number">5.010</span><span class="operator">;</span>
+</pre>
+<p>with the same effect.</p>
+</li>
+</ul>
+
+</body>
+
+</html>

@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Extending::Recipe2 - Providing a role for the base object class</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Extending::Recipe2 - Providing a role for the base object class</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Extending::Recipe2 - Providing a role for the base object class</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MooseX::Debugging</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span>
+      <span class="string">base_class_roles</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MooseX::Debugging::Role::Object'</span><span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MooseX::Debugging::Role::Object</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> BUILD </span><span class="operator">{}</span>
+  <span class="variable">after</span> <span class="string">BUILD</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">warn</span> <span class="string">"Made a new "</span> <span class="operator">.</span> <span class="operator">(</span> <span class="keyword">ref</span> <span class="variable">$self</span> <span class="operator">)</span> <span class="operator">.</span> <span class="string">" object\n"</span><span class="operator">;</span>
+        <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>In this example, we provide a role for the base object class that adds
+some simple debugging output. Every time an object is created, it
+spits out a warning saying what type of object it was.</p>
+<p>Obviously, a real debugging role would do something more interesting,
+but this recipe is all about how we apply that role.</p>
+<p>In this case, with the combination of <a href="../../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a> and
+<a href="../../../../lib/Moose/Util/MetaRole.html">the Moose::Util::MetaRole manpage</a>, we ensure that when a module does <code>use
+MooseX::Debugging</code>, it automatically gets the debugging role applied
+to its base object class.</p>
+<p>There are a few pieces of code worth looking at more closely.</p>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span>
+      <span class="string">base_class_roles</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MooseX::Debugging::Role::Object'</span><span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>This creates an <a href="../../../../lib/pods/perlfunc.html#import"><code>import</code></a> method in the <code>MooseX::Debugging</code> package. Since we
+are not actually exporting anything, we do not pass <code>setup_import_methods</code>
+any parameters related to exports, but we need to have an <a href="../../../../lib/pods/perlfunc.html#import"><code>import</code></a> method to
+ensure that our <code>init_meta</code> method is called. The <code>init_meta</code> is created by
+<code>setup_import_methods</code> for us, since we passed the <code>base_class_roles</code>
+parameter. The generated <code>init_meta</code> will in turn call
+<a href="../../../../lib/Moose/Util/MetaRole.html#apply_base_class_roles">Moose::Util::MetaRole::apply_base_class_roles</a>.</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> BUILD </span><span class="operator">{}</span>
+  <span class="variable">after</span> <span class="string">BUILD</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="operator">...</span>
+  <span class="operator">};</span>
+</pre>
+<p>Due to the way role composition currently works, if the class that a role is
+composed into contains a <code>BUILD</code> method, then that will override the <code>BUILD</code>
+method in any roles it composes, which is typically not what you want. Using a
+method modifier on <code>BUILD</code> avoids this issue, since method modifiers compose
+together rather than being overridden. Method modifiers require that a method
+exists in order to wrap, however, so we also provide a stub method to wrap if
+no <code>BUILD</code> method exists in the class.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

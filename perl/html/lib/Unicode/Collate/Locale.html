@@ -1,0 +1,302 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Unicode::Collate::Locale - Linguistic tailoring for DUCET via Unicode::Collate</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Unicode::Collate::Locale - Linguistic tailoring for DUCET via Unicode::Collate</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#constructor">Constructor</a></li>
+		<li><a href="#methods">Methods</a></li>
+		<li><a href="#a_list_of_tailorable_locales">A list of tailorable locales</a></li>
+	</ul>
+
+	<li><a href="#install">INSTALL</a></li>
+	<li><a href="#caveat">CAVEAT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Unicode::Collate::Locale - Linguistic tailoring for DUCET via Unicode::Collate</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Unicode::Collate::Locale</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment">#construct</span>
+  <span class="variable">$Collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate::Locale</span><span class="operator">-&gt;</span>
+      <span class="variable">new</span><span class="operator">(</span><span class="string">locale</span> <span class="operator">=&gt;</span> <span class="variable">$locale_name</span><span class="operator">,</span> <span class="variable">%tailoring</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment">#sort</span>
+  <span class="variable">@sorted</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">sort</span><span class="operator">(</span><span class="variable">@not_sorted</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment">#compare</span>
+  <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">cmp</span><span class="operator">(</span><span class="variable">$a</span><span class="operator">,</span> <span class="variable">$b</span><span class="operator">);</span> <span class="comment"># returns 1, 0, or -1.</span>
+</pre>
+<p><strong>Note:</strong> Strings in <code>@not_sorted</code>, <a href="../../../lib/pods/perlvar.html#_a"><code>$a</code></a> and <a href="../../../lib/pods/perlvar.html#_b"><code>$b</code></a> are interpreted
+according to Perl's Unicode support. See <a href="../../../lib/pods/perlunicode.html">the perlunicode manpage</a>,
+<a href="../../../lib/pods/perluniintro.html">the perluniintro manpage</a>, <a href="../../../lib/pods/perlunitut.html">the perlunitut manpage</a>, <a href="../../../lib/pods/perlunifaq.html">the perlunifaq manpage</a>, <a href="../../../lib/utf8.html">the utf8 manpage</a>.
+Otherwise you can use <code>preprocess</code> (cf. <a href="#unicode_collate"><code>Unicode::Collate</code></a>)
+or should decode them before.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides linguistic tailoring for it
+taking advantage of <a href="#unicode_collate"><code>Unicode::Collate</code></a>.</p>
+<p>
+</p>
+<h2><a name="constructor">Constructor</a></h2>
+<p>The <code>new</code> method returns a collator object.</p>
+<p>A parameter list for the constructor is a hash, which can include
+a special key <code>locale</code> and its value (case-insensitive) standing
+for a two-letter language code (ISO-639) like <code>'en'</code> for English.
+For example, <code>Unicode::Collate::Locale-&gt;new(locale =&gt; 'FR')</code>
+returns a collator tailored for French.</p>
+<p><code>$locale_name</code> may be suffixed with a territory(country)
+code or a variant code, which are separated with <code>'_'</code>.
+E.g. <code>en_US</code> for English in USA,
+<code>es_ES_traditional</code> for Spanish in Spain (Traditional),</p>
+<p>If <code>$localename</code> is not defined,
+fallback is selected in the following order:</p>
+<pre>
+    1. language_territory_variant
+    2. language_territory
+    3. language__variant
+    4. language
+    5. default</pre>
+<p>Tailoring tags provided by <a href="#unicode_collate"><code>Unicode::Collate</code></a> are allowed as long as
+they are not used for <code>locale</code> support.  Esp. the <code>table</code> tag
+is always untailorable since it is reserved for DUCET.</p>
+<p>E.g. a collator for French, which ignores diacritics and case difference
+(i.e. level 1), with reversed case ordering and no normalization.</p>
+<pre>
+    Unicode::Collate::Locale-&gt;new(
+        level =&gt; 1,
+        locale =&gt; 'fr',
+        upper_before_lower =&gt; 1,
+        normalization =&gt; undef
+    )</pre>
+<p>Overriding a behavior already tailored by <code>locale</code> is disallowed
+if such a tailoring is passed to <code>new()</code>.</p>
+<pre>
+    Unicode::Collate::Locale-&gt;new(
+        locale =&gt; 'da',
+        upper_before_lower =&gt; 0, # causes error as reserved by 'da'
+    )</pre>
+<p>However <code>change()</code> inherited from <a href="#unicode_collate"><code>Unicode::Collate</code></a> allows
+such a tailoring that is reserved by <code>locale</code>. Examples:</p>
+<pre>
+    new(locale =&gt; 'ca')-&gt;change(backwards =&gt; undef)
+    new(locale =&gt; 'da')-&gt;change(upper_before_lower =&gt; 0)
+    new(locale =&gt; 'ja')-&gt;change(overrideCJK =&gt; undef)</pre>
+<p>
+</p>
+<h2><a name="methods">Methods</a></h2>
+<p><code>Unicode::Collate::Locale</code> is a subclass of <a href="#unicode_collate"><code>Unicode::Collate</code></a>
+and methods other than <code>new</code> are inherited from <a href="#unicode_collate"><code>Unicode::Collate</code></a>.</p>
+<p>Here is a list of additional methods:</p>
+<dl>
+<dt><strong><a name="getlocale" class="item"><code>$Collator-&gt;getlocale</code></a></strong></dt>
+
+<dd>
+<p>Returns a language code accepted and used actually on collation.
+If linguistic tailoring is not provided for a language code you passed
+(intensionally for some languages, or due to the incomplete implementation),
+this method returns a string <a href="../../../lib/pods/perlfunc.html#default"><code>'default'</code></a> meaning no special tailoring.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="a_list_of_tailorable_locales">A list of tailorable locales</a></h2>
+<pre>
+      locale name       description
+    ----------------------------------------------------------
+      af                Afrikaans
+      ar                Arabic
+      az                Azerbaijani (Azeri)
+      be                Belarusian
+      bg                Bulgarian
+      ca                Catalan
+      cs                Czech
+      cy                Welsh
+      da                Danish
+      de__phonebook     German (umlaut as 'ae', 'oe', 'ue')
+      eo                Esperanto
+      es                Spanish
+      es__traditional   Spanish ('ch' and 'll' as a grapheme)
+      et                Estonian
+      fi                Finnish
+      fil               Filipino
+      fo                Faroese
+      fr                French
+      ha                Hausa
+      haw               Hawaiian
+      hr                Croatian
+      hu                Hungarian
+      hy                Armenian
+      ig                Igbo
+      is                Icelandic
+      ja                Japanese [1]
+      kk                Kazakh
+      kl                Kalaallisut
+      ko                Korean [2]
+      lt                Lithuanian
+      lv                Latvian
+      mk                Macedonian
+      mt                Maltese
+      nb                Norwegian Bokmal
+      nn                Norwegian Nynorsk
+      nso               Northern Sotho
+      om                Oromo
+      pl                Polish
+      ro                Romanian
+      ru                Russian
+      se                Northern Sami
+      sk                Slovak
+      sl                Slovenian
+      sq                Albanian
+      sr                Serbian
+      sv                Swedish
+      tn                Tswana
+      to                Tonga
+      tr                Turkish
+      uk                Ukrainian
+      vi                Vietnamese
+      wo                Wolof
+      yo                Yoruba
+      zh                Chinese
+      zh__big5han       Chinese (ideographs: big5 order)
+      zh__gb2312han     Chinese (ideographs: GB-2312 order)
+      zh__pinyin        Chinese (ideographs: pinyin order)
+      zh__stroke        Chinese (ideographs: stroke order)
+    ----------------------------------------------------------</pre>
+<p>Locales according to the default UCA rules include
+de (German),
+en (English),
+ga (Irish),
+id (Indonesian),
+it (Italian),
+ka (Georgian),
+ln (Lingala),
+ms (Malay),
+nl (Dutch),
+pt (Portuguese),
+st (Southern Sotho),
+sw (Swahili),
+xh (Xhosa),
+zu (Zulu).</p>
+<p><strong>Note</strong></p>
+<p>[1] ja: Ideographs are sorted in JIS X 0208 order.
+Fullwidth and halfwidth forms are identical to their normal form.
+The difference between hiragana and katakana is at the 4th level,
+the comparison also requires <code>(variable =&gt; 'Non-ignorable')</code>,
+and then <code>katakana_before_hiragana</code> has no effect.</p>
+<p>[2] ko: Plenty of ideographs are sorted by their reading. Such
+an ideograph is primary (level 1) equal to, and secondary (level 2)
+greater than, the corresponding hangul syllable.</p>
+<p>
+</p>
+<hr />
+<h1><a name="install">INSTALL</a></h1>
+<p>Installation of <code>Unicode::Collate::Locale</code> requires <em class="file">Collate/Locale.pm</em>,
+<em class="file">Collate/Locale/*.pm</em>, <em class="file">Collate/CJK/*.pm</em> and <em class="file">Collate/allkeys.txt</em>.
+On building, <code>Unicode::Collate::Locale</code> doesn't require any of <em class="file">data/*.txt</em>,
+<em class="file">gendata/*</em>, and <em class="file">mklocale</em>.
+Tests for <code>Unicode::Collate::Locale</code> are named <em class="file">t/loc_*.t</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveat">CAVEAT</a></h1>
+<dl>
+<dt><strong><a name="tailoring_is_not_maximum" class="item">tailoring is not maximum</a></strong></dt>
+
+<dd>
+<p>Even if a certain letter is tailored, its equivalent would not always
+tailored as well as it. For example, even though W is tailored,
+fullwidth W (<code>U+FF37</code>), W with acute (<code>U+1E82</code>), etc. are not
+tailored. The result may depend on whether source strings are
+normalized or not, and whether decomposed or composed.
+Thus <code>(normalization =&gt; undef)</code> is less preferred.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>The Unicode::Collate::Locale module for perl was written
+by SADAHIRO Tomoyuki, &lt;<a href="mailto:SADAHIRO@cpan.org">SADAHIRO@cpan.org</a>&gt;.
+This module is Copyright(C) 2004-2011, SADAHIRO Tomoyuki. Japan.
+All rights reserved.</p>
+<p>This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="unicode_collation_algorithm_uts_102" class="item">Unicode Collation Algorithm - UTS #10</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/reports/tr10/">http://www.unicode.org/reports/tr10/</a></p>
+</dd>
+<dt><strong><a name="table" class="item">The Default Unicode Collation Element Table (DUCET)</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/Public/UCA/latest/allkeys.txt">http://www.unicode.org/Public/UCA/latest/allkeys.txt</a></p>
+</dd>
+<dt><strong><a name="language" class="item">Unicode Locale Data Markup Language (LDML) - UTS #35</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/reports/tr35/">http://www.unicode.org/reports/tr35/</a></p>
+</dd>
+<dt><strong><a name="cldr_unicode_common_locale_data_repository6" class="item">CLDR - Unicode Common Locale Data Repository</a></strong></dt>
+
+<dd>
+<p><a href="http://cldr.unicode.org/">http://cldr.unicode.org/</a></p>
+</dd>
+<dt><strong><a name="unicode_collate7" class="item"><a href="../../../lib/Unicode/Collate.html">the Unicode::Collate manpage</a></a></strong></dt>
+
+<dt><strong><a name="unicode_normalize" class="item"><a href="../../../lib/Unicode/Normalize.html">the Unicode::Normalize manpage</a></a></strong></dt>
+
+</dl>
+
+</body>
+
+</html>

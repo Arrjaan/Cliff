@@ -1,0 +1,114 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>bytes - Perl pragma to force byte semantics rather than character semantics</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>bytes - Perl pragma to force byte semantics rather than character semantics</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#notice">NOTICE</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>bytes - Perl pragma to force byte semantics rather than character semantics</p>
+<p>
+</p>
+<hr />
+<h1><a name="notice">NOTICE</a></h1>
+<p>This pragma reflects early attempts to incorporate Unicode into perl and
+has since been superseded. It breaks encapsulation (i.e. it exposes the
+innards of how the perl executable currently happens to store a string),
+and use of this module for anything other than debugging purposes is
+strongly discouraged. If you feel that the functions here within might be
+useful for your application, this possibly indicates a mismatch between
+your mental model of Perl Unicode and the current reality. In that case,
+you may wish to read some of the perl Unicode documentation:
+<a href="../lib/pods/perluniintro.html">the perluniintro manpage</a>, <a href="../lib/pods/perlunitut.html">the perlunitut manpage</a>, <a href="../lib/pods/perlunifaq.html">the perlunifaq manpage</a> and <a href="../lib/pods/perlunicode.html">the perlunicode manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">bytes</span><span class="operator">;</span>
+    <span class="operator">...</span> <span class="keyword">chr</span><span class="operator">(...);</span>       <span class="comment"># or bytes::chr</span>
+    <span class="operator">...</span> <span class="keyword">index</span><span class="operator">(...);</span>     <span class="comment"># or bytes::index</span>
+    <span class="operator">...</span> <span class="keyword">length</span><span class="operator">(...);</span>    <span class="comment"># or bytes::length</span>
+    <span class="operator">...</span> <span class="keyword">ord</span><span class="operator">(...);</span>       <span class="comment"># or bytes::ord</span>
+    <span class="operator">...</span> <span class="keyword">rindex</span><span class="operator">(...);</span>    <span class="comment"># or bytes::rindex</span>
+    <span class="operator">...</span> <span class="keyword">substr</span><span class="operator">(...);</span>    <span class="comment"># or bytes::substr</span>
+    <span class="keyword">no</span> <span class="variable">bytes</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>use bytes</code> pragma disables character semantics for the rest of the
+lexical scope in which it appears.  <code>no bytes</code> can be used to reverse
+the effect of <code>use bytes</code> within the current lexical scope.</p>
+<p>Perl normally assumes character semantics in the presence of character
+data (i.e. data that has come from a source that has been marked as
+being of a particular character encoding). When <code>use bytes</code> is in
+effect, the encoding is temporarily ignored, and each string is treated
+as a series of bytes.</p>
+<p>As an example, when Perl sees <a href="../lib/pods/perlfunc.html#chr"><code>$x = chr(400)</code></a>, it encodes the character
+in UTF-8 and stores it in $x. Then it is marked as character data, so,
+for instance, <code>length $x</code> returns <code>1</code>. However, in the scope of the
+<a href="../lib/pods/perlrun.html#bytes"><code>bytes</code></a> pragma, $x is treated as a series of bytes - the bytes that make
+up the UTF8 encoding - and <code>length $x</code> returns <code>2</code>:</p>
+<pre>
+    <span class="variable">$x</span> <span class="operator">=</span> <span class="keyword">chr</span><span class="operator">(</span><span class="number">400</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="string">"Length is "</span><span class="operator">,</span> <span class="keyword">length</span> <span class="variable">$x</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>     <span class="comment"># "Length is 1"</span>
+    <span class="keyword">printf</span> <span class="string">"Contents are %vd\n"</span><span class="operator">,</span> <span class="variable">$x</span><span class="operator">;</span>         <span class="comment"># "Contents are 400"</span>
+    <span class="operator">{</span> 
+        <span class="keyword">use</span> <span class="variable">bytes</span><span class="operator">;</span> <span class="comment"># or "require bytes; bytes::length()"</span>
+        <span class="keyword">print</span> <span class="string">"Length is "</span><span class="operator">,</span> <span class="keyword">length</span> <span class="variable">$x</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span> <span class="comment"># "Length is 2"</span>
+        <span class="keyword">printf</span> <span class="string">"Contents are %vd\n"</span><span class="operator">,</span> <span class="variable">$x</span><span class="operator">;</span>     <span class="comment"># "Contents are 198.144"</span>
+    <span class="operator">}</span>
+</pre>
+<p><a href="../lib/pods/perlfunc.html#chr"><code>chr()</code></a>, <a href="../lib/pods/perlfunc.html#ord"><code>ord()</code></a>, <a href="../lib/pods/perlvar.html#substr"><code>substr()</code></a>, <a href="../lib/pods/perlfunc.html#index"><code>index()</code></a> and <a href="../lib/pods/perlfunc.html#rindex"><code>rindex()</code></a> behave similarly.</p>
+<p>For more on the implications and differences between character
+semantics and byte semantics, see <a href="../lib/pods/perluniintro.html">the perluniintro manpage</a> and <a href="../lib/pods/perlunicode.html">the perlunicode manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>bytes::substr() does not work as an <code>lvalue()</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/pods/perluniintro.html">the perluniintro manpage</a>, <a href="../lib/pods/perlunicode.html">the perlunicode manpage</a>, <a href="../lib/utf8.html">the utf8 manpage</a></p>
+
+</body>
+
+</html>

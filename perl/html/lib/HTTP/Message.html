@@ -1,0 +1,377 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>HTTP::Message - HTTP style message</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>HTTP::Message - HTTP style message</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>HTTP::Message - HTTP style message (base class)</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">use</span> <span class="variable">base</span> <span class="string">'HTTP::Message'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>An <code>HTTP::Message</code> object contains some headers and a content body.
+The following methods are available:</p>
+<dl>
+<dt><strong><a name="new" class="item">$mess = HTTP::Message-&gt;new</a></strong></dt>
+
+<dt><strong>$mess = HTTP::Message-&gt;new( $headers )</strong></dt>
+
+<dt><strong>$mess = HTTP::Message-&gt;new( $headers, $content )</strong></dt>
+
+<dd>
+<p>This constructs a new message object.  Normally you would want
+construct <code>HTTP::Request</code> or <code>HTTP::Response</code> objects instead.</p>
+<p>The optional $header argument should be a reference to an
+<code>HTTP::Headers</code> object or a plain array reference of key/value pairs.
+If an <code>HTTP::Headers</code> object is provided then a copy of it will be
+embedded into the constructed message, i.e. it will not be owned and
+can be modified afterwards without affecting the message.</p>
+<p>The optional $content argument should be a string of bytes.</p>
+</dd>
+<dt><strong><a name="parse" class="item">$mess = HTTP::Message-&gt;parse( $str )</a></strong></dt>
+
+<dd>
+<p>This constructs a new message object by parsing the given string.</p>
+</dd>
+<dt><strong><a name="headers" class="item">$mess-&gt;headers</a></strong></dt>
+
+<dd>
+<p>Returns the embedded <code>HTTP::Headers</code> object.</p>
+</dd>
+<dt><strong><a name="headers_as_string" class="item">$mess-&gt;headers_as_string</a></strong></dt>
+
+<dt><strong>$mess-&gt;headers_as_string( $eol )</strong></dt>
+
+<dd>
+<p>Call the <a href="#as_string"><code>as_string()</code></a> method for the headers in the
+message.  This will be the same as</p>
+<pre>
+    $mess-&gt;headers-&gt;as_string</pre>
+<p>but it will make your program a whole character shorter :-)</p>
+</dd>
+<dt><strong><a name="content" class="item">$mess-&gt;content</a></strong></dt>
+
+<dt><strong>$mess-&gt;content( $bytes )</strong></dt>
+
+<dd>
+<p>The <a href="#content"><code>content()</code></a> method sets the raw content if an argument is given.  If no
+argument is given the content is not touched.  In either case the
+original raw content is returned.</p>
+<p>Note that the content should be a string of bytes.  Strings in perl
+can contain characters outside the range of a byte.  The <code>Encode</code>
+module can be used to turn such strings into a string of bytes.</p>
+</dd>
+<dt><strong><a name="add_content" class="item">$mess-&gt;add_content( $bytes )</a></strong></dt>
+
+<dd>
+<p>The <a href="#add_content"><code>add_content()</code></a> methods appends more data bytes to the end of the
+current content buffer.</p>
+</dd>
+<dt><strong><a name="add_content_utf8" class="item">$mess-&gt;add_content_utf8( $string )</a></strong></dt>
+
+<dd>
+<p>The add_content_utf8() method appends the UTF-8 bytes representing the
+string to the end of the current content buffer.</p>
+</dd>
+<dt><strong><a name="content_ref" class="item">$mess-&gt;content_ref</a></strong></dt>
+
+<dt><strong>$mess-&gt;content_ref( \$bytes )</strong></dt>
+
+<dd>
+<p>The <a href="#content_ref"><code>content_ref()</code></a> method will return a reference to content buffer string.
+It can be more efficient to access the content this way if the content
+is huge, and it can even be used for direct manipulation of the content,
+for instance:</p>
+<pre>
+  <span class="variable">$</span><span class="operator">{</span><span class="variable">$res</span><span class="operator">-&gt;</span><span class="variable">content_ref</span><span class="operator">}</span> <span class="operator">=~</span> <span class="regex">s/\bfoo\b/bar/g</span><span class="operator">;</span>
+</pre>
+<p>This example would modify the content buffer in-place.</p>
+<p>If an argument is passed it will setup the content to reference some
+external source.  The <a href="#content"><code>content()</code></a> and <a href="#add_content"><code>add_content()</code></a> methods
+will automatically dereference scalar references passed this way.  For
+other references <a href="#content"><code>content()</code></a> will return the reference itself and
+<a href="#add_content"><code>add_content()</code></a> will refuse to do anything.</p>
+</dd>
+<dt><strong><a name="content_charset" class="item">$mess-&gt;content_charset</a></strong></dt>
+
+<dd>
+<p>This returns the charset used by the content in the message.  The
+charset is either found as the charset attribute of the
+<code>Content-Type</code> header or by guessing.</p>
+<p>See <a href="http://www.w3.org/TR/REC-html40/charset.html#spec-char-encoding">http://www.w3.org/TR/REC-html40/charset.html#spec-char-encoding</a>
+for details about how charset is determined.</p>
+</dd>
+<dt><strong><a name="decoded_content" class="item">$mess-&gt;decoded_content( %options )</a></strong></dt>
+
+<dd>
+<p>Returns the content with any <code>Content-Encoding</code> undone and for textual content
+the raw content encoded to Perl's Unicode strings.  If the <code>Content-Encoding</code>
+or <a href="#charset"><code>charset</code></a> of the message is unknown this method will fail by returning
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>The following options can be specified.</p>
+<dl>
+<dt><strong><a name="charset" class="item"><code>charset</code></a></strong></dt>
+
+<dd>
+<p>This override the charset parameter for text content.  The value
+<code>none</code> can used to suppress decoding of the charset.</p>
+</dd>
+<dt><strong><a name="default_charset" class="item"><code>default_charset</code></a></strong></dt>
+
+<dd>
+<p>This override the default charset guessed by <a href="#content_charset"><code>content_charset()</code></a> or
+if that fails &quot;ISO-8859-1&quot;.</p>
+</dd>
+<dt><strong><a name="alt_charset" class="item"><code>alt_charset</code></a></strong></dt>
+
+<dd>
+<p>If decoding fails because the charset specified in the Content-Type header
+isn't recognized by Perl's Encode module, then try decoding using this charset
+instead of failing.  The <a href="#alt_charset"><code>alt_charset</code></a> might be specified as <code>none</code> to simply
+return the string without any decoding of charset as alternative.</p>
+</dd>
+<dt><strong><a name="charset_strict" class="item"><code>charset_strict</code></a></strong></dt>
+
+<dd>
+<p>Abort decoding if malformed characters is found in the content.  By
+default you get the substitution character (&quot;\x{FFFD}&quot;) in place of
+malformed characters.</p>
+</dd>
+<dt><strong><a name="raise_error" class="item"><code>raise_error</code></a></strong></dt>
+
+<dd>
+<p>If TRUE then raise an exception if not able to decode content.  Reason
+might be that the specified <code>Content-Encoding</code> or <a href="#charset"><code>charset</code></a> is not
+supported.  If this option is FALSE, then <a href="#decoded_content"><code>decoded_content()</code></a> will return
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors, but will still set $@.</p>
+</dd>
+<dt><strong><a name="ref" class="item"><code>ref</code></a></strong></dt>
+
+<dd>
+<p>If TRUE then a reference to decoded content is returned.  This might
+be more efficient in cases where the decoded content is identical to
+the raw content as no data copying is required in this case.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="decodable" class="item">$mess-&gt;decodable</a></strong></dt>
+
+<dt><strong>HTTP::Message::decodable()</strong></dt>
+
+<dd>
+<p>This returns the encoding identifiers that <a href="#decoded_content"><code>decoded_content()</code></a> can
+process.  In scalar context returns a comma separated string of
+identifiers.</p>
+<p>This value is suitable for initializing the <code>Accept-Encoding</code> request
+header field.</p>
+</dd>
+<dt><strong><a name="decode" class="item">$mess-&gt;decode</a></strong></dt>
+
+<dd>
+<p>This method tries to replace the content of the message with the
+decoded version and removes the <code>Content-Encoding</code> header.  Returns
+TRUE if successful and FALSE if not.</p>
+<p>If the message does not have a <code>Content-Encoding</code> header this method
+does nothing and returns TRUE.</p>
+<p>Note that the content of the message is still bytes after this method
+has been called and you still need to call <a href="#decoded_content"><code>decoded_content()</code></a> if you
+want to process its content as a string.</p>
+</dd>
+<dt><strong><a name="encode" class="item">$mess-&gt;encode( $encoding, ... )</a></strong></dt>
+
+<dd>
+<p>Apply the given encodings to the content of the message.  Returns TRUE
+if successful. The &quot;identity&quot; (non-)encoding is always supported; other
+currently supported encodings, subject to availability of required
+additional modules, are &quot;gzip&quot;, &quot;deflate&quot;, &quot;x-bzip2&quot; and &quot;base64&quot;.</p>
+<p>A successful call to this function will set the <code>Content-Encoding</code>
+header.</p>
+<p>Note that <code>multipart/*</code> or <code>message/*</code> messages can't be encoded and
+this method will croak if you try.</p>
+</dd>
+<dt><strong><a name="parts" class="item">$mess-&gt;parts</a></strong></dt>
+
+<dt><strong>$mess-&gt;parts( @parts )</strong></dt>
+
+<dt><strong>$mess-&gt;parts( \@parts )</strong></dt>
+
+<dd>
+<p>Messages can be composite, i.e. contain other messages.  The composite
+messages have a content type of <code>multipart/*</code> or <code>message/*</code>.  This
+method give access to the contained messages.</p>
+<p>The argumentless form will return a list of <code>HTTP::Message</code> objects.
+If the content type of $msg is not <code>multipart/*</code> or <code>message/*</code> then
+this will return the empty list.  In scalar context only the first
+object is returned.  The returned message parts should be regarded as
+read-only (future versions of this library might make it possible
+to modify the parent by modifying the parts).</p>
+<p>If the content type of $msg is <code>message/*</code> then there will only be
+one part returned.</p>
+<p>If the content type is <code>message/http</code>, then the return value will be
+either an <code>HTTP::Request</code> or an <code>HTTP::Response</code> object.</p>
+<p>If an @parts argument is given, then the content of the message will be
+modified. The array reference form is provided so that an empty list
+can be provided.  The @parts array should contain <code>HTTP::Message</code>
+objects.  The @parts objects are owned by $mess after this call and
+should not be modified or made part of other messages.</p>
+<p>When updating the message with this method and the old content type of
+$mess is not <code>multipart/*</code> or <code>message/*</code>, then the content type is
+set to <code>multipart/mixed</code> and all other content headers are cleared.</p>
+<p>This method will croak if the content type is <code>message/*</code> and more
+than one part is provided.</p>
+</dd>
+<dt><strong><a name="add_part" class="item">$mess-&gt;add_part( $part )</a></strong></dt>
+
+<dd>
+<p>This will add a part to a message.  The $part argument should be
+another <code>HTTP::Message</code> object.  If the previous content type of
+$mess is not <code>multipart/*</code> then the old content (together with all
+content headers) will be made part #1 and the content type made
+<code>multipart/mixed</code> before the new part is added.  The $part object is
+owned by $mess after this call and should not be modified or made part
+of other messages.</p>
+<p>There is no return value.</p>
+</dd>
+<dt><strong><a name="clear" class="item">$mess-&gt;clear</a></strong></dt>
+
+<dd>
+<p>Will clear the headers and set the content to the empty string.  There
+is no return value</p>
+</dd>
+<dt><strong><a name="protocol" class="item">$mess-&gt;protocol</a></strong></dt>
+
+<dt><strong>$mess-&gt;protocol( $proto )</strong></dt>
+
+<dd>
+<p>Sets the HTTP protocol used for the message.  The <a href="#protocol"><code>protocol()</code></a> is a string
+like <code>HTTP/1.0</code> or <code>HTTP/1.1</code>.</p>
+</dd>
+<dt><strong><a name="clone" class="item">$mess-&gt;clone</a></strong></dt>
+
+<dd>
+<p>Returns a copy of the message object.</p>
+</dd>
+<dt><strong><a name="as_string" class="item">$mess-&gt;as_string</a></strong></dt>
+
+<dt><strong>$mess-&gt;as_string( $eol )</strong></dt>
+
+<dd>
+<p>Returns the message formatted as a single string.</p>
+<p>The optional $eol parameter specifies the line ending sequence to use.
+The default is &quot;\n&quot;.  If no $eol is given then as_string will ensure
+that the returned string is newline terminated (even when the message
+content is not).  No extra newline is appended if an explicit $eol is
+passed.</p>
+</dd>
+<dt><strong><a name="dump" class="item">$mess-&gt;dump( %opt )</a></strong></dt>
+
+<dd>
+<p>Returns the message formatted as a string.  In void context print the string.</p>
+<p>This differs from <a href="#as_string"><code>$mess-&gt;as_string</code></a> in that it escapes the bytes
+of the content so that it's safe to print them and it limits how much
+content to print.  The escapes syntax used is the same as for Perl's
+double quoted strings.  If there is no content the string &quot;(no
+content)&quot; is shown in its place.</p>
+<p>Options to influence the output can be passed as key/value pairs. The
+following options are recognized:</p>
+<dl>
+<dt><strong><a name="maxlength_num" class="item">maxlength =&gt; $num</a></strong></dt>
+
+<dd>
+<p>How much of the content to show.  The default is 512.  Set this to 0
+for unlimited.</p>
+<p>If the content is longer then the string is chopped at the limit and
+the string &quot;...\n(### more bytes not shown)&quot; appended.</p>
+</dd>
+<dt><strong><a name="prefix_str" class="item">prefix =&gt; $str</a></strong></dt>
+
+<dd>
+<p>A string that will be prefixed to each line of the dump.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>All methods unknown to <code>HTTP::Message</code> itself are delegated to the
+<code>HTTP::Headers</code> object that is part of every message.  This allows
+convenient access to these methods.  Refer to <a href="../../lib/HTTP/Headers.html">the HTTP::Headers manpage</a> for
+details of these methods:</p>
+<pre>
+    $mess-&gt;header( $field =&gt; $val )
+    $mess-&gt;push_header( $field =&gt; $val )
+    $mess-&gt;init_header( $field =&gt; $val )
+    $mess-&gt;remove_header( $field )
+    $mess-&gt;remove_content_headers
+    $mess-&gt;header_field_names
+    $mess-&gt;scan( \&amp;doit )</pre>
+<pre>
+    $mess-&gt;date
+    $mess-&gt;expires
+    $mess-&gt;if_modified_since
+    $mess-&gt;if_unmodified_since
+    $mess-&gt;last_modified
+    $mess-&gt;content_type
+    $mess-&gt;content_encoding
+    $mess-&gt;content_length
+    $mess-&gt;content_language
+    $mess-&gt;title
+    $mess-&gt;user_agent
+    $mess-&gt;server
+    $mess-&gt;from
+    $mess-&gt;referer
+    $mess-&gt;www_authenticate
+    $mess-&gt;authorization
+    $mess-&gt;proxy_authorization
+    $mess-&gt;authorization_basic
+    $mess-&gt;proxy_authorization_basic</pre>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1995-2004 Gisle Aas.</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

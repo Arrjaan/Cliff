@@ -1,0 +1,261 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Perl::Critic::Document - Caching wrapper around a PPI::Document.</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Perl::Critic::Document - Caching wrapper around a PPI::Document.</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#interface_support">INTERFACE SUPPORT</a></li>
+	<li><a href="#constructor">CONSTRUCTOR</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Perl::Critic::Document - Caching wrapper around a PPI::Document.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">PPI::Document</span><span class="operator">;</span>
+    <span class="keyword">use</span> <span class="variable">Perl::Critic::Document</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$doc</span> <span class="operator">=</span> <span class="variable">PPI::Document</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">'Foo.pm'</span><span class="operator">);</span>
+    <span class="variable">$doc</span> <span class="operator">=</span> <span class="variable">Perl::Critic::Document</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">-source</span> <span class="operator">=&gt;</span> <span class="variable">$doc</span><span class="operator">);</span>
+    <span class="comment">## Then use the instance just like a PPI::Document</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Perl::Critic does a lot of iterations over the PPI document tree via
+the <a href="#find"><code>PPI::Document::find()</code></a> method.  To save some time, this class
+pre-caches a lot of the common <a href="#find"><code>find()</code></a> calls in a single traversal.
+Then, on subsequent requests we return the cached data.</p>
+<p>This is implemented as a facade, where method calls are handed to the
+stored <code>PPI::Document</code> instance.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>This facade does not implement the overloaded operators from
+<a href="../../../lib/PPI/Document.html">PPI::Document</a> (that is, the <code>use overload ...</code>
+work). Therefore, users of this facade must not rely on that syntactic
+sugar.  So, for example, instead of <code>my $source = &quot;$doc&quot;;</code> you should
+write <code>my $source = $doc-</code>content();&gt;</p>
+<p>Perhaps there is a CPAN module out there which implements a facade
+better than we do here?</p>
+<p>
+</p>
+<hr />
+<h1><a name="interface_support">INTERFACE SUPPORT</a></h1>
+<p>This is considered to be a public class.  Any changes to its interface
+will go through a deprecation cycle.</p>
+<p>
+</p>
+<hr />
+<h1><a name="constructor">CONSTRUCTOR</a></h1>
+<dl>
+<dt><strong><a name="new" class="item"><code>new(-source =&gt; $source_code, '-filename-override' =&gt; $filename, '-program-extensions' =&gt; [program_extensions])</code></a></strong></dt>
+
+<dd>
+<p>Create a new instance referencing a PPI::Document instance.  The
+<code>$source_code</code> can be the name of a file, a reference to a scalar
+containing actual source code, or a <a href="../../../lib/PPI/Document.html">PPI::Document</a> or
+<a href="../../../lib/PPI/Document/File.html">PPI::Document::File</a>.</p>
+<p>In the event that <code>$source_code</code> is a reference to a scalar containing actual
+source code or a <a href="../../../lib/PPI/Document.html">PPI::Document</a>, the resulting
+<a href="../../../lib/Perl/Critic/Document.html">Perl::Critic::Document</a> will not have a filename.
+This may cause <a href="../../../lib/Perl/Critic/Document.html">Perl::Critic::Document</a> to incorrectly
+classify the source code as a module or script.  To avoid this problem, you
+can optionally set the <code>-filename-override</code> to force the
+<a href="../../../lib/Perl/Critic/Document.html">Perl::Critic::Document</a> to have a particular
+<code>$filename</code>.  Do not use this option if <code>$source_code</code> is already the name
+of a file, or is a reference to a <a href="../../../lib/PPI/Document/File.html">PPI::Document::File</a>.</p>
+<p>The '-program-extensions' argument is optional, and is a reference to a list
+of strings and/or regular expressions. The strings will be made into regular
+expressions matching the end of a file name, and any document whose file name
+matches one of the regular expressions will be considered a program.</p>
+<p>If -program-extensions is not specified, or if it does not determine the
+document type, the document will be considered to be a program if the source
+has a shebang line or its file name (if any) matches <a href="../../../lib/pods/perlfunc.html#m_"><code>m/ [.] PL \z /smx</code></a>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<dl>
+<dt><strong><a name="ppi_document" class="item"><code>ppi_document()</code></a></strong></dt>
+
+<dd>
+<p>Accessor for the wrapped PPI::Document instance.  Note that altering
+this instance in any way can cause unpredictable failures in
+Perl::Critic's subsequent analysis because some caches may fall out of
+date.</p>
+</dd>
+<dt><strong><a name="find" class="item"><code>find($wanted)</code></a></strong></dt>
+
+<dt><strong><a name="find_first" class="item"><code>find_first($wanted)</code></a></strong></dt>
+
+<dt><strong><a name="find_any" class="item"><code>find_any($wanted)</code></a></strong></dt>
+
+<dd>
+<p>Caching wrappers around the PPI methods.  If <code>$wanted</code> is a simple PPI class
+name, then the cache is employed. Otherwise we forward the call to the
+corresponding method of the <code>PPI::Document</code> instance.</p>
+</dd>
+<dt><strong><a name="namespaces" class="item"><code>namespaces()</code></a></strong></dt>
+
+<dd>
+<p>Returns a list of the namespaces (package names) in the document.</p>
+</dd>
+<dt><strong><a name="subdocuments_for_namespace" class="item"><code>subdocuments_for_namespace($namespace)</code></a></strong></dt>
+
+<dd>
+<p>Returns a list of sub-documents containing the elements in the given
+namespace.  For example, given that the current document is for the source</p>
+<pre>
+    <span class="variable">foo</span><span class="operator">();</span>
+    <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+    <span class="keyword">package</span> <span class="variable">Bar</span><span class="operator">;</span>
+    <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<p>this method will return two <a href="../../../lib/Perl/Critic/Document.html">Perl::Critic::Document</a>s
+for a parameter of <code>&quot;Foo&quot;</code>.  For more, see
+<a href="../../../lib/PPIx/Utilities/Node.html#split_ppi_node_by_namespace">split_ppi_node_by_namespace in the PPIx::Utilities::Node manpage</a>.</p>
+</dd>
+<dt><strong><a name="ppix_regexp_from_element" class="item"><code>ppix_regexp_from_element($element)</code></a></strong></dt>
+
+<dd>
+<p>Caching wrapper around <a href="#new"><code>PPIx::Regexp-&gt;new($element)</code></a>.  If
+<code>$element</code> is a <code>PPI::Element</code> the cache is employed, otherwise it
+just returns the results of <a href="#new"><code>PPIx::Regexp-&gt;new()</code></a>.  In either case,
+it returns <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> unless the argument is something that
+<a href="../../../lib/PPIx/Regexp.html">PPIx::Regexp</a> actually understands.</p>
+</dd>
+<dt><strong><a name="filename" class="item"><code>filename()</code></a></strong></dt>
+
+<dd>
+<p>Returns the filename for the source code if applicable
+(PPI::Document::File) or <a href="../../../lib/pods/perlfunc.html#undef"><code>undef</code></a> otherwise (PPI::Document).</p>
+</dd>
+<dt><strong><a name="isa" class="item"><code>isa( $classname )</code></a></strong></dt>
+
+<dd>
+<p>To be compatible with other modules that expect to get a
+PPI::Document, the Perl::Critic::Document class masquerades as the
+PPI::Document class.</p>
+</dd>
+<dt><strong><a name="highest_explicit_perl_version" class="item"><code>highest_explicit_perl_version()</code></a></strong></dt>
+
+<dd>
+<p>Returns a <a href="../../../lib/version.html">version</a> object for the highest Perl version
+requirement declared in the document via a <a href="../../../lib/pods/perlfunc.html#use"><code>use</code></a> or <a href="../../../lib/pods/perlfunc.html#require"><code>require</code></a>
+statement.  Returns nothing if there is no version statement.</p>
+</dd>
+<dt><strong><a name="uses_module" class="item"><code>uses_module($module_or_pragma_name)</code></a></strong></dt>
+
+<dd>
+<p>Answers whether there is a <a href="../../../lib/pods/perlfunc.html#use"><code>use</code></a>, <a href="../../../lib/pods/perlfunc.html#require"><code>require</code></a>, or <a href="../../../lib/pods/perlfunc.html#no"><code>no</code></a> of the given name in
+this document.  Note that there is no differentiation of modules vs. pragmata
+here.</p>
+</dd>
+<dt><strong><a name="process_annotations" class="item"><code>process_annotations()</code></a></strong></dt>
+
+<dd>
+<p>Causes this Document to scan itself and mark which lines &amp;
+policies are disabled by the <code>&quot;## no critic&quot;</code> annotations.</p>
+</dd>
+<dt><strong><a name="line_is_disabled_for_policy" class="item"><code>line_is_disabled_for_policy($line, $policy_object)</code></a></strong></dt>
+
+<dd>
+<p>Returns true if the given <code>$policy_object</code> or <code>$policy_name</code> has
+been disabled for at <code>$line</code> in this Document.  Otherwise, returns false.</p>
+</dd>
+<dt><strong><a name="add_annotation" class="item"><code>add_annotation( $annotation )</code></a></strong></dt>
+
+<dd>
+<p>Adds an <code>$annotation</code> object to this Document.</p>
+</dd>
+<dt><strong><a name="annotations" class="item"><code>annotations()</code></a></strong></dt>
+
+<dd>
+<p>Returns a list containing all the
+<a href="../../../lib/Perl/Critic/Annotation.html">Perl::Critic::Annotation</a>s that
+were found in this Document.</p>
+</dd>
+<dt><strong><a name="add_suppressed_violation" class="item"><code>add_suppressed_violation($violation)</code></a></strong></dt>
+
+<dd>
+<p>Informs this Document that a <code>$violation</code> was found but not reported
+because it fell on a line that had been suppressed by a <code>&quot;## no critic&quot;</code>
+annotation. Returns <code>$self</code>.</p>
+</dd>
+<dt><strong><a name="suppressed_violations" class="item"><code>suppressed_violations()</code></a></strong></dt>
+
+<dd>
+<p>Returns a list of references to all the
+<a href="../../../lib/Perl/Critic/Violation.html">Perl::Critic::Violation</a>s
+that were found in this Document but were suppressed.</p>
+</dd>
+<dt><strong><a name="is_program" class="item"><code>is_program()</code></a></strong></dt>
+
+<dd>
+<p>Returns whether this document is considered to be a program.</p>
+</dd>
+<dt><strong><a name="is_module" class="item"><code>is_module()</code></a></strong></dt>
+
+<dd>
+<p>Returns whether this document is considered to be a Perl module.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Chris Dolan &lt;<a href="mailto:cdolan@cpan.org">cdolan@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2006-2011 Chris Dolan.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.  The full text of this license
+can be found in the LICENSE file included with this module.</p>
+
+</body>
+
+</html>

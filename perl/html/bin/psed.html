@@ -1,0 +1,676 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>psed - a stream editor</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>psed - a stream editor</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#commands">COMMANDS</a></li>
+	<ul>
+
+		<li><a href="#addresses">Addresses</a></li>
+		<li><a href="#functions">Functions</a></li>
+	</ul>
+
+	<li><a href="#basic_regular_expressions">BASIC REGULAR EXPRESSIONS</a></li>
+	<ul>
+
+		<li><a href="#atoms">Atoms</a></li>
+		<li><a href="#bounds">Bounds</a></li>
+		<li><a href="#bracket_expressions">Bracket Expressions</a></li>
+		<li><a href="#additional_atoms">Additional Atoms</a></li>
+	</ul>
+
+	<li><a href="#environment">ENVIRONMENT</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#example">EXAMPLE</a></li>
+	<li><a href="#sed_script_translation">SED SCRIPT TRANSLATION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#standards">STANDARDS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT and LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>psed - a stream editor</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+   psed [-an] script [file ...]
+   psed [-an] [-e script] [-f script-file] [file ...]</pre>
+<pre>
+   s2p  [-an] [-e script] [-f script-file]</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A stream editor reads the input stream consisting of the specified files
+(or standard input, if none are given), processes is line by line by
+applying a script consisting of edit commands, and writes resulting lines
+to standard output. The filename `<code>-</code>' may be used to read standard input.</p>
+<p>The edit script is composed from arguments of <strong>-e</strong> options and
+script-files, in the given order. A single script argument may be specified
+as the first parameter.</p>
+<p>If this program is invoked with the name <em class="file">s2p</em>, it will act as a
+sed-to-Perl translator. See <a href="#sed_script_translation">sed Script Translation</a>.</p>
+<p><strong>sed</strong> returns an exit code of 0 on success or &gt;0 if an error occurred.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="a8" class="item"><strong>-a</strong></a></strong></dt>
+
+<dd>
+<p>A file specified as argument to the <strong>w</strong> edit command is by default
+opened before input processing starts. Using <strong>-a</strong>, opening of such
+files is delayed until the first line is actually written to the file.</p>
+</dd>
+<dt><strong><a name="e_script" class="item"><strong>-e</strong> <em>script</em></a></strong></dt>
+
+<dd>
+<p>The editing commands defined by <em>script</em> are appended to the script.
+Multiple commands must be separated by newlines.</p>
+</dd>
+<dt><strong><a name="f_script_file" class="item"><strong>-f</strong> <em>script-file</em></a></strong></dt>
+
+<dd>
+<p>Editing commands from the specified <em>script-file</em> are read and appended
+to the script.</p>
+</dd>
+<dt><strong><a name="n" class="item"><strong>-n</strong></a></strong></dt>
+
+<dd>
+<p>By default, a line is written to standard output after the editing script
+has been applied to it. The <strong>-n</strong> option suppresses automatic printing.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="commands">COMMANDS</a></h1>
+<p><strong>sed</strong> command syntax is defined as</p>
+<p>   [<em>address</em>[<strong>,</strong><em>address</em>]][<strong>!</strong>]<em>function</em>[<em>argument</em>]</p>
+<p>with whitespace being permitted before or after addresses, and between
+the function character and the argument. The <em>address</em>es and the
+address inverter (<code>!</code>) are used to restrict the application of a
+command to the selected line(s) of input.</p>
+<p>Each command must be on a line of its own, except where noted in
+the synopses below.</p>
+<p>The edit cycle performed on each input line consist of reading the line
+(without its trailing newline character) into the <em>pattern space</em>,
+applying the applicable commands of the edit script, writing the final
+contents of the pattern space and a newline to the standard output.
+A <em>hold space</em> is provided for saving the contents of the
+pattern space for later use.</p>
+<p>
+</p>
+<h2><a name="addresses">Addresses</a></h2>
+<p>A sed address is either a line number or a pattern, which may be combined
+arbitrarily to construct ranges. Lines are numbered across all input files.</p>
+<p>Any address may be followed by an exclamation mark (`<code>!</code>'), selecting
+all lines not matching that address.</p>
+<dl>
+<dt><strong><a name="number" class="item"><em>number</em></a></strong></dt>
+
+<dd>
+<p>The line with the given number is selected.</p>
+</dd>
+<dt><strong><a name="_" class="item"><strong>$</strong></a></strong></dt>
+
+<dd>
+<p>A dollar sign (<a href="#_"><code>$</code></a>) is the line number of the last line of the input stream.</p>
+</dd>
+<dt><strong><a name="regular_expression" class="item"><strong>/</strong><em>regular expression</em><strong>/</strong></a></strong></dt>
+
+<dd>
+<p>A pattern address is a basic regular expression (see 
+<a href="#basic_regular_expressions">Basic Regular Expressions</a>), between the delimiting character <code>/</code>.
+Any other character except <code>\</code> or newline may be used to delimit a
+pattern address when the initial delimiter is prefixed with a
+backslash (`<code>\</code>').</p>
+</dd>
+</dl>
+<p>If no address is given, the command selects every line.</p>
+<p>If one address is given, it selects the line (or lines) matching the
+address.</p>
+<p>Two addresses select a range that begins whenever the first address
+matches, and ends (including that line) when the second address matches.
+If the first (second) address is a matching pattern, the second 
+address is not applied to the very same line to determine the end of
+the range. Likewise, if the second address is a matching pattern, the
+first address is not applied to the very same line to determine the
+begin of another range. If both addresses are line numbers,
+and the second line number is less than the first line number, then
+only the first line is selected.</p>
+<p>
+</p>
+<h2><a name="functions">Functions</a></h2>
+<p>The maximum permitted number of addresses is indicated with each
+function synopsis below.</p>
+<p>The argument <em>text</em> consists of one or more lines following the command.
+Embedded newlines in <em>text</em> must be preceded with a backslash.  Other
+backslashes in <em>text</em> are deleted and the following character is taken
+literally.</p>
+<dl>
+<dt><strong><a name="1addr_a_text" class="item">[1addr]<strong>a\</strong> <em>text</em></a></strong></dt>
+
+<dd>
+<p>Write <em>text</em> (which must start on the line following the command)
+to standard output immediately before reading the next line
+of input, either by executing the <strong>N</strong> function or by beginning a new cycle.</p>
+</dd>
+<dt><strong><a name="2addr_b_label" class="item">[2addr]<strong>b</strong> [<em>label</em>]</a></strong></dt>
+
+<dd>
+<p>Branch to the <strong>:</strong> function with the specified <em>label</em>. If no label
+is given, branch to the end of the script.</p>
+</dd>
+<dt><strong><a name="2addr_c_text" class="item">[2addr]<strong>c\</strong> <em>text</em></a></strong></dt>
+
+<dd>
+<p>The line, or range of lines, selected by the address is deleted. 
+The <em>text</em> (which must start on the line following the command)
+is written to standard output. With an address range, this occurs at
+the end of the range.</p>
+</dd>
+<dt><strong><a name="2addr_d" class="item">[2addr]<strong>d</strong></a></strong></dt>
+
+<dd>
+<p>Deletes the pattern space and starts the next cycle.</p>
+</dd>
+<dt><strong><a name="2addr_d" class="item">[2addr]<strong>D</strong></a></strong></dt>
+
+<dd>
+<p>Deletes the pattern space through the first embedded newline or to the end.
+If the pattern space becomes empty, a new cycle is started, otherwise
+execution of the script is restarted.</p>
+</dd>
+<dt><strong><a name="2addr_g" class="item">[2addr]<strong>g</strong></a></strong></dt>
+
+<dd>
+<p>Replace the contents of the pattern space with the hold space.</p>
+</dd>
+<dt><strong><a name="2addr_g" class="item">[2addr]<strong>G</strong></a></strong></dt>
+
+<dd>
+<p>Append a newline and the contents of the hold space to the pattern space.</p>
+</dd>
+<dt><strong><a name="2addr_h" class="item">[2addr]<strong>h</strong></a></strong></dt>
+
+<dd>
+<p>Replace the contents of the hold space with the pattern space.</p>
+</dd>
+<dt><strong><a name="2addr_h" class="item">[2addr]<strong>H</strong></a></strong></dt>
+
+<dd>
+<p>Append a newline and the contents of the pattern space to the hold space.</p>
+</dd>
+<dt><strong><a name="1addr_i_text" class="item">[1addr]<strong>i\</strong> <em>text</em></a></strong></dt>
+
+<dd>
+<p>Write the <em>text</em> (which must start on the line following the command)
+to standard output.</p>
+</dd>
+<dt><strong><a name="2addr_l" class="item">[2addr]<strong>l</strong></a></strong></dt>
+
+<dd>
+<p>Print the contents of the pattern space: non-printable characters are
+shown in C-style escaped form; long lines are split and have a trailing
+`<code>\</code>' at the point of the split; the true end of a line is marked with
+a `<a href="#_"><code>$</code></a>'. Escapes are: `\a', `\t', `\n', `\f', `\r', `\e' for
+BEL, HT, LF, FF, CR, ESC, respectively, and `\' followed by a three-digit
+octal number for all other non-printable characters.</p>
+</dd>
+<dt><strong><a name="2addr_n" class="item">[2addr]<strong>n</strong></a></strong></dt>
+
+<dd>
+<p>If automatic printing is enabled, write the pattern space to the standard
+output. Replace the pattern space with the next line of input. If
+there is no more input, processing is terminated.</p>
+</dd>
+<dt><strong><a name="2addr_n" class="item">[2addr]<strong>N</strong></a></strong></dt>
+
+<dd>
+<p>Append a newline and the next line of input to the pattern space. If
+there is no more input, processing is terminated.</p>
+</dd>
+<dt><strong><a name="2addr_p" class="item">[2addr]<strong>p</strong></a></strong></dt>
+
+<dd>
+<p>Print the pattern space to the standard output. (Use the <strong>-n</strong> option
+to suppress automatic printing at the end of a cycle if you want to
+avoid double printing of lines.)</p>
+</dd>
+<dt><strong><a name="2addr_p" class="item">[2addr]<strong>P</strong></a></strong></dt>
+
+<dd>
+<p>Prints the pattern space through the first embedded newline or to the end.</p>
+</dd>
+<dt><strong><a name="1addr_q" class="item">[1addr]<strong>q</strong></a></strong></dt>
+
+<dd>
+<p>Branch to the end of the script and quit without starting a new cycle.</p>
+</dd>
+<dt><strong><a name="1addr_r_file" class="item">[1addr]<strong>r</strong> <em>file</em></a></strong></dt>
+
+<dd>
+<p>Copy the contents of the <em>file</em> to standard output immediately before
+the next attempt to read a line of input. Any error encountered while
+reading <em>file</em> is silently ignored.</p>
+</dd>
+<dt><strong><a name="2addr_s_regular_expression_replacement_flags" class="item">[2addr]<strong>s/</strong><em>regular expression</em><strong>/</strong><em>replacement</em><strong>/</strong><em>flags</em></a></strong></dt>
+
+<dd>
+<p>Substitute the <em>replacement</em> string for the first substring in
+the pattern space that matches the <em>regular expression</em>.
+Any character other than backslash or newline can be used instead of a 
+slash to delimit the regular expression and the replacement.
+To use the delimiter as a literal character within the regular expression
+and the replacement, precede the character by a backslash (`<code>\</code>').</p>
+<p>Literal newlines may be embedded in the replacement string by
+preceding a newline with a backslash.</p>
+<p>Within the replacement, an ampersand (`<code>&amp;</code>') is replaced by the string
+matching the regular expression. The strings `<code>\1</code>' through `<a href="#9"><code>\9</code></a>' are
+replaced by the corresponding subpattern (see <a href="#basic_regular_expressions">Basic Regular Expressions</a>).
+To get a literal `<code>&amp;</code>' or `<code>\</code>' in the replacement text, precede it
+by a backslash.</p>
+<p>The following <em>flags</em> modify the behaviour of the <strong>s</strong> command:</p>
+<dl>
+<dt><strong><a name="g" class="item"><strong>g</strong></a></strong></dt>
+
+<dd>
+<p>The replacement is performed for all matching, non-overlapping substrings
+of the pattern space.</p>
+</li>
+<li><strong><a name="9" class="item"><strong>1</strong>..<strong>9</strong></a></strong>
+
+<p>Replace only the n-th matching substring of the pattern space.</p>
+</dd>
+<dt><strong><a name="p" class="item"><strong>p</strong></a></strong></dt>
+
+<dd>
+<p>If the substitution was made, print the new value of the pattern space.</p>
+</dd>
+<dt><strong><a name="w_file" class="item"><strong>w</strong> <em>file</em></a></strong></dt>
+
+<dd>
+<p>If the substitution was made, write the new value of the pattern space
+to the specified file.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="2addr_t_label" class="item">[2addr]<strong>t</strong> [<em>label</em>]</a></strong></dt>
+
+<dd>
+<p>Branch to the <strong>:</strong> function with the specified <em>label</em> if any <strong>s</strong>
+substitutions have been made since the most recent reading of an input line
+or execution of a <strong>t</strong> function. If no label is given, branch to the end of
+the script.</p>
+</dd>
+<dt><strong><a name="2addr_w_file" class="item">[2addr]<strong>w</strong> <em>file</em></a></strong></dt>
+
+<dd>
+<p>The contents of the pattern space are written to the <em>file</em>.</p>
+</dd>
+<dt><strong><a name="2addr_x" class="item">[2addr]<strong>x</strong></a></strong></dt>
+
+<dd>
+<p>Swap the contents of the pattern space and the hold space.</p>
+</dd>
+<dt><strong><a name="1addr" class="item">[1addr]<strong>=</strong></a></strong></dt>
+
+<dd>
+<p>Prints the current line number on the standard output.</p>
+</dd>
+<dt><strong><a name="2addr_command" class="item">[2addr]<strong>{</strong> [<em>command</em>]</a></strong></dt>
+
+<dt><strong><a name="0addr" class="item">[0addr]<strong>}</strong></a></strong></dt>
+
+<dd>
+<p>These two commands begin and end a command list. The first command may
+be given on the same line as the opening <strong>{</strong> command. The commands
+within the list are jointly selected by the address(es) given on the
+<strong>{</strong> command (but may still have individual addresses).</p>
+</dd>
+<dt><strong><a name="0addr_comment" class="item">[0addr]<strong>#</strong> [<em>comment</em>]</a></strong></dt>
+
+<dd>
+<p>The entire line is ignored (treated as a comment). If, however, the first
+two characters in the script are `<a href="#n"><code>#n</code></a>', automatic printing of output is
+suppressed, as if the <strong>-n</strong> option were given on the command line.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="basic_regular_expressions">BASIC REGULAR EXPRESSIONS</a></h1>
+<p>A <em>Basic Regular Expression</em> (BRE), as defined in POSIX 1003.2, consists
+of <em>atoms</em>, for matching parts of a string, and <em>bounds</em>, specifying
+repetitions of a preceding atom.</p>
+<p>
+</p>
+<h2><a name="atoms">Atoms</a></h2>
+<p>The possible atoms of a BRE are: <strong>.</strong>, matching any single character;
+<strong>^</strong> and <strong>$</strong>, matching the null string at the beginning or end
+of a string, respectively; a <em>bracket expressions</em>, enclosed
+in <strong>[</strong> and <strong>]</strong> (see below); and any single character with no
+other significance (matching that character). A <strong>\</strong> before one
+of: <strong>.</strong>, <strong>^</strong>, <strong>$</strong>, <strong>[</strong>, <strong>*</strong>, <strong>\</strong>, matching the character
+after the backslash. A sequence of atoms enclosed in <strong>\(</strong> and <strong>\)</strong>
+becomes an atom and establishes the target for a <em>backreference</em>,
+consisting of the substring that actually matches the enclosed atoms.
+Finally, <strong>\</strong> followed by one of the digits <strong>0</strong> through <strong>9</strong> is a
+backreference.</p>
+<p>A <strong>^</strong> that is not first, or a <strong>$</strong> that is not last does not have
+a special significance and need not be preceded by a backslash to
+become literal. The same is true for a <strong>]</strong>, that does not terminate
+a bracket expression.</p>
+<p>An unescaped backslash cannot be last in a BRE.</p>
+<p>
+</p>
+<h2><a name="bounds">Bounds</a></h2>
+<p>The BRE bounds are: <strong>*</strong>, specifying 0 or more matches of the preceding
+atom; <strong>\{</strong><em>count</em><strong>\}</strong>, specifying that many repetitions;
+<strong>\{</strong><em>minimum</em><strong>,\}</strong>, giving a lower limit; and
+<strong>\{</strong><em>minimum</em><strong>,</strong><em>maximum</em><strong>\}</strong> finally defines a lower and upper
+bound.</p>
+<p>A bound appearing as the first item in a BRE is taken literally.</p>
+<p>
+</p>
+<h2><a name="bracket_expressions">Bracket Expressions</a></h2>
+<p>A <em>bracket expression</em> is a list of characters, character ranges
+and character classes enclosed in <strong>[</strong> and <strong>]</strong> and matches any
+single character from the represented set of characters.</p>
+<p>A character range is written as two characters separated by <strong>-</strong> and
+represents all characters (according to the character collating sequence)
+that are not less than the first and not greater than the second.
+(Ranges are very collating-sequence-dependent, and portable programs
+should avoid relying on them.)</p>
+<p>A character class is one of the class names</p>
+<pre>
+   alnum     digit     punct
+   alpha     graph     space
+   blank     lower     upper
+   cntrl     print     xdigit</pre>
+<p>enclosed in <strong>[:</strong> and <strong>:]</strong> and represents the set of characters
+as defined in <code>ctype(3)</code>.</p>
+<p>If the first character after <strong>[</strong> is <strong>^</strong>, the sense of matching is
+inverted.</p>
+<p>To include a literal `<code>^</code>', place it anywhere else but first. To
+include a literal '<code>]</code>' place it first or immediately after an
+initial <strong>^</strong>. To include a literal `<code>-</code>' make it the first (or
+second after <strong>^</strong>) or last character, or the second endpoint of
+a range.</p>
+<p>The special bracket expression constructs <code>[[:&lt;:]]</code> and <code>[[:&gt;:]]</code> 
+match the null string at the beginning and end of a word respectively.
+(Note that neither is identical to Perl's `\b' atom.)</p>
+<p>
+</p>
+<h2><a name="additional_atoms">Additional Atoms</a></h2>
+<p>Since some sed implementations provide additional regular expression
+atoms (not defined in POSIX 1003.2), <strong>psed</strong> is capable of translating
+the following backslash escapes:</p>
+<dl>
+<dt><strong><a name="this_is_the_same_as" class="item"><strong>\&lt;</strong> This is the same as <code>[[:&gt;:]]</code>.</a></strong></dt>
+
+<dt><strong><a name="this_is_the_same_as2" class="item"><strong>\&gt;</strong> This is the same as <code>[[:&lt;:]]</code>.</a></strong></dt>
+
+<dt><strong><a name="w_this_is_an_abbreviation_for_alnum" class="item"><strong>\w</strong> This is an abbreviation for <code>[[:alnum:]_]</code>.</a></strong></dt>
+
+<dt><strong><a name="w_this_is_an_abbreviation_for_alnum" class="item"><strong>\W</strong> This is an abbreviation for <code>[^[:alnum:]_]</code>.</a></strong></dt>
+
+<dt><strong><a name="y_match_the_empty_string_at_a_word_boundary" class="item"><strong>\y</strong> Match the empty string at a word boundary.</a></strong></dt>
+
+<dt><strong><a name="b_match_the_empty_string_between_any_two_either_word_or_non_word_characters" class="item"><strong>\B</strong> Match the empty string between any two either word or non-word characters.</a></strong></dt>
+
+</dl>
+<p>To enable this feature, the environment variable PSEDEXTBRE must be set
+to a string containing the requested characters, e.g.:
+<code>PSEDEXTBRE='&lt;&gt;wW'</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="environment">ENVIRONMENT</a></h1>
+<p>The environment variable <code>PSEDEXTBRE</code> may be set to extend BREs.
+See <a href="#additional_atoms">Additional Atoms</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="ambiguous_translation_for_character_s_in_y_command" class="item">ambiguous translation for character `%s' in `y' command</a></strong></dt>
+
+<dd>
+<p>The indicated character appears twice, with different translations.</p>
+</dd>
+<dt><strong><a name="cannot_be_last_in_pattern" class="item">`[' cannot be last in pattern</a></strong></dt>
+
+<dd>
+<p>A `[' in a BRE indicates the beginning of a <em>bracket expression</em>.</p>
+</dd>
+<dt><strong><a name="cannot_be_last_in_pattern2" class="item">`\' cannot be last in pattern</a></strong></dt>
+
+<dd>
+<p>A `\' in a BRE is used to make the subsequent character literal.</p>
+</dd>
+<dt><strong><a name="cannot_be_last_in_substitution" class="item">`\' cannot be last in substitution</a></strong></dt>
+
+<dd>
+<p>A `\' in a substitution string is used to make the subsequent character literal.</p>
+</dd>
+<dt><strong><a name="conflicting_flags_s" class="item">conflicting flags `%s'</a></strong></dt>
+
+<dd>
+<p>In an <strong>s</strong> command, either the `g' flag and an n-th occurrence flag, or
+multiple n-th occurrence flags are specified. Note that only the digits
+`1' through `9' are permitted.</p>
+</dd>
+<dt><strong><a name="s" class="item">duplicate label %s (first defined at %s)</a></strong></dt>
+
+<dt><strong><a name="address" class="item">excess address(es)</a></strong></dt>
+
+<dd>
+<p>The command has more than the permitted number of addresses.</p>
+</dd>
+<dt><strong><a name="command" class="item">extra characters after command (%s)</a></strong></dt>
+
+<dt><strong><a name="illegal_option_s" class="item">illegal option `%s'</a></strong></dt>
+
+<dt><strong><a name="improper_delimiter_in_s_command" class="item">improper delimiter in s command</a></strong></dt>
+
+<dd>
+<p>The BRE and substitution may not be delimited with `\' or newline.</p>
+</dd>
+<dt><strong><a name="invalid_address_after" class="item">invalid address after `,'</a></strong></dt>
+
+<dt><strong><a name="backreference" class="item">invalid backreference (%s)</a></strong></dt>
+
+<dd>
+<p>The specified backreference number exceeds the number of backreferences
+in the BRE.</p>
+</dd>
+<dt><strong><a name="invalid_repeat_clause_s" class="item">invalid repeat clause `\{%s\}'</a></strong></dt>
+
+<dd>
+<p>The repeat clause does not contain a valid integer value, or pair of
+values.</p>
+</dd>
+<dt><strong><a name="malformed_regex_1st_address" class="item">malformed regex, 1st address</a></strong></dt>
+
+<dt><strong><a name="malformed_regex_2nd_address" class="item">malformed regex, 2nd address</a></strong></dt>
+
+<dt><strong><a name="malformed_regular_expression" class="item">malformed regular expression</a></strong></dt>
+
+<dt><strong><a name="malformed_substitution_expression" class="item">malformed substitution expression</a></strong></dt>
+
+<dt><strong><a name="malformed_y_command_argument" class="item">malformed `y' command argument</a></strong></dt>
+
+<dd>
+<p>The first or second string of a <strong>y</strong> command  is syntactically incorrect.</p>
+</dd>
+<dt><strong><a name="maximum_less_than_minimum_in_s" class="item">maximum less than minimum in `\{%s\}'</a></strong></dt>
+
+<dt><strong><a name="no_script_command_given" class="item">no script command given</a></strong></dt>
+
+<dd>
+<p>There must be at least one <strong>-e</strong> or one <strong>-f</strong> option specifying a
+script or script file.</p>
+</dd>
+<dt><strong><a name="not_valid_as_delimiter_in_y_command" class="item">`\' not valid as delimiter in `y' command</a></strong></dt>
+
+<dt><strong><a name="option_e_requires_an_argument" class="item">option -e requires an argument</a></strong></dt>
+
+<dt><strong><a name="option_f_requires_an_argument" class="item">option -f requires an argument</a></strong></dt>
+
+<dt><strong><a name="s_command_requires_argument" class="item">`s' command requires argument</a></strong></dt>
+
+<dt><strong><a name="start_of_unterminated" class="item">start of unterminated `{'</a></strong></dt>
+
+<dt><strong><a name="string_lengths_in_y_command_differ" class="item">string lengths in `y' command differ</a></strong></dt>
+
+<dd>
+<p>The translation table strings in a <strong>y</strong> command must have equal lengths.</p>
+</dd>
+<dt><strong><a name="undefined_label_s" class="item">undefined label `%s'</a></strong></dt>
+
+<dt><strong><a name="unexpected" class="item">unexpected `}'</a></strong></dt>
+
+<dd>
+<p>A <strong>}</strong> command without a preceding <strong>{</strong> command was encountered.</p>
+</dd>
+<dt><strong><a name="unexpected_end_of_script" class="item">unexpected end of script</a></strong></dt>
+
+<dd>
+<p>The end of the script was reached although a text line after a
+<strong>a</strong>, <strong>c</strong> or <strong>i</strong> command indicated another line.</p>
+</dd>
+<dt><strong><a name="unknown_command_s" class="item">unknown command `%s'</a></strong></dt>
+
+<dt><strong><a name="unterminated" class="item">unterminated `['</a></strong></dt>
+
+<dd>
+<p>A BRE contains an unterminated bracket expression.</p>
+</dd>
+<dt><strong><a name="unterminated2" class="item">unterminated `\('</a></strong></dt>
+
+<dd>
+<p>A BRE contains an unterminated backreference.</p>
+</dd>
+<dt><strong><a name="without_closing" class="item">`\{' without closing `\}'</a></strong></dt>
+
+<dd>
+<p>A BRE contains an unterminated bounds specification.</p>
+</dd>
+<dt><strong><a name="without_preceding" class="item">`\)' without preceding `\('</a></strong></dt>
+
+<dt><strong><a name="y_command_requires_argument" class="item">`y' command requires argument</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="example">EXAMPLE</a></h1>
+<p>The basic material for the preceding section was generated by running
+the sed script</p>
+<pre>
+   <span class="comment">#no autoprint</span>
+   <span class="regex">s/^.*Warn( *"\([^"]*\)".*$/\1/</span>
+   <span class="variable">t</span> <span class="variable">process</span>
+   <span class="variable">b</span>
+   <span class="operator">:</span><span class="variable">process</span>
+   <span class="regex">s/$!/%s/g</span>
+   <span class="regex">s/$[_[:alnum:]]\{1,\}/%s/g</span>
+   <span class="regex">s/\\\\/\\/g</span>
+   <span class="regex">s/^/=item /</span>
+   <span class="variable">p</span>
+</pre>
+<p>on the program's own text, and piping the output into <code>sort -u</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="sed_script_translation">SED SCRIPT TRANSLATION</a></h1>
+<p>If this program is invoked with the name <em class="file">s2p</em> it will act as a
+sed-to-Perl translator. After option processing (all other
+arguments are ignored), a Perl program is printed on standard
+output, which will process the input stream (as read from all
+arguments) in the way defined by the sed script and the option setting
+used for the translation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><code>perl(1)</code>, <code>re_format(7)</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>The <strong>l</strong> command will show escape characters (ESC) as `<code>\e</code>', but
+a vertical tab (VT) in octal.</p>
+<p>Trailing spaces are truncated from labels in <strong>:</strong>, <strong>t</strong> and <strong>b</strong> commands.</p>
+<p>The meaning of an empty regular expression (`<code>//</code>'), as defined by <strong>sed</strong>,
+is &quot;the last pattern used, at run time&quot;. This deviates from the Perl
+interpretation, which will re-use the &quot;last last successfully executed
+regular expression&quot;. Since keeping track of pattern usage would create
+terribly cluttered code, and differences would only appear in obscure
+context (where other <strong>sed</strong> implementations appear to deviate, too),
+the Perl semantics was adopted. Note that common usage of this feature,
+such as in <code>/abc/s//xyz/</code>, will work as expected.</p>
+<p>Collating elements (of bracket expressions in BREs) are not implemented.</p>
+<p>
+</p>
+<hr />
+<h1><a name="standards">STANDARDS</a></h1>
+<p>This <strong>sed</strong> implementation conforms to the IEEE Std1003.2-1992 (&quot;POSIX.2&quot;)
+definition of <strong>sed</strong>, and is compatible with the <em>OpenBSD</em>
+implementation, except where otherwise noted (see <a href="#bugs">BUGS</a>).</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This Perl implementation of <em>sed</em> was written by Wolfgang Laun,
+<em><a href="mailto:Wolfgang.Laun@alcatel.at">Wolfgang.Laun@alcatel.at</a></em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT and LICENSE</a></h1>
+<p>This program is free and open software. You may use, modify,
+distribute, and sell this program (and any modified variants) in any
+way you wish, provided you do not restrict others from doing the same.</p>
+
+</body>
+
+</html>

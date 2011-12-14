@@ -1,0 +1,942 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Unicode::Collate - Unicode Collation Algorithm</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Unicode::Collate - Unicode Collation Algorithm</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#constructor_and_tailoring">Constructor and Tailoring</a></li>
+		<li><a href="#methods_for_collation">Methods for Collation</a></li>
+		<li><a href="#methods_for_searching">Methods for Searching</a></li>
+		<li><a href="#other_methods">Other Methods</a></li>
+	</ul>
+
+	<li><a href="#export">EXPORT</a></li>
+	<li><a href="#install">INSTALL</a></li>
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#author__copyright_and_license">AUTHOR, COPYRIGHT AND LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Unicode::Collate - Unicode Collation Algorithm</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Unicode::Collate</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment">#construct</span>
+  <span class="variable">$Collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">%tailoring</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment">#sort</span>
+  <span class="variable">@sorted</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">sort</span><span class="operator">(</span><span class="variable">@not_sorted</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="comment">#compare</span>
+  <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">cmp</span><span class="operator">(</span><span class="variable">$a</span><span class="operator">,</span> <span class="variable">$b</span><span class="operator">);</span> <span class="comment"># returns 1, 0, or -1.</span>
+</pre>
+<p><strong>Note:</strong> Strings in <code>@not_sorted</code>, <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> and <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a> are interpreted
+according to Perl's Unicode support. See <a href="../../lib/pods/perlunicode.html">the perlunicode manpage</a>,
+<a href="../../lib/pods/perluniintro.html">the perluniintro manpage</a>, <a href="../../lib/pods/perlunitut.html">the perlunitut manpage</a>, <a href="../../lib/pods/perlunifaq.html">the perlunifaq manpage</a>, <a href="../../lib/utf8.html">the utf8 manpage</a>.
+Otherwise you can use <a href="#preprocess"><code>preprocess</code></a> or should decode them before.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module is an implementation of Unicode Technical Standard #10
+(a.k.a. UTS #10) - Unicode Collation Algorithm (a.k.a. UCA).</p>
+<p>
+</p>
+<h2><a name="constructor_and_tailoring">Constructor and Tailoring</a></h2>
+<p>The <code>new</code> method returns a collator object. If <code>new()</code> is called
+with no parameters, the collator should do the default collation.</p>
+<pre>
+   <span class="variable">$Collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+      <span class="string">UCA_Version</span> <span class="operator">=&gt;</span> <span class="variable">$UCA_Version</span><span class="operator">,</span>
+      <span class="string">alternate</span> <span class="operator">=&gt;</span> <span class="variable">$alternate</span><span class="operator">,</span> <span class="comment"># alias for 'variable'</span>
+      <span class="string">backwards</span> <span class="operator">=&gt;</span> <span class="variable">$levelNumber</span><span class="operator">,</span> <span class="comment"># or \@levelNumbers</span>
+      <span class="string">entry</span> <span class="operator">=&gt;</span> <span class="variable">$element</span><span class="operator">,</span>
+      <span class="string">hangul_terminator</span> <span class="operator">=&gt;</span> <span class="variable">$term_primary_weight</span><span class="operator">,</span>
+      <span class="string">ignoreName</span> <span class="operator">=&gt;</span> <span class="string">qr/</span><span class="variable">$ignoreName</span><span class="string">/</span><span class="operator">,</span>
+      <span class="string">ignoreChar</span> <span class="operator">=&gt;</span> <span class="string">qr/</span><span class="variable">$ignoreChar</span><span class="string">/</span><span class="operator">,</span>
+      <span class="string">ignore_level2</span> <span class="operator">=&gt;</span> <span class="variable">$bool</span><span class="operator">,</span>
+      <span class="string">katakana_before_hiragana</span> <span class="operator">=&gt;</span> <span class="variable">$bool</span><span class="operator">,</span>
+      <span class="string">level</span> <span class="operator">=&gt;</span> <span class="variable">$collationLevel</span><span class="operator">,</span>
+      <span class="string">normalization</span>  <span class="operator">=&gt;</span> <span class="variable">$normalization_form</span><span class="operator">,</span>
+      <span class="string">overrideCJK</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">overrideCJK</span><span class="operator">,</span>
+      <span class="string">overrideHangul</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">overrideHangul</span><span class="operator">,</span>
+      <span class="string">preprocess</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">preprocess</span><span class="operator">,</span>
+      <span class="string">rearrange</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">@charList</span><span class="operator">,</span>
+      <span class="string">rewrite</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">rewrite</span><span class="operator">,</span>
+      <span class="string">suppress</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="variable">@charList</span><span class="operator">,</span>
+      <span class="string">table</span> <span class="operator">=&gt;</span> <span class="variable">$filename</span><span class="operator">,</span>
+      <span class="string">undefName</span> <span class="operator">=&gt;</span> <span class="string">qr/</span><span class="variable">$undefName</span><span class="string">/</span><span class="operator">,</span>
+      <span class="string">undefChar</span> <span class="operator">=&gt;</span> <span class="string">qr/</span><span class="variable">$undefChar</span><span class="string">/</span><span class="operator">,</span>
+      <span class="string">upper_before_lower</span> <span class="operator">=&gt;</span> <span class="variable">$bool</span><span class="operator">,</span>
+      <span class="string">variable</span> <span class="operator">=&gt;</span> <span class="variable">$variable</span><span class="operator">,</span>
+   <span class="operator">);</span>
+</pre>
+<dl>
+<dt><strong><a name="uca_version" class="item">UCA_Version</a></strong></dt>
+
+<dd>
+<p>If the revision (previously &quot;tracking version&quot;) number of UCA is given,
+behavior of that revision is emulated on collating.
+If omitted, the return value of <a href="#uca_version"><code>UCA_Version()</code></a> is used.</p>
+<p>The following revisions are supported.  The default is 22.</p>
+<pre>
+     UCA       Unicode Standard         DUCET (@version)
+   -------------------------------------------------------
+      8              3.1                3.0.1 (3.0.1d9)
+      9     3.1 with Corrigendum 3      3.1.1 (3.1.1)
+     11              4.0                4.0.0 (4.0.0)
+     14             4.1.0               4.1.0 (4.1.0)
+     16              5.0                5.0.0 (5.0.0)
+     18             5.1.0               5.1.0 (5.1.0)
+     20             5.2.0               5.2.0 (5.2.0)
+     22             6.0.0               6.0.0 (6.0.0)</pre>
+<p>* Noncharacters (e.g. U+FFFF) are not ignored, and can be overridden
+since <a href="#uca_version"><code>UCA_Version</code></a> 22.</p>
+<p>* Fully ignorable characters were ignored, and would not interrupt
+contractions with <a href="#uca_version"><code>UCA_Version</code></a> 9 and 11.</p>
+<p>* Treatment of ignorables after variables and some behaviors
+were changed at <a href="#uca_version"><code>UCA_Version</code></a> 9.</p>
+<p>* Characters regarded as CJK unified ideographs (cf. <a href="#overridecjk"><code>overrideCJK</code></a>)
+depend on <a href="#uca_version"><code>UCA_Version</code></a>.</p>
+<p>* Many hangul jamo are assigned at <a href="#uca_version"><code>UCA_Version</code></a> 20, that will affect
+<a href="#hangul_terminator"><code>hangul_terminator</code></a>.</p>
+</dd>
+<dt><strong><a name="alternate" class="item">alternate</a></strong></dt>
+
+<dd>
+<p>-- see 3.2.2 Alternate Weighting, version 8 of UTS #10</p>
+<p>For backward compatibility, <a href="#alternate"><code>alternate</code></a> (old name) can be used
+as an alias for <a href="#variable"><code>variable</code></a>.</p>
+</dd>
+<dt><strong><a name="backwards" class="item">backwards</a></strong></dt>
+
+<dd>
+<p>-- see 3.1.2 French Accents, UTS #10.</p>
+<pre>
+     backwards =&gt; $levelNumber or \@levelNumbers</pre>
+<p>Weights in reverse order; ex. level 2 (diacritic ordering) in French.
+If omitted (or <code>$levelNumber</code> is <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or <code>\@levelNumbers</code> is <code>[]</code>),
+forwards at all the levels.</p>
+</dd>
+<dt><strong><a name="entry" class="item">entry</a></strong></dt>
+
+<dd>
+<p>-- see 3.1 Linguistic Features; 3.2.1 File Format, UTS #10.</p>
+<p>If the same character (or a sequence of characters) exists
+in the collation element table through <a href="#table"><code>table</code></a>,
+mapping to collation elements is overridden.
+If it does not exist, the mapping is defined additionally.</p>
+<pre>
+    <span class="string">entry</span> <span class="operator">=&gt;</span> <span class="operator">&lt;&lt;</span><span class="default">'ENTRY'</span><span class="operator">,</span> <span class="comment"># for DUCET v4.0.0 (allkeys-4.0.0.txt)</span><span class="string">
+    0063 0068 ; [.0E6A.0020.0002.0063] # ch
+    0043 0068 ; [.0E6A.0020.0007.0043] # Ch
+    0043 0048 ; [.0E6A.0020.0008.0043] # CH
+    006C 006C ; [.0F4C.0020.0002.006C] # ll
+    004C 006C ; [.0F4C.0020.0007.004C] # Ll
+    004C 004C ; [.0F4C.0020.0008.004C] # LL
+    00F1      ; [.0F7B.0020.0002.00F1] # n-tilde
+    006E 0303 ; [.0F7B.0020.0002.00F1] # n-tilde
+    00D1      ; [.0F7B.0020.0008.00D1] # N-tilde
+    004E 0303 ; [.0F7B.0020.0008.00D1] # N-tilde
+    </span><span class="default">ENTRY</span>
+</pre>
+<pre>
+    <span class="string">entry</span> <span class="operator">=&gt;</span> <span class="operator">&lt;&lt;</span><span class="default">'ENTRY'</span><span class="operator">,</span> <span class="comment"># for DUCET v4.0.0 (allkeys-4.0.0.txt)</span><span class="string">
+    00E6 ; [.0E33.0020.0002.00E6][.0E8B.0020.0002.00E6] # ae ligature as &lt;a&gt;&lt;e&gt;
+    00C6 ; [.0E33.0020.0008.00C6][.0E8B.0020.0008.00C6] # AE ligature as &lt;A&gt;&lt;E&gt;
+    </span><span class="default">ENTRY</span>
+</pre>
+<p><strong>NOTE:</strong> The code point in the UCA file format (before <code>';'</code>)
+<strong>must</strong> be a Unicode code point (defined as hexadecimal),
+but not a native code point.
+So <code>0063</code> must always denote <code>U+0063</code>,
+but not a character of <code>&quot;\x63&quot;</code>.</p>
+<p>Weighting may vary depending on collation element table.
+So ensure the weights defined in <a href="#entry"><code>entry</code></a> will be consistent with
+those in the collation element table loaded via <a href="#table"><code>table</code></a>.</p>
+<p>In DUCET v4.0.0, primary weight of <code>C</code> is <code>0E60</code>
+and that of <code>D</code> is <code>0E6D</code>. So setting primary weight of <code>CH</code> to <code>0E6A</code>
+(as a value between <code>0E60</code> and <code>0E6D</code>)
+makes ordering as <code>C &lt; CH &lt; D</code>.
+Exactly speaking DUCET already has some characters between <code>C</code> and <code>D</code>:
+<code>small capital C</code> (<code>U+1D04</code>) with primary weight <code>0E64</code>,
+<code>c-hook/C-hook</code> (<code>U+0188/U+0187</code>) with <code>0E65</code>,
+and <code>c-curl</code> (<code>U+0255</code>) with <code>0E69</code>.
+Then primary weight <code>0E6A</code> for <code>CH</code> makes <code>CH</code>
+ordered between <code>c-curl</code> and <code>D</code>.</p>
+</dd>
+<dt><strong><a name="hangul_terminator" class="item">hangul_terminator</a></strong></dt>
+
+<dd>
+<p>-- see 7.1.4 Trailing Weights, UTS #10.</p>
+<p>If a true value is given (non-zero but should be positive),
+it will be added as a terminator primary weight to the end of
+every standard Hangul syllable. Secondary and any higher weights
+for terminator are set to zero.
+If the value is false or <a href="#hangul_terminator"><code>hangul_terminator</code></a> key does not exist,
+insertion of terminator weights will not be performed.</p>
+<p>Boundaries of Hangul syllables are determined
+according to conjoining Jamo behavior in <em class="file">the Unicode Standard</em>
+and <em class="file">HangulSyllableType.txt</em>.</p>
+<p><strong>Implementation Note:</strong>
+(1) For expansion mapping (Unicode character mapped
+to a sequence of collation elements), a terminator will not be added
+between collation elements, even if Hangul syllable boundary exists there.
+Addition of terminator is restricted to the next position
+to the last collation element.</p>
+<p>(2) Non-conjoining Hangul letters
+(Compatibility Jamo, halfwidth Jamo, and enclosed letters) are not
+automatically terminated with a terminator primary weight.
+These characters may need terminator included in a collation element
+table beforehand.</p>
+</dd>
+<dt><strong><a name="ignorechar" class="item">ignoreChar</a></strong></dt>
+
+<dt><strong><a name="ignorename" class="item">ignoreName</a></strong></dt>
+
+<dd>
+<p>-- see 3.2.2 Variable Weighting, UTS #10.</p>
+<p>Makes the entry in the table completely ignorable;
+i.e. as if the weights were zero at all level.</p>
+<p>Through <a href="#ignorechar"><code>ignoreChar</code></a>, any character matching <a href="../../lib/pods/perlfunc.html#qr_"><code>qr/$ignoreChar/</code></a>
+will be ignored. Through <a href="#ignorename"><code>ignoreName</code></a>, any character whose name
+(given in the <a href="#table"><code>table</code></a> file as a comment) matches <a href="../../lib/pods/perlfunc.html#qr_"><code>qr/$ignoreName/</code></a>
+will be ignored.</p>
+<p>E.g. when 'a' and 'e' are ignorable,
+'element' is equal to 'lament' (or 'lmnt').</p>
+</dd>
+<dt><strong><a name="ignore_level2" class="item">ignore_level2</a></strong></dt>
+
+<dd>
+<p>-- see 5.1 Parametric Tailoring, UTS #10.</p>
+<p>By default, case-sensitive comparison (that is level 3 difference)
+won't ignore accents (that is level 2 difference).</p>
+<p>If the parameter is made true, accents (and other primary ignorable
+characters) are ignored, even though cases are taken into account.</p>
+<p><strong>NOTE</strong>: <a href="#level"><code>level</code></a> should be 3 or greater.</p>
+</dd>
+<dt><strong><a name="katakana_before_hiragana" class="item">katakana_before_hiragana</a></strong></dt>
+
+<dd>
+<p>-- see 7.3.1 Tertiary Weight Table, UTS #10.</p>
+<p>By default, hiragana is before katakana.
+If the parameter is made true, this is reversed.</p>
+<p><strong>NOTE</strong>: This parameter simplemindedly assumes that any hiragana/katakana
+distinctions must occur in level 3, and their weights at level 3 must be
+same as those mentioned in 7.3.1, UTS #10.
+If you define your collation elements which violate this requirement,
+this parameter does not work validly.</p>
+</dd>
+<dt><strong><a name="level" class="item">level</a></strong></dt>
+
+<dd>
+<p>-- see 4.3 Form Sort Key, UTS #10.</p>
+<p>Set the maximum level.
+Any higher levels than the specified one are ignored.</p>
+<pre>
+  Level 1: alphabetic ordering
+  Level 2: diacritic ordering
+  Level 3: case ordering
+  Level 4: tie-breaking (e.g. in the case when variable is 'shifted')</pre>
+<pre>
+  ex.level =&gt; 2,</pre>
+<p>If omitted, the maximum is the 4th.</p>
+</dd>
+<dt><strong><a name="normalization" class="item">normalization</a></strong></dt>
+
+<dd>
+<p>-- see 4.1 Normalize, UTS #10.</p>
+<p>If specified, strings are normalized before preparation of sort keys
+(the normalization is executed after preprocess).</p>
+<p>A form name <code>Unicode::Normalize::normalize()</code> accepts will be applied
+as <code>$normalization_form</code>.
+Acceptable names include <code>'NFD'</code>, <code>'NFC'</code>, <code>'NFKD'</code>, and <code>'NFKC'</code>.
+See <code>Unicode::Normalize::normalize()</code> for detail.
+If omitted, <code>'NFD'</code> is used.</p>
+<p><a href="#normalization"><code>normalization</code></a> is performed after <a href="#preprocess"><code>preprocess</code></a> (if defined).</p>
+<p>Furthermore, special values, <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> and <code>&quot;prenormalized&quot;</code>, can be used,
+though they are not concerned with <code>Unicode::Normalize::normalize()</code>.</p>
+<p>If <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> (not a string <a href="../../lib/pods/perlfunc.html#undef"><code>&quot;undef&quot;</code></a>) is passed explicitly
+as the value for this key,
+any normalization is not carried out (this may make tailoring easier
+if any normalization is not desired). Under <code>(normalization =&gt; undef)</code>,
+only contiguous contractions are resolved;
+e.g. even if <code>A-ring</code> (and <code>A-ring-cedilla</code>) is ordered after <code>Z</code>,
+<code>A-cedilla-ring</code> would be primary equal to <a href="../../lib/pods/perlguts.html#a"><code>A</code></a>.
+In this point,
+<code>(normalization =&gt; undef, preprocess =&gt; sub { NFD(shift) })</code>
+<strong>is not</strong> equivalent to <code>(normalization =&gt; 'NFD')</code>.</p>
+<p>In the case of <code>(normalization =&gt; &quot;prenormalized&quot;)</code>,
+any normalization is not performed, but
+discontiguous contractions with combining characters are performed.
+Therefore
+<code>(normalization =&gt; 'prenormalized', preprocess =&gt; sub { NFD(shift) })</code>
+<strong>is</strong> equivalent to <code>(normalization =&gt; 'NFD')</code>.
+If source strings are finely prenormalized,
+<code>(normalization =&gt; 'prenormalized')</code> may save time for normalization.</p>
+<p>Except <code>(normalization =&gt; undef)</code>,
+<strong>Unicode::Normalize</strong> is required (see also <strong>CAVEAT</strong>).</p>
+</dd>
+<dt><strong><a name="overridecjk" class="item">overrideCJK</a></strong></dt>
+
+<dd>
+<p>-- see 7.1 Derived Collation Elements, UTS #10.</p>
+<p>By default, CJK unified ideographs are ordered in Unicode codepoint
+order, but those in the CJK Unified Ideographs block are lesser than
+those in the CJK Unified Ideographs Extension A etc.</p>
+<pre>
+    In the CJK Unified Ideographs block:
+    U+4E00..U+9FA5 if UCA_Version is 8 to 11.
+    U+4E00..U+9FBB if UCA_Version is 14 to 16.
+    U+4E00..U+9FC3 if UCA_Version is 18.
+    U+4E00..U+9FCB if UCA_Version is 20 or greater.</pre>
+<pre>
+    In the CJK Unified Ideographs Extension blocks:
+    Ext.A (U+3400..U+4DB5) and Ext.B (U+20000..U+2A6D6) in any UCA_Version.
+    Ext.C (U+2A700..U+2B734) if UCA_Version is 20 or greater.
+    Ext.D (U+2B740..U+2B81D) if UCA_Version is 22 or greater.</pre>
+<p>Through <a href="#overridecjk"><code>overrideCJK</code></a>, ordering of CJK unified ideographs (including
+extensions) can be overridden.</p>
+<p>ex. CJK unified ideographs in the JIS code point order.</p>
+<pre>
+  <span class="string">overrideCJK</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$u</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>             <span class="comment"># get a Unicode codepoint</span>
+      <span class="keyword">my</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">'n'</span><span class="operator">,</span> <span class="variable">$u</span><span class="operator">);</span>     <span class="comment"># to UTF-16BE</span>
+      <span class="keyword">my</span> <span class="variable">$s</span> <span class="operator">=</span> <span class="variable">your_unicode_to_sjis_converter</span><span class="operator">(</span><span class="variable">$b</span><span class="operator">);</span> <span class="comment"># convert</span>
+      <span class="keyword">my</span> <span class="variable">$n</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'n'</span><span class="operator">,</span> <span class="variable">$s</span><span class="operator">);</span>   <span class="comment"># convert sjis to short</span>
+      <span class="operator">[</span> <span class="variable">$n</span><span class="operator">,</span> <span class="number">0x20</span><span class="operator">,</span> <span class="number">0x2</span><span class="operator">,</span> <span class="variable">$u</span> <span class="operator">]</span><span class="operator">;</span>     <span class="comment"># return the collation element</span>
+  <span class="operator">},</span>
+</pre>
+<p>The return value may be an arrayref of 1st to 4th weights as shown
+above. The return value may be an integer as the primary weight
+as shown below.  If <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned, the default derived
+collation element will be used.</p>
+<pre>
+  <span class="string">overrideCJK</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$u</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>             <span class="comment"># get a Unicode codepoint</span>
+      <span class="keyword">my</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="keyword">pack</span><span class="operator">(</span><span class="string">'n'</span><span class="operator">,</span> <span class="variable">$u</span><span class="operator">);</span>     <span class="comment"># to UTF-16BE</span>
+      <span class="keyword">my</span> <span class="variable">$s</span> <span class="operator">=</span> <span class="variable">your_unicode_to_sjis_converter</span><span class="operator">(</span><span class="variable">$b</span><span class="operator">);</span> <span class="comment"># convert</span>
+      <span class="keyword">my</span> <span class="variable">$n</span> <span class="operator">=</span> <span class="keyword">unpack</span><span class="operator">(</span><span class="string">'n'</span><span class="operator">,</span> <span class="variable">$s</span><span class="operator">);</span>   <span class="comment"># convert sjis to short</span>
+      <span class="keyword">return</span> <span class="variable">$n</span><span class="operator">;</span>                 <span class="comment"># return the primary weight</span>
+  <span class="operator">},</span>
+</pre>
+<p>The return value may be a list containing zero or more of
+an arrayref, an integer, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>ex. ignores all CJK unified ideographs.</p>
+<pre>
+  <span class="string">overrideCJK</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{()},</span> <span class="comment"># CODEREF returning empty list</span>
+</pre>
+<pre>
+   <span class="comment"># where -&gt;eq("Pe\x{4E00}rl", "Perl") is true</span>
+   <span class="comment"># as U+4E00 is a CJK unified ideograph and to be ignorable.</span>
+</pre>
+<p>If <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is passed explicitly as the value for this key,
+weights for CJK unified ideographs are treated as undefined.
+But assignment of weight for CJK unified ideographs
+in <a href="#table"><code>table</code></a> or <a href="#entry"><code>entry</code></a> is still valid.</p>
+<p><strong>Note:</strong> In addition to them, 12 CJK compatibility ideographs (<code>U+FA0E</code>,
+<code>U+FA0F</code>, <code>U+FA11</code>, <code>U+FA13</code>, <code>U+FA14</code>, <code>U+FA1F</code>, <code>U+FA21</code>, <code>U+FA23</code>,
+<code>U+FA24</code>, <code>U+FA27</code>, <code>U+FA28</code>, <code>U+FA29</code>) are also treated as CJK unified
+ideographs. But they can't be overridden via <a href="#overridecjk"><code>overrideCJK</code></a> when you use
+DUCET, as the table includes weights for them. <a href="#table"><code>table</code></a> or <a href="#entry"><code>entry</code></a> has
+priority over <a href="#overridecjk"><code>overrideCJK</code></a>.</p>
+</dd>
+<dt><strong><a name="overridehangul" class="item">overrideHangul</a></strong></dt>
+
+<dd>
+<p>-- see 7.1 Derived Collation Elements, UTS #10.</p>
+<p>By default, Hangul syllables are decomposed into Hangul Jamo,
+even if <code>(normalization =&gt; undef)</code>.
+But the mapping of Hangul syllables may be overridden.</p>
+<p>This parameter works like <a href="#overridecjk"><code>overrideCJK</code></a>, so see there for examples.</p>
+<p>If you want to override the mapping of Hangul syllables,
+NFD and NFKD are not appropriate, since NFD and NFKD will decompose
+Hangul syllables before overriding. FCD may decompose Hangul syllables
+as the case may be.</p>
+<p>If <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is passed explicitly as the value for this key,
+weight for Hangul syllables is treated as undefined
+without decomposition into Hangul Jamo.
+But definition of weight for Hangul syllables
+in <a href="#table"><code>table</code></a> or <a href="#entry"><code>entry</code></a> is still valid.</p>
+</dd>
+<dt><strong><a name="preprocess" class="item">preprocess</a></strong></dt>
+
+<dd>
+<p>-- see 5.1 Preprocessing, UTS #10.</p>
+<p>If specified, the coderef is used to preprocess each string
+before the formation of sort keys.</p>
+<p>ex. dropping English articles, such as &quot;a&quot; or &quot;the&quot;.
+Then, &quot;the pen&quot; is before &quot;a pencil&quot;.</p>
+<pre>
+     <span class="string">preprocess</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+           <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+           <span class="variable">$str</span> <span class="operator">=~</span> <span class="regex">s/\b(?:an?|the)\s+//gi</span><span class="operator">;</span>
+           <span class="keyword">return</span> <span class="variable">$str</span><span class="operator">;</span>
+        <span class="operator">},</span>
+</pre>
+<p><a href="#preprocess"><code>preprocess</code></a> is performed before <a href="#normalization"><code>normalization</code></a> (if defined).</p>
+<p>ex. decoding strings in a legacy encoding such as shift-jis:</p>
+<pre>
+    <span class="variable">$sjis_collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+        <span class="string">preprocess</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">your_shiftjis_to_unicode_decoder</span><span class="operator">,</span>
+    <span class="operator">);</span>
+    <span class="variable">@result</span> <span class="operator">=</span> <span class="variable">$sjis_collator</span><span class="operator">-&gt;</span><span class="variable">sort</span><span class="operator">(</span><span class="variable">@shiftjis_strings</span><span class="operator">);</span>
+</pre>
+<p><strong>Note:</strong> Strings returned from the coderef will be interpreted
+according to Perl's Unicode support. See <a href="../../lib/pods/perlunicode.html">the perlunicode manpage</a>,
+<a href="../../lib/pods/perluniintro.html">the perluniintro manpage</a>, <a href="../../lib/pods/perlunitut.html">the perlunitut manpage</a>, <a href="../../lib/pods/perlunifaq.html">the perlunifaq manpage</a>, <a href="../../lib/utf8.html">the utf8 manpage</a>.</p>
+</dd>
+<dt><strong><a name="rearrange" class="item">rearrange</a></strong></dt>
+
+<dd>
+<p>-- see 3.1.3 Rearrangement, UTS #10.</p>
+<p>Characters that are not coded in logical order and to be rearranged.
+If <a href="#uca_version"><code>UCA_Version</code></a> is equal to or lesser than 11, default is:</p>
+<pre>
+    rearrange =&gt; [ 0x0E40..0x0E44, 0x0EC0..0x0EC4 ],</pre>
+<p>If you want to disallow any rearrangement, pass <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> or <code>[]</code>
+(a reference to empty list) as the value for this key.</p>
+<p>If <a href="#uca_version"><code>UCA_Version</code></a> is equal to or greater than 14, default is <code>[]</code>
+(i.e. no rearrangement).</p>
+<p><strong>According to the version 9 of UCA, this parameter shall not be used;
+but it is not warned at present.</strong></p>
+</dd>
+<dt><strong><a name="rewrite" class="item">rewrite</a></strong></dt>
+
+<dd>
+<p>If specified, the coderef is used to rewrite lines in <a href="#table"><code>table</code></a> or <a href="#entry"><code>entry</code></a>.
+The coderef will get each line, and then should return a rewritten line
+according to the UCA file format.
+If the coderef returns an empty line, the line will be skipped.</p>
+<p>e.g. any primary ignorable characters into tertiary ignorable:</p>
+<pre>
+    <span class="string">rewrite</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$line</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="variable">$line</span> <span class="operator">=~</span> <span class="regex">s/\[\.0000\..{4}\..{4}\./[.0000.0000.0000./g</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="variable">$line</span><span class="operator">;</span>
+    <span class="operator">},</span>
+</pre>
+<p>This example shows rewriting weights. <a href="#rewrite"><code>rewrite</code></a> is allowed to
+affect code points, weights, and the name.</p>
+<p><strong>NOTE</strong>: <a href="#table"><code>table</code></a> is available to use another table file;
+preparing a modified table once would be more efficient than
+rewriting lines on reading an unmodified table every time.</p>
+</dd>
+<dt><strong><a name="suppress" class="item">suppress</a></strong></dt>
+
+<dd>
+<p>-- see suppress contractions in 5.14.11 Special-Purpose Commands,
+UTS #35 (LDML).</p>
+<p>Contractions beginning with the specified characters are suppressed,
+even if those contractions are defined in <a href="#table"><code>table</code></a> or <a href="#entry"><code>entry</code></a>.</p>
+<p>An example for Russian and some languages using the Cyrillic script:</p>
+<pre>
+    suppress =&gt; [0x0400..0x0417, 0x041A..0x0437, 0x043A..0x045F],</pre>
+<p>where 0x0400 stands for <code>U+0400</code>, CYRILLIC CAPITAL LETTER IE WITH GRAVE.</p>
+</dd>
+<dt><strong><a name="table" class="item">table</a></strong></dt>
+
+<dd>
+<p>-- see 3.2 Default Unicode Collation Element Table, UTS #10.</p>
+<p>You can use another collation element table if desired.</p>
+<p>The table file should locate in the <em class="file">Unicode/Collate</em> directory
+on <a href="../../lib/pods/perlvar.html#_inc"><code>@INC</code></a>. Say, if the filename is <em class="file">Foo.txt</em>,
+the table file is searched as <em class="file">Unicode/Collate/Foo.txt</em> in <a href="../../lib/pods/perlvar.html#_inc"><code>@INC</code></a>.</p>
+<p>By default, <em class="file">allkeys.txt</em> (as the filename of DUCET) is used.
+If you will prepare your own table file, any name other than <em class="file">allkeys.txt</em>
+may be better to avoid namespace conflict.</p>
+<p><strong>NOTE</strong>: When XSUB is used, the DUCET is compiled on building this
+module, and it may save time at the run time.
+Explicit saying <code>table =&gt; 'allkeys.txt'</code> (or using another table),
+or using <a href="#ignorechar"><code>ignoreChar</code></a>, <a href="#ignorename"><code>ignoreName</code></a>, <a href="#undefchar"><code>undefChar</code></a>, <a href="#undefname"><code>undefName</code></a> or
+<a href="#rewrite"><code>rewrite</code></a> will prevent this module from using the compiled DUCET.</p>
+<p>If <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> is passed explicitly as the value for this key,
+no file is read (but you can define collation elements via <a href="#entry"><code>entry</code></a>).</p>
+<p>A typical way to define a collation element table
+without any file of table:</p>
+<pre>
+   <span class="variable">$onlyABC</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+       <span class="string">table</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span>
+       <span class="string">entry</span> <span class="operator">=&gt;</span> <span class="operator">&lt;&lt;</span><span class="default"> </span><span class="string">'ENTRIES'</span><span class="operator">,</span><span class="string">
+   0061 ; [.0101.0020.0002.0061] # LATIN SMALL LETTER A
+   0041 ; [.0101.0020.0008.0041] # LATIN CAPITAL LETTER A
+   0062 ; [.0102.0020.0002.0062] # LATIN SMALL LETTER B
+   0042 ; [.0102.0020.0008.0042] # LATIN CAPITAL LETTER B
+   0063 ; [.0103.0020.0002.0063] # LATIN SMALL LETTER C
+   0043 ; [.0103.0020.0008.0043] # LATIN CAPITAL LETTER C
+   ENTRIES
+    );
+   </span>
+</pre>
+<p>If <a href="#ignorename"><code>ignoreName</code></a> or <a href="#undefname"><code>undefName</code></a> is used, character names should be
+specified as a comment (following <code>#</code>) on each line.</p>
+</dd>
+<dt><strong><a name="undefchar" class="item">undefChar</a></strong></dt>
+
+<dt><strong><a name="undefname" class="item">undefName</a></strong></dt>
+
+<dd>
+<p>-- see 6.3.4 Reducing the Repertoire, UTS #10.</p>
+<p>Undefines the collation element as if it were unassigned in the <a href="#table"><code>table</code></a>.
+This reduces the size of the table.
+If an unassigned character appears in the string to be collated,
+the sort key is made from its codepoint
+as a single-character collation element,
+as it is greater than any other assigned collation elements
+(in the codepoint order among the unassigned characters).
+But, it'd be better to ignore characters
+unfamiliar to you and maybe never used.</p>
+<p>Through <a href="#undefchar"><code>undefChar</code></a>, any character matching <a href="../../lib/pods/perlfunc.html#qr_"><code>qr/$undefChar/</code></a>
+will be undefined. Through <a href="#undefname"><code>undefName</code></a>, any character whose name
+(given in the <a href="#table"><code>table</code></a> file as a comment) matches <a href="../../lib/pods/perlfunc.html#qr_"><code>qr/$undefName/</code></a>
+will be undefined.</p>
+<p>ex. Collation weights for beyond-BMP characters are not stored in object:</p>
+<pre>
+    <span class="string">undefChar</span> <span class="operator">=&gt;</span> <span class="string">qr/[^\0-\x{fffd}]/</span><span class="operator">,</span>
+</pre>
+</dd>
+<dt><strong><a name="upper_before_lower" class="item">upper_before_lower</a></strong></dt>
+
+<dd>
+<p>-- see 6.6 Case Comparisons, UTS #10.</p>
+<p>By default, lowercase is before uppercase.
+If the parameter is made true, this is reversed.</p>
+<p><strong>NOTE</strong>: This parameter simplemindedly assumes that any lowercase/uppercase
+distinctions must occur in level 3, and their weights at level 3 must be
+same as those mentioned in 7.3.1, UTS #10.
+If you define your collation elements which differs from this requirement,
+this parameter doesn't work validly.</p>
+</dd>
+<dt><strong><a name="variable" class="item">variable</a></strong></dt>
+
+<dd>
+<p>-- see 3.2.2 Variable Weighting, UTS #10.</p>
+<p>This key allows to variable weighting for variable collation elements,
+which are marked with an ASTERISK in the table
+(NOTE: Many punctuation marks and symbols are variable in <em class="file">allkeys.txt</em>).</p>
+<pre>
+   variable =&gt; 'blanked', 'non-ignorable', 'shifted', or 'shift-trimmed'.</pre>
+<p>These names are case-insensitive.
+By default (if specification is omitted), 'shifted' is adopted.</p>
+<pre>
+   <span class="string">'Blanked'</span>        <span class="variable">Variable</span> <span class="variable">elements</span> <span class="variable">are</span> <span class="variable">made</span> <span class="variable">ignorable</span> <span class="variable">at</span> <span class="variable">levels</span> <span class="number">1</span> <span class="variable">through</span> <span class="number">3</span><span class="operator">;</span>
+                    <span class="variable">considered</span> <span class="variable">at</span> <span class="variable">the</span> <span class="number">4</span><span class="variable">th</span> <span class="variable">level</span><span class="operator">.</span>
+</pre>
+<pre>
+   'Non-Ignorable'  Variable elements are not reset to ignorable.</pre>
+<pre>
+   'Shifted'        Variable elements are made ignorable at levels 1 through 3
+                    their level 4 weight is replaced by the old level 1 weight.
+                    Level 4 weight for Non-Variable elements is 0xFFFF.</pre>
+<pre>
+   'Shift-Trimmed'  Same as 'shifted', but all FFFF's at the 4th level
+                    are trimmed.</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="methods_for_collation">Methods for Collation</a></h2>
+<dl>
+<dt><strong><a name="sort" class="item"><code>@sorted = $Collator-&gt;sort(@not_sorted)</code></a></strong></dt>
+
+<dd>
+<p>Sorts a list of strings.</p>
+</dd>
+<dt><strong><a name="cmp" class="item"><code>$result = $Collator-&gt;cmp($a, $b)</code></a></strong></dt>
+
+<dd>
+<p>Returns 1 (when <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> is greater than <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a>)
+or 0 (when <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> is equal to <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a>)
+or -1 (when <a href="../../lib/pods/perlvar.html#_a"><code>$a</code></a> is lesser than <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a>).</p>
+</dd>
+<dt><strong><a name="eq" class="item"><code>$result = $Collator-&gt;eq($a, $b)</code></a></strong></dt>
+
+<dt><strong><a name="ne" class="item"><code>$result = $Collator-&gt;ne($a, $b)</code></a></strong></dt>
+
+<dt><strong><a name="lt" class="item"><code>$result = $Collator-&gt;lt($a, $b)</code></a></strong></dt>
+
+<dt><strong><a name="le" class="item"><code>$result = $Collator-&gt;le($a, $b)</code></a></strong></dt>
+
+<dt><strong><a name="gt" class="item"><code>$result = $Collator-&gt;gt($a, $b)</code></a></strong></dt>
+
+<dt><strong><a name="ge" class="item"><code>$result = $Collator-&gt;ge($a, $b)</code></a></strong></dt>
+
+<dd>
+<p>They works like the same name operators as theirs.</p>
+<pre>
+   eq : whether $a is equal to $b.
+   ne : whether $a is not equal to $b.
+   lt : whether $a is lesser than $b.
+   le : whether $a is lesser than $b or equal to $b.
+   gt : whether $a is greater than $b.
+   ge : whether $a is greater than $b or equal to $b.</pre>
+</dd>
+<dt><strong><a name="getsortkey" class="item"><code>$sortKey = $Collator-&gt;getSortKey($string)</code></a></strong></dt>
+
+<dd>
+<p>-- see 4.3 Form Sort Key, UTS #10.</p>
+<p>Returns a sort key.</p>
+<p>You compare the sort keys using a binary comparison
+and get the result of the comparison of the strings using UCA.</p>
+<pre>
+   $Collator-&gt;getSortKey($a) cmp $Collator-&gt;getSortKey($b)</pre>
+<pre>
+      is equivalent to</pre>
+<pre>
+   $Collator-&gt;cmp($a, $b)</pre>
+</dd>
+<dt><strong><a name="viewsortkey" class="item"><code>$sortKeyForm = $Collator-&gt;viewSortKey($string)</code></a></strong></dt>
+
+<dd>
+<p>Converts a sorting key into its representation form.
+If <a href="#uca_version"><code>UCA_Version</code></a> is 8, the output is slightly different.</p>
+<pre>
+   <span class="keyword">use</span> <span class="variable">Unicode::Collate</span><span class="operator">;</span>
+   <span class="keyword">my</span> <span class="variable">$c</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">();</span>
+   <span class="keyword">print</span> <span class="variable">$c</span><span class="operator">-&gt;</span><span class="variable">viewSortKey</span><span class="operator">(</span><span class="string">"Perl"</span><span class="operator">),</span><span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="comment"># output:</span>
+   <span class="comment"># [0B67 0A65 0B7F 0B03 | 0020 0020 0020 0020 | 0008 0002 0002 0002 | FFFF FFFF FFFF FFFF]</span>
+   <span class="comment">#  Level 1               Level 2               Level 3               Level 4</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="methods_for_searching">Methods for Searching</a></h2>
+<p>The <a href="#match"><code>match</code></a>, <a href="#gmatch"><code>gmatch</code></a>, <a href="#subst"><code>subst</code></a>, <a href="#gsubst"><code>gsubst</code></a> methods work
+like <a href="../../lib/pods/perlfunc.html#m_"><code>m//</code></a>, <a href="../../lib/pods/perlfunc.html#m_"><code>m//g</code></a>, <a href="../../lib/pods/perlfunc.html#s_"><code>s///</code></a>, <a href="../../lib/pods/perlfunc.html#s_"><code>s///g</code></a>, respectively,
+but they are not aware of any pattern, but only a literal substring.</p>
+<p><strong>DISCLAIMER:</strong> If <a href="#preprocess"><code>preprocess</code></a> or <a href="#normalization"><code>normalization</code></a> parameter is true
+for <code>$Collator</code>, calling these methods (<a href="#index"><code>index</code></a>, <a href="#match"><code>match</code></a>, <a href="#gmatch"><code>gmatch</code></a>,
+<a href="#subst"><code>subst</code></a>, <a href="#gsubst"><code>gsubst</code></a>) is croaked, as the position and the length might
+differ from those on the specified string.</p>
+<p><a href="#rearrange"><code>rearrange</code></a> and <a href="#hangul_terminator"><code>hangul_terminator</code></a> parameters are neglected.
+<a href="#katakana_before_hiragana"><code>katakana_before_hiragana</code></a> and <a href="#upper_before_lower"><code>upper_before_lower</code></a> don't affect
+matching and searching, as it doesn't matter whether greater or lesser.</p>
+<dl>
+<dt><strong><a name="index" class="item"><code>$position = $Collator-&gt;index($string, $substring[, $position])</code></a></strong></dt>
+
+<dt><strong><code>($position, $length) = $Collator-&gt;index($string, $substring[, $position])</code></strong></dt>
+
+<dd>
+<p>If <code>$substring</code> matches a part of <code>$string</code>, returns
+the position of the first occurrence of the matching part in scalar context;
+in list context, returns a two-element list of
+the position and the length of the matching part.</p>
+<p>If <code>$substring</code> does not match any part of <code>$string</code>,
+returns <code>-1</code> in scalar context and
+an empty list in list context.</p>
+<p>e.g. you say</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$Collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">normalization</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="string">level</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+                                     <span class="comment"># (normalization =&gt; undef) is REQUIRED.</span>
+  <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="string">"Ich muﬂ studieren Perl."</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$sub</span> <span class="operator">=</span> <span class="string">"M‹SS"</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$match</span><span class="operator">;</span>
+  <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">my</span><span class="operator">(</span><span class="variable">$pos</span><span class="operator">,</span><span class="variable">$len</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">index</span><span class="operator">(</span><span class="variable">$str</span><span class="operator">,</span> <span class="variable">$sub</span><span class="operator">))</span> <span class="operator">{</span>
+      <span class="variable">$match</span> <span class="operator">=</span> <span class="keyword">substr</span><span class="operator">(</span><span class="variable">$str</span><span class="operator">,</span> <span class="variable">$pos</span><span class="operator">,</span> <span class="variable">$len</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>and get <code>&quot;muﬂ&quot;</code> in <code>$match</code> since <code>&quot;muﬂ&quot;</code>
+is primary equal to <code>&quot;M‹SS&quot;</code>.</p>
+</dd>
+<dt><strong><a name="match" class="item"><code>$match_ref = $Collator-&gt;match($string, $substring)</code></a></strong></dt>
+
+<dt><strong><code>($match)   = $Collator-&gt;match($string, $substring)</code></strong></dt>
+
+<dd>
+<p>If <code>$substring</code> matches a part of <code>$string</code>, in scalar context, returns
+<strong>a reference to</strong> the first occurrence of the matching part
+(<code>$match_ref</code> is always true if matches,
+since every reference is <strong>true</strong>);
+in list context, returns the first occurrence of the matching part.</p>
+<p>If <code>$substring</code> does not match any part of <code>$string</code>,
+returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> in scalar context and
+an empty list in list context.</p>
+<p>e.g.</p>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$match_ref</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">match</span><span class="operator">(</span><span class="variable">$str</span><span class="operator">,</span> <span class="variable">$sub</span><span class="operator">))</span> <span class="operator">{</span> <span class="comment"># scalar context</span>
+        <span class="keyword">print</span> <span class="string">"matches [$</span><span class="variable">$match_ref</span><span class="string">].\n"</span><span class="operator">;</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"doesn't match.\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+     or</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">((</span><span class="variable">$match</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">match</span><span class="operator">(</span><span class="variable">$str</span><span class="operator">,</span> <span class="variable">$sub</span><span class="operator">))</span> <span class="operator">{</span> <span class="comment"># list context</span>
+        <span class="keyword">print</span> <span class="string">"matches [</span><span class="variable">$match</span><span class="string">].\n"</span><span class="operator">;</span>
+    <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="keyword">print</span> <span class="string">"doesn't match.\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="gmatch" class="item"><code>@match = $Collator-&gt;gmatch($string, $substring)</code></a></strong></dt>
+
+<dd>
+<p>If <code>$substring</code> matches a part of <code>$string</code>, returns
+all the matching parts (or matching count in scalar context).</p>
+<p>If <code>$substring</code> does not match any part of <code>$string</code>,
+returns an empty list.</p>
+</dd>
+<dt><strong><a name="subst" class="item"><code>$count = $Collator-&gt;subst($string, $substring, $replacement)</code></a></strong></dt>
+
+<dd>
+<p>If <code>$substring</code> matches a part of <code>$string</code>,
+the first occurrence of the matching part is replaced by <code>$replacement</code>
+(<code>$string</code> is modified) and <code>$count</code> (always equals to <code>1</code>) is returned.</p>
+<p><code>$replacement</code> can be a <code>CODEREF</code>,
+taking the matching part as an argument,
+and returning a string to replace the matching part
+(a bit similar to <a href="../../lib/pods/perlfunc.html#s_"><code>s/(..)/$coderef-&gt;($1)/e</code></a>).</p>
+</dd>
+<dt><strong><a name="gsubst" class="item"><code>$count = $Collator-&gt;gsubst($string, $substring, $replacement)</code></a></strong></dt>
+
+<dd>
+<p>If <code>$substring</code> matches a part of <code>$string</code>,
+all the occurrences of the matching part are replaced by <code>$replacement</code>
+(<code>$string</code> is modified) and <code>$count</code> is returned.</p>
+<p><code>$replacement</code> can be a <code>CODEREF</code>,
+taking the matching part as an argument,
+and returning a string to replace the matching part
+(a bit similar to <a href="../../lib/pods/perlfunc.html#s_"><code>s/(..)/$coderef-&gt;($1)/eg</code></a>).</p>
+<p>e.g.</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$Collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">normalization</span> <span class="operator">=&gt;</span> <span class="keyword">undef</span><span class="operator">,</span> <span class="string">level</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+                                     <span class="comment"># (normalization =&gt; undef) is REQUIRED.</span>
+  <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="string">"Camel donkey zebra came\x{301}l CAMEL horse cam\0e\0l..."</span><span class="operator">;</span>
+  <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">gsubst</span><span class="operator">(</span><span class="variable">$str</span><span class="operator">,</span> <span class="string">"camel"</span><span class="operator">,</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="string">"&lt;b&gt;</span><span class="variable">$_</span><span class="string">[0]&lt;/b&gt;"</span> <span class="operator">});</span>
+</pre>
+<pre>
+  <span class="comment"># now $str is "&lt;b&gt;Camel&lt;/b&gt; donkey zebra &lt;b&gt;came\x{301}l&lt;/b&gt; &lt;b&gt;CAMEL&lt;/b&gt; horse &lt;b&gt;cam\0e\0l&lt;/b&gt;...";</span>
+  <span class="comment"># i.e., all the camels are made bold-faced.</span>
+</pre>
+<pre>
+   <span class="variable">Examples</span><span class="operator">:</span> <span class="variable">levels</span> <span class="keyword">and</span> <span class="variable">ignore_level2</span> <span class="operator">-</span> <span class="variable">what</span> <span class="variable">does</span> <span class="variable">camel</span> <span class="variable">match</span><span class="operator">?</span>
+     <span class="operator">---------------------------------------------------------------------------</span>
+   <span class="variable">level</span>  <span class="variable">ignore_level2</span>  <span class="operator">|</span>  <span class="variable">camel</span>  <span class="variable">Camel</span>  <span class="variable">came</span><span class="operator">\x</span><span class="operator">{</span><span class="string">301</span><span class="operator">}</span><span class="variable">l</span>  <span class="variable">c</span><span class="operator">-</span><span class="variable">a</span><span class="operator">-</span><span class="regex">m-e-l</span>  <span class="variable">cam</span><span class="operator">\</span><span class="number">0</span><span class="variable">e</span><span class="operator">\</span><span class="number">0</span><span class="variable">l</span>
+     <span class="operator">-----------------------|---------------------------------------------------</span>
+     <span class="number">1</span>        <span class="variable">false</span>      <span class="operator">|</span>   <span class="variable">yes</span>    <span class="variable">yes</span>      <span class="variable">yes</span>          <span class="variable">yes</span>        <span class="variable">yes</span>
+     <span class="number">2</span>        <span class="variable">false</span>      <span class="operator">|</span>   <span class="variable">yes</span>    <span class="variable">yes</span>      <span class="keyword">no</span>           <span class="variable">yes</span>        <span class="variable">yes</span>
+     <span class="number">3</span>        <span class="variable">false</span>      <span class="operator">|</span>   <span class="variable">yes</span>    <span class="keyword">no</span>       <span class="keyword">no</span>           <span class="variable">yes</span>        <span class="variable">yes</span>
+     <span class="number">4</span>        <span class="variable">false</span>      <span class="operator">|</span>   <span class="variable">yes</span>    <span class="keyword">no</span>       <span class="keyword">no</span>           <span class="keyword">no</span>         <span class="variable">yes</span>
+     <span class="operator">-----------------------|---------------------------------------------------</span>
+     <span class="number">1</span>        <span class="variable">true</span>       <span class="operator">|</span>   <span class="variable">yes</span>    <span class="variable">yes</span>      <span class="variable">yes</span>          <span class="variable">yes</span>        <span class="variable">yes</span>
+     <span class="number">2</span>        <span class="variable">true</span>       <span class="operator">|</span>   <span class="variable">yes</span>    <span class="variable">yes</span>      <span class="variable">yes</span>          <span class="variable">yes</span>        <span class="variable">yes</span>
+     <span class="number">3</span>        <span class="variable">true</span>       <span class="operator">|</span>   <span class="variable">yes</span>    <span class="keyword">no</span>       <span class="variable">yes</span>          <span class="variable">yes</span>        <span class="variable">yes</span>
+     <span class="number">4</span>        <span class="variable">true</span>       <span class="operator">|</span>   <span class="variable">yes</span>    <span class="keyword">no</span>       <span class="variable">yes</span>          <span class="keyword">no</span>         <span class="variable">yes</span>
+     <span class="operator">---------------------------------------------------------------------------</span>
+   <span class="variable">note</span><span class="operator">:</span> <span class="keyword">if</span> <span class="string">variable</span> <span class="operator">=&gt;</span> <span class="variable">non</span><span class="operator">-</span><span class="variable">ignorable</span><span class="operator">,</span> <span class="variable">camel</span> <span class="variable">doesn't</span> <span class="variable">match</span> <span class="variable">c</span><span class="operator">-</span><span class="variable">a</span><span class="operator">-</span><span class="regex">m-e-l</span>
+         <span class="variable">at</span> <span class="variable">any</span> <span class="variable">level</span><span class="operator">.</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="other_methods">Other Methods</a></h2>
+<dl>
+<dt><strong><a name="change" class="item"><code>%old_tailoring = $Collator-&gt;change(%new_tailoring)</code></a></strong></dt>
+
+<dt><strong><code>$modified_collator = $Collator-&gt;change(%new_tailoring)</code></strong></dt>
+
+<dd>
+<p>Changes the value of specified keys and returns the changed part.</p>
+<pre>
+    <span class="variable">$Collator</span> <span class="operator">=</span> <span class="variable">Unicode::Collate</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">level</span> <span class="operator">=&gt;</span> <span class="number">4</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">eq</span><span class="operator">(</span><span class="string">"perl"</span><span class="operator">,</span> <span class="string">"PERL"</span><span class="operator">);</span> <span class="comment"># false</span>
+</pre>
+<pre>
+    <span class="variable">%old</span> <span class="operator">=</span> <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">change</span><span class="operator">(</span><span class="string">level</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span> <span class="comment"># returns (level =&gt; 4).</span>
+</pre>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">eq</span><span class="operator">(</span><span class="string">"perl"</span><span class="operator">,</span> <span class="string">"PERL"</span><span class="operator">);</span> <span class="comment"># true</span>
+</pre>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">change</span><span class="operator">(</span><span class="variable">%old</span><span class="operator">);</span> <span class="comment"># returns (level =&gt; 2).</span>
+</pre>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">eq</span><span class="operator">(</span><span class="string">"perl"</span><span class="operator">,</span> <span class="string">"PERL"</span><span class="operator">);</span> <span class="comment"># false</span>
+</pre>
+<p>Not all <code>(key,value)</code>s are allowed to be changed.
+See also <code>@Unicode::Collate::ChangeOK</code> and <code>@Unicode::Collate::ChangeNG</code>.</p>
+<p>In the scalar context, returns the modified collator
+(but it is <strong>not</strong> a clone from the original).</p>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">change</span><span class="operator">(</span><span class="string">level</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">)-&gt;</span><span class="variable">eq</span><span class="operator">(</span><span class="string">"perl"</span><span class="operator">,</span> <span class="string">"PERL"</span><span class="operator">);</span> <span class="comment"># true</span>
+</pre>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">eq</span><span class="operator">(</span><span class="string">"perl"</span><span class="operator">,</span> <span class="string">"PERL"</span><span class="operator">);</span> <span class="comment"># true; now max level is 2nd.</span>
+</pre>
+<pre>
+    <span class="variable">$Collator</span><span class="operator">-&gt;</span><span class="variable">change</span><span class="operator">(</span><span class="string">level</span> <span class="operator">=&gt;</span> <span class="number">4</span><span class="operator">)-&gt;</span><span class="variable">eq</span><span class="operator">(</span><span class="string">"perl"</span><span class="operator">,</span> <span class="string">"PERL"</span><span class="operator">);</span> <span class="comment"># false</span>
+</pre>
+</dd>
+<dt><strong><a name="version" class="item"><code>$version = $Collator-&gt;version()</code></a></strong></dt>
+
+<dd>
+<p>Returns the version number (a string) of the Unicode Standard
+which the <a href="#table"><code>table</code></a> file used by the collator object is based on.
+If the table does not include a version line (starting with <code>@version</code>),
+returns <code>&quot;unknown&quot;</code>.</p>
+</dd>
+<dt><strong><code>UCA_Version()</code></strong></dt>
+
+<dd>
+<p>Returns the revision number of UTS #10 this module consults,
+that should correspond with the DUCET incorporated.</p>
+</dd>
+<dt><strong><a name="base_unicode_version" class="item"><code>Base_Unicode_Version()</code></a></strong></dt>
+
+<dd>
+<p>Returns the version number of UTS #10 this module consults,
+that should correspond with the DUCET incorporated.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="export">EXPORT</a></h1>
+<p>No method will be exported.</p>
+<p>
+</p>
+<hr />
+<h1><a name="install">INSTALL</a></h1>
+<p>Though this module can be used without any <a href="#table"><code>table</code></a> file,
+to use this module easily, it is recommended to install a table file
+in the UCA format, by copying it under the directory
+&lt;a place in @INC&gt;/Unicode/Collate.</p>
+<p>The most preferable one is &quot;The Default Unicode Collation Element Table&quot;
+(aka DUCET), available from the Unicode Consortium's website:</p>
+<pre>
+   <a href="http://www.unicode.org/Public/UCA/">http://www.unicode.org/Public/UCA/</a></pre>
+<pre>
+   <a href="http://www.unicode.org/Public/UCA/latest/allkeys.txt">http://www.unicode.org/Public/UCA/latest/allkeys.txt</a> (latest version)</pre>
+<p>If DUCET is not installed, it is recommended to copy the file
+from <a href="http://www.unicode.org/Public/UCA/latest/allkeys.txt">http://www.unicode.org/Public/UCA/latest/allkeys.txt</a>
+to &lt;a place in @INC&gt;/Unicode/Collate/allkeys.txt
+manually.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<dl>
+<dt><strong><a name="normalization" class="item">Normalization</a></strong></dt>
+
+<dd>
+<p>Use of the <a href="#normalization"><code>normalization</code></a> parameter requires the <strong>Unicode::Normalize</strong>
+module (see <a href="../../lib/Unicode/Normalize.html">the Unicode::Normalize manpage</a>).</p>
+<p>If you need not it (say, in the case when you need not
+handle any combining characters),
+assign <code>normalization =&gt; undef</code> explicitly.</p>
+<p>-- see 6.5 Avoiding Normalization, UTS #10.</p>
+</dd>
+<dt><strong><a name="conformance_test" class="item">Conformance Test</a></strong></dt>
+
+<dd>
+<p>The Conformance Test for the UCA is available
+under <a href="http://www.unicode.org/Public/UCA/">http://www.unicode.org/Public/UCA/</a>.</p>
+<p>For <em class="file">CollationTest_SHIFTED.txt</em>,
+a collator via <code>Unicode::Collate-&gt;new( )</code> should be used;
+for <em class="file">CollationTest_NON_IGNORABLE.txt</em>, a collator via
+<code>Unicode::Collate-&gt;new(variable =&gt; &quot;non-ignorable&quot;, level =&gt; 3)</code>.</p>
+<p><strong>Unicode::Normalize is required to try The Conformance Test.</strong></p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author__copyright_and_license">AUTHOR, COPYRIGHT AND LICENSE</a></h1>
+<p>The Unicode::Collate module for perl was written by SADAHIRO Tomoyuki,
+&lt;<a href="mailto:SADAHIRO@cpan.org">SADAHIRO@cpan.org</a>&gt;. This module is Copyright(C) 2001-2011,
+SADAHIRO Tomoyuki. Japan. All rights reserved.</p>
+<p>This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+<p>The file Unicode/Collate/allkeys.txt was copied verbatim
+from <a href="http://www.unicode.org/Public/UCA/6.0.0/allkeys.txt">http://www.unicode.org/Public/UCA/6.0.0/allkeys.txt</a>.
+This file is Copyright (c) 1991-2010 Unicode, Inc. All rights reserved.
+Distributed under the Terms of Use in <a href="http://www.unicode.org/copyright.html">http://www.unicode.org/copyright.html</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<dl>
+<dt><strong><a name="unicode_collation_algorithm_uts_10" class="item">Unicode Collation Algorithm - UTS #10</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/reports/tr10/">http://www.unicode.org/reports/tr10/</a></p>
+</dd>
+<dt><strong><a name="table" class="item">The Default Unicode Collation Element Table (DUCET)</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/Public/UCA/latest/allkeys.txt">http://www.unicode.org/Public/UCA/latest/allkeys.txt</a></p>
+</dd>
+<dt><strong><a name="the_conformance_test_for_the_uca" class="item">The conformance test for the UCA</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/Public/UCA/latest/CollationTest.html">http://www.unicode.org/Public/UCA/latest/CollationTest.html</a></p>
+<p><a href="http://www.unicode.org/Public/UCA/latest/CollationTest.zip">http://www.unicode.org/Public/UCA/latest/CollationTest.zip</a></p>
+</dd>
+<dt><strong><a name="hangul_syllable_type" class="item">Hangul Syllable Type</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/Public/UNIDATA/HangulSyllableType.txt">http://www.unicode.org/Public/UNIDATA/HangulSyllableType.txt</a></p>
+</dd>
+<dt><strong><a name="unicode_normalization_forms_uax_15" class="item">Unicode Normalization Forms - UAX #15</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/reports/tr15/">http://www.unicode.org/reports/tr15/</a></p>
+</dd>
+<dt><strong><a name="language" class="item">Unicode Locale Data Markup Language (LDML) - UTS #35</a></strong></dt>
+
+<dd>
+<p><a href="http://www.unicode.org/reports/tr35/">http://www.unicode.org/reports/tr35/</a></p>
+</dd>
+</dl>
+
+</body>
+
+</html>

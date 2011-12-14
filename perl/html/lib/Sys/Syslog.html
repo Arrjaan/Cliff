@@ -1,0 +1,771 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Sys::Syslog - Perl interface to the UNIX syslog calls</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Sys::Syslog - Perl interface to the UNIX syslog calls</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#exports">EXPORTS</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<li><a href="#the_rules_of_sys__syslog">THE RULES OF SYS::SYSLOG</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#constants">CONSTANTS</a></li>
+	<ul>
+
+		<li><a href="#facilities">Facilities</a></li>
+		<li><a href="#levels">Levels</a></li>
+	</ul>
+
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#history">HISTORY</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<ul>
+
+		<li><a href="#manual_pages">Manual Pages</a></li>
+		<li><a href="#rfcs">RFCs</a></li>
+		<li><a href="#articles">Articles</a></li>
+		<li><a href="#event_log">Event Log</a></li>
+	</ul>
+
+	<li><a href="#authors___acknowledgements">AUTHORS &amp; ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#license">LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Sys::Syslog - Perl interface to the UNIX <a href="#syslog"><code>syslog(3)</code></a> calls</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>This is the documentation of version 0.29</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Sys::Syslog</span><span class="operator">;</span>                        <span class="comment"># all except setlogsock()</span>
+    <span class="keyword">use</span> <span class="variable">Sys::Syslog</span> <span class="string">qw(:standard :macros)</span><span class="operator">;</span>  <span class="comment"># standard functions &amp; macros</span>
+</pre>
+<pre>
+    <span class="variable">openlog</span><span class="operator">(</span><span class="variable">$ident</span><span class="operator">,</span> <span class="variable">$logopt</span><span class="operator">,</span> <span class="variable">$facility</span><span class="operator">);</span>    <span class="comment"># don't forget this</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="variable">$priority</span><span class="operator">,</span> <span class="variable">$format</span><span class="operator">,</span> <span class="variable">@args</span><span class="operator">);</span>
+    <span class="variable">$oldmask</span> <span class="operator">=</span> <span class="variable">setlogmask</span><span class="operator">(</span><span class="variable">$mask_priority</span><span class="operator">);</span>
+    <span class="variable">closelog</span><span class="operator">();</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>Sys::Syslog</code> is an interface to the UNIX <a href="#syslog"><code>syslog(3)</code></a> program.
+Call <a href="#syslog"><code>syslog()</code></a> with a string priority and a list of <a href="../../lib/pods/perlfunc.html#printf"><code>printf()</code></a> args
+just like <a href="#syslog"><code>syslog(3)</code></a>.</p>
+<p>You can find a kind of FAQ in <a href="#the_rules_of_sys__syslog">THE RULES OF SYS::SYSLOG</a>.  Please read 
+it before coding, and again before asking questions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="exports">EXPORTS</a></h1>
+<p><code>Sys::Syslog</code> exports the following <code>Exporter</code> tags:</p>
+<ul>
+<li>
+<p><code>:standard</code> exports the standard <a href="#syslog"><code>syslog(3)</code></a> functions:</p>
+<pre>
+    openlog closelog setlogmask syslog</pre>
+</li>
+<li>
+<p><code>:extended</code> exports the Perl specific functions for <a href="#syslog"><code>syslog(3)</code></a>:</p>
+<pre>
+    setlogsock</pre>
+</li>
+<li>
+<p><code>:macros</code> exports the symbols corresponding to most of your <a href="#syslog"><code>syslog(3)</code></a> 
+macros and the <code>LOG_UPTO()</code> and <code>LOG_MASK()</code> functions. 
+See <a href="#constants">CONSTANTS</a> for the supported constants and their meaning.</p>
+</li>
+</ul>
+<p>By default, <code>Sys::Syslog</code> exports the symbols from the <code>:standard</code> tag.</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<dl>
+<dt><strong><a name="openlog" class="item"><strong>openlog($ident, $logopt, $facility)</strong></a></strong></dt>
+
+<dd>
+<p>Opens the syslog.
+<code>$ident</code> is prepended to every message.  <code>$logopt</code> contains zero or
+more of the options detailed below.  <code>$facility</code> specifies the part 
+of the system to report about, for example <code>LOG_USER</code> or <code>LOG_LOCAL0</code>:
+see <a href="#facilities">Facilities</a> for a list of well-known facilities, and your 
+<a href="#syslog"><code>syslog(3)</code></a> documentation for the facilities available in your system. 
+Check <a href="#see_also">SEE ALSO</a> for useful links. Facility can be given as a string 
+or a numeric macro.</p>
+<p>This function will croak if it can't connect to the syslog daemon.</p>
+<p>Note that <a href="#openlog"><code>openlog()</code></a> now takes three arguments, just like <a href="#openlog"><code>openlog(3)</code></a>.</p>
+<p><strong>You should use <a href="#openlog"><code>openlog()</code></a> before calling <a href="#syslog"><code>syslog()</code></a>.</strong></p>
+<p><strong>Options</strong></p>
+<ul>
+<li>
+<p><code>cons</code> - This option is ignored, since the failover mechanism will drop 
+down to the console automatically if all other media fail.</p>
+</li>
+<li>
+<p><code>ndelay</code> - Open the connection immediately (normally, the connection is
+opened when the first message is logged).</p>
+</li>
+<li>
+<p><code>noeol</code> - When set to true, no end of line character (<a href="../../lib/pods/perlrun.html#n"><code>\n</code></a>) will be
+appended to the message. This can be useful for some buggy syslog daemons.</p>
+</li>
+<li>
+<p><code>nofatal</code> - When set to true, <a href="#openlog"><code>openlog()</code></a> and <a href="#syslog"><code>syslog()</code></a> will only 
+emit warnings instead of dying if the connection to the syslog can't 
+be established.</p>
+</li>
+<li>
+<p><code>nonul</code> - When set to true, no <code>NUL</code> character (<code>\0</code>) will be
+appended to the message. This can be useful for some buggy syslog daemons.</p>
+</li>
+<li>
+<p><code>nowait</code> - Don't wait for child processes that may have been created 
+while logging the message.  (The GNU C library does not create a child
+process, so this option has no effect on Linux.)</p>
+</li>
+<li>
+<p><code>perror</code> - Write the message to standard error output as well to the
+system log (added in <code>Sys::Syslo</code> 0.22).</p>
+</li>
+<li>
+<p><code>pid</code> - Include PID with each message.</p>
+</li>
+</ul>
+<p><strong>Examples</strong></p>
+<p>Open the syslog with options <code>ndelay</code> and <code>pid</code>, and with facility <code>LOCAL0</code>:</p>
+<pre>
+    <span class="variable">openlog</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">,</span> <span class="string">"ndelay,pid"</span><span class="operator">,</span> <span class="string">"local0"</span><span class="operator">);</span>
+</pre>
+<p>Same thing, but this time using the macro corresponding to <code>LOCAL0</code>:</p>
+<pre>
+    <span class="variable">openlog</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">,</span> <span class="string">"ndelay,pid"</span><span class="operator">,</span> <span class="variable">LOG_LOCAL0</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="syslog" class="item"><strong>syslog($priority, $message)</strong></a></strong></dt>
+
+<dt><strong><strong>syslog($priority, $format, @args)</strong></strong></dt>
+
+<dd>
+<p>If <code>$priority</code> permits, logs <code>$message</code> or <a href="../../lib/pods/perlfunc.html#sprintf"><code>sprintf($format, @args)</code></a>
+with the addition that <code>%m</code> in $message or <code>$format</code> is replaced with
+<code>&quot;$!&quot;</code> (the latest error message).</p>
+<p><code>$priority</code> can specify a level, or a level and a facility.  Levels and 
+facilities can be given as strings or as macros.  When using the <code>eventlog</code>
+mechanism, priorities <code>DEBUG</code> and <code>INFO</code> are mapped to event type 
+<code>informational</code>, <code>NOTICE</code> and <code>WARNING</code> to <code>warning</code> and <code>ERR</code> to 
+<code>EMERG</code> to <code>error</code>.</p>
+<p>If you didn't use <a href="#openlog"><code>openlog()</code></a> before using <a href="#syslog"><code>syslog()</code></a>, <a href="#syslog"><code>syslog()</code></a> will 
+try to guess the <code>$ident</code> by extracting the shortest prefix of 
+<code>$format</code> that ends in a <code>&quot;:&quot;</code>.</p>
+<p><strong>Examples</strong></p>
+<pre>
+    <span class="comment"># informational level</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">"info"</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">);</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="variable">LOG_INFO</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># information level, Local0 facility</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">"info|local0"</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">);</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="variable">LOG_INFO</span><span class="operator">|</span><span class="variable">LOG_LOCAL0</span><span class="operator">,</span> <span class="variable">$message</span><span class="operator">);</span>
+</pre>
+<dl>
+<dt><strong><a name="note3" class="item"><strong>Note</strong></a></strong></dt>
+
+<dd>
+<p><code>Sys::Syslog</code> version v0.07 and older passed the <code>$message</code> as the 
+formatting string to <a href="../../lib/pods/perlfunc.html#sprintf"><code>sprintf()</code></a> even when no formatting arguments
+were provided.  If the code calling <a href="#syslog"><code>syslog()</code></a> might execute with 
+older versions of this module, make sure to call the function as
+<a href="#syslog"><code>syslog($priority, &quot;%s&quot;, $message)</code></a> instead of <a href="#syslog"><code>syslog($priority,
+$message)</code></a>.  This protects against hostile formatting sequences that
+might show up if $message contains tainted data.</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="setlogmask" class="item"><strong>setlogmask($mask_priority)</strong></a></strong></dt>
+
+<dd>
+<p>Sets the log mask for the current process to <code>$mask_priority</code> and 
+returns the old mask.  If the mask argument is 0, the current log mask 
+is not modified.  See <a href="#levels">Levels</a> for the list of available levels. 
+You can use the <code>LOG_UPTO()</code> function to allow all levels up to a 
+given priority (but it only accept the numeric macros as arguments).</p>
+<p><strong>Examples</strong></p>
+<p>Only log errors:</p>
+<pre>
+    <span class="variable">setlogmask</span><span class="operator">(</span> <span class="variable">LOG_MASK</span><span class="operator">(</span><span class="variable">LOG_ERR</span><span class="operator">)</span> <span class="operator">);</span>
+</pre>
+<p>Log everything except informational messages:</p>
+<pre>
+    <span class="variable">setlogmask</span><span class="operator">(</span> <span class="operator">~(</span><span class="variable">LOG_MASK</span><span class="operator">(</span><span class="variable">LOG_INFO</span><span class="operator">))</span> <span class="operator">);</span>
+</pre>
+<p>Log critical messages, errors and warnings:</p>
+<pre>
+    <span class="variable">setlogmask</span><span class="operator">(</span> <span class="variable">LOG_MASK</span><span class="operator">(</span><span class="variable">LOG_CRIT</span><span class="operator">)</span>
+              <span class="operator">|</span> <span class="variable">LOG_MASK</span><span class="operator">(</span><span class="variable">LOG_ERR</span><span class="operator">)</span>
+              <span class="operator">|</span> <span class="variable">LOG_MASK</span><span class="operator">(</span><span class="variable">LOG_WARNING</span><span class="operator">)</span> <span class="operator">);</span>
+</pre>
+<p>Log all messages up to debug:</p>
+<pre>
+    <span class="variable">setlogmask</span><span class="operator">(</span> <span class="variable">LOG_UPTO</span><span class="operator">(</span><span class="variable">LOG_DEBUG</span><span class="operator">)</span> <span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="setlogsock" class="item"><strong>setlogsock()</strong></a></strong></dt>
+
+<dd>
+<p>Sets the socket type and options to be used for the next call to <a href="#openlog"><code>openlog()</code></a>
+or <a href="#syslog"><code>syslog()</code></a>.  Returns true on success, <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on failure.</p>
+<p>Being Perl-specific, this function has evolved along time.  It can currently
+be called as follow:</p>
+<ul>
+<li>
+<p><a href="#setlogsock"><code>setlogsock($sock_type)</code></a></p>
+</li>
+<li>
+<p><a href="#setlogsock"><code>setlogsock($sock_type, $stream_location)</code></a> (added in Perl 5.004_02)</p>
+</li>
+<li>
+<p><a href="#setlogsock"><code>setlogsock($sock_type, $stream_location, $sock_timeout)</code></a> (added in
+<code>Sys::Syslog</code> 0.25)</p>
+</li>
+<li>
+<p><a href="#setlogsock"><code>setlogsock(\%options)</code></a> (added in <code>Sys::Syslog</code> 0.28)</p>
+</li>
+</ul>
+<p>The available options are:</p>
+<ul>
+<li>
+<p><code>type</code> - equivalent to <code>$sock_type</code>, selects the socket type (or
+&quot;mechanism&quot;).  An array reference can be passed to specify several
+mechanisms to try, in the given order.</p>
+</li>
+<li>
+<p><code>path</code> - equivalent to <code>$stream_location</code>, sets the stream location.
+Defaults to standard Unix location, or <code>_PATH_LOG</code>.</p>
+</li>
+<li>
+<p><code>timeout</code> - equivalent to <code>$sock_timeout</code>, sets the socket timeout
+in seconds.  Defaults to 0 on all systems except Mac&nbsp;OS&nbsp;X where it
+is set to 0.25 sec.</p>
+</li>
+<li>
+<p><code>host</code> - sets the hostname to send the messages to.  Defaults to 
+the local host.</p>
+</li>
+<li>
+<p><code>port</code> - sets the TCP or UDP port to connect to.  Defaults to the
+first standard syslog port available on the system.</p>
+</li>
+</ul>
+<p>The available mechanisms are:</p>
+<ul>
+<li>
+<p><code>&quot;native&quot;</code> - use the native C functions from your <a href="#syslog"><code>syslog(3)</code></a> library
+(added in <code>Sys::Syslog</code> 0.15).</p>
+</li>
+<li>
+<p><code>&quot;eventlog&quot;</code> - send messages to the Win32 events logger (Win32 only; 
+added in <code>Sys::Syslog</code> 0.19).</p>
+</li>
+<li>
+<p><code>&quot;tcp&quot;</code> - connect to a TCP socket, on the <code>syslog/tcp</code> or <code>syslogng/tcp</code> 
+service.  See also the <code>host</code>, <code>port</code> and <code>timeout</code> options.</p>
+</li>
+<li>
+<p><code>&quot;udp&quot;</code> - connect to a UDP socket, on the <code>syslog/udp</code> service.
+See also the <code>host</code>, <code>port</code> and <code>timeout</code> options.</p>
+</li>
+<li>
+<p><code>&quot;inet&quot;</code> - connect to an INET socket, either TCP or UDP, tried in that 
+order.  See also the <code>host</code>, <code>port</code> and <code>timeout</code> options.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlrun.html#unix"><code>&quot;unix&quot;</code></a> - connect to a UNIX domain socket (in some systems a character 
+special device).  The name of that socket is given by the <code>path</code> option
+or, if omitted, the value returned by the <code>_PATH_LOG</code> macro (if your
+system defines it), <em class="file">/dev/log</em> or <em class="file">/dev/conslog</em>, whichever is writable.</p>
+</li>
+<li>
+<p><code>&quot;stream&quot;</code> - connect to the stream indicated by the <code>path</code> option, or,
+if omitted, the value returned by the <code>_PATH_LOG</code> macro (if your system
+defines it), <em class="file">/dev/log</em> or <em class="file">/dev/conslog</em>, whichever is writable.  For
+example Solaris and IRIX system may prefer <code>&quot;stream&quot;</code> instead of <a href="../../lib/pods/perlrun.html#unix"><code>&quot;unix&quot;</code></a>.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#pipe"><code>&quot;pipe&quot;</code></a> - connect to the named pipe indicated by the <code>path</code> option,
+or, if omitted, to the value returned by the <code>_PATH_LOG</code> macro (if your
+system defines it), or <em class="file">/dev/log</em> (added in <code>Sys::Syslog</code> 0.21).
+HP-UX is a system which uses such a named pipe.</p>
+</li>
+<li>
+<p><code>&quot;console&quot;</code> - send messages directly to the console, as for the <code>&quot;cons&quot;</code> 
+option of <a href="#openlog"><code>openlog()</code></a>.</p>
+</li>
+</ul>
+<p>The default is to try <code>native</code>, <code>tcp</code>, <code>udp</code>, <a href="../../lib/pods/perlrun.html#unix"><code>unix</code></a>, <a href="../../lib/pods/perlfunc.html#pipe"><code>pipe</code></a>, <code>stream</code>, 
+<code>console</code>.
+Under systems with the Win32 API, <code>eventlog</code> will be added as the first 
+mechanism to try if <code>Win32::EventLog</code> is available.</p>
+<p>Giving an invalid value for <code>$sock_type</code> will <code>croak</code>.</p>
+<p><strong>Examples</strong></p>
+<p>Select the UDP socket mechanism:</p>
+<pre>
+    <span class="variable">setlogsock</span><span class="operator">(</span><span class="string">"udp"</span><span class="operator">);</span>
+</pre>
+<p>Send messages using the TCP socket mechanism on a custom port:</p>
+<pre>
+    <span class="variable">setlogsock</span><span class="operator">(</span><span class="operator">{</span> <span class="string">type</span> <span class="operator">=&gt;</span> <span class="string">"tcp"</span><span class="operator">,</span> <span class="string">port</span> <span class="operator">=&gt;</span> <span class="number">2486</span> <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>Send messages to a remote host using the TCP socket mechanism:</p>
+<pre>
+    <span class="variable">setlogsock</span><span class="operator">(</span><span class="operator">{</span> <span class="string">type</span> <span class="operator">=&gt;</span> <span class="string">"tcp"</span><span class="operator">,</span> <span class="string">host</span> <span class="operator">=&gt;</span> <span class="variable">$loghost</span> <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>Try the native, UDP socket then UNIX domain socket mechanisms:</p>
+<pre>
+    <span class="variable">setlogsock</span><span class="operator">(</span><span class="operator">[</span><span class="string">"native"</span><span class="operator">,</span> <span class="string">"udp"</span><span class="operator">,</span> <span class="string">"unix"</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<dl>
+<dt><strong><a name="note4" class="item"><strong>Note</strong></a></strong></dt>
+
+<dd>
+<p>Now that the &quot;native&quot; mechanism is supported by <code>Sys::Syslog</code> and selected 
+by default, the use of the <a href="#setlogsock"><code>setlogsock()</code></a> function is discouraged because 
+other mechanisms are less portable across operating systems.  Authors of 
+modules and programs that use this function, especially its cargo-cult form 
+<a href="#setlogsock"><code>setlogsock(&quot;unix&quot;)</code></a>, are advised to remove any occurence of it unless they 
+specifically want to use a given mechanism (like TCP or UDP to connect to 
+a remote host).</p>
+</dd>
+</dl>
+</dd>
+<dt><strong><a name="closelog" class="item"><strong>closelog()</strong></a></strong></dt>
+
+<dd>
+<p>Closes the log file and returns true on success.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="the_rules_of_sys__syslog">THE RULES OF SYS::SYSLOG</a></h1>
+<p><em>The First Rule of Sys::Syslog is:</em>
+You do not call <a href="#setlogsock"><code>setlogsock</code></a>.</p>
+<p><em>The Second Rule of Sys::Syslog is:</em>
+You <strong>do not</strong> call <a href="#setlogsock"><code>setlogsock</code></a>.</p>
+<p><em>The Third Rule of Sys::Syslog is:</em>
+The program crashes, <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a>s, calls <a href="#closelog"><code>closelog</code></a>, the log is over.</p>
+<p><em>The Fourth Rule of Sys::Syslog is:</em>
+One facility, one priority.</p>
+<p><em>The Fifth Rule of Sys::Syslog is:</em>
+One log at a time.</p>
+<p><em>The Sixth Rule of Sys::Syslog is:</em>
+No <a href="#syslog"><code>syslog</code></a> before <a href="#openlog"><code>openlog</code></a>.</p>
+<p><em>The Seventh Rule of Sys::Syslog is:</em>
+Logs will go on as long as they have to.</p>
+<p><em>The Eighth, and Final Rule of Sys::Syslog is:</em>
+If this is your first use of Sys::Syslog, you must read the doc.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>An example:</p>
+<pre>
+    <span class="variable">openlog</span><span class="operator">(</span><span class="variable">$program</span><span class="operator">,</span> <span class="string">'cons,pid'</span><span class="operator">,</span> <span class="string">'user'</span><span class="operator">);</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">'info'</span><span class="operator">,</span> <span class="string">'%s'</span><span class="operator">,</span> <span class="string">'this is another test'</span><span class="operator">);</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">'mail|warning'</span><span class="operator">,</span> <span class="string">'this is a better test: %d'</span><span class="operator">,</span> <span class="keyword">time</span><span class="operator">);</span>
+    <span class="variable">closelog</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">'debug'</span><span class="operator">,</span> <span class="string">'this is the last test'</span><span class="operator">);</span>
+</pre>
+<p>Another example:</p>
+<pre>
+    <span class="variable">openlog</span><span class="operator">(</span><span class="string">"</span><span class="variable">$program</span><span class="string"> $$"</span><span class="operator">,</span> <span class="string">'ndelay'</span><span class="operator">,</span> <span class="string">'user'</span><span class="operator">);</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">'notice'</span><span class="operator">,</span> <span class="string">'fooprogram: this is really done'</span><span class="operator">);</span>
+</pre>
+<p>Example of use of <code>%m</code>:</p>
+<pre>
+    <span class="variable">$!</span> <span class="operator">=</span> <span class="number">55</span><span class="operator">;</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">'info'</span><span class="operator">,</span> <span class="string">'problem was %m'</span><span class="operator">);</span>   <span class="comment"># %m == $! in syslog(3)</span>
+</pre>
+<p>Log to UDP port on <code>$remotehost</code> instead of logging locally:</p>
+<pre>
+    <span class="variable">setlogsock</span><span class="operator">(</span><span class="string">"udp"</span><span class="operator">,</span> <span class="variable">$remotehost</span><span class="operator">);</span>
+    <span class="variable">openlog</span><span class="operator">(</span><span class="variable">$program</span><span class="operator">,</span> <span class="string">'ndelay'</span><span class="operator">,</span> <span class="string">'user'</span><span class="operator">);</span>
+    <span class="variable">syslog</span><span class="operator">(</span><span class="string">'info'</span><span class="operator">,</span> <span class="string">'something happened over here'</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="constants">CONSTANTS</a></h1>
+<p>
+</p>
+<h2><a name="facilities">Facilities</a></h2>
+<ul>
+<li>
+<p><code>LOG_AUDIT</code> - audit daemon (IRIX); falls back to <code>LOG_AUTH</code></p>
+</li>
+<li>
+<p><code>LOG_AUTH</code> - security/authorization messages</p>
+</li>
+<li>
+<p><code>LOG_AUTHPRIV</code> - security/authorization messages (private)</p>
+</li>
+<li>
+<p><code>LOG_CONSOLE</code> - <code>/dev/console</code> output (FreeBSD); falls back to <code>LOG_USER</code></p>
+</li>
+<li>
+<p><code>LOG_CRON</code> - clock daemons (<strong>cron</strong> and <strong>at</strong>)</p>
+</li>
+<li>
+<p><code>LOG_DAEMON</code> - system daemons without separate facility value</p>
+</li>
+<li>
+<p><code>LOG_FTP</code> - FTP daemon</p>
+</li>
+<li>
+<p><code>LOG_KERN</code> - kernel messages</p>
+</li>
+<li>
+<p><code>LOG_INSTALL</code> - installer subsystem (Mac OS X); falls back to <code>LOG_USER</code></p>
+</li>
+<li>
+<p><code>LOG_LAUNCHD</code> - launchd - general bootstrap daemon (Mac OS X);
+falls back to <code>LOG_DAEMON</code></p>
+</li>
+<li>
+<p><code>LOG_LFMT</code> - logalert facility; falls back to <code>LOG_USER</code></p>
+</li>
+<li>
+<p><code>LOG_LOCAL0</code> through <code>LOG_LOCAL7</code> - reserved for local use</p>
+</li>
+<li>
+<p><code>LOG_LPR</code> - line printer subsystem</p>
+</li>
+<li>
+<p><code>LOG_MAIL</code> - mail subsystem</p>
+</li>
+<li>
+<p><code>LOG_NETINFO</code> - NetInfo subsystem (Mac OS X); falls back to <code>LOG_DAEMON</code></p>
+</li>
+<li>
+<p><code>LOG_NEWS</code> - USENET news subsystem</p>
+</li>
+<li>
+<p><code>LOG_NTP</code> - NTP subsystem (FreeBSD, NetBSD); falls back to <code>LOG_DAEMON</code></p>
+</li>
+<li>
+<p><code>LOG_RAS</code> - Remote Access Service (VPN / PPP) (Mac OS X);
+falls back to <code>LOG_AUTH</code></p>
+</li>
+<li>
+<p><code>LOG_REMOTEAUTH</code> - remote authentication/authorization (Mac OS X);
+falls back to <code>LOG_AUTH</code></p>
+</li>
+<li>
+<p><code>LOG_SECURITY</code> - security subsystems (firewalling, etc.) (FreeBSD);
+falls back to <code>LOG_AUTH</code></p>
+</li>
+<li>
+<p><code>LOG_SYSLOG</code> - messages generated internally by <strong>syslogd</strong></p>
+</li>
+<li>
+<p><code>LOG_USER</code> (default) - generic user-level messages</p>
+</li>
+<li>
+<p><code>LOG_UUCP</code> - UUCP subsystem</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="levels">Levels</a></h2>
+<ul>
+<li>
+<p><code>LOG_EMERG</code> - system is unusable</p>
+</li>
+<li>
+<p><code>LOG_ALERT</code> - action must be taken immediately</p>
+</li>
+<li>
+<p><code>LOG_CRIT</code> - critical conditions</p>
+</li>
+<li>
+<p><code>LOG_ERR</code> - error conditions</p>
+</li>
+<li>
+<p><code>LOG_WARNING</code> - warning conditions</p>
+</li>
+<li>
+<p><code>LOG_NOTICE</code> - normal, but significant, condition</p>
+</li>
+<li>
+<p><code>LOG_INFO</code> - informational message</p>
+</li>
+<li>
+<p><code>LOG_DEBUG</code> - debug-level message</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="invalid_argument_passed_to_setlogsock" class="item"><code>Invalid argument passed to setlogsock</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> You gave <a href="#setlogsock"><code>setlogsock()</code></a> an invalid value for <code>$sock_type</code>.</p>
+</dd>
+<dt><strong><a name="eventlog_passed_to_setlogsock_but_no_win32_api_available" class="item"><code>eventlog passed to setlogsock, but no Win32 API available</code></a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> You asked <a href="#setlogsock"><code>setlogsock()</code></a> to use the Win32 event logger but the 
+operating system running the program isn't Win32 or does not provides Win32
+compatible facilities.</p>
+</dd>
+<dt><strong><a name="no_connection_to_syslog_available" class="item"><code>no connection to syslog available</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> <a href="#syslog"><code>syslog()</code></a> failed to connect to the specified socket.</p>
+</dd>
+<dt><strong><a name="stream_passed_to_setlogsock_but_s_is_not_writable" class="item"><code>stream passed to setlogsock, but %s is not writable</code></a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> You asked <a href="#setlogsock"><code>setlogsock()</code></a> to use a stream socket, but the given 
+path is not writable.</p>
+</dd>
+<dt><strong><a name="stream_passed_to_setlogsock_but_could_not_find_any_device" class="item"><code>stream passed to setlogsock, but could not find any device</code></a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> You asked <a href="#setlogsock"><code>setlogsock()</code></a> to use a stream socket, but didn't 
+provide a path, and <code>Sys::Syslog</code> was unable to find an appropriate one.</p>
+</dd>
+<dt><strong><a name="tcp_passed_to_setlogsock_but_tcp_service_unavailable" class="item"><code>tcp passed to setlogsock, but tcp service unavailable</code></a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> You asked <a href="#setlogsock"><code>setlogsock()</code></a> to use a TCP socket, but the service 
+is not available on the system.</p>
+</dd>
+<dt><strong><a name="syslog_expecting_argument_s" class="item"><code>syslog: expecting argument %s</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> You forgot to give <a href="#syslog"><code>syslog()</code></a> the indicated argument.</p>
+</dd>
+<dt><strong><a name="syslog_invalid_level_facility_s" class="item"><code>syslog: invalid level/facility: %s</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> You specified an invalid level or facility.</p>
+</dd>
+<dt><strong><a name="syslog_too_many_levels_given_s" class="item"><code>syslog: too many levels given: %s</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> You specified too many levels.</p>
+</dd>
+<dt><strong><a name="syslog_too_many_facilities_given_s" class="item"><code>syslog: too many facilities given: %s</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> You specified too many facilities.</p>
+</dd>
+<dt><strong><a name="syslog_level_must_be_given" class="item"><code>syslog: level must be given</code></a></strong></dt>
+
+<dd>
+<p><strong>(F)</strong> You forgot to specify a level.</p>
+</dd>
+<dt><strong><a name="udp_passed_to_setlogsock_but_udp_service_unavailable" class="item"><code>udp passed to setlogsock, but udp service unavailable</code></a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> You asked <a href="#setlogsock"><code>setlogsock()</code></a> to use a UDP socket, but the service 
+is not available on the system.</p>
+</dd>
+<dt><strong><a name="unix_passed_to_setlogsock_but_path_not_available" class="item"><code>unix passed to setlogsock, but path not available</code></a></strong></dt>
+
+<dd>
+<p><strong>(W)</strong> You asked <a href="#setlogsock"><code>setlogsock()</code></a> to use a UNIX socket, but <code>Sys::Syslog</code> 
+was unable to find an appropriate an appropriate device.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p><code>Sys::Syslog</code> is a core module, part of the standard Perl distribution
+since 1990.  At this time, modules as we know them didn't exist, the
+Perl library was a collection of <em class="file">.pl</em> files, and the one for sending
+syslog messages with was simply <em class="file">lib/syslog.pl</em>, included with Perl 3.0.
+It was converted as a module with Perl 5.0, but had a version number
+only starting with Perl 5.6.  Here is a small table with the matching
+Perl and <code>Sys::Syslog</code> versions.</p>
+<pre>
+    Sys::Syslog     Perl
+    -----------     ----
+       undef        5.0.x -- 5.5.x
+       0.01         5.6.0, 5.6.1, 5.6.2
+       0.03         5.8.0
+       0.04         5.8.1, 5.8.2, 5.8.3
+       0.05         5.8.4, 5.8.5, 5.8.6
+       0.06         5.8.7
+       0.13         5.8.8
+       0.22         5.10.0
+       0.27         5.8.9</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>
+</p>
+<h2><a name="manual_pages">Manual Pages</a></h2>
+<p><a href="#syslog">syslog(3)</a></p>
+<p>SUSv3 issue 6, IEEE Std 1003.1, 2004 edition, 
+<a href="http://www.opengroup.org/onlinepubs/000095399/basedefs/syslog.h.html">http://www.opengroup.org/onlinepubs/000095399/basedefs/syslog.h.html</a></p>
+<p>GNU C Library documentation on syslog, 
+<a href="http://www.gnu.org/software/libc/manual/html_node/Syslog.html">http://www.gnu.org/software/libc/manual/html_node/Syslog.html</a></p>
+<p>Solaris 10 documentation on syslog, 
+<a href="http://docs.sun.com/app/docs/doc/816-5168/syslog-3c?a=view">http://docs.sun.com/app/docs/doc/816-5168/syslog-3c</a></p>
+<p>Mac OS X documentation on syslog,
+<a href="http://developer.apple.com/documentation/Darwin/Reference/ManPages/man3/syslog.3.html">http://developer.apple.com/documentation/Darwin/Reference/ManPages/man3/syslog.3.html</a></p>
+<p>IRIX 6.5 documentation on syslog,
+<a href="http://techpubs.sgi.com/library/tpl/cgi-bin/getdoc.cgi?coll=0650&db=man&fname=3c+syslog">http://techpubs.sgi.com/library/tpl/cgi-bin/getdoc.cgi</a></p>
+<p>AIX 5L 5.3 documentation on syslog, 
+<a href="http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf2/syslog.htm">http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp</a></p>
+<p>HP-UX 11i documentation on syslog, 
+<a href="http://docs.hp.com/en/B2355-60130/syslog.3C.html">http://docs.hp.com/en/B2355-60130/syslog.3C.html</a></p>
+<p>Tru64 5.1 documentation on syslog, 
+<a href="http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V51_HTML/MAN/MAN3/0193____.HTM">http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V51_HTML/MAN/MAN3/0193____.HTM</a></p>
+<p>Stratus VOS 15.1, 
+<a href="http://stratadoc.stratus.com/vos/15.1.1/r502-01/wwhelp/wwhimpl/js/html/wwhelp.htm?context=r502-01&file=ch5r502-01bi.html">http://stratadoc.stratus.com/vos/15.1.1/r502-01/wwhelp/wwhimpl/js/html/wwhelp.htm</a></p>
+<p>
+</p>
+<h2><a name="rfcs">RFCs</a></h2>
+<p><em>RFC 3164 - The BSD syslog Protocol</em>, <a href="http://www.faqs.org/rfcs/rfc3164.html">http://www.faqs.org/rfcs/rfc3164.html</a>
+-- Please note that this is an informational RFC, and therefore does not 
+specify a standard of any kind.</p>
+<p><em>RFC 3195 - Reliable Delivery for syslog</em>, <a href="http://www.faqs.org/rfcs/rfc3195.html">http://www.faqs.org/rfcs/rfc3195.html</a></p>
+<p>
+</p>
+<h2><a name="articles">Articles</a></h2>
+<p><em>Syslogging with Perl</em>, <a href="http://lexington.pm.org/meetings/022001.html">http://lexington.pm.org/meetings/022001.html</a></p>
+<p>
+</p>
+<h2><a name="event_log">Event Log</a></h2>
+<p>Windows Event Log,
+<a href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/wes/wes/windows_event_log.asp">http://msdn.microsoft.com/library/default.asp</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="authors___acknowledgements">AUTHORS &amp; ACKNOWLEDGEMENTS</a></h1>
+<p>Tom Christiansen &lt;<em class="file">tchrist (at) perl.com</em>&gt; and Larry Wall
+&lt;<em class="file">larry (at) wall.org</em>&gt;.</p>
+<p>UNIX domain sockets added by Sean Robinson
+&lt;<em class="file">robinson_s (at) sc.maricopa.edu</em>&gt; with support from Tim Bunce 
+&lt;<em class="file">Tim.Bunce (at) ig.co.uk</em>&gt; and the <code>perl5-porters</code> mailing list.</p>
+<p>Dependency on <em class="file">syslog.ph</em> replaced with XS code by Tom Hughes
+&lt;<em class="file">tom (at) compton.nu</em>&gt;.</p>
+<p>Code for <code>constant()</code>s regenerated by Nicholas Clark &lt;<em class="file">nick (at) ccl4.org</em>&gt;.</p>
+<p>Failover to different communication modes by Nick Williams
+&lt;<em class="file">Nick.Williams (at) morganstanley.com</em>&gt;.</p>
+<p>Extracted from core distribution for publishing on the CPAN by 
+S&eacute;bastien Aperghis-Tramoni &lt;sebastien (at) aperghis.net&gt;.</p>
+<p>XS code for using native C functions borrowed from <code>Unix::Syslog</code>, 
+written by Marcus Harnisch &lt;<em class="file">marcus.harnisch (at) gmx.net</em>&gt;.</p>
+<p>Yves Orton suggested and helped for making <code>Sys::Syslog</code> use the native 
+event logger under Win32 systems.</p>
+<p>Jerry D. Hedden and Reini Urban provided greatly appreciated help to 
+debug and polish <code>Sys::Syslog</code> under Cygwin.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>Please report any bugs or feature requests to
+<a href="#syslog"><code>bug-sys-syslog (at) rt.cpan.org</code></a>, or through the web interface at
+<a href="http://rt.cpan.org/Public/Dist/Display.html?Name=Sys-Syslog">http://rt.cpan.org/Public/Dist/Display.html</a>.
+I will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>You can find documentation for this module with the perldoc command.</p>
+<pre>
+    <a href="../../lib/pods/perldoc.html">perldoc</a> Sys::Syslog</pre>
+<p>You can also look for information at:</p>
+<ul>
+<li><strong><a name="annocpan_annotated_cpan_documentation15" class="item">AnnoCPAN: Annotated CPAN documentation</a></strong>
+
+<p><a href="http://annocpan.org/dist/Sys-Syslog">http://annocpan.org/dist/Sys-Syslog</a></p>
+</li>
+<li><strong><a name="cpan_ratings15" class="item">CPAN Ratings</a></strong>
+
+<p><a href="http://cpanratings.perl.org/d/Sys-Syslog">http://cpanratings.perl.org/d/Sys-Syslog</a></p>
+</li>
+<li><strong><a name="rt_cpan_s_request_tracker13" class="item">RT: CPAN's request tracker</a></strong>
+
+<p><a href="http://rt.cpan.org/Dist/Display.html?Queue=Sys-Syslog">http://rt.cpan.org/Dist/Display.html</a></p>
+</li>
+<li><strong><a name="search_cpan14" class="item">Search CPAN</a></strong>
+
+<p><a href="http://search.cpan.org/dist/Sys-Syslog/">http://search.cpan.org/dist/Sys-Syslog/</a></p>
+</li>
+<li><strong><a name="kobes_cpan_search" class="item">Kobes' CPAN Search</a></strong>
+
+<p><a href="http://cpan.uwinnipeg.ca/dist/Sys-Syslog">http://cpan.uwinnipeg.ca/dist/Sys-Syslog</a></p>
+</li>
+<li><strong><a name="perl_documentation" class="item">Perl Documentation</a></strong>
+
+<p><a href="http://perldoc.perl.org/Sys/Syslog.html">http://perldoc.perl.org/Sys/Syslog.html</a></p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (C) 1990-2009 by Larry Wall and others.</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

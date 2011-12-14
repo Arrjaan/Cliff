@@ -1,0 +1,660 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlbot - Bag o' Object Tricks</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlbot - Bag o' Object Tricks</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#oo_scaling_tips">OO SCALING TIPS</a></li>
+	<li><a href="#instance_variables">INSTANCE VARIABLES</a></li>
+	<li><a href="#scalar_instance_variables">SCALAR INSTANCE VARIABLES</a></li>
+	<li><a href="#instance_variable_inheritance">INSTANCE VARIABLE INHERITANCE</a></li>
+	<li><a href="#object_relationships">OBJECT RELATIONSHIPS</a></li>
+	<li><a href="#overriding_superclass_methods">OVERRIDING SUPERCLASS METHODS</a></li>
+	<li><a href="#using_relationship_with_sdbm">USING RELATIONSHIP WITH SDBM</a></li>
+	<li><a href="#thinking_of_code_reuse">THINKING OF CODE REUSE</a></li>
+	<li><a href="#class_context_and_the_object">CLASS CONTEXT AND THE OBJECT</a></li>
+	<li><a href="#inheriting_a_constructor">INHERITING A CONSTRUCTOR</a></li>
+	<li><a href="#delegation">DELEGATION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlbot - Bag o' Object Tricks (the BOT)</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The following collection of tricks and hints is intended to whet curious
+appetites about such things as the use of instance variables and the
+mechanics of object and class relationships.  The reader is encouraged to
+consult relevant textbooks for discussion of Object Oriented definitions and
+methodology.  This is not intended as a tutorial for object-oriented
+programming or as a comprehensive guide to Perl's object oriented features,
+nor should it be construed as a style guide.  If you're looking for tutorials,
+be sure to read <a href="../../lib/pods/perlboot.html">the perlboot manpage</a>, <a href="../../lib/pods/perltoot.html">the perltoot manpage</a>, and <a href="../../lib/pods/perltooc.html">the perltooc manpage</a>.</p>
+<p>The Perl motto still holds:  There's more than one way to do it.</p>
+<p>
+</p>
+<hr />
+<h1><a name="oo_scaling_tips">OO SCALING TIPS</a></h1>
+<ol>
+<li>
+<p>Do not attempt to verify the type of $self.  That'll break if the class is
+inherited, when the type of $self is valid but its package isn't what you
+expect.  See rule 5.</p>
+</li>
+<li>
+<p>If an object-oriented (OO) or indirect-object (IO) syntax was used, then the
+object is probably the correct type and there's no need to become paranoid
+about it.  Perl isn't a paranoid language anyway.  If people subvert the OO
+or IO syntax then they probably know what they're doing and you should let
+them do it.  See rule 1.</p>
+</li>
+<li>
+<p>Use the two-argument form of <a href="../../lib/pods/perlfunc.html#bless"><code>bless()</code></a>.  Let a subclass use your constructor.
+See <a href="#inheriting_a_constructor">INHERITING A CONSTRUCTOR</a>.</p>
+</li>
+<li>
+<p>The subclass is allowed to know things about its immediate superclass, the
+superclass is allowed to know nothing about a subclass.</p>
+</li>
+<li>
+<p>Don't be trigger happy with inheritance.  A &quot;using&quot;, &quot;containing&quot;, or
+&quot;delegation&quot; relationship (some sort of aggregation, at least) is often more
+appropriate.  See <a href="#object_relationships">OBJECT RELATIONSHIPS</a>, <a href="#using_relationship_with_sdbm">USING RELATIONSHIP WITH SDBM</a>,
+and <a href="#delegation">DELEGATION</a>.</p>
+</li>
+<li>
+<p>The object is the namespace.  Make package globals accessible via the
+object.  This will remove the guess work about the symbol's home package.
+See <a href="#class_context_and_the_object">CLASS CONTEXT AND THE OBJECT</a>.</p>
+</li>
+<li>
+<p>IO syntax is certainly less noisy, but it is also prone to ambiguities that
+can cause difficult-to-find bugs.  Allow people to use the sure-thing OO
+syntax, even if you don't like it.</p>
+</li>
+<li>
+<p>Do not use function-call syntax on a method.  You're going to be bitten
+someday.  Someone might move that method into a superclass and your code
+will be broken.  On top of that you're feeding the paranoia in rule 2.</p>
+</li>
+<li>
+<p>Don't assume you know the home package of a method.  You're making it
+difficult for someone to override that method.  See <a href="#thinking_of_code_reuse">THINKING OF CODE REUSE</a>.</p>
+</li>
+</ol>
+<p>
+</p>
+<hr />
+<h1><a name="instance_variables">INSTANCE VARIABLES</a></h1>
+<p>An anonymous array or anonymous hash can be used to hold instance
+variables.  Named parameters are also demonstrated.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">%params</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'High'</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">$params</span><span class="operator">{</span><span class="string">'High'</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'Low'</span><span class="operator">}</span>  <span class="operator">=</span> <span class="variable">$params</span><span class="operator">{</span><span class="string">'Low'</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Bar</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">%params</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">[]</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">=</span> <span class="variable">$params</span><span class="operator">{</span><span class="string">'Left'</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="operator">=</span> <span class="variable">$params</span><span class="operator">{</span><span class="string">'Right'</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">'High'</span> <span class="operator">=&gt;</span> <span class="number">42</span><span class="operator">,</span> <span class="string">'Low'</span> <span class="operator">=&gt;</span> <span class="number">11</span> <span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"High=</span><span class="variable">$a</span><span class="string">-&gt;{'High'}\n"</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"Low=</span><span class="variable">$a</span><span class="string">-&gt;{'Low'}\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$b</span> <span class="operator">=</span> <span class="variable">Bar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">'Left'</span> <span class="operator">=&gt;</span> <span class="number">78</span><span class="operator">,</span> <span class="string">'Right'</span> <span class="operator">=&gt;</span> <span class="number">40</span> <span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"Left=</span><span class="variable">$b</span><span class="string">-&gt;[0]\n"</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"Right=</span><span class="variable">$b</span><span class="string">-&gt;[1]\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="scalar_instance_variables">SCALAR INSTANCE VARIABLES</a></h1>
+<p>An anonymous scalar can be used when only one instance variable is needed.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span><span class="operator">;</span>
+                <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">\</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="number">42</span> <span class="operator">);</span>
+        <span class="keyword">print</span> <span class="string">"a=$</span><span class="variable">$a</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="instance_variable_inheritance">INSTANCE VARIABLE INHERITANCE</a></h1>
+<p>This example demonstrates how one might inherit instance variables from a
+superclass for inclusion in the new class.  This requires calling the
+superclass's constructor and adding one's own instance variables to the new
+object.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Bar</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'buz'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">42</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( Bar )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="variable">Bar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'biz'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">11</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"buz = "</span><span class="operator">,</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'buz'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"biz = "</span><span class="operator">,</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'biz'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="object_relationships">OBJECT RELATIONSHIPS</a></h1>
+<p>The following demonstrates how one might implement &quot;containing&quot; and &quot;using&quot;
+relationships between objects.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Bar</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'buz'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">42</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'Bar'</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">Bar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'biz'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">11</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"buz = "</span><span class="operator">,</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'Bar'</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'buz'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"biz = "</span><span class="operator">,</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'biz'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="overriding_superclass_methods">OVERRIDING SUPERCLASS METHODS</a></h1>
+<p>The following example demonstrates how to override a superclass method and
+then call the overridden method.  The <strong>SUPER</strong> pseudo-class allows the
+programmer to call an overridden superclass method without actually knowing
+where that method is defined.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Buz</span><span class="operator">;</span>
+        <span class="keyword">sub</span><span class="variable"> goo </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"here's the goo\n"</span> <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Bar</span><span class="operator">;</span> <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( Buz )</span><span class="operator">;</span>
+        <span class="keyword">sub</span><span class="variable"> google </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"google here\n"</span> <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Baz</span><span class="operator">;</span>
+        <span class="keyword">sub</span><span class="variable"> mumble </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"mumbling\n"</span> <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( Bar Baz )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">[]</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> grr </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"grumble\n"</span> <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> goo </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">SUPER::goo</span><span class="operator">();</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> mumble </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">SUPER::mumble</span><span class="operator">();</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> google </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">SUPER::google</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">mumble</span><span class="operator">;</span>
+        <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">grr</span><span class="operator">;</span>
+        <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">goo</span><span class="operator">;</span>
+        <span class="variable">$foo</span><span class="operator">-&gt;</span><span class="variable">google</span><span class="operator">;</span>
+</pre>
+<p>Note that <code>SUPER</code> refers to the superclasses of the current package
+(<code>Foo</code>), not to the superclasses of <code>$self</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_relationship_with_sdbm">USING RELATIONSHIP WITH SDBM</a></h1>
+<p>This example demonstrates an interface for the SDBM class.  This creates a
+&quot;using&quot; relationship between the SDBM class and the new class Mydbm.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Mydbm</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">require</span> <span class="variable">SDBM_File</span><span class="operator">;</span>
+        <span class="keyword">require</span> <span class="variable">Tie::Hash</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( Tie::Hash )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> TIEHASH </span><span class="operator">{</span>
+            <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+            <span class="keyword">my</span> <span class="variable">$ref</span>  <span class="operator">=</span> <span class="variable">SDBM_File</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+            <span class="keyword">bless</span> <span class="operator">{</span><span class="string">'dbm'</span> <span class="operator">=&gt;</span> <span class="variable">$ref</span><span class="operator">}</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> FETCH </span><span class="operator">{</span>
+            <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+            <span class="keyword">my</span> <span class="variable">$ref</span>  <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'dbm'</span><span class="operator">}</span><span class="operator">;</span>
+            <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="variable">FETCH</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> STORE </span><span class="operator">{</span>
+            <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+            <span class="keyword">if</span> <span class="operator">(</span><span class="keyword">defined</span> <span class="variable">$_</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">){</span>
+                <span class="keyword">my</span> <span class="variable">$ref</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'dbm'</span><span class="operator">}</span><span class="operator">;</span>
+                <span class="variable">$ref</span><span class="operator">-&gt;</span><span class="variable">STORE</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+            <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+                <span class="keyword">die</span> <span class="string">"Cannot STORE an undefined key in Mydbm\n"</span><span class="operator">;</span>
+            <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Fcntl</span> <span class="string">qw( O_RDWR O_CREAT )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">tie</span> <span class="variable">%foo</span><span class="operator">,</span> <span class="string">"Mydbm"</span><span class="operator">,</span> <span class="string">"Sdbm"</span><span class="operator">,</span> <span class="variable">O_RDWR</span><span class="operator">|</span><span class="variable">O_CREAT</span><span class="operator">,</span> <span class="number">0640</span><span class="operator">;</span>
+        <span class="variable">$foo</span><span class="operator">{</span><span class="string">'bar'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">123</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"foo-bar = </span><span class="variable">$foo</span><span class="string">{'bar'}\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">tie</span> <span class="variable">%bar</span><span class="operator">,</span> <span class="string">"Mydbm"</span><span class="operator">,</span> <span class="string">"Sdbm2"</span><span class="operator">,</span> <span class="variable">O_RDWR</span><span class="operator">|</span><span class="variable">O_CREAT</span><span class="operator">,</span> <span class="number">0640</span><span class="operator">;</span>
+        <span class="variable">$bar</span><span class="operator">{</span><span class="string">'Cathy'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">456</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"bar-Cathy = </span><span class="variable">$bar</span><span class="string">{'Cathy'}\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="thinking_of_code_reuse">THINKING OF CODE REUSE</a></h1>
+<p>One strength of Object-Oriented languages is the ease with which old code
+can use new code.  The following examples will demonstrate first how one can
+hinder code reuse and then how one can promote code reuse.</p>
+<p>This first example illustrates a class which uses a fully-qualified method
+call to access the &quot;private&quot; method <code>BAZ()</code>.  The second example will show
+that it is impossible to override the <code>BAZ()</code> method.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">FOO</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> bar </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FOO::private::BAZ</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">FOO::private</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> BAZ </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in BAZ\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">FOO</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">bar</span><span class="operator">;</span>
+</pre>
+<p>Now we try to override the <code>BAZ()</code> method.  We would like FOO::bar() to call
+GOOP::BAZ(), but this cannot happen because FOO::bar() explicitly calls
+FOO::private::BAZ().</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">FOO</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> bar </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">FOO::private::BAZ</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">FOO::private</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> BAZ </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in BAZ\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">GOOP</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( FOO )</span><span class="operator">;</span>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> BAZ </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in GOOP::BAZ\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">GOOP</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">bar</span><span class="operator">;</span>
+</pre>
+<p>To create reusable code we must modify class FOO, flattening class
+FOO::private.  The next example shows a reusable class FOO which allows the
+method GOOP::BAZ() to be used in place of FOO::BAZ().</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">FOO</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> bar </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">BAZ</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> BAZ </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in BAZ\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">GOOP</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( FOO )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="operator">{}</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">sub</span><span class="variable"> BAZ </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in GOOP::BAZ\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">GOOP</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">bar</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="class_context_and_the_object">CLASS CONTEXT AND THE OBJECT</a></h1>
+<p>Use the object to solve package and class context problems.  Everything a
+method needs should be available via the object or should be passed as a
+parameter to the method.</p>
+<p>A class will sometimes have static or global data to be used by the
+methods.  A subclass may want to override that data and replace it with new
+data.  When this happens the superclass may not know how to find the new
+copy of the data.</p>
+<p>This problem can be solved by using the object to define the context of the
+method.  Let the method look in the object for a reference to the data.  The
+alternative is to force the method to go hunting for the data (&quot;Is it in my
+class, or in a subclass?  Which subclass?&quot;), and this can be inconvenient
+and will lead to hackery.  It is better just to let the object tell the
+method where that data is located.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Bar</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">%fizzle</span> <span class="operator">=</span> <span class="operator">(</span> <span class="string">'Password'</span> <span class="operator">=&gt;</span> <span class="string">'XYZZY'</span> <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'fizzle'</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">%fizzle</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> enter </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="comment"># Don't try to guess if we should use %Bar::fizzle</span>
+                <span class="comment"># or %Foo::fizzle.  The object already knows which</span>
+                <span class="comment"># we should use, so just ask it.</span>
+                <span class="comment">#</span>
+                <span class="keyword">my</span> <span class="variable">$fizzle</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'fizzle'</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="keyword">print</span> <span class="string">"The word is "</span><span class="operator">,</span> <span class="variable">$fizzle</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'Password'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+                        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Foo</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw( Bar )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">%fizzle</span> <span class="operator">=</span> <span class="operator">(</span> <span class="string">'Password'</span> <span class="operator">=&gt;</span> <span class="string">'Rumple'</span> <span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="variable">Bar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'fizzle'</span><span class="operator">}</span> <span class="operator">=</span> <span class="operator">\</span><span class="variable">%fizzle</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">Bar</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$b</span> <span class="operator">=</span> <span class="variable">Foo</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">enter</span><span class="operator">;</span>
+        <span class="variable">$b</span><span class="operator">-&gt;</span><span class="variable">enter</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="inheriting_a_constructor">INHERITING A CONSTRUCTOR</a></h1>
+<p>An inheritable constructor should use the second form of <a href="../../lib/pods/perlfunc.html#bless"><code>bless()</code></a> which allows
+blessing directly into a specified class.  Notice in this example that the
+object will be a BAR not a FOO, even though the constructor is in class FOO.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">FOO</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> new </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="operator">{}</span><span class="operator">;</span>
+                <span class="keyword">bless</span> <span class="variable">$self</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> baz </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in FOO::baz()\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">BAR</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(FOO)</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> baz </span><span class="operator">{</span>
+                <span class="keyword">print</span> <span class="string">"in BAR::baz()\n"</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="variable">$a</span> <span class="operator">=</span> <span class="variable">BAR</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+        <span class="variable">$a</span><span class="operator">-&gt;</span><span class="variable">baz</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="delegation">DELEGATION</a></h1>
+<p>Some classes, such as SDBM_File, cannot be effectively subclassed because
+they create foreign objects.  Such a class can be extended with some sort of
+aggregation technique such as the &quot;using&quot; relationship mentioned earlier or
+by delegation.</p>
+<p>The following example demonstrates delegation using an <code>AUTOLOAD()</code> function to
+perform message-forwarding.  This will allow the Mydbm object to behave
+exactly like an SDBM_File object.  The Mydbm class could now extend the
+behavior by adding custom <code>FETCH()</code> and <code>STORE()</code> methods, if this is desired.</p>
+<pre>
+        <span class="keyword">package</span> <span class="variable">Mydbm</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">require</span> <span class="variable">SDBM_File</span><span class="operator">;</span>
+        <span class="keyword">require</span> <span class="variable">Tie::Hash</span><span class="operator">;</span>
+        <span class="variable">@ISA</span> <span class="operator">=</span> <span class="string">qw(Tie::Hash)</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> TIEHASH </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">my</span> <span class="variable">$ref</span> <span class="operator">=</span> <span class="variable">SDBM_File</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+                <span class="keyword">bless</span> <span class="operator">{</span><span class="string">'delegate'</span> <span class="operator">=&gt;</span> <span class="variable">$ref</span><span class="operator">}</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> AUTOLOAD </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="comment"># The Perl interpreter places the name of the</span>
+                <span class="comment"># message in a variable called $AUTOLOAD.</span>
+</pre>
+<pre>
+                <span class="comment"># DESTROY messages should never be propagated.</span>
+                <span class="keyword">return</span> <span class="keyword">if</span> <span class="variable">$AUTOLOAD</span> <span class="operator">=~</span> <span class="regex">/::DESTROY$/</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="comment"># Remove the package name.</span>
+                <span class="variable">$AUTOLOAD</span> <span class="operator">=~</span> <span class="regex">s/^Mydbm:://</span><span class="operator">;</span>
+</pre>
+<pre>
+                <span class="comment"># Pass the message to the delegate.</span>
+                <span class="variable">$self</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'delegate'</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">$AUTOLOAD</span><span class="operator">(</span><span class="variable">@_</span><span class="operator">);</span>
+                        <span class="operator">}</span>
+</pre>
+<pre>
+        <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">Fcntl</span> <span class="string">qw( O_RDWR O_CREAT )</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">tie</span> <span class="variable">%foo</span><span class="operator">,</span> <span class="string">"Mydbm"</span><span class="operator">,</span> <span class="string">"adbm"</span><span class="operator">,</span> <span class="variable">O_RDWR</span><span class="operator">|</span><span class="variable">O_CREAT</span><span class="operator">,</span> <span class="number">0640</span><span class="operator">;</span>
+        <span class="variable">$foo</span><span class="operator">{</span><span class="string">'bar'</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">123</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"foo-bar = </span><span class="variable">$foo</span><span class="string">{'bar'}\n"</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/pods/perlboot.html">the perlboot manpage</a>, <a href="../../lib/pods/perltoot.html">the perltoot manpage</a>, <a href="../../lib/pods/perltooc.html">the perltooc manpage</a>.</p>
+
+</body>
+
+</html>

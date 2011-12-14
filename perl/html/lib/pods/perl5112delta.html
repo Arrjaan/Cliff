@@ -1,0 +1,435 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perl5112delta - what is new for perl v5.11.2</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perl5112delta - what is new for perl v5.11.2</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#core_enhancements">Core Enhancements</a></li>
+	<ul>
+
+		<li><a href="#qr_overloading">qr overloading</a></li>
+		<li><a href="#pluggable_keywords">Pluggable keywords</a></li>
+		<li><a href="#apis_for_more_internals">APIs for more internals</a></li>
+		<li><a href="#overridable_function_lookup">Overridable function lookup</a></li>
+	</ul>
+
+	<li><a href="#modules_and_pragmata">Modules and Pragmata</a></li>
+	<ul>
+
+		<li><a href="#new_modules_and_pragmata">New Modules and Pragmata</a></li>
+		<li><a href="#pragmata_changes">Pragmata Changes</a></li>
+		<li><a href="#updated_modules">Updated Modules</a></li>
+	</ul>
+
+	<li><a href="#utility_changes">Utility Changes</a></li>
+	<li><a href="#performance_enhancements">Performance Enhancements</a></li>
+	<li><a href="#new_or_changed_diagnostics">New or Changed Diagnostics</a></li>
+	<li><a href="#changed_internals">Changed Internals</a></li>
+	<li><a href="#new_tests">New Tests</a></li>
+	<li><a href="#known_problems">Known Problems</a></li>
+	<li><a href="#deprecations">Deprecations</a></li>
+	<ul>
+
+		<li><a href="#use_of____to_mean_an_empty_attribute_list_is_now_deprecated_">Use of <code>:=</code> to mean an empty attribute list is now deprecated.</a></li>
+	</ul>
+
+	<li><a href="#acknowledgements">Acknowledgements</a></li>
+	<li><a href="#reporting_bugs">Reporting Bugs</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perl5112delta - what is new for perl v5.11.2</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes differences between the 5.11.1 release and the
+5.11.2 release.</p>
+<p>
+</p>
+<hr />
+<h1><a name="core_enhancements">Core Enhancements</a></h1>
+<p>
+</p>
+<h2><a name="qr_overloading">qr overloading</a></h2>
+<p>It is now possible to overload the <a href="../../lib/pods/perlfunc.html#qr_"><code>qr//</code></a> operator, that is,
+conversion to regexp, like it was already possible to overload
+conversion to boolean, string or number of objects. It is invoked when
+an object appears on the right hand side of the <code>=~</code> operator, or when
+it is interpolated into a regexp. See <a href="../../lib/overload.html">the overload manpage</a>.</p>
+<p>
+</p>
+<h2><a name="pluggable_keywords">Pluggable keywords</a></h2>
+<p>Extension modules can now cleanly hook into the Perl parser to define
+new kinds of keyword-headed expression and compound statement. The
+syntax following the keyword is defined entirely by the extension. This
+allow a completely non-Perl sublanguage to be parsed inline, with the
+right ops cleanly generated. This feature is currently considered
+experimental.</p>
+<p>See <a href="../../lib/pods/perlapi.html#pl_keyword_plugin">PL_keyword_plugin in the perlapi manpage</a> for the mechanism. The Perl core
+source distribution also includes a new module
+<a href="../../XS/APItest/KeywordRPN.html">the XS::APItest::KeywordRPN manpage</a>, which implements reverse Polish notation
+arithmetic via pluggable keywords. This module is mainly used for test
+purposes, and is not normally installed, but also serves as an example
+of how to use the new mechanism.</p>
+<p>
+</p>
+<h2><a name="apis_for_more_internals">APIs for more internals</a></h2>
+<p>The lowest layers of the lexer and parts of the pad system now have C
+APIs available to XS extensions. These are necessary to support proper
+use of pluggable keywords, but have other uses too. The new APIs are
+experimental, and only cover a small proportion of what would be
+necessary to take full advantage of the core's facilities in these
+areas. It is intended that the Perl 5.13 development cycle will see the
+addition of a full range of clean, supported interfaces.</p>
+<p>
+</p>
+<h2><a name="overridable_function_lookup">Overridable function lookup</a></h2>
+<p>Where an extension module hooks the creation of rv2cv ops to modify the
+subroutine lookup process, this now works correctly for bareword
+subroutine calls. This means that prototypes on subroutines referenced
+this way will be processed correctly. (Previously bareword subroutine
+names were initially looked up, for parsing purposes, by an unhookable
+mechanism, so extensions could only properly influence subroutine names
+that appeared with an <code>&amp;</code> sigil.)</p>
+<p>
+</p>
+<hr />
+<h1><a name="modules_and_pragmata">Modules and Pragmata</a></h1>
+<p>
+</p>
+<h2><a name="new_modules_and_pragmata">New Modules and Pragmata</a></h2>
+<dl>
+<dt><strong><a name="legacy" class="item"><code>legacy</code></a></strong></dt>
+
+<dd>
+<p>Preserves legacy behaviors or enable new non-default behaviors.
+Currently the only behaviour concerns semantics for the 128 characters
+on ASCII systems that have the 8th bit set.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="pragmata_changes">Pragmata Changes</a></h2>
+<dl>
+<dt><strong><a name="diagnostics" class="item"><code>diagnostics</code></a></strong></dt>
+
+<dd>
+<p>Supports %.0f formatting internally.</p>
+</dd>
+<dt><strong><a name="overload" class="item"><code>overload</code></a></strong></dt>
+
+<dd>
+<p>Allow overloading of 'qr'.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="updated_modules">Updated Modules</a></h2>
+<dl>
+<dt><strong><a name="b_concise" class="item"><code>B::Concise</code></a></strong></dt>
+
+<dd>
+<p>Optimize reversing an array in-place, avoid using defined %hash in core
+code and tests.</p>
+</dd>
+<dt><strong><a name="b_deparse2" class="item"><a href="#b_deparse"><code>B::Deparse</code></a></a></strong></dt>
+
+<dd>
+<p>Teach B::Deparse about in-place reverse.</p>
+</dd>
+<dt><strong><a name="carp3" class="item"><a href="#carp"><code>Carp</code></a></a></strong></dt>
+
+<dd>
+<p>Refine Carp <a href="../../lib/pods/perlfunc.html#caller"><code>caller()</code></a> fix and add tests.</p>
+</dd>
+<dt><strong><a name="compress_zlib2" class="item"><a href="#compress_zlib"><code>Compress::Zlib</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 2.022.</p>
+</dd>
+<dt><strong><a name="cpanplus2" class="item"><a href="#cpanplus"><code>CPANPLUS</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 0.89_09.</p>
+</dd>
+<dt><strong><a name="encode2" class="item"><a href="#encode"><code>Encode</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 2.38.</p>
+</dd>
+<dt><strong><a name="extutils_cbuilder2" class="item"><a href="#extutils_cbuilder"><code>ExtUtils::CBuilder</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 0.27.</p>
+</dd>
+<dt><strong><a name="env" class="item"><code>Env</code></a></strong></dt>
+
+<dd>
+<p>Add EXISTS and DELETE methods to Env.pm.</p>
+</dd>
+<dt><strong><a name="file_fetch2" class="item"><a href="#file_fetch"><code>File::Fetch</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 0.22.</p>
+</dd>
+<dt><strong><a name="i8n_langinfo" class="item"><code>I8N::Langinfo</code></a></strong></dt>
+
+<dd>
+<p>Correctly document export of I18N::Langinfo.</p>
+</dd>
+<dt><strong><a name="i8n_langtags" class="item"><code>I8N::LangTags</code></a></strong></dt>
+
+<dd>
+<p>In I18N::LangTags::Detect, avoid using defined @array and defined
+%hash.</p>
+</dd>
+<dt><strong><a name="io_compress2" class="item"><a href="#io_compress"><code>IO::Compress</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 2.022.</p>
+</dd>
+<dt><strong><a name="ipc_cmd2" class="item"><a href="#ipc_cmd"><code>IPC::Cmd</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 0.54.</p>
+</dd>
+<dt><strong><a name="list_util2" class="item"><a href="#list_util"><code>List::Util</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 1.22.</p>
+</dd>
+<dt><strong><a name="locale_maketext" class="item"><code>Locale::Maketext</code></a></strong></dt>
+
+<dd>
+<p>In Locale::Maketext, avoid using defined @array and defined %hash.
+Convert the odd Locale::Maketext test out from Test to Test::More.</p>
+</dd>
+<dt><strong><a name="module_build2" class="item"><a href="#module_build"><code>Module::Build</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 0.35_08.</p>
+</dd>
+<dt><strong><a name="module_corelist2" class="item"><a href="#module_corelist"><code>Module::CoreList</code></a></a></strong></dt>
+
+<dd>
+<p>Implemented <code>is_deprecated()</code>.</p>
+</dd>
+<dt><strong><a name="pod_simple2" class="item"><a href="#pod_simple"><code>Pod::Simple</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 3.10.</p>
+</dd>
+<dt><strong><a name="scalar_util2" class="item"><a href="#scalar_util"><code>Scalar::Util</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 1.22.</p>
+</dd>
+<dt><strong><a name="switch2" class="item"><a href="#switch"><code>Switch</code></a></a></strong></dt>
+
+<dd>
+<p>Updated to 2.16.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="utility_changes">Utility Changes</a></h1>
+<dl>
+<dt><strong><a name="a2p" class="item"><em class="file">a2p</em></a></strong></dt>
+
+<dd>
+<p>Fixed bugs with the <code>match()</code> operator in list context, remove mention of
+$[.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="performance_enhancements">Performance Enhancements</a></h1>
+<ul>
+<li>
+<p>Reversing an array to itself (as in <code>@a = reverse @a</code>) in void context
+now happens in-place and is several orders of magnitude faster than it
+used to be. It will also preserve non-existent elements whenever
+possible, i.e. for non magical arrays or tied arrays with <code>EXISTS</code> and
+<code>DELETE</code> methods.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="new_or_changed_diagnostics">New or Changed Diagnostics</a></h1>
+<p>Several new diagnostics, see <a href="../../lib/pods/perldiag.html">the perldiag manpage</a> for details.</p>
+<dl>
+<dt><strong><a name="bad_plugin_affecting_keyword_s" class="item"><code>Bad plugin affecting keyword '%s'</code></a></strong></dt>
+
+<dt><strong><a name="gmtime" class="item"><code>gmtime(%.0f) too large</code></a></strong></dt>
+
+<dt><strong><a name="lexing_code_attempted_to_stuff_non_latin_1_character_into_latin_1_input" class="item"><code>Lexing code attempted to stuff non-Latin-1 character into Latin-1 input</code></a></strong></dt>
+
+<dt><strong><a name="error" class="item"><code>Lexing code internal error (%s)</code></a></strong></dt>
+
+<dt><strong><a name="localtime" class="item"><code>localtime(%.0f) too large</code></a></strong></dt>
+
+<dt><strong><a name="overloaded_dereference_did_not_return_a_reference" class="item"><code>Overloaded dereference did not return a reference</code></a></strong></dt>
+
+<dt><strong><a name="overloaded_qr_did_not_return_a_regexp" class="item"><code>Overloaded qr did not return a REGEXP</code></a></strong></dt>
+
+<dt><strong><a name="perl_pmflag" class="item"><code>Perl_pmflag() is deprecated, and will be removed from the XS API</code></a></strong></dt>
+
+</dl>
+<p>One diagnostic has been removed:</p>
+<dl>
+<dt><strong><a name="runaway_format" class="item"><code>Runaway format</code></a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="changed_internals">Changed Internals</a></h1>
+<ul>
+<li>
+<p><a href="#perl_pmflag"><code>Perl_pmflag</code></a> has been removed from the public API. Calling it now
+generates a deprecation warning, and it will be removed in a future
+release. Although listed as part of the API, it was never documented,
+and only ever used in <em class="file">toke.c</em>, and prior to 5.10, <em class="file">regcomp.c</em>. In
+core, it has been replaced by a static function.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="new_tests">New Tests</a></h1>
+<dl>
+<dt><strong><a name="t_op_while_readdir_t" class="item"><em class="file">t/op/while_readdir.t</em></a></strong></dt>
+
+<dd>
+<p>Test that a bare readdir in while loop sets $_.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="known_problems">Known Problems</a></h1>
+<dl>
+<dt><strong><a name="known_test_failures_on_vms2" class="item">Known test failures on VMS</a></strong></dt>
+
+<dd>
+<p>Perl 5.11.2 fails a small set of core and CPAN tests as of this
+release. With luck, that'll be sorted out for 5.11.3.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="deprecations">Deprecations</a></h1>
+<p>The following items are now deprecated.</p>
+<p>
+</p>
+<h2><a name="use_of____to_mean_an_empty_attribute_list_is_now_deprecated_">Use of <code>:=</code> to mean an empty attribute list is now deprecated.</a></h2>
+<p>An accident of Perl's parser meant that these constructions were all
+equivalent:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$pi</span> <span class="operator">:=</span> <span class="number">4</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$pi</span> <span class="operator">:</span> <span class="operator">=</span> <span class="number">4</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$pi</span> <span class="operator">:</span>  <span class="operator">=</span> <span class="number">4</span><span class="operator">;</span>
+</pre>
+<p>with the <code>:</code> being treated as the start of an attribute list, which
+ends before the <code>=</code>. As whitespace is not significant here, all are
+parsed as an empty attribute list, hence all the above are equivalent
+to, and better written as</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$pi</span> <span class="operator">=</span> <span class="number">4</span><span class="operator">;</span>
+</pre>
+<p>because no attribute processing is done for an empty list.</p>
+<p>As is, this meant that <code>:=</code> cannot be used as a new token, without
+silently changing the meaning of existing code. Hence that particular
+form is now deprecated, and will become a syntax error. If it is
+absolutely necessary to have empty attribute lists (for example,
+because of a code generator) then avoid the warning by adding a space
+before the <code>=</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">Acknowledgements</a></h1>
+<p>Perl 5.11.2 represents approximately 3 weeks development since Perl
+5.11.1 and contains 29,992 lines of changes across 458 files from 38
+authors and committers:</p>
+<p>Abhijit Menon-Sen, Abigail, Ben Morrow, Bo Borgerson, Brad Gilbert,
+Bram, Chris Williams, Craig A. Berry, Daniel Frederick Crisman, Dave
+Rolsky, David E. Wheeler, David Golden, Eric Brine, Father
+Chrysostomos, Frank Wiegand, Gerard Goossen, Gisle Aas, Graham Barr,
+Harmen, H.Merijn Brand, Jan Dubois, Jerry D. Hedden, Jesse Vincent,
+Karl Williamson, Kevin Ryde, Leon Brocard, Nicholas Clark, Paul
+Marquess, Philippe Bruhat, Rafael Garcia-Suarez, Sisyphus, Steffen
+Mueller, Steve Hay, Steve Peters, Vincent Pit, Yuval Kogman, Yves
+Orton, and Zefram.</p>
+<p>Many of the changes included in this version originated in the CPAN
+modules included in Perl's core. We're grateful to the entire CPAN
+community for helping Perl to flourish.</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting_bugs">Reporting Bugs</a></h1>
+<p>If you find what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the perl bug
+database at <a href="http://rt.perl.org/perlbug/">http://rt.perl.org/perlbug/</a> . There may also be information
+at <a href="http://www.perl.org/">http://www.perl.org/</a> , the Perl Home Page.</p>
+<p>If you believe you have an unreported bug, please run the <strong>perlbug</strong>
+program included with your release. Be sure to trim your bug down to a
+tiny but sufficient test case. Your bug report, along with the output
+of <code>perl -V</code>, will be sent off to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a> to be analysed by
+the Perl porting team.</p>
+<p>If the bug you are reporting has security implications, which make it
+inappropriate to send to a publicly archived mailing list, then please
+send it to <a href="mailto:perl5-security-report@perl.org.">perl5-security-report@perl.org.</a> This points to a closed
+subscription unarchived mailing list, which includes all the core
+committers, who be able to help assess the impact of issues, figure out
+a resolution, and help co-ordinate the release of patches to mitigate
+or fix the problem across all platforms on which Perl is supported.
+Please only use this address for security issues in the Perl core, not
+for modules independently distributed on CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The <em class="file">Changes</em> file for an explanation of how to view exhaustive
+details on what changed.</p>
+<p>The <em class="file">INSTALL</em> file for how to build Perl.</p>
+<p>The <em class="file">README</em> file for general stuff.</p>
+<p>The <em class="file">Artistic</em> and <em class="file">Copying</em> files for copyright information.</p>
+
+</body>
+
+</html>

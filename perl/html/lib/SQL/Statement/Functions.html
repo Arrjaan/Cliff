@@ -1,0 +1,471 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>SQL::Statement::Functions - built-in &amp; user-defined SQL functions</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>SQL::Statement::Functions - built-in &amp; user-defined SQL functions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#function_syntax">Function syntax</a></li>
+	<li><a href="#user_defined_functions">User-Defined Functions</a></li>
+	<ul>
+
+		<li><a href="#loading_user_defined_functions">Loading User-Defined Functions</a></li>
+		<li><a href="#creating_user_defined_functions">Creating User-Defined Functions</a></li>
+		<li><a href="#creating_in_memory_tables_with_functions">Creating In-Memory Tables with functions</a></li>
+	</ul>
+
+	<li><a href="#built_in_functions">Built-in Functions</a></li>
+	<ul>
+
+		<li><a href="#aggregate_functions">Aggregate Functions</a></li>
+		<ul>
+
+			<li><a href="#min__max__avg__sum__count">min, max, avg, sum, count</a></li>
+		</ul>
+
+		<li><a href="#date_and_time_functions">Date and Time Functions</a></li>
+		<ul>
+
+			<li><a href="#current_date__current_time__current_timestamp">current_date, current_time, current_timestamp</a></li>
+		</ul>
+
+		<li><a href="#string_functions">String Functions</a></li>
+		<ul>
+
+			<li><a href="#char_length__lower__position__regex__soundex__substring__trim__upper">char_length, lower, position, regex, soundex, substring, trim, upper</a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#special_utility_functions">Special Utility Functions</a></li>
+	<ul>
+
+		<li><a href="#import__"><code>IMPORT()</code></a></li>
+	</ul>
+
+	<li><a href="#submitting_built_in_functions">Submitting built-in functions</a></li>
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#author___copyright">AUTHOR &amp; COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>SQL::Statement::Functions - built-in &amp; user-defined SQL functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ SELECT Func(args);
+ SELECT * FROM Func(args);
+ SELECT * FROM x WHERE Funcs(args);
+ SELECT * FROM x WHERE y &lt; Funcs(args);</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module contains the built-in functions for SQL::Parser and SQL::Statement.  All of the functions are also available in any DBDs that subclass those modules (e.g. DBD::CSV, DBD::DBM, DBD::File, DBD::AnyData, DBD::Excel, etc.).</p>
+<p>This documentation covers built-in functions and also explains how to create your own functions to supplement the built-in ones.  It's easy.  If you create one that is generally useful, see below for how to submit it to become a built-in function.</p>
+<p>
+</p>
+<hr />
+<h1><a name="function_syntax">Function syntax</a></h1>
+<p>When using SQL::Statement/SQL::Parser directly to parse SQL, functions (either built-in or user-defined) may occur anywhere in a SQL statement that values, column names, table names, or predicates may occur.  When using the modules through a DBD or in any other context in which the SQL is both parsed and executed, functions can occur in the same places except that they can not occur in the column selection clause of a SELECT statement that contains a FROM clause.</p>
+<pre>
+ <span class="comment"># valid for both parsing and executing</span>
+</pre>
+<pre>
+     SELECT MyFunc(args);
+     SELECT * FROM MyFunc(args);
+     SELECT * FROM x WHERE MyFuncs(args);
+     SELECT * FROM x WHERE y &lt; MyFuncs(args);</pre>
+<pre>
+ <span class="comment"># valid only for parsing (won't work from a DBD)</span>
+</pre>
+<pre>
+     SELECT MyFunc(args) FROM x WHERE y;</pre>
+<p>
+</p>
+<hr />
+<h1><a name="user_defined_functions">User-Defined Functions</a></h1>
+<p>
+</p>
+<h2><a name="loading_user_defined_functions">Loading User-Defined Functions</a></h2>
+<p>In addition to the built-in functions, you can create any number of your own user-defined functions (UDFs).  In order to use a UDF in a script, you first have to create a perl subroutine (see below), then you need to make the function available to your database handle with the CREATE FUNCTION or LOAD commands:</p>
+<pre>
+ <span class="comment"># load a single function "foo" from a subroutine</span>
+ <span class="comment"># named "foo" in the current package</span>
+</pre>
+<pre>
+      <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">" CREATE FUNCTION foo EXTERNAL "</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># load a single function "foo" from a subroutine</span>
+ <span class="comment"># named "bar" in the current package</span>
+</pre>
+<pre>
+      <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">" CREATE FUNCTION foo EXTERNAL NAME bar"</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># load a single function "foo" from a subroutine named "foo"</span>
+ <span class="comment"># in another package</span>
+</pre>
+<pre>
+      <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">' CREATE FUNCTION foo EXTERNAL NAME "Bar::Baz::foo" '</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># load all the functions in another package</span>
+</pre>
+<pre>
+      <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">' LOAD "Bar::Baz" '</span><span class="operator">);</span>
+</pre>
+<p>Functions themselves should follow SQL identifier naming rules.  Subroutines loaded with CREATE FUNCTION can have any valid perl subroutine name.  Subroutines loaded with LOAD must start with SQL_FUNCTION_ and then the actual function name.  For example:</p>
+<pre>
+ <span class="keyword">package</span> <span class="variable">Qux::Quimble</span><span class="operator">;</span>
+ <span class="keyword">sub</span><span class="variable"> SQL_FUNCTION_FOO </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+ <span class="keyword">sub</span><span class="variable"> SQL_FUNCTION_BAR </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+ <span class="keyword">sub</span><span class="variable"> some_other_perl_subroutine_not_a_function </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+ <span class="number">1</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="comment"># in another package</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"LOAD Qux::Quimble"</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># This loads FOO and BAR as SQL functions.</span>
+</pre>
+<p>
+</p>
+<h2><a name="creating_user_defined_functions">Creating User-Defined Functions</a></h2>
+<p>User-defined functions (UDFs) are perl subroutines that return values appropriate to the context of the function in a SQL statement.  For example the built-in CURRENT_TIME returns a string value and therefore may be used anywhere in a SQL statement that a string value can.  Here' the entire perl code for the function:</p>
+<pre>
+ <span class="comment"># CURRENT_TIME</span>
+ <span class="comment">#</span>
+ <span class="comment"># arguments : none</span>
+ <span class="comment"># returns   : string containing current time as hh::mm::ss</span>
+ <span class="comment">#</span>
+ <span class="keyword">sub</span><span class="variable"> SQL_FUNCTION_CURRENT_TIME </span><span class="operator">{</span>
+     <span class="keyword">sprintf</span> <span class="string">"%02s::%02s::%02s"</span><span class="operator">,(</span><span class="keyword">localtime</span><span class="operator">)</span><span class="operator">[</span><span class="number">2</span><span class="operator">,</span><span class="number">1</span><span class="operator">,</span><span class="number">0</span><span class="operator">]</span>
+ <span class="operator">}</span>
+</pre>
+<p>More complex functions can make use of a number of arguments always passed to functions automatically.  Functions always receive these values in @_:</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> FOO </span><span class="operator">{</span>
+     <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span><span class="variable">$sth</span><span class="operator">,</span><span class="variable">$rowhash</span><span class="operator">,</span><span class="variable">@params</span><span class="operator">);</span>
+ <span class="operator">}</span>
+</pre>
+<p>The first argument, $self, is whatever class the function is defined in, not generally useful unless you have an entire module to support the function.</p>
+<p>The second argument, $sth is the active statement handle of the current statement.  Like all active statement handles it contains the current database handle in the {Database} attribute so you can have access to the database handle in any function:</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> FOO </span><span class="operator">{</span>
+     <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span><span class="variable">$sth</span><span class="operator">,</span><span class="variable">$rowhash</span><span class="operator">,</span><span class="variable">@params</span><span class="operator">);</span>
+     <span class="keyword">my</span> <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">Database</span><span class="operator">}</span><span class="operator">;</span>
+     <span class="comment"># $dbh-&gt;do( ...), etc.</span>
+ <span class="operator">}</span>
+</pre>
+<p>In actual practice you probably want to use $sth-{Database} directly rather than making a local copy, so $sth-&gt;{Database}-&gt;do(...).</p>
+<p>The third argument, $rowhash, is a reference to a hash containing the key/value pairs for the current database row the SQL is searching.  This isn't relevant for something like CURRENT_TIME which isn't based on a SQL search, but here's an example of a (rather useless) UDF using $rowhash that just joins the values for the entire row with a colon:</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> COLON_JOIN </span><span class="operator">{</span>
+     <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span><span class="variable">$sth</span><span class="operator">,</span><span class="variable">$rowhash</span><span class="operator">,</span><span class="variable">@params</span><span class="operator">);</span>
+     <span class="keyword">my</span> <span class="variable">$str</span> <span class="operator">=</span> <span class="keyword">join</span> <span class="string">':'</span><span class="operator">,</span> <span class="keyword">values</span> <span class="variable">%$rowhash</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<p>The remaining arguments, @params, are arguments passed by users to the function, either directly or with placeholders; another silly example which just returns the results of multiplying the arguments passed to it:</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> MULTIPLY </span><span class="operator">{</span>
+     <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span><span class="variable">$sth</span><span class="operator">,</span><span class="variable">$rowhash</span><span class="operator">,</span><span class="variable">@params</span><span class="operator">);</span>
+     <span class="keyword">return</span> <span class="variable">$params</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">*</span> <span class="variable">$params</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="comment"># first make the function available</span>
+ <span class="comment">#</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE FUNCTION MULTIPLY"</span><span class="operator">);</span>
+</pre>
+<pre>
+ <span class="comment"># then multiply col3 in each row times seven</span>
+ <span class="comment">#</span>
+ <span class="keyword">my</span> <span class="variable">$sth</span><span class="operator">=</span><span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"SELECT col1 FROM tbl1 WHERE col2 = MULTIPLY(col3,7)"</span><span class="operator">);</span>
+ <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">;</span>
+ <span class="comment">#</span>
+ <span class="comment"># or</span>
+ <span class="comment">#</span>
+ <span class="keyword">my</span> <span class="variable">$sth</span><span class="operator">=</span><span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"SELECT col1 FROM tbl1 WHERE col2 = MULTIPLY(col3,?)"</span><span class="operator">);</span>
+ <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">(</span><span class="number">7</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="creating_in_memory_tables_with_functions">Creating In-Memory Tables with functions</a></h2>
+<p>A function can return almost anything, as long is it is an appropriate return for the context the function will be used in.  In the special case of table-returning functions, the function should return a reference to an array of array references with the first row being the column names and the remaining rows the data.  For example:</p>
+<p><strong>1. create a function that returns an AoA</strong>,</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> Japh </span><span class="operator">{</span><span class="operator">[</span>
+      <span class="operator">[</span><span class="string">qw( id word   )</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">[</span><span class="string">qw( 1 Hacker  )</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">[</span><span class="string">qw( 2 Perl    )</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">[</span><span class="string">qw( 3 Another )</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">[</span><span class="string">qw( 4 Just    )</span><span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">]</span><span class="operator">}</span>
+</pre>
+<p><strong>2. make your database handle aware of the function</strong></p>
+<pre>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE FUNCTION 'Japh');
+  </span>
+</pre>
+<p><strong>3. Access the data in the AoA from SQL</strong></p>
+<pre>
+  <span class="variable">$sth</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"SELECT word FROM Japh ORDER BY id DESC"</span><span class="operator">);</span>
+</pre>
+<p>Or here's an example that does a join on two in-memory tables:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> Prof  </span><span class="operator">{</span><span class="operator">[</span> <span class="operator">[</span><span class="string">qw(pid pname)</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="string">qw(1 Sue )</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="string">qw(2 Bob)</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="string">qw(3 Tom )</span><span class="operator">]</span> <span class="operator">]</span><span class="operator">}</span>
+  <span class="keyword">sub</span><span class="variable"> Class </span><span class="operator">{</span><span class="operator">[</span> <span class="operator">[</span><span class="string">qw(pid cname)</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="string">qw(1 Chem)</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="string">qw(2 Bio)</span><span class="operator">]</span><span class="operator">,</span><span class="operator">[</span><span class="string">qw(2 Math)</span><span class="operator">]</span> <span class="operator">]</span><span class="operator">}</span>
+  <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE FUNCTION </span><span class="variable">$_</span><span class="string">) for qw(Prof Class);
+  </span><span class="variable">$sth</span><span class="string"> = </span><span class="variable">$dbh</span><span class="string">-&gt;prepare("</span><span class="variable">SELECT</span> <span class="operator">*</span> <span class="variable">FROM</span> <span class="variable">Prof</span> <span class="variable">NATURAL</span> <span class="variable">JOIN</span> <span class="variable">Class</span><span class="string">");
+  </span>
+</pre>
+<p>The &quot;Prof&quot; and &quot;Class&quot; functions return tables which can be used like any SQL table.</p>
+<p>More complex functions might do something like scrape an RSS feed, or search a file system and put the results in AoA.  For example, to search a directory with SQL:</p>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> Dir </span><span class="operator">{</span>
+     <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span><span class="variable">$sth</span><span class="operator">,</span><span class="variable">$rowhash</span><span class="operator">,</span><span class="variable">$dir</span><span class="operator">)=</span><span class="variable">@_</span><span class="operator">;</span>
+     <span class="keyword">opendir</span> <span class="variable">D</span><span class="operator">,</span> <span class="variable">$dir</span> <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"'</span><span class="variable">$dir</span><span class="string">':$!"</span><span class="operator">;</span>
+     <span class="keyword">my</span> <span class="variable">@files</span> <span class="operator">=</span> <span class="keyword">readdir</span> <span class="variable">D</span><span class="operator">;</span>
+     <span class="keyword">my</span> <span class="variable">$data</span> <span class="operator">=</span> <span class="operator">[[</span><span class="string">qw(fileName fileExt)</span><span class="operator">]]</span><span class="operator">;</span>
+     <span class="keyword">for</span> <span class="operator">(</span><span class="variable">@files</span><span class="operator">)</span> <span class="operator">{</span>
+         <span class="keyword">my</span><span class="operator">(</span><span class="variable">$fn</span><span class="operator">,</span><span class="variable">$ext</span><span class="operator">)</span> <span class="operator">=</span> <span class="regex">/^(.*)(\.[^\.]+)$/</span><span class="operator">;</span>
+         <span class="keyword">push</span> <span class="variable">@$data</span><span class="operator">,</span> <span class="operator">[</span><span class="variable">$fn</span><span class="operator">,</span><span class="variable">$ext</span><span class="operator">]</span><span class="operator">;</span>
+     <span class="operator">}</span>
+     <span class="keyword">return</span> <span class="variable">$data</span><span class="operator">;</span>
+ <span class="operator">}</span>
+ <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">do</span><span class="operator">(</span><span class="string">"CREATE FUNCTION Dir"</span><span class="operator">);</span>
+ <span class="keyword">printf</span> <span class="string">"%s\n"</span><span class="operator">,</span> <span class="keyword">join</span><span class="string">'   '</span><span class="operator">,</span><span class="variable">@</span><span class="operator">{</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">selectcol_arrayref</span><span class="operator">(</span><span class="string">"
+     SELECT fileName FROM Dir('./') WHERE fileExt = '.pl'
+ "</span><span class="operator">)</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Obviously, that function could be expanded with File::Find and/or stat to provide more information and it could be made to accept a list of directories rather than a single directory.</p>
+<p>Table-Returning functions are a way to turn *anything* that can be modeled as an AoA into a DBI data source.</p>
+<p>
+</p>
+<hr />
+<h1><a name="built_in_functions">Built-in Functions</a></h1>
+<p>
+</p>
+<h2><a name="aggregate_functions">Aggregate Functions</a></h2>
+<p>
+</p>
+<h3><a name="min__max__avg__sum__count">min, max, avg, sum, count</a></h3>
+<p>Aggregate functions are handled elsewhere, see <a href="../../../lib/SQL/Parser.html">the SQL::Parser manpage</a> for documentation.</p>
+<p>
+</p>
+<h2><a name="date_and_time_functions">Date and Time Functions</a></h2>
+<p>
+</p>
+<h3><a name="current_date__current_time__current_timestamp">current_date, current_time, current_timestamp</a></h3>
+<p><strong>CURRENT_DATE</strong></p>
+<pre>
+ <span class="comment"># purpose   : find current date</span>
+ <span class="comment"># arguments : none</span>
+ <span class="comment"># returns   : string containing current date as yyyy-mm-dd</span>
+</pre>
+<p><strong>CURRENT_TIME</strong></p>
+<pre>
+ <span class="comment"># purpose   : find current time</span>
+ <span class="comment"># arguments : none</span>
+ <span class="comment"># returns   : string containing current time as hh::mm::ss</span>
+</pre>
+<p><strong>CURRENT_TIMESTAMP</strong></p>
+<pre>
+ <span class="comment"># purpose   : find current date and time</span>
+ <span class="comment"># arguments : none</span>
+ <span class="comment"># returns   : string containing current timestamp as yyyy-mm-dd hh::mm::ss</span>
+</pre>
+<p>
+</p>
+<h2><a name="string_functions">String Functions</a></h2>
+<p>
+</p>
+<h3><a name="char_length__lower__position__regex__soundex__substring__trim__upper">char_length, lower, position, regex, soundex, substring, trim, upper</a></h3>
+<p><strong>CHAR_LENGTH</strong></p>
+<pre>
+ <span class="comment"># purpose   : find length in characters of a string</span>
+ <span class="comment"># arguments : a string</span>
+ <span class="comment"># returns   : a number - the length of the string in characters</span>
+</pre>
+<p><strong>LOWER &amp; UPPER</strong></p>
+<pre>
+ <span class="comment"># purpose   : lower-case or upper-case a string</span>
+ <span class="comment"># arguments : a string</span>
+ <span class="comment"># returns   : the sting lower or upper cased</span>
+</pre>
+<p><strong>POSITION</strong></p>
+<pre>
+ <span class="comment"># purpose   : find first position of a substring in a string</span>
+ <span class="comment"># arguments : a substring and  a string possibly containing the substring</span>
+ <span class="comment"># returns   : a number - the index of the substring in the string</span>
+ <span class="comment">#             or 0 if the substring doesn't occur in the sring</span>
+</pre>
+<p><strong>REGEX</strong></p>
+<pre>
+ <span class="comment"># purpose   : test if a string matches a perl regular expression</span>
+ <span class="comment"># arguments : a string and a regex to match the string against</span>
+ <span class="comment"># returns   : boolean value of the regex match</span>
+ <span class="comment">#</span>
+ <span class="comment"># example   : ... WHERE REGEX(col3,'/^fun/i') ... matches rows</span>
+ <span class="comment">#             in which col3 starts with "fun", ignoring case</span>
+</pre>
+<p><strong>SOUNDEX</strong></p>
+<pre>
+ <span class="comment"># purpose   : test if two strings have matching soundex codes</span>
+ <span class="comment"># arguments : two strings</span>
+ <span class="comment"># returns   : true if the strings share the same soundex code</span>
+ <span class="comment">#</span>
+ <span class="comment"># example   : ... WHERE SOUNDEX(col3,'fun') ... matches rows</span>
+ <span class="comment">#             in which col3 is a soundex match for "fun"</span>
+</pre>
+<p><strong>CONCAT</strong></p>
+<pre>
+ <span class="comment"># purpose   : concatenate 1 or more strings into a single string;</span>
+ <span class="comment">#                      an alternative to the '||' operator</span>
+ <span class="comment"># arguments : 1 or more strings</span>
+ <span class="comment"># returns   : the concatenated string</span>
+ <span class="comment">#</span>
+ <span class="comment"># example   : SELECT CONCAT(first_string, 'this string', ' that string')</span>
+ <span class="comment">#              returns "&lt;value-of-first-string&gt;this string that string"</span>
+ <span class="comment"># note      : if any argument evaluates to NULL, the returned value is NULL</span>
+</pre>
+<p><strong>COALESCE</strong> <em>aka</em> <strong>NVL</strong></p>
+<pre>
+ <span class="comment"># purpose   : return the first non-NULL value from a list</span>
+ <span class="comment"># arguments : 1 or more expressions</span>
+ <span class="comment"># returns   : the first expression (reading left to right)</span>
+ <span class="comment">#             which is not NULL; returns NULL if all are NULL</span>
+ <span class="comment">#</span>
+ <span class="comment"># example   : SELECT COALESCE(NULL, some_null_column, 'not null')</span>
+ <span class="comment">#              returns 'not null'</span>
+</pre>
+<p><strong>DECODE</strong></p>
+<pre>
+ <span class="comment"># purpose   : compare the first argument against</span>
+ <span class="comment">#             succeding arguments at position 1 + 2N</span>
+ <span class="comment">#             (N = 0 to (# of arguments - 2)/2), and if equal,</span>
+ <span class="comment">#                              return the value of the argument at 1 + 2N + 1; if no</span>
+ <span class="comment">#             arguments are equal, the last argument value is returned</span>
+ <span class="comment"># arguments : 4 or more expressions, must be even # of arguments</span>
+ <span class="comment"># returns   : the value of the argument at 1 + 2N + 1 if argument 1 + 2N</span>
+ <span class="comment">#             is equal to argument1; else the last argument value</span>
+ <span class="comment">#</span>
+ <span class="comment"># example   : SELECT DECODE(some_column,</span>
+ <span class="comment">#                    'first value', 'first value matched'</span>
+ <span class="comment">#                    '2nd value', '2nd value matched'</span>
+ <span class="comment">#                    'no value matched'</span>
+ <span class="comment">#                    )</span>
+</pre>
+<p><strong>REPLACE</strong>, <strong>SUBSTITUTE</strong></p>
+<pre>
+ <span class="comment"># purpose   : perform perl subsitution on input string</span>
+ <span class="comment"># arguments : a string and a substitute pattern string</span>
+ <span class="comment"># returns   : the result of the substitute operation</span>
+ <span class="comment">#</span>
+ <span class="comment"># example   : ... WHERE REPLACE(col3,'s/fun(\w+)nier/$1/ig') ... replaces</span>
+ <span class="comment">#                      all instances of /fun(\w+)nier/ in col3 with the string</span>
+ <span class="comment">#                      between 'fun' and 'nier'</span>
+</pre>
+<p><strong>SUBSTRING</strong></p>
+<pre>
+  SUBSTRING( string FROM start_pos [FOR length] )</pre>
+<p>Returns the substring starting at start_pos and extending for
+&quot;length&quot; character or until the end of the string, if no
+&quot;length&quot; is supplied.  Examples:</p>
+<pre>
+  SUBSTRING( 'foobar' FROM 4 )       # returns &quot;bar&quot;</pre>
+<pre>
+  SUBSTRING( 'foobar' FROM 4 FOR 2)  # returns &quot;ba&quot;</pre>
+<p>Note: The SUBSTRING function is implemented in SQL::Parser and SQL::Statement and, at the current time, can not be over-ridden.</p>
+<p><strong>TRIM</strong></p>
+<pre>
+  TRIM ( [ [LEADING|TRAILING|BOTH] ['trim_char'] FROM ] string )</pre>
+<p>Removes all occurrences of &lt;trim_char&gt; from the front, back, or
+both sides of a string.</p>
+<pre>
+ BOTH is the default if neither LEADING nor TRAILING is specified.</pre>
+<pre>
+ Space is the default if no trim_char is specified.</pre>
+<pre>
+ Examples:</pre>
+<pre>
+ TRIM( string )
+   trims leading and trailing spaces from string</pre>
+<pre>
+ TRIM( LEADING FROM str )
+   trims leading spaces from string</pre>
+<pre>
+ TRIM( 'x' FROM str )
+   trims leading and trailing x's from string</pre>
+<p>Note: The TRIM function is implemented in SQL::Parser and SQL::Statement and, at the current time, can not be over-ridden.</p>
+<p>
+</p>
+<hr />
+<h1><a name="special_utility_functions">Special Utility Functions</a></h1>
+<p>
+</p>
+<h2><a name="import__"><code>IMPORT()</code></a></h2>
+<pre>
+ <span class="variable">CREATE</span> <span class="variable">TABLE</span> <span class="variable">foo</span> <span class="variable">AS</span> <span class="variable">IMPORT</span><span class="operator">(</span><span class="regex">?)    ,{},</span><span class="variable">$external_executed_sth</span><span class="regex">
+ CREATE TABLE foo AS IMPORT(?</span><span class="operator">)</span>    <span class="operator">,</span><span class="operator">{}</span><span class="operator">,</span><span class="variable">$AoA</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="submitting_built_in_functions">Submitting built-in functions</a></h1>
+<p>There are a few built-in functions in the SQL::Statement::Functions.  If you make a generally useful UDF, why not submit it to me and have it (and your name) included with the built-in functions?  Please follow the format shown in the module including a description of the arguments and return values for the function as well as an example.  Send them to me at jzucker AT cpan.org with a subject line containing &quot;built-in UDF&quot;.</p>
+<p>Thanks in advance :-).</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>Dean Arnold supplied DECODE, COALESCE, REPLACE, many thanks!</p>
+<p>
+</p>
+<hr />
+<h1><a name="author___copyright">AUTHOR &amp; COPYRIGHT</a></h1>
+<p>Copyright (c) 2005 by Jeff Zucker: jzuckerATcpan.org
+Copyright (c) 2009,2010 by Jens Rehsack: rehsackATcpan.org</p>
+<p>All rights reserved.</p>
+<p>The module may be freely distributed under the same terms as
+Perl itself using either the &quot;GPL License&quot; or the &quot;Artistic
+License&quot; as specified in the Perl README file.</p>
+
+</body>
+
+</html>

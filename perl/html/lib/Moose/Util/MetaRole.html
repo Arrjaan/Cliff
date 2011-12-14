@@ -1,0 +1,221 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Util::MetaRole - Apply roles to any metaclass, as well as the object base class</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Util::MetaRole - Apply roles to any metaclass, as well as the object base class</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#apply_metaroles_______">apply_metaroles( ... )</a></li>
+		<li><a href="#apply_base_class_roles__for_____class__roles______roles__">apply_base_class_roles( for =&gt; $class, roles =&gt; \@roles )</a></li>
+	</ul>
+
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Util::MetaRole - Apply roles to any metaclass, as well as the object base class</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyApp::Moose</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span> <span class="operator">();</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Exporter</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::MetaRole</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">MyApp::Role::Meta::Class</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MyApp::Role::Meta::Method::Constructor</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MyApp::Role::Object</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Moose::Exporter</span><span class="operator">-&gt;</span><span class="variable">setup_import_methods</span><span class="operator">(</span> <span class="string">also</span> <span class="operator">=&gt;</span> <span class="string">'Moose'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> init_meta </span><span class="operator">{</span>
+      <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">%args</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">Moose</span><span class="operator">-&gt;</span><span class="variable">init_meta</span><span class="operator">(</span><span class="variable">%args</span><span class="operator">);</span>
+</pre>
+<pre>
+      <span class="variable">Moose::Util::MetaRole::apply_metaroles</span><span class="operator">(</span>
+          <span class="string">for</span>             <span class="operator">=&gt;</span> <span class="variable">$args</span><span class="operator">{</span><span class="string">for_class</span><span class="operator">}</span><span class="operator">,</span>
+          <span class="string">class_metaroles</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+              <span class="string">class</span> <span class="operator">=&gt;</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MyApp::Role::Meta::Class'</span><span class="operator">]</span><span class="operator">,</span>
+              <span class="string">constructor</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MyApp::Role::Meta::Method::Constructor'</span><span class="operator">]</span><span class="operator">,</span>
+          <span class="operator">}</span><span class="operator">,</span>
+      <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="variable">Moose::Util::MetaRole::apply_base_class_roles</span><span class="operator">(</span>
+          <span class="string">for</span>   <span class="operator">=&gt;</span> <span class="variable">$args</span><span class="operator">{</span><span class="string">for_class</span><span class="operator">}</span><span class="operator">,</span>
+          <span class="string">roles</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="string">'MyApp::Role::Object'</span><span class="operator">]</span><span class="operator">,</span>
+      <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="variable">$args</span><span class="operator">{</span><span class="string">for_class</span><span class="operator">}</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This utility module is designed to help authors of Moose extensions
+write extensions that are able to cooperate with other Moose
+extensions. To do this, you must write your extensions as roles, which
+can then be dynamically applied to the caller's metaclasses.</p>
+<p>This module makes sure to preserve any existing superclasses and roles
+already set for the meta objects, which means that any number of
+extensions can apply roles in any order.</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>The easiest way to use this module is through <a href="../../../lib/Moose/Exporter.html">the Moose::Exporter manpage</a>, which can
+generate the appropriate <code>init_meta</code> method for you, and make sure it is
+called when imported.</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">FUNCTIONS</a></h1>
+<p>This module provides two functions.</p>
+<p>
+</p>
+<h2><a name="apply_metaroles_______">apply_metaroles( ... )</a></h2>
+<p>This function will apply roles to one or more metaclasses for the specified
+class. It will return a new metaclass object for the class or role passed in
+the &quot;for&quot; parameter.</p>
+<p>It accepts the following parameters:</p>
+<ul>
+<li><strong><a name="for_name" class="item">for =&gt; $name</a></strong>
+
+<p>This specifies the class or for which to alter the meta classes. This can be a
+package name, or an appropriate meta-object (a <a href="../../../lib/Moose/Meta/Class.html">the Moose::Meta::Class manpage</a> or
+<a href="../../../lib/Moose/Meta/Role.html">the Moose::Meta::Role manpage</a>).</p>
+</li>
+<li><strong><a name="class_metaroles_roles" class="item">class_metaroles =&gt; \%roles</a></strong>
+
+<p>This is a hash reference specifying which metaroles will be applied to the
+class metaclass and its contained metaclasses and helper classes.</p>
+<p>Each key should in turn point to an array reference of role names.</p>
+<p>It accepts the following keys:</p>
+<dl>
+<dt><strong><a name="class" class="item">class</a></strong></dt>
+
+<dt><strong><a name="attribute" class="item">attribute</a></strong></dt>
+
+<dt><strong><a name="method" class="item">method</a></strong></dt>
+
+<dt><strong><a name="wrapped_method" class="item">wrapped_method</a></strong></dt>
+
+<dt><strong><a name="instance" class="item">instance</a></strong></dt>
+
+<dt><strong><a name="constructor" class="item">constructor</a></strong></dt>
+
+<dt><strong><a name="destructor" class="item">destructor</a></strong></dt>
+
+<dt><strong><a name="error" class="item">error</a></strong></dt>
+
+</dl>
+</li>
+<li><strong><a name="role_metaroles_roles" class="item">role_metaroles =&gt; \%roles</a></strong>
+
+<p>This is a hash reference specifying which metaroles will be applied to the
+role metaclass and its contained metaclasses and helper classes.</p>
+<p>It accepts the following keys:</p>
+<dl>
+<dt><strong><a name="role" class="item">role</a></strong></dt>
+
+<dt><strong>attribute</strong></dt>
+
+<dt><strong>method</strong></dt>
+
+<dt><strong><a name="required_method" class="item">required_method</a></strong></dt>
+
+<dt><strong><a name="conflicting_method" class="item">conflicting_method</a></strong></dt>
+
+<dt><strong><a name="application_to_class" class="item">application_to_class</a></strong></dt>
+
+<dt><strong><a name="application_to_role" class="item">application_to_role</a></strong></dt>
+
+<dt><strong><a name="application_to_instance" class="item">application_to_instance</a></strong></dt>
+
+<dt><strong><a name="application_role_summation" class="item">application_role_summation</a></strong></dt>
+
+<dt><strong><a name="applied_attribute" class="item">applied_attribute</a></strong></dt>
+
+</dl>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="apply_base_class_roles__for_____class__roles______roles__">apply_base_class_roles( for =&gt; $class, roles =&gt; \@roles )</a></h2>
+<p>This function will apply the specified roles to the object's base class.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>See <a href="../../../lib/Moose/bugs.html">BUGS in the Moose manpage</a> for details on reporting bugs.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

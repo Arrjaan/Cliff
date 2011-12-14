@@ -1,0 +1,405 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perlfork - Perl's fork emulation</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perlfork - Perl's fork emulation</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#behavior_of_other_perl_features_in_forked_pseudo_processes">Behavior of other Perl features in forked pseudo-processes</a></li>
+		<li><a href="#resource_limits">Resource limits</a></li>
+		<li><a href="#killing_the_parent_process">Killing the parent process</a></li>
+		<li><a href="#lifetime_of_the_parent_process_and_pseudo_processes">Lifetime of the parent process and pseudo-processes</a></li>
+	</ul>
+
+	<li><a href="#caveats_and_limitations">CAVEATS AND LIMITATIONS</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>perlfork - Perl's <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    NOTE:  As of the 5.8.0 release, fork() emulation has considerably
+    matured.  However, there are still a few known bugs and differences
+    from real fork() that might affect you.  See the &quot;BUGS&quot; and
+    &quot;CAVEATS AND LIMITATIONS&quot; sections below.</pre>
+<p>Perl provides a <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> keyword that corresponds to the Unix system call
+of the same name.  On most Unix-like platforms where the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> system
+call is available, Perl's <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> simply calls it.</p>
+<p>On some platforms such as Windows where the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> system call is not
+available, Perl can be built to emulate <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> at the interpreter level.
+While the emulation is designed to be as compatible as possible with the
+real <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> at the level of the Perl program, there are certain
+important differences that stem from the fact that all the pseudo child
+&quot;processes&quot; created this way live in the same real process as far as the
+operating system is concerned.</p>
+<p>This document provides a general overview of the capabilities and
+limitations of the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation.  Note that the issues discussed here
+are not applicable to platforms where a real <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> is available and Perl
+has been configured to use it.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation is implemented at the level of the Perl interpreter.
+What this means in general is that running <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> will actually clone the
+running interpreter and all its state, and run the cloned interpreter in
+a separate thread, beginning execution in the new thread just after the
+point where the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> was called in the parent.  We will refer to the
+thread that implements this child &quot;process&quot; as the pseudo-process.</p>
+<p>To the Perl program that called <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>, all this is designed to be
+transparent.  The parent returns from the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> with a pseudo-process
+ID that can be subsequently used in any process-manipulation functions;
+the child returns from the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> with a value of <code>0</code> to signify that
+it is the child pseudo-process.</p>
+<p>
+</p>
+<h2><a name="behavior_of_other_perl_features_in_forked_pseudo_processes">Behavior of other Perl features in forked pseudo-processes</a></h2>
+<p>Most Perl features behave in a natural way within pseudo-processes.</p>
+<dl>
+<dt><strong><a name="__" class="item">$$ or $PROCESS_ID</a></strong></dt>
+
+<dd>
+<p>This special variable is correctly set to the pseudo-process ID.
+It can be used to identify pseudo-processes within a particular
+session.  Note that this value is subject to recycling if any
+pseudo-processes are launched after others have been wait()-ed on.</p>
+</dd>
+<dt><strong><a name="_env" class="item">%ENV</a></strong></dt>
+
+<dd>
+<p>Each pseudo-process maintains its own virtual environment.  Modifications
+to %ENV affect the virtual environment, and are only visible within that
+pseudo-process, and in any processes (or pseudo-processes) launched from
+it.</p>
+</dd>
+<dt><strong><a name="chdir" class="item"><code>chdir()</code> and all other builtins that accept filenames</a></strong></dt>
+
+<dd>
+<p>Each pseudo-process maintains its own virtual idea of the current directory.
+Modifications to the current directory using <a href="#chdir"><code>chdir()</code></a> are only visible within
+that pseudo-process, and in any processes (or pseudo-processes) launched from
+it.  All file and directory accesses from the pseudo-process will correctly
+map the virtual working directory to the real working directory appropriately.</p>
+</dd>
+<dt><strong><a name="wait" class="item"><code>wait()</code> and <a href="../../lib/pods/perlfunc.html#waitpid"><code>waitpid()</code></a></a></strong></dt>
+
+<dd>
+<p><a href="#wait"><code>wait()</code></a> and <a href="../../lib/pods/perlfunc.html#waitpid"><code>waitpid()</code></a> can be passed a pseudo-process ID returned by <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>.
+These calls will properly wait for the termination of the pseudo-process
+and return its status.</p>
+</dd>
+<dt><strong><a name="kill" class="item"><code>kill()</code></a></strong></dt>
+
+<dd>
+<p><a href="#kill"><code>kill('KILL', ...)</code></a> can be used to terminate a pseudo-process by
+passing it the ID returned by <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>.  This should not be used except
+under dire circumstances, because the operating system may not
+guarantee integrity of the process resources when a running thread is
+terminated.  Note that using <a href="#kill"><code>kill('KILL', ...)</code></a> on a
+pseudo-process() may typically cause memory leaks, because the thread
+that implements the pseudo-process does not get a chance to clean up
+its resources.</p>
+<p><a href="#kill"><code>kill('TERM', ...)</code></a> can also be used on pseudo-processes, but the
+signal will not be delivered while the pseudo-process is blocked by a
+system call, e.g. waiting for a socket to connect, or trying to read
+from a socket with no data available.  Starting in Perl 5.14 the
+parent process will not wait for children to exit once they have been
+signalled with <a href="#kill"><code>kill('TERM', ...)</code></a> to avoid deadlock during process
+exit.  You will have to explicitly call <a href="../../lib/pods/perlfunc.html#waitpid"><code>waitpid()</code></a> to make sure the
+child has time to clean-up itself, but you are then also responsible
+that the child is not blocking on I/O either.</p>
+</dd>
+<dt><strong><a name="exec" class="item"><code>exec()</code></a></strong></dt>
+
+<dd>
+<p>Calling <a href="#exec"><code>exec()</code></a> within a pseudo-process actually spawns the requested
+executable in a separate process and waits for it to complete before
+exiting with the same exit status as that process.  This means that the
+process ID reported within the running executable will be different from
+what the earlier Perl <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> might have returned.  Similarly, any process
+manipulation functions applied to the ID returned by <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> will affect the
+waiting pseudo-process that called <a href="#exec"><code>exec()</code></a>, not the real process it is
+waiting for after the <a href="#exec"><code>exec()</code></a>.</p>
+<p>When <a href="#exec"><code>exec()</code></a> is called inside a pseudo-process then DESTROY methods and
+END blocks will still be called after the external process returns.</p>
+</dd>
+<dt><strong><a name="exit" class="item"><code>exit()</code></a></strong></dt>
+
+<dd>
+<p><a href="#exit"><code>exit()</code></a> always exits just the executing pseudo-process, after automatically
+wait()-ing for any outstanding child pseudo-processes.  Note that this means
+that the process as a whole will not exit unless all running pseudo-processes
+have exited.  See below for some limitations with open filehandles.</p>
+</dd>
+<dt><strong><a name="open_handles_to_files_directories_and_network_sockets" class="item">Open handles to files, directories and network sockets</a></strong></dt>
+
+<dd>
+<p>All open handles are dup()-ed in pseudo-processes, so that closing
+any handles in one process does not affect the others.  See below for
+some limitations.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="resource_limits">Resource limits</a></h2>
+<p>In the eyes of the operating system, pseudo-processes created via the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>
+emulation are simply threads in the same process.  This means that any
+process-level limits imposed by the operating system apply to all
+pseudo-processes taken together.  This includes any limits imposed by the
+operating system on the number of open file, directory and socket handles,
+limits on disk space usage, limits on memory size, limits on CPU utilization
+etc.</p>
+<p>
+</p>
+<h2><a name="killing_the_parent_process">Killing the parent process</a></h2>
+<p>If the parent process is killed (either using Perl's <a href="#kill"><code>kill()</code></a> builtin, or
+using some external means) all the pseudo-processes are killed as well,
+and the whole process exits.</p>
+<p>
+</p>
+<h2><a name="lifetime_of_the_parent_process_and_pseudo_processes">Lifetime of the parent process and pseudo-processes</a></h2>
+<p>During the normal course of events, the parent process and every
+pseudo-process started by it will wait for their respective pseudo-children
+to complete before they exit.  This means that the parent and every
+pseudo-child created by it that is also a pseudo-parent will only exit
+after their pseudo-children have exited.</p>
+<p>Starting with Perl 5.14 a parent will not <a href="#wait"><code>wait()</code></a> automatically
+for any child that has been signalled with <code>sig('TERM', ...)</code>
+to avoid a deadlock in case the child is blocking on I/O and
+never receives the signal.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats_and_limitations">CAVEATS AND LIMITATIONS</a></h1>
+<dl>
+<dt><strong><a name="begin_blocks" class="item">BEGIN blocks</a></strong></dt>
+
+<dd>
+<p>The <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation will not work entirely correctly when called from
+within a BEGIN block.  The forked copy will run the contents of the
+BEGIN block, but will not continue parsing the source stream after the
+BEGIN block.  For example, consider the following code:</p>
+<pre>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span>
+        <span class="keyword">fork</span> <span class="keyword">and</span> <span class="keyword">exit</span><span class="operator">;</span>          <span class="comment"># fork child and exit the parent</span>
+        <span class="keyword">print</span> <span class="string">"inner\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">print</span> <span class="string">"outer\n"</span><span class="operator">;</span>
+</pre>
+<p>This will print:</p>
+<pre>
+    inner</pre>
+<p>rather than the expected:</p>
+<pre>
+    inner
+    outer</pre>
+<p>This limitation arises from fundamental technical difficulties in
+cloning and restarting the stacks used by the Perl parser in the
+middle of a parse.</p>
+</dd>
+<dt><strong><a name="open_filehandles" class="item">Open filehandles</a></strong></dt>
+
+<dd>
+<p>Any filehandles open at the time of the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> will be dup()-ed.  Thus,
+the files can be closed independently in the parent and child, but beware
+that the dup()-ed handles will still share the same seek pointer.  Changing
+the seek position in the parent will change it in the child and vice-versa.
+One can avoid this by opening files that need distinct seek pointers
+separately in the child.</p>
+<p>On some operating systems, notably Solaris and Unixware, calling <a href="#exit"><code>exit()</code></a>
+from a child process will flush and close open filehandles in the parent,
+thereby corrupting the filehandles.  On these systems, calling <code>_exit()</code>
+is suggested instead.  <code>_exit()</code> is available in Perl through the 
+<code>POSIX</code> module.  Please consult your system's manpages for more information
+on this.</p>
+</dd>
+<dt><strong><a name="open_directory_handles" class="item">Open directory handles</a></strong></dt>
+
+<dd>
+<p>Perl will completely read from all open directory handles until they
+reach the end of the stream.  It will then <a href="../../lib/pods/perlfunc.html#seekdir"><code>seekdir()</code></a> back to the
+original location and all future <a href="../../lib/pods/perlfunc.html#readdir"><code>readdir()</code></a> requests will be fulfilled
+from the cache buffer.  That means that neither the directory handle held
+by the parent process nor the one held by the child process will see
+any changes made to the directory after the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> call.</p>
+<p>Note that <a href="../../lib/pods/perlfunc.html#rewinddir"><code>rewinddir()</code></a> has a similar limitation on Windows and will not
+force <a href="../../lib/pods/perlfunc.html#readdir"><code>readdir()</code></a> to read the directory again either.  Only a newly
+opened directory handle will reflect changes to the directory.</p>
+</dd>
+<dt><strong><a name="open" class="item">Forking pipe <code>open()</code> not yet implemented</a></strong></dt>
+
+<dd>
+<p>The <a href="#open"><code>open(FOO, &quot;|-&quot;)</code></a> and <a href="#open"><code>open(BAR, &quot;-|&quot;)</code></a> constructs are not yet
+implemented.  This limitation can be easily worked around in new code
+by creating a pipe explicitly.  The following example shows how to
+write to a forked child:</p>
+<pre>
+    <span class="comment"># simulate open(FOO, "|-")</span>
+    <span class="keyword">sub</span><span class="variable"> pipe_to_fork </span><span class="operator">(</span>$<span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$parent</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">pipe</span> <span class="keyword">my</span> <span class="variable">$child</span><span class="operator">,</span> <span class="variable">$parent</span> <span class="keyword">or</span> <span class="keyword">die</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$pid</span> <span class="operator">=</span> <span class="keyword">fork</span><span class="operator">();</span>
+        <span class="keyword">die</span> <span class="string">"fork() failed: $!"</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$pid</span><span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$pid</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">close</span> <span class="variable">$child</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">else</span> <span class="operator">{</span>
+            <span class="keyword">close</span> <span class="variable">$parent</span><span class="operator">;</span>
+            <span class="keyword">open</span><span class="operator">(</span><span class="variable">STDIN</span><span class="operator">,</span> <span class="string">"&lt;&amp;="</span> <span class="operator">.</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">$child</span><span class="operator">))</span> <span class="keyword">or</span> <span class="keyword">die</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="variable">$pid</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">pipe_to_fork</span><span class="operator">(</span><span class="string">'FOO'</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="comment"># parent</span>
+        <span class="keyword">print</span> <span class="variable">FOO</span> <span class="string">"pipe_to_fork\n"</span><span class="operator">;</span>
+        <span class="keyword">close</span> <span class="variable">FOO</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="comment"># child</span>
+        <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">STDIN</span><span class="operator">&gt;)</span> <span class="operator">{</span> <span class="keyword">print</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">exit</span><span class="operator">(</span><span class="number">0</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<p>And this one reads from the child:</p>
+<pre>
+    <span class="comment"># simulate open(FOO, "-|")</span>
+    <span class="keyword">sub</span><span class="variable"> pipe_from_fork </span><span class="operator">(</span>$<span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$parent</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">pipe</span> <span class="variable">$parent</span><span class="operator">,</span> <span class="keyword">my</span> <span class="variable">$child</span> <span class="keyword">or</span> <span class="keyword">die</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$pid</span> <span class="operator">=</span> <span class="keyword">fork</span><span class="operator">();</span>
+        <span class="keyword">die</span> <span class="string">"fork() failed: $!"</span> <span class="keyword">unless</span> <span class="keyword">defined</span> <span class="variable">$pid</span><span class="operator">;</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$pid</span><span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">close</span> <span class="variable">$child</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="keyword">else</span> <span class="operator">{</span>
+            <span class="keyword">close</span> <span class="variable">$parent</span><span class="operator">;</span>
+            <span class="keyword">open</span><span class="operator">(</span><span class="variable">STDOUT</span><span class="operator">,</span> <span class="string">"&gt;&amp;="</span> <span class="operator">.</span> <span class="keyword">fileno</span><span class="operator">(</span><span class="variable">$child</span><span class="operator">))</span> <span class="keyword">or</span> <span class="keyword">die</span><span class="operator">;</span>
+        <span class="operator">}</span>
+        <span class="variable">$pid</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">pipe_from_fork</span><span class="operator">(</span><span class="string">'BAR'</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="comment"># parent</span>
+        <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">BAR</span><span class="operator">&gt;)</span> <span class="operator">{</span> <span class="keyword">print</span><span class="operator">;</span> <span class="operator">}</span>
+        <span class="keyword">close</span> <span class="variable">BAR</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">else</span> <span class="operator">{</span>
+        <span class="comment"># child</span>
+        <span class="keyword">print</span> <span class="string">"pipe_from_fork\n"</span><span class="operator">;</span>
+        <span class="keyword">exit</span><span class="operator">(</span><span class="number">0</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<p>Forking pipe <a href="#open"><code>open()</code></a> constructs will be supported in future.</p>
+</dd>
+<dt><strong><a name="global_state_maintained_by_xsubs" class="item">Global state maintained by XSUBs</a></strong></dt>
+
+<dd>
+<p>External subroutines (XSUBs) that maintain their own global state may
+not work correctly.  Such XSUBs will either need to maintain locks to
+protect simultaneous access to global data from different pseudo-processes,
+or maintain all their state on the Perl symbol table, which is copied
+naturally when <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> is called.  A callback mechanism that provides
+extensions an opportunity to clone their state will be provided in the
+near future.</p>
+</dd>
+<dt><strong><a name="interpreter_embedded_in_larger_application" class="item">Interpreter embedded in larger application</a></strong></dt>
+
+<dd>
+<p>The <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation may not behave as expected when it is executed in an
+application which embeds a Perl interpreter and calls Perl APIs that can
+evaluate bits of Perl code.  This stems from the fact that the emulation
+only has knowledge about the Perl interpreter's own data structures and
+knows nothing about the containing application's state.  For example, any
+state carried on the application's own call stack is out of reach.</p>
+</dd>
+<dt><strong><a name="thread_safety_of_extensions" class="item">Thread-safety of extensions</a></strong></dt>
+
+<dd>
+<p>Since the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation runs code in multiple threads, extensions
+calling into non-thread-safe libraries may not work reliably when
+calling <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>.  As Perl's threading support gradually becomes more
+widely adopted even on platforms with a native <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>, such extensions
+are expected to be fixed for thread-safety.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<ul>
+<li>
+<p>Having pseudo-process IDs be negative integers breaks down for the integer
+<code>-1</code> because the <a href="#wait"><code>wait()</code></a> and <a href="../../lib/pods/perlfunc.html#waitpid"><code>waitpid()</code></a> functions treat this number as
+being special.  The tacit assumption in the current implementation is that
+the system never allocates a thread ID of <code>1</code> for user threads.  A better
+representation for pseudo-process IDs will be implemented in future.</p>
+</li>
+<li>
+<p>In certain cases, the OS-level handles created by the <a href="../../lib/pods/perlfunc.html#pipe"><code>pipe()</code></a>, <a href="../../lib/pods/perlfunc.html#socket"><code>socket()</code></a>,
+and <a href="../../lib/pods/perlfunc.html#accept"><code>accept()</code></a> operators are apparently not duplicated accurately in
+pseudo-processes.  This only happens in some situations, but where it
+does happen, it may result in deadlocks between the read and write ends
+of pipe handles, or inability to send or receive data across socket
+handles.</p>
+</li>
+<li>
+<p>This document may be incomplete in some respects.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Support for concurrent interpreters and the <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a> emulation was implemented
+by ActiveState, with funding from Microsoft Corporation.</p>
+<p>This document is authored and maintained by Gurusamy Sarathy
+&lt;<a href="mailto:gsar@activestate.com">gsar@activestate.com</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/pods/perlfunc.html#fork">fork in the perlfunc manpage</a>, <a href="../../lib/pods/perlipc.html">the perlipc manpage</a></p>
+
+</body>
+
+</html>

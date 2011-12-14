@@ -1,0 +1,925 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>perl5137delta - what is new for perl v5.13.7</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>perl5137delta - what is new for perl v5.13.7</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#core_enhancements">Core Enhancements</a></li>
+	<ul>
+
+		<li><a href="#single_term_prototype">Single term prototype</a></li>
+		<li><a href="#use_re___flags__"><code>use re '/flags';</code></a></li>
+		<li><a href="#statement_labels_can_appear_in_more_places">Statement labels can appear in more places</a></li>
+		<li><a href="#use_feature_unicode_strings_now_applies_to_more_regex_matching"><code>use feature &quot;unicode_strings&quot;</code> now applies to more regex matching</a></li>
+		<li><a href="#array_and_hash_container_functions_accept_references">Array and hash container functions accept references</a></li>
+		<li><a href="#y___r">y///r</a></li>
+		<li><a href="#new_global_variable____global_phase_">New global variable <a href="../../lib/pods/perlvar.html#___global_phase_"><code>${^GLOBAL_PHASE}</code></a></a></li>
+		<li><a href="#unicode_version_6_0_is_now_supported__mostly_">Unicode Version 6.0 is now supported (mostly)</a></li>
+		<li><a href="#improved_support_for_custom_ops">Improved support for custom OPs</a></li>
+	</ul>
+
+	<li><a href="#incompatible_changes">Incompatible Changes</a></li>
+	<ul>
+
+		<li><a href="#dereferencing_typeglobs">Dereferencing typeglobs</a></li>
+		<li><a href="#clearing_stashes">Clearing stashes</a></li>
+	</ul>
+
+	<li><a href="#deprecations">Deprecations</a></li>
+	<ul>
+
+		<li><a href="#_n_bell__is_deprecated"><code>\N{BELL}</code> is deprecated</a></li>
+	</ul>
+
+	<li><a href="#performance_enhancements">Performance Enhancements</a></li>
+	<li><a href="#modules_and_pragmata">Modules and Pragmata</a></li>
+	<ul>
+
+		<li><a href="#new_modules_and_pragmata">New Modules and Pragmata</a></li>
+		<li><a href="#updated_modules_and_pragmata">Updated Modules and Pragmata</a></li>
+	</ul>
+
+	<li><a href="#documentation">Documentation</a></li>
+	<ul>
+
+		<li><a href="#new_documentation">New Documentation</a></li>
+		<ul>
+
+			<li><a href="#perlpodstyle"><a href="../../lib/pods/perlpodstyle.html">the perlpodstyle manpage</a></a></li>
+		</ul>
+
+		<li><a href="#changes_to_existing_documentation">Changes to Existing Documentation</a></li>
+	</ul>
+
+	<li><a href="#diagnostics">Diagnostics</a></li>
+	<ul>
+
+		<li><a href="#new_diagnostics">New Diagnostics</a></li>
+	</ul>
+
+	<li><a href="#utility_changes">Utility Changes</a></li>
+	<ul>
+
+		<ul>
+
+			<li><a href="#ptargrep"><a href="../../bin/ptargrep.html">the ptargrep manpage</a></a></li>
+		</ul>
+
+	</ul>
+
+	<li><a href="#testing">Testing</a></li>
+	<li><a href="#platform_support">Platform Support</a></li>
+	<ul>
+
+		<li><a href="#platform_specific_notes">Platform-Specific Notes</a></li>
+	</ul>
+
+	<li><a href="#internal_changes">Internal Changes</a></li>
+	<li><a href="#selected_bug_fixes">Selected Bug Fixes</a></li>
+	<li><a href="#obituary">Obituary</a></li>
+	<li><a href="#acknowledgements">Acknowledgements</a></li>
+	<li><a href="#reporting_bugs">Reporting Bugs</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>perl5137delta - what is new for perl v5.13.7</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This document describes differences between the 5.13.6 release and
+the 5.13.7 release.</p>
+<p>If you are upgrading from an earlier release such as 5.13.5, first read
+<a href="../../lib/pods/perl5136delta.html">the perl5136delta manpage</a>, which describes differences between 5.13.5 and
+5.13.6.</p>
+<p>
+</p>
+<hr />
+<h1><a name="core_enhancements">Core Enhancements</a></h1>
+<p>
+</p>
+<h2><a name="single_term_prototype">Single term prototype</a></h2>
+<p>The <code>+</code> prototype is a special alternative to <code>$</code> that will act like
+<code>\[@%]</code> when given a literal array or hash variable, but will otherwise
+force scalar context on the argument.  This is useful for functions which
+should accept either a literal array or an array reference as the argument:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> smartpush </span><span class="operator">(</span>+@<span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$aref</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">die</span> <span class="string">"Not an array or arrayref"</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$aref</span> <span class="keyword">eq</span> <span class="string">'ARRAY'</span><span class="operator">;</span>
+        <span class="keyword">push</span> <span class="variable">@$aref</span><span class="operator">,</span> <span class="variable">@_</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p>When using the <code>+</code> prototype, your function must check that the argument
+is of an acceptable type.</p>
+<p>
+</p>
+<h2><a name="use_re___flags__"><code>use re '/flags';</code></a></h2>
+<p>The <code>re</code> pragma now has the ability to turn on regular expression flags
+till the end of the lexical scope:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">re</span> <span class="string">'/x'</span><span class="operator">;</span>
+    <span class="string">"foo"</span> <span class="operator">=~</span> <span class="regex">/ (.+) /</span><span class="operator">;</span>  <span class="comment"># /x implied</span>
+</pre>
+<p>See <a href="../../lib/auto/re/__flags__mode.html">'/flags' mode in the re manpage</a> for details.</p>
+<p>
+</p>
+<h2><a name="statement_labels_can_appear_in_more_places">Statement labels can appear in more places</a></h2>
+<p>Statement labels can now occur before any type of statement or declaration,
+such as <a href="../../lib/pods/perlfunc.html#package"><code>package</code></a>.</p>
+<p>
+</p>
+<h2><a name="use_feature_unicode_strings_now_applies_to_more_regex_matching"><code>use feature &quot;unicode_strings&quot;</code> now applies to more regex matching</a></h2>
+<p>Another chunk of the <a href="../../lib/pods/perlunicode.html#the_unicode_bug">The &quot;Unicode Bug&quot; in the perlunicode manpage</a> is fixed in this
+release.  Now, regular expressions compiled within the scope of the
+&quot;unicode_strings&quot; feature (or under the &quot;u&quot; regex modifier (specifiable
+currently only with infix notation <a href="../../lib/pods/perlrun.html#u"><code>(?u:...)</code></a> or via <code>use re '/u'</code>)
+will match the same whether or not the target string is encoded in utf8,
+with regard to <code>[[:posix:]]</code> character classes</p>
+<p>Work is underway to add the case sensitive matching to the control of
+this feature, but was not complete in time for this dot release.</p>
+<p>
+</p>
+<h2><a name="array_and_hash_container_functions_accept_references">Array and hash container functions accept references</a></h2>
+<p>All built-in functions that operate directly on array or hash
+containers now also accept hard references to arrays or hashes:</p>
+<pre>
+  |----------------------------+---------------------------|
+  | Traditional syntax         | Terse syntax              |
+  |----------------------------+---------------------------|
+  | push @$arrayref, @stuff    | push $arrayref, @stuff    |
+  | unshift @$arrayref, @stuff | unshift $arrayref, @stuff |
+  | pop @$arrayref             | pop $arrayref             |
+  | shift @$arrayref           | shift $arrayref           |
+  | splice @$arrayref, 0, 2    | splice $arrayref, 0, 2    |
+  | keys %$hashref             | keys $hashref             |
+  | keys @$arrayref            | keys $arrayref            |
+  | values %$hashref           | values $hashref           |
+  | values @$arrayref          | values $arrayref          |
+  | ($k,$v) = each %$hashref   | ($k,$v) = each $hashref   |
+  | ($k,$v) = each @$arrayref  | ($k,$v) = each $arrayref  |
+  |----------------------------+---------------------------|</pre>
+<p>This allows these built-in functions to act on long dereferencing chains
+or on the return value of subroutines without needing to wrap them in
+<code>@{}</code> or <code>%{}</code>:</p>
+<pre>
+  <span class="keyword">push</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">tags</span><span class="operator">}</span><span class="operator">,</span> <span class="variable">$new_tag</span><span class="operator">;</span>  <span class="comment"># old way</span>
+  <span class="keyword">push</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">tags</span><span class="operator">,</span>    <span class="variable">$new_tag</span><span class="operator">;</span>  <span class="comment"># new way</span>
+</pre>
+<pre>
+  <span class="keyword">for</span> <span class="operator">(</span> <span class="keyword">keys</span> <span class="variable">%</span><span class="operator">{</span><span class="variable">$hoh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">genres</span><span class="operator">}{</span><span class="string">artists</span><span class="operator">}}</span> <span class="operator">)</span> <span class="operator">{...}</span> <span class="comment"># old way </span>
+  <span class="keyword">for</span> <span class="operator">(</span> <span class="keyword">keys</span> <span class="variable">$hoh</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">genres</span><span class="operator">}{</span><span class="string">artists</span><span class="operator">}</span>    <span class="operator">)</span> <span class="operator">{...}</span> <span class="comment"># new way</span>
+</pre>
+<p>For <a href="../../lib/pods/perlfunc.html#push"><code>push</code></a>, <a href="../../lib/pods/perlfunc.html#unshift"><code>unshift</code></a> and <code>splice</code>, the reference will auto-vivify
+if it is not defined, just as if it were wrapped with <code>@{}</code>.</p>
+<p>Calling <a href="../../lib/pods/perlfunc.html#keys"><code>keys</code></a> or <a href="../../lib/pods/perlfunc.html#values"><code>values</code></a> directly on a reference gives a substantial
+performance improvement over explicit dereferencing.</p>
+<p>For <a href="../../lib/pods/perlfunc.html#keys"><code>keys</code></a>, <a href="../../lib/pods/perlfunc.html#values"><code>values</code></a>, <a href="../../lib/pods/perlfunc.html#each"><code>each</code></a>, when overloaded dereferencing is
+present, the overloaded dereference is used instead of dereferencing the
+underlying reftype.  Warnings are issued about assumptions made in the
+following three ambiguous cases:</p>
+<pre>
+  <span class="operator">(</span><span class="variable">a</span><span class="operator">)</span> <span class="variable">If</span> <span class="variable">both</span> <span class="variable">%</span><span class="operator">{}</span> <span class="keyword">and</span> <span class="variable">@</span><span class="operator">{}</span> <span class="variable">overloading</span> <span class="keyword">exists</span><span class="operator">,</span> <span class="variable">%</span><span class="operator">{}</span> <span class="variable">is</span> <span class="variable">used</span>
+  <span class="operator">(</span><span class="variable">b</span><span class="operator">)</span> <span class="variable">If</span> <span class="variable">%</span><span class="operator">{}</span> <span class="variable">overloading</span> <span class="keyword">exists</span> <span class="variable">on</span> <span class="variable">a</span> <span class="variable">blessed</span> <span class="variable">arrayref</span><span class="operator">,</span> <span class="variable">%</span><span class="operator">{}</span> <span class="variable">is</span> <span class="variable">used</span>
+  <span class="operator">(</span><span class="variable">c</span><span class="operator">)</span> <span class="variable">If</span> <span class="variable">@</span><span class="operator">{}</span> <span class="variable">overloading</span> <span class="keyword">exists</span> <span class="variable">on</span> <span class="variable">a</span> <span class="variable">blessed</span> <span class="variable">hashref</span><span class="operator">,</span> <span class="variable">@</span><span class="operator">{}</span> <span class="variable">is</span> <span class="variable">used</span>
+</pre>
+<p>
+</p>
+<h2><a name="y___r">y///r</a></h2>
+<p>The <a href="../../lib/pods/perlguts.html#r"><code>/r</code></a> flag, which was added to <a href="../../lib/pods/perlfunc.html#s_"><code>s///</code></a> in 5.13.2, has been extended to
+the <a href="../../lib/pods/perlfunc.html#y_"><code>y///</code></a> operator.</p>
+<p>It causes it to perform the substitution on a <em>copy</em> of its operand,
+returning that copy instead of a character count.</p>
+<p>
+</p>
+<h2><a name="new_global_variable____global_phase_">New global variable <a href="../../lib/pods/perlvar.html#___global_phase_"><code>${^GLOBAL_PHASE}</code></a></a></h2>
+<p>A new global variable, <a href="../../lib/pods/perlvar.html#___global_phase_"><code>${^GLOBAL_PHASE}</code></a>, has been added to allow
+introspection of the current phase of the perl interpreter. It's explained in
+detail in <a href="../../lib/pods/perlvar.html#___global_phase_">${^GLOBAL_PHASE} in the perlvar manpage</a> and
+<a href="../../lib/pods/perlmod.html#begin__unitcheck__check__init_and_end">BEGIN, UNITCHECK, CHECK, INIT and END in the perlmod manpage</a>.</p>
+<p>
+</p>
+<h2><a name="unicode_version_6_0_is_now_supported__mostly_">Unicode Version 6.0 is now supported (mostly)</a></h2>
+<p>Perl comes with the Unicode 6.0 data base updated with
+<em>Corrigendum #8</em>,
+with one exception noted below.
+See <a href="http://unicode.org/versions/Unicode6.0.0">http://unicode.org/versions/Unicode6.0.0</a> for details on the new
+release.  Perl does not support any Unicode provisional properties,
+including the new ones for this release, but their database files are
+packaged with Perl.</p>
+<p>Unicode 6.0 has chosen to use the name <code>BELL</code> for the character at U+1F514,
+which is a symbol that looks like a bell, and used in Japanese cell
+phones.  This conflicts with the long-standing Perl usage of having
+<code>BELL</code> mean the ASCII <code>BEL</code> character, U+0007.  In Perl 5.14,
+<code>\N{BELL}</code> will continue to mean U+0007, but its use will generate a
+deprecated warning message, unless such warnings are turned off.  The
+new name for U+0007 in Perl will be <code>ALERT</code>, which corresponds nicely
+with the existing shorthand sequence for it, <a href="../../lib/pods/perlrun.html#a"><code>&quot;\a&quot;</code></a>.  <code>\N{BEL}</code> will
+mean U+0007, with no warning given.  The character at U+1F514 will not
+have a name in 5.14, but can be referred to by <code>\N{U+1F514}</code>.  The plan
+is that in Perl 5.16, <code>\N{BELL}</code> will refer to U+1F514, and so all code
+that uses <code>\N{BELL}</code> should convert by then to using <code>\N{ALERT}</code>,
+<code>\N{BEL}</code>, or <a href="../../lib/pods/perlrun.html#a"><code>&quot;\a&quot;</code></a> instead.</p>
+<p>
+</p>
+<h2><a name="improved_support_for_custom_ops">Improved support for custom OPs</a></h2>
+<p>Custom ops can now be registered with the new <code>custom_op_register</code> C
+function and the <code>XOP</code> structure. This will make it easier to add new
+properties of custom ops in the future. Two new properties have been added
+already, <a href="../../lib/pods/perlguts.html#xop_class"><code>xop_class</code></a> and <a href="../../lib/pods/perlguts.html#xop_peep"><code>xop_peep</code></a>.</p>
+<p><a href="../../lib/pods/perlguts.html#xop_class"><code>xop_class</code></a> is one of the OA_*OP constants, and allows <a href="../../lib/B.html">the B manpage</a> and other
+introspection mechanisms to work with custom ops that aren't BASEOPs.
+<a href="../../lib/pods/perlguts.html#xop_peep"><code>xop_peep</code></a> is a pointer to a function that will be called for ops of this
+type from <code>Perl_rpeep</code>.</p>
+<p>See <a href="../../lib/pods/perlguts.html#custom_operators">Custom Operators in the perlguts manpage</a> and <a href="../../lib/pods/perlapi.html#custom_operators">Custom Operators in the perlapi manpage</a> for more
+detail.</p>
+<p>The old <code>PL_custom_op_names</code>/<code>PL_custom_op_descs</code> interface is still
+supported but discouraged.</p>
+<p>
+</p>
+<hr />
+<h1><a name="incompatible_changes">Incompatible Changes</a></h1>
+<p>
+</p>
+<h2><a name="dereferencing_typeglobs">Dereferencing typeglobs</a></h2>
+<p>If you assign a typeglob to a scalar variable:</p>
+<pre>
+    <span class="variable">$glob</span> <span class="operator">=</span> <span class="variable">*foo</span><span class="operator">;</span>
+</pre>
+<p>the glob that is copied to <code>$glob</code> is marked with a special flag
+indicating that the glob is just a copy. This allows subsequent assignments
+to <code>$glob</code> to overwrite the glob. The original glob, however, is
+immutable.</p>
+<p>Many Perl operators did not distinguish between these two types of globs.
+This would result in strange behaviour in edge cases: <code>untie $scalar</code>
+would do nothing if the last thing assigned to the scalar was a glob
+(because it treated it as <code>untie *$scalar</code>, which unties a handle).
+Assignment to a glob slot (e.g., <code>(*$glob) = \@some_array</code>) would simply
+assign <code>\@some_array</code> to <code>$glob</code>.</p>
+<p>To fix this, the <code>*{}</code> operator (including the <code>*foo</code> and <code>*$foo</code> forms)
+has been modified to make a new immutable glob if its operand is a glob
+copy. Various operators that make a distinction between globs and scalars
+have been modified to treat only immutable globs as globs.</p>
+<p>This causes an incompatible change in code that assigns a glob to the
+return value of <code>*{}</code> when that operator was passed a glob copy. Take the
+following code, for instance:</p>
+<pre>
+    <span class="variable">$glob</span> <span class="operator">=</span> <span class="variable">*foo</span><span class="operator">;</span>
+    <span class="operator">*</span><span class="variable">$glob</span> <span class="operator">=</span> <span class="variable">*bar</span><span class="operator">;</span>
+</pre>
+<p>The <code>*$glob</code> on the second line returns a new immutable glob. That new
+glob is made an alias to <code>*bar</code>. Then it is discarded. So the second
+assignment has no effect.</p>
+<p>It also means that <code>tie $handle</code> will now tie <code>$handle</code> as a scalar, even
+if it has had a glob assigned to it.</p>
+<p>The upside to this incompatible change is that bugs
+<em>[perl #77496]</em>,
+<em>[perl #77502]</em>,
+<em>[perl #77508]</em>,
+<em>[perl #77688]</em>,
+and
+<em>[perl #77812]</em>,
+and maybe others, too, have been fixed.</p>
+<p>See <a href="http://rt.perl.org/rt3/Public/Bug/Display.html?id=77810">http://rt.perl.org/rt3/Public/Bug/Display.html</a> for even
+more detail.</p>
+<p>
+</p>
+<h2><a name="clearing_stashes">Clearing stashes</a></h2>
+<p>Stash list assignment <code>%foo:: = ()</code> used to make the stash anonymous
+temporarily while it was being emptied. Consequently, any of its
+subroutines referenced elsewhere would become anonymous (showing up as
+&quot;(unknown)&quot; in <a href="../../lib/pods/perlfunc.html#caller"><code>caller</code></a>). Now they retain their package names, such that
+<a href="../../lib/pods/perlfunc.html#caller"><code>caller</code></a> will return the original sub name if there is still a reference
+to its typeglob, or &quot;foo::__ANON__&quot; otherwise
+<em>[perl #79208]</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="deprecations">Deprecations</a></h1>
+<p>
+</p>
+<h2><a name="_n_bell__is_deprecated"><code>\N{BELL}</code> is deprecated</a></h2>
+<p>This is because Unicode is using that name for a different character.
+See <a href="#unicode_version_6_0_is_now_supported__mostly_">Unicode Version 6.0 is now supported (mostly)</a> for more
+explanation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="performance_enhancements">Performance Enhancements</a></h1>
+<ul>
+<li>
+<p>When an object has many weak references to it, freeing that object
+can under some some circumstances take O(N^2) time to free (where N is the
+number of references). The number of circumstances has been reduced.
+<em>[perl #75254]</em>.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="modules_and_pragmata">Modules and Pragmata</a></h1>
+<p>
+</p>
+<h2><a name="new_modules_and_pragmata">New Modules and Pragmata</a></h2>
+<ul>
+<li>
+<p>The following modules were added by the <code>Unicode::Collate</code> 
+upgrade from 0.63 to 0.67. See below for details.</p>
+<p><code>Unicode::Collate::CJK::Big5</code></p>
+<p><code>Unicode::Collate::CJK::GB2312</code></p>
+<p><code>Unicode::Collate::CJK::JISX0208</code></p>
+<p><code>Unicode::Collate::CJK::Korean</code></p>
+<p><code>Unicode::Collate::CJK::Pinyin</code></p>
+<p><code>Unicode::Collate::CJK::Stroke</code></p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="updated_modules_and_pragmata">Updated Modules and Pragmata</a></h2>
+<ul>
+<li>
+<p><code>Archive::Extract</code> has been upgraded from 0.44 to 0.46</p>
+<p>Resolves an issue with NetBSD-current and its new unzip 
+executable.</p>
+</li>
+<li>
+<p><code>Archive::Tar</code> has been upgraded from 1.68 to 1.72</p>
+<p>This adds the ptargrep utility for using regular expressions against 
+the contents of files in a tar archive.</p>
+</li>
+<li>
+<p><code>B</code> has been upgraded from 1.24 to 1.26.</p>
+<p>It no longer crashes when taking apart a <a href="../../lib/pods/perlfunc.html#y_"><code>y///</code></a> containing characters
+outside the octet range or compiled in a <code>use utf8</code> scope.</p>
+<p>The size of the shared object has been reduced by about 40%, with no
+reduction in functionality.</p>
+</li>
+<li>
+<p><code>B::Deparse</code> has been upgraded from 0.99 to 1.01.</p>
+<p>It fixes deparsing of <a href="../../lib/pods/perlfunc.html#our"><code>our</code></a> followed by a variable with funny characters
+(as permitted under the <a href="../../lib/pods/perlrun.html#utf8"><code>utf8</code></a> pragma)
+<em>[perl #33752]</em>.</p>
+</li>
+<li>
+<p><code>CGI</code> has been upgraded from 3.49 to 3.50</p>
+<p>This provides the following security fixes: the MIME boundary in 
+multipart_init is now random and improvements to the handling of 
+newlines embedded in header values.</p>
+<p>The documentation for <code>param_fetch()</code> has been corrected and clarified.</p>
+</li>
+<li>
+<p><code>CPAN</code> has been upgraded from 1.94_61 to 1.94_62</p>
+</li>
+<li>
+<p><code>CPANPLUS</code> has been upgraded from 0.9007 to 0.9010</p>
+<p>Fixes for the SQLite source engine and resolving of issues with the
+testsuite when run under local::lib and/or cpanminus</p>
+</li>
+<li>
+<p><code>CPANPLUS::Dist::Build</code> has been upgraded from 0.48 to 0.50</p>
+</li>
+<li>
+<p><code>Data::Dumper</code> has been upgraded from 2.129 to 2.130_01.</p>
+</li>
+<li>
+<p><code>DynaLoader</code> has been upgraded from 1.10 to 1.11.</p>
+<p>It fixes a buffer overflow when passed a very long file name.</p>
+</li>
+<li>
+<p><code>ExtUtils::Constant</code> has been upgraded from 0.22 to 0.23.</p>
+<p>The <code>AUTOLOAD</code> helper code generated by <code>ExtUtils::Constant::ProxySubs</code>
+can now <code>croak</code> for missing constants, or generate a complete <code>AUTOLOAD</code>
+subroutine in XS, allowing simplification of many modules that use it.
+(<code>Fcntl</code>, <code>File::Glob</code>, <code>GDBM_File</code>, <code>I18N::Langinfo</code>, <code>POSIX</code>, <code>Socket</code>)</p>
+<p><code>ExtUtils::Constant::ProxySubs</code> can now optionally push the names of all
+constants onto the package's C{@EXPORT_OK}. This has been used to replace
+less space-efficient code in <code>B</code>, helping considerably shrink the size of its
+shared object.</p>
+</li>
+<li>
+<p><code>Fcntl</code> has been upgraded from 1.09 to 1.10.</p>
+</li>
+<li>
+<p><code>File::Fetch</code> has been upgraded from 0.24 to 0.28</p>
+<p><code>HTTP::Lite</code> is now supported for 'http' scheme.</p>
+<p>The <code>fetch</code> utility is supported on FreeBSD, NetBSD and
+Dragonfly BSD for the <code>http</code> and <code>ftp</code> schemes.</p>
+</li>
+<li>
+<p><code>File::Glob</code> has been upgraded from 1.09 to 1.10.</p>
+</li>
+<li>
+<p><code>File::stat</code> has been upgraded from 1.03 to 1.04.</p>
+<p>The <a href="../../lib/pods/perlrun.html#x"><code>-x</code></a> and <a href="../../lib/pods/perlrun.html#x"><code>-X</code></a> file test operators now work correctly under the root
+user.</p>
+</li>
+<li>
+<p><code>GDBM_File</code> has been upgraded from 1.11 to 1.12.</p>
+<p>This fixes a memory leak when DBM filters are used.</p>
+</li>
+<li>
+<p><code>Hash::Util</code> has been upgraded from 0.09 to 0.10.</p>
+</li>
+<li>
+<p><code>Hash::Util::FieldHash</code> has been upgraded from 1.05 to 1.06.</p>
+</li>
+<li>
+<p><code>I18N::Langinfo</code> has been upgraded from 0.06 to 0.07.</p>
+</li>
+<li>
+<p><code>Locale::Maketext</code> has been upgraded from 1.16 to 1.17.</p>
+</li>
+<li>
+<p><code>Math::BigInt</code> has been upgraded from 1.97 to 1.99_01.</p>
+</li>
+<li>
+<p><code>Math::BigRat</code> has been upgraded from 0.26 to 0.26_01</p>
+</li>
+<li>
+<p><code>Math::BigInt::FastCalc</code> has been upgraded from 0.22 to 0.24_01.</p>
+</li>
+<li>
+<p><code>MIME::Base64</code> has been upgraded from 3.09 to 3.10</p>
+<p>Includes new functions to calculate the length of encoded and decoded
+base64 strings.</p>
+</li>
+<li>
+<p><code>mro</code> has been upgraded from 1.04 to 1.05.</p>
+</li>
+<li>
+<p><code>NDBM_File</code> has been upgraded from 1.09 to 1.10.</p>
+<p>This fixes a memory leak when DBM filters are used.</p>
+</li>
+<li>
+<p><code>ODBM_File</code> has been upgraded from 1.08 to 1.09.</p>
+<p>This fixes a memory leak when DBM filters are used.</p>
+</li>
+<li>
+<p><code>Opcode</code> has been upgraded from 1.16 to 1.17.</p>
+</li>
+<li>
+<p><code>parent</code> has been upgraded from 0.223 to 0.224</p>
+</li>
+<li>
+<p><code>Pod::Simple</code> has been upgraded from 3.14 to 3.15</p>
+<p>Includes various fixes to <code>HTML</code> and <code>XHTML</code> handling.</p>
+</li>
+<li>
+<p><code>POSIX</code> has been upgraded from 1.21 to 1.22.</p>
+</li>
+<li>
+<p><code>re</code> has been upgraded from 0.13 to 0.14, for the sake of the new
+<code>use re &quot;/flags&quot;</code> pragma.</p>
+</li>
+<li>
+<p><code>Safe</code> has been upgraded from 2.28 to 2.29.</p>
+<p>It adds <code>&amp;version::vxs::VCMP</code> to the default share.</p>
+</li>
+<li>
+<p><code>SDBM_File</code> has been upgraded from 1.07 to 1.08.</p>
+</li>
+<li>
+<p><code>SelfLoader</code> has been upgraded from 1.17 to 1.18.</p>
+<p>It now works in taint mode
+<em>[perl #72062]</em>.</p>
+</li>
+<li>
+<p><code>Socket</code> has been upgraded from 1.90 to 1.91.</p>
+</li>
+<li>
+<p><code>Storable</code> has been upgraded from 2.22 to 2.24</p>
+<p>Includes performance improvement for overloaded classes.</p>
+</li>
+<li>
+<p><code>Sys::Hostname</code> has been upgraded from 1.13 to 1.14.</p>
+</li>
+<li>
+<p><code>Unicode::Collate</code> has been upgraded from 0.63 to 0.67</p>
+<p>This release newly adds locales <code>ja</code> <code>ko</code> and <code>zh</code> and its variants 
+( <code>zh__big5han</code>, <code>zh__gb2312han</code>, <code>zh__pinyin</code>, <code>zh__stroke</code> ).</p>
+<p>Supported UCA_Version 22 for Unicode 6.0.0.</p>
+<p>The following modules have been added:</p>
+<p><code>Unicode::Collate::CJK::Big5</code> for <code>zh__big5han</code> which makes 
+tailoring of CJK Unified Ideographs in the order of CLDR's big5han ordering.</p>
+<p><code>Unicode::Collate::CJK::GB2312</code> for <code>zh__gb2312han</code> which makes
+tailoring of CJK Unified Ideographs in the order of CLDR's gb2312han ordering.</p>
+<p><code>Unicode::Collate::CJK::JISX0208</code> which makes tailoring of 6355 kanji 
+(CJK Unified Ideographs) in the JIS X 0208 order.</p>
+<p><code>Unicode::Collate::CJK::Korean</code> which makes tailoring of CJK Unified Ideographs 
+in the order of CLDR's Korean ordering.</p>
+<p><code>Unicode::Collate::CJK::Pinyin</code> for <code>zh__pinyin</code> which makes
+tailoring of CJK Unified Ideographs in the order of CLDR's pinyin ordering.</p>
+<p><code>Unicode::Collate::CJK::Stroke</code> for <code>zh__stroke</code> which makes
+tailoring of CJK Unified Ideographs in the order of CLDR's stroke ordering.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="documentation">Documentation</a></h1>
+<p><a href="../../lib/pods/perlvar.html">the perlvar manpage</a> reorders the variables and groups them by topic. Each variable
+introduced after Perl 5.000 notes the first version in which it is 
+available. <a href="../../lib/pods/perlvar.html">the perlvar manpage</a> also has a new section for deprecated variables to
+note when they were removed.</p>
+<p>
+</p>
+<h2><a name="new_documentation">New Documentation</a></h2>
+<p>
+</p>
+<h3><a name="perlpodstyle"><a href="../../lib/pods/perlpodstyle.html">the perlpodstyle manpage</a></a></h3>
+<p>New style guide for POD documentation,
+split mostly from the NOTES section of the pod2man man page.</p>
+<p>( This was added to <code>v5.13.6</code> but was not documented with that release ).</p>
+<p>
+</p>
+<h2><a name="changes_to_existing_documentation">Changes to Existing Documentation</a></h2>
+<ul>
+<li>
+<p>Array and hash slices in scalar context are now documented in <a href="../../lib/pods/perldata.html">the perldata manpage</a>.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlform.html">the perlform manpage</a> and <a href="../../lib/pods/perllocale.html">the perllocale manpage</a> have been corrected to state that
+<code>use locale</code> affects formats.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">Diagnostics</a></h1>
+<p>
+</p>
+<h2><a name="new_diagnostics">New Diagnostics</a></h2>
+<ul>
+<li>
+<p>&quot;Using !~ with %s doesn't make sense&quot;: This message was actually added in
+5.13.2, but was omitted from perldelta. It now applies also to the <a href="../../lib/pods/perlfunc.html#y_"><code>y///</code></a>
+operator, and has been documented.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="utility_changes">Utility Changes</a></h1>
+<p>
+</p>
+<h3><a name="ptargrep"><a href="../../bin/ptargrep.html">the ptargrep manpage</a></a></h3>
+<ul>
+<li>
+<p><a href="../../bin/ptargrep.html">the ptargrep manpage</a> is a utility to apply pattern matching to the contents of files 
+in a tar archive. It comes with <code>Archive::Tar</code>.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="testing">Testing</a></h1>
+<ul>
+<li>
+<p>The new <em class="file">t/mro/isa_aliases.t</em> has been added, which tests that
+<code>*Foo::ISA = *Bar::ISA</code> works properly.</p>
+</li>
+<li>
+<p><em class="file">t/mro/isarev.t</em> has been added, which tests that <code>PL_isarev</code> (accessible
+at the Perl level via <code>mro::get_isarev</code>) is updated properly.</p>
+</li>
+<li>
+<p><em class="file">t/run/switchd-78586.t</em> has been added, which tests that
+<em>[perl #78586]</em>
+has been fixed (related to line numbers in the debugger).</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="platform_support">Platform Support</a></h1>
+<p>
+</p>
+<h2><a name="platform_specific_notes">Platform-Specific Notes</a></h2>
+<dl>
+<dt><strong><a name="windows4" class="item">Windows</a></strong></dt>
+
+<dd>
+<p>Directory handles are now properly cloned when threads are created. In perl
+5.13.6, child threads simply stopped inheriting directory handles. In
+previous versions, threads would share handles, resulting in crashes.</p>
+<p>Support for building with Visual C++ 2010 is now underway, but is not yet
+complete. See <em class="file">README.win32</em> for more details.</p>
+</dd>
+<dt><strong><a name="vms7" class="item">VMS</a></strong></dt>
+
+<dd>
+<p>Record-oriented files (record format variable or variable with fixed control)
+opened for write by the perlio layer will now be line buffered to prevent the
+introduction of spurious line breaks whenever the perlio buffer fills up.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="internal_changes">Internal Changes</a></h1>
+<ul>
+<li>
+<p><code>lex_start</code> has been added to the API, but is considered experimental.</p>
+</li>
+<li>
+<p>A new <code>parse_block</code> function has been added to the API
+<em>[perl #78222]</em>.</p>
+</li>
+<li>
+<p>A new, experimental API has been added for accessing the internal
+structure that Perl uses for <a href="../../lib/pods/perlvar.html#__h"><code>%^H</code></a>. See the functions beginning with
+<code>cophh_</code> in <a href="../../lib/pods/perlapi.html">the perlapi manpage</a>.</p>
+</li>
+<li>
+<p>A stash can now have a list of effective names in addition to its usual
+name. The first effective name can be accessed via the <code>HvENAME</code> macro,
+which is now the recommended name to use in MRO linearisations (<code>HvNAME</code>
+being a fallback if there is no <code>HvENAME</code>).</p>
+<p>These names are added and deleted via <code>hv_ename_add</code> and
+<code>hv_ename_delete</code>. These two functions are <em>not</em> part of the API.</p>
+</li>
+<li>
+<p>The way the parser handles labels has been cleaned up and refactored. As a
+result, the <code>newFOROP()</code> constructor function no longer takes a parameter
+stating what label is to go in the state op.</p>
+</li>
+<li>
+<p>The <code>newWHILEOP()</code> and <code>newFOROP()</code> functions no longer accept a line
+number as a parameter.</p>
+</li>
+<li>
+<p>A new <code>parse_barestmt()</code> function has been added, for parsing a statement
+without a label.</p>
+</li>
+<li>
+<p>A new <code>parse_label()</code> function has been added, that parses a statement
+label, separate from statements.</p>
+</li>
+<li>
+<p>The <code>CvSTASH()</code> macro can now only be used as an rvalue. <code>CvSTASH_set()</code>
+has been added to replace assignment to <code>CvSTASH()</code>. This is to ensure
+that backreferences are handled properly. These macros are not part of the
+API.</p>
+</li>
+<li>
+<p>The <code>op_scope()</code> and <code>op_lvalue()</code> functions have been added to the API,
+but are considered experimental.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="selected_bug_fixes">Selected Bug Fixes</a></h1>
+<ul>
+<li>
+<p>The <code>parse_stmt</code> C function added in earlier in the 5.13.x series has been
+fixed to work with statements ending with <code>}</code>
+<em>[perl #78222]</em>.</p>
+</li>
+<li>
+<p>The <code>parse_fullstmt</code> C function added in 5.13.5 has been fixed to work
+when called while an expression is being parsed.</p>
+</li>
+<li>
+<p>Characters in the Latin-1 non-ASCII range (0x80 to 0xFF) used not to match
+themselves if the string happened to be UTF8-encoded internally, the
+regular expression was not, and the character in the regular expression was
+inside a repeated group (e.g.,
+<code>Encode::decode_utf8(&quot;\303\200&quot;) =~ /(\xc0)+/</code>)
+<em>[perl #78464]</em>.</p>
+</li>
+<li>
+<p>The <a href="../../lib/pods/perlrun.html#d"><code>(?d)</code></a> regular expression construct now overrides a previous <a href="../../lib/pods/perlrun.html#u"><code>(?u)</code></a>
+or <code>use feature &quot;unicode_string&quot;</code>
+<em>[perl #78508]</em>.</p>
+</li>
+<li>
+<p>A memory leak in <code>do &quot;file&quot;</code>, introduced in perl 5.13.6, has been fixed
+<em>[perl #78488]</em>.</p>
+</li>
+<li>
+<p>Various bugs related to typeglob dereferencing have been fixed. See
+<a href="#dereferencing_typeglobs">Dereferencing typeglobs</a>, above.</p>
+</li>
+<li>
+<p>The <code>SvPVbyte</code> function available to XS modules now calls magic before
+downgrading the SV, to avoid warnings about wide characters
+<em>[perl #72398]</em>.</p>
+</li>
+<li>
+<p>The <code>=</code> operator used to ignore magic (e.g., tie methods) on its
+right-hand side if the scalar happened to hold a typeglob. This could
+happen if a typeglob was the last thing returned from or assigned to a tied
+scalar
+<em>[perl #77498]</em>.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#sprintf"><code>sprintf</code></a> was ignoring locales when called with constant arguments
+<em>[perl #78632]</em>.</p>
+</li>
+<li>
+<p>A non-ASCII character in the Latin-1 range could match both a Posix
+class, such as <code>[[:alnum:]]</code>, and its inverse <code>[[:^alnum:]]</code>.  This is
+now fixed for regular expressions compiled under the <a href="../../lib/pods/perlrun.html#u"><code>&quot;u&quot;</code></a> modifier.
+See <a href="#c_use_feature_unicode_strings__now_applies_to_more_regex_matching"><code>use feature &quot;unicode_strings&quot;</code> now applies to more regex matching</a>.
+<em>[perl #18281]</em>.</p>
+</li>
+<li>
+<p>Concatenating long strings under <code>use encoding</code> no longer causes perl to
+crash
+<em>[perl #78674]</em>.</p>
+</li>
+<li>
+<p>Typeglob assignments would crash if the glob's stash no longer existed, so
+long as the glob assigned to was named 'ISA' or the glob on either side of
+the assignment contained a subroutine.</p>
+</li>
+<li>
+<p>Calling <a href="../../lib/pods/perlfunc.html#import"><code>-&gt;import</code></a> on a class lacking an import method could corrupt
+the stack, resulting in strange behaviour. For instance,</p>
+<pre>
+  <span class="keyword">push</span> <span class="variable">@a</span><span class="operator">,</span> <span class="string">"foo"</span><span class="operator">,</span> <span class="variable">$b</span> <span class="operator">=</span> <span class="variable">bar</span><span class="operator">-&gt;</span><span class="variable">import</span><span class="operator">;</span>
+</pre>
+<p>would assign 'foo' to <a href="../../lib/pods/perlvar.html#_b"><code>$b</code></a>
+<em>[perl #63790]</em>.</p>
+</li>
+<li>
+<p>Creating an alias to a package when that package had been detached from the
+symbol table would result in corrupted isa caches
+<em>[perl #77358]</em>.</p>
+</li>
+<li>
+<p><code>.=</code> followed by <code>&lt;&gt;</code> or <a href="../../lib/pods/perlfunc.html#readline"><code>readline</code></a> would leak memory if <a href="../../lib/pods/perlvar.html#__"><code>$/</code></a>
+contained characters beyond the octet range and the scalar assigned to
+happened to be encoded as UTF8 internally
+<em>[perl #72246]</em>.</p>
+</li>
+<li>
+<p>The <a href="../../lib/pods/perlfunc.html#recv"><code>recv</code></a> function could crash when called with the MSG_TRUNC flag
+<em>[perl #75082]</em>.</p>
+</li>
+<li>
+<p>Evaluating a simple glob (like <code>*a</code>) was calling get-magic on the glob,
+even when its contents were not being used
+<em>[perl #78580]</em>.</p>
+<p>This bug was introduced in 5.13.2 and did not affect earlier perl versions.</p>
+</li>
+<li>
+<p>Matching a Unicode character against an alternation containing characters
+that happened to match continuation bytes in the former's UTF8
+representation (<code>qq{\x{30ab}} =~ /\xab|\xa9/</code>) would cause erroneous
+warnings
+<em>[perl #70998]</em>.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#s_"><code>s///r</code></a> (added in 5.13.2) no longer leaks.</p>
+</li>
+<li>
+<p>The trie optimisation was not taking empty groups into account, preventing
+'foo' from matching <a href="../../lib/pods/perlguts.html#a"><code>/\A(?:(?:)foo|bar|zot)\z/</code></a>
+<em>[perl #78356]</em>.</p>
+</li>
+<li>
+<p>A pattern containing a <code>+</code> inside a lookahead would sometimes cause an
+incorrect match failure in a global match (e.g., <code>/(?=(\S+))/g</code>)
+<em>[perl #68564]</em>.</p>
+</li>
+<li>
+<p>Iterating with <code>foreach</code> over an array returned by an lvalue sub now works
+<em>[perl #23790]</em>.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlvar.html#__"><code>$@</code></a> is now localised during calls to <a href="../../lib/pods/perlfunc.html#binmode"><code>binmode</code></a> to prevent action at a
+distance
+<em>[perl #78844]</em>.</p>
+</li>
+<li>
+<p><code>PL_isarev</code>, which is accessible to Perl via <code>mro::get_isarev</code> is now
+updated properly when packages are deleted or removed from the <code>@ISA</code> of
+other classes. This allows many packages to be created and deleted without
+causing a memory leak
+<em>[perl #75176]</em>.</p>
+</li>
+<li>
+<p><code>undef *Foo::</code> and <code>undef *Foo::ISA</code> and <code>delete $package::{ISA}</code>
+used not to update the internal isa caches if the
+stash or <code>@ISA</code> array had a reference elsewhere. In
+fact, <code>undef *Foo::ISA</code> would stop a new <code>@Foo::ISA</code> array from updating
+caches.</p>
+</li>
+<li>
+<p><code>@ISA</code> arrays can now be shared between classes via
+<code>*Foo::ISA = \@Bar::ISA</code> or <code>*Foo::ISA = *Bar::ISA</code>
+<em>[perl #77238]</em>.</p>
+</li>
+<li>
+<p>The parser no longer hangs when encountering certain Unicode characters,
+such as U+387
+<em>[perl #74022]</em>.</p>
+</li>
+<li>
+<p><a href="../../lib/pods/perlfunc.html#formline"><code>formline</code></a> no longer crashes when passed a tainted format picture. It also
+taints <a href="../../lib/pods/perlvar.html#__a"><code>$^A</code></a> now if its arguments are tainted
+<em>[perl #79138]</em>.</p>
+</li>
+<li>
+<p>A signal handler called within a signal handler could cause leaks or
+double-frees. Now fixed.
+<em>[perl #76248]</em>.</p>
+</li>
+<li>
+<p>When trying to report <code>Use of uninitialized value $Foo::BAR</code>, crashes could
+occur if the GLOB of the global variable causing the warning has been detached
+from its original stash by, for example <code>delete $::{'Foo::'}</code>. This has been
+fixed by disabling the reporting of variable names in the warning in those
+cases.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="obituary">Obituary</a></h1>
+<p>Randy Kobes, creator of the kobesearch alternative to search.cpan.org and
+contributor/maintainer to several core Perl toolchain modules, passed away
+on September 18, 2010 after a battle with lung cancer.  His contributions
+to the Perl community will be missed.</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">Acknowledgements</a></h1>
+<p>Perl 5.13.7 represents approximately one month of development since Perl 5.13.6
+and contains 73100 lines of changes across 518 files from 39 authors and committers:</p>
+<p>Abhijit Menon-Sen, Abigail, Ben Morrow, Chas. J. Owens IV, Chris 'BinGOs' Williams, Craig A. Berry,
+David Golden, David Mitchell, Father Chrysostomos, Fingle Nark, Florian Ragwitz, George Greer,
+Grant McLean, H.Merijn Brand, Ian Goodacre, Jan Dubois, Jerry D. Hedden, Jesse Vincent, Karl Williamson,
+Lubomir Rintel, Marty Pauley, Moritz Lenz, Nicholas Clark, Nicolas Kaiser, Niko Tyni, Peter John Acklam,
+Rafael Garcia-Suarez, Shlomi Fish, Steffen Mueller, Steve Hay, Tatsuhiko Miyagawa, Tim Bunce, Todd Rinaldo,
+Tom Christiansen, Tom Hukins, Tony Cook, Yves Orton, Zefram and brian d foy</p>
+<p>Many of the changes included in this version originated in the CPAN modules included in
+Perl's core. We're grateful to the entire CPAN community for helping Perl to flourish.</p>
+<p>
+</p>
+<hr />
+<h1><a name="reporting_bugs">Reporting Bugs</a></h1>
+<p>If you find what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the perl
+bug database at <a href="http://rt.perl.org/perlbug/">http://rt.perl.org/perlbug/</a> .  There may also be
+information at <a href="http://www.perl.org/">http://www.perl.org/</a> , the Perl Home Page.</p>
+<p>If you believe you have an unreported bug, please run the <strong>perlbug</strong>
+program included with your release.  Be sure to trim your bug down
+to a tiny but sufficient test case.  Your bug report, along with the
+output of <code>perl -V</code>, will be sent off to <a href="mailto:perlbug@perl.org">perlbug@perl.org</a> to be
+analysed by the Perl porting team.</p>
+<p>If the bug you are reporting has security implications, which make it
+inappropriate to send to a publicly archived mailing list, then please send
+it to <a href="mailto:perl5-security-report@perl.org.">perl5-security-report@perl.org.</a> This points to a closed subscription
+unarchived mailing list, which includes all the core committers, who be able
+to help assess the impact of issues, figure out a resolution, and help
+co-ordinate the release of patches to mitigate or fix the problem across all
+platforms on which Perl is supported. Please only use this address for
+security issues in the Perl core, not for modules independently
+distributed on CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The <em class="file">Changes</em> file for an explanation of how to view exhaustive details
+on what changed.</p>
+<p>The <em class="file">INSTALL</em> file for how to build Perl.</p>
+<p>The <em class="file">README</em> file for general stuff.</p>
+<p>The <em class="file">Artistic</em> and <em class="file">Copying</em> files for copyright information.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,860 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>URI - Uniform Resource Identifiers</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>URI - Uniform Resource Identifiers</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#constructors">CONSTRUCTORS</a></li>
+	<li><a href="#common_methods">COMMON METHODS</a></li>
+	<li><a href="#generic_methods">GENERIC METHODS</a></li>
+	<li><a href="#server_methods">SERVER METHODS</a></li>
+	<li><a href="#scheme_specific_support">SCHEME-SPECIFIC SUPPORT</a></li>
+	<li><a href="#configuration_variables">CONFIGURATION VARIABLES</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#parsing_uris_with_regexp">PARSING URIs WITH REGEXP</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#authors___acknowledgments">AUTHORS / ACKNOWLEDGMENTS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>URI - Uniform Resource Identifiers (absolute and relative)</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="variable">$u1</span> <span class="operator">=</span> <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"http://www.perl.com"</span><span class="operator">);</span>
+ <span class="variable">$u2</span> <span class="operator">=</span> <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"foo"</span><span class="operator">,</span> <span class="string">"http"</span><span class="operator">);</span>
+ <span class="variable">$u3</span> <span class="operator">=</span> <span class="variable">$u2</span><span class="operator">-&gt;</span><span class="variable">abs</span><span class="operator">(</span><span class="variable">$u1</span><span class="operator">);</span>
+ <span class="variable">$u4</span> <span class="operator">=</span> <span class="variable">$u3</span><span class="operator">-&gt;</span><span class="variable">clone</span><span class="operator">;</span>
+ <span class="variable">$u5</span> <span class="operator">=</span> <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"HTTP://WWW.perl.com:80"</span><span class="operator">)-&gt;</span><span class="variable">canonical</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">$str</span> <span class="operator">=</span> <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">as_string</span><span class="operator">;</span>
+ <span class="variable">$str</span> <span class="operator">=</span> <span class="string">"</span><span class="variable">$u</span><span class="string">"</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">$scheme</span> <span class="operator">=</span> <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">scheme</span><span class="operator">;</span>
+ <span class="variable">$opaque</span> <span class="operator">=</span> <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">opaque</span><span class="operator">;</span>
+ <span class="variable">$path</span>   <span class="operator">=</span> <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">path</span><span class="operator">;</span>
+ <span class="variable">$frag</span>   <span class="operator">=</span> <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">fragment</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">scheme</span><span class="operator">(</span><span class="string">"ftp"</span><span class="operator">);</span>
+ <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">host</span><span class="operator">(</span><span class="string">"ftp.perl.com"</span><span class="operator">);</span>
+ <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">path</span><span class="operator">(</span><span class="string">"cpan/"</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module implements the <code>URI</code> class.  Objects of this class
+represent &quot;Uniform Resource Identifier references&quot; as specified in <a href="http://www.ietf.org/rfc/rfc2396.txt" class="rfc">RFC
+2396</a> (and updated by <a href="http://www.ietf.org/rfc/rfc2732.txt" class="rfc">RFC 2732</a>).</p>
+<p>A Uniform Resource Identifier is a compact string of characters that
+identifies an abstract or physical resource.  A Uniform Resource
+Identifier can be further classified as either a Uniform Resource Locator
+(URL) or a Uniform Resource Name (URN).  The distinction between URL
+and URN does not matter to the <code>URI</code> class interface. A
+&quot;URI-reference&quot; is a URI that may have additional information attached
+in the form of a fragment identifier.</p>
+<p>An absolute URI reference consists of three parts:  a <em>scheme</em>, a
+<em>scheme-specific part</em> and a <em>fragment</em> identifier.  A subset of URI
+references share a common syntax for hierarchical namespaces.  For
+these, the scheme-specific part is further broken down into
+<em>authority</em>, <em>path</em> and <em>query</em> components.  These URIs can also
+take the form of relative URI references, where the scheme (and
+usually also the authority) component is missing, but implied by the
+context of the URI reference.  The three forms of URI reference
+syntax are summarized as follows:</p>
+<pre>
+  &lt;scheme&gt;:&lt;scheme-specific-part&gt;#&lt;fragment&gt;
+  &lt;scheme&gt;://&lt;authority&gt;&lt;path&gt;?&lt;query&gt;#&lt;fragment&gt;
+  &lt;path&gt;?&lt;query&gt;#&lt;fragment&gt;</pre>
+<p>The components into which a URI reference can be divided depend on the
+<em>scheme</em>.  The <code>URI</code> class provides methods to get and set the
+individual components.  The methods available for a specific
+<code>URI</code> object depend on the scheme.</p>
+<p>
+</p>
+<hr />
+<h1><a name="constructors">CONSTRUCTORS</a></h1>
+<p>The following methods construct new <code>URI</code> objects:</p>
+<dl>
+<dt><strong><a name="new" class="item">$uri = URI-&gt;new( $str )</a></strong></dt>
+
+<dt><strong>$uri = URI-&gt;new( $str, $scheme )</strong></dt>
+
+<dd>
+<p>Constructs a new URI object.  The string
+representation of a URI is given as argument, together with an optional
+scheme specification.  Common URI wrappers like &quot;&quot; and &lt;&gt;, as well as
+leading and trailing white space, are automatically removed from
+the $str argument before it is processed further.</p>
+<p>The constructor determines the scheme, maps this to an appropriate
+URI subclass, constructs a new object of that class and returns it.</p>
+<p>The $scheme argument is only used when $str is a
+relative URI.  It can be either a simple string that
+denotes the scheme, a string containing an absolute URI reference, or
+an absolute <code>URI</code> object.  If no $scheme is specified for a relative
+URI $str, then $str is simply treated as a generic URI (no scheme-specific
+methods available).</p>
+<p>The set of characters available for building URI references is
+restricted (see <a href="../lib/URI/Escape.html">the URI::Escape manpage</a>).  Characters outside this set are
+automatically escaped by the URI constructor.</p>
+</dd>
+<dt><strong><a name="new_abs" class="item">$uri = URI-&gt;new_abs( $str, $base_uri )</a></strong></dt>
+
+<dd>
+<p>Constructs a new absolute URI object.  The $str argument can
+denote a relative or absolute URI.  If relative, then it is
+absolutized using $base_uri as base. The $base_uri must be an absolute
+URI.</p>
+</dd>
+<dt><strong>$uri = URI::file-&gt;new( $filename )</strong></dt>
+
+<dt><strong>$uri = URI::file-&gt;new( $filename, $os )</strong></dt>
+
+<dd>
+<p>Constructs a new <em>file</em> URI from a file name.  See <a href="../lib/URI/file.html">the URI::file manpage</a>.</p>
+</dd>
+<dt><strong>$uri = URI::file-&gt;new_abs( $filename )</strong></dt>
+
+<dt><strong>$uri = URI::file-&gt;new_abs( $filename, $os )</strong></dt>
+
+<dd>
+<p>Constructs a new absolute <em>file</em> URI from a file name.  See
+<a href="../lib/URI/file.html">the URI::file manpage</a>.</p>
+</dd>
+<dt><strong><a name="cwd" class="item">$uri = URI::file-&gt;cwd</a></strong></dt>
+
+<dd>
+<p>Returns the current working directory as a <em>file</em> URI.  See
+<a href="../lib/URI/file.html">the URI::file manpage</a>.</p>
+</dd>
+<dt><strong><a name="clone" class="item">$uri-&gt;clone</a></strong></dt>
+
+<dd>
+<p>Returns a copy of the $uri.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="common_methods">COMMON METHODS</a></h1>
+<p>The methods described in this section are available for all <code>URI</code>
+objects.</p>
+<p>Methods that give access to components of a URI always return the
+old value of the component.  The value returned is <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> if the
+component was not present.  There is generally a difference between a
+component that is empty (represented as <code>&quot;&quot;</code>) and a component that is
+missing (represented as <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a>).  If an accessor method is given an
+argument, it updates the corresponding component in addition to
+returning the old value of the component.  Passing an undefined
+argument removes the component (if possible).  The description of
+each accessor method indicates whether the component is passed as
+an escaped (percent-encoded) or an unescaped string.  A component that can be further
+divided into sub-parts are usually passed escaped, as unescaping might
+change its semantics.</p>
+<p>The common methods available for all URI are:</p>
+<dl>
+<dt><strong><a name="scheme" class="item">$uri-&gt;scheme</a></strong></dt>
+
+<dt><strong>$uri-&gt;scheme( $new_scheme )</strong></dt>
+
+<dd>
+<p>Sets and returns the scheme part of the $uri.  If the $uri is
+relative, then $uri-&gt;scheme returns <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a>.  If called with an
+argument, it updates the scheme of $uri, possibly changing the
+class of $uri, and returns the old scheme value.  The method croaks
+if the new scheme name is illegal; a scheme name must begin with a
+letter and must consist of only US-ASCII letters, numbers, and a few
+special marks: &quot;.&quot;, &quot;+&quot;, &quot;-&quot;.  This restriction effectively means
+that the scheme must be passed unescaped.  Passing an undefined
+argument to the scheme method makes the URI relative (if possible).</p>
+<p>Letter case does not matter for scheme names.  The string
+returned by $uri-&gt;scheme is always lowercase.  If you want the scheme
+just as it was written in the URI in its original case,
+you can use the $uri-&gt;_scheme method instead.</p>
+</dd>
+<dt><strong><a name="opaque" class="item">$uri-&gt;opaque</a></strong></dt>
+
+<dt><strong>$uri-&gt;opaque( $new_opaque )</strong></dt>
+
+<dd>
+<p>Sets and returns the scheme-specific part of the $uri
+(everything between the scheme and the fragment)
+as an escaped string.</p>
+</dd>
+<dt><strong><a name="path" class="item">$uri-&gt;path</a></strong></dt>
+
+<dt><strong>$uri-&gt;path( $new_path )</strong></dt>
+
+<dd>
+<p>Sets and returns the same value as $uri-&gt;opaque unless the URI
+supports the generic syntax for hierarchical namespaces.
+In that case the generic method is overridden to set and return
+the part of the URI between the <em>host name</em> and the <em>fragment</em>.</p>
+</dd>
+<dt><strong><a name="fragment" class="item">$uri-&gt;fragment</a></strong></dt>
+
+<dt><strong>$uri-&gt;fragment( $new_frag )</strong></dt>
+
+<dd>
+<p>Returns the fragment identifier of a URI reference
+as an escaped string.</p>
+</dd>
+<dt><strong><a name="as_string" class="item">$uri-&gt;as_string</a></strong></dt>
+
+<dd>
+<p>Returns a URI object to a plain ASCII string.  URI objects are
+also converted to plain strings automatically by overloading.  This
+means that $uri objects can be used as plain strings in most Perl
+constructs.</p>
+</dd>
+<dt><strong><a name="as_iri" class="item">$uri-&gt;as_iri</a></strong></dt>
+
+<dd>
+<p>Returns a Unicode string representing the URI.  Escaped UTF-8 sequences
+representing non-ASCII characters are turned into their corresponding Unicode
+code point.</p>
+</dd>
+<dt><strong><a name="canonical" class="item">$uri-&gt;canonical</a></strong></dt>
+
+<dd>
+<p>Returns a normalized version of the URI.  The rules
+for normalization are scheme-dependent.  They usually involve
+lowercasing the scheme and Internet host name components,
+removing the explicit port specification if it matches the default port,
+uppercasing all escape sequences, and unescaping octets that can be
+better represented as plain characters.</p>
+<p>For efficiency reasons, if the $uri is already in normalized form,
+then a reference to it is returned instead of a copy.</p>
+</dd>
+<dt><strong><a name="eq" class="item">$uri-&gt;eq( $other_uri )</a></strong></dt>
+
+<dt><strong>URI::eq( $first_uri, $other_uri )</strong></dt>
+
+<dd>
+<p>Tests whether two URI references are equal.  URI references
+that normalize to the same string are considered equal.  The method
+can also be used as a plain function which can also test two string
+arguments.</p>
+<p>If you need to test whether two <code>URI</code> object references denote the
+same object, use the '==' operator.</p>
+</dd>
+<dt><strong><a name="abs" class="item">$uri-&gt;abs( $base_uri )</a></strong></dt>
+
+<dd>
+<p>Returns an absolute URI reference.  If $uri is already
+absolute, then a reference to it is simply returned.  If the $uri
+is relative, then a new absolute URI is constructed by combining the
+$uri and the $base_uri, and returned.</p>
+</dd>
+<dt><strong><a name="rel" class="item">$uri-&gt;rel( $base_uri )</a></strong></dt>
+
+<dd>
+<p>Returns a relative URI reference if it is possible to
+make one that denotes the same resource relative to $base_uri.
+If not, then $uri is simply returned.</p>
+</dd>
+<dt><strong><a name="secure" class="item">$uri-&gt;secure</a></strong></dt>
+
+<dd>
+<p>Returns a TRUE value if the URI is considered to point to a resource on
+a secure channel, such as an SSL or TLS encrypted one.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="generic_methods">GENERIC METHODS</a></h1>
+<p>The following methods are available to schemes that use the
+common/generic syntax for hierarchical namespaces.  The descriptions of
+schemes below indicate which these are.  Unknown schemes are
+assumed to support the generic syntax, and therefore the following
+methods:</p>
+<dl>
+<dt><strong><a name="authority" class="item">$uri-&gt;authority</a></strong></dt>
+
+<dt><strong>$uri-&gt;authority( $new_authority )</strong></dt>
+
+<dd>
+<p>Sets and returns the escaped authority component
+of the $uri.</p>
+</dd>
+<dt><strong>$uri-&gt;path</strong></dt>
+
+<dt><strong>$uri-&gt;path( $new_path )</strong></dt>
+
+<dd>
+<p>Sets and returns the escaped path component of
+the $uri (the part between the host name and the query or fragment).
+The path can never be undefined, but it can be the empty string.</p>
+</dd>
+<dt><strong><a name="path_query" class="item">$uri-&gt;path_query</a></strong></dt>
+
+<dt><strong>$uri-&gt;path_query( $new_path_query )</strong></dt>
+
+<dd>
+<p>Sets and returns the escaped path and query
+components as a single entity.  The path and the query are
+separated by a &quot;?&quot; character, but the query can itself contain &quot;?&quot;.</p>
+</dd>
+<dt><strong><a name="path_segments" class="item">$uri-&gt;path_segments</a></strong></dt>
+
+<dt><strong>$uri-&gt;path_segments( $segment, ... )</strong></dt>
+
+<dd>
+<p>Sets and returns the path.  In a scalar context, it returns
+the same value as $uri-&gt;path.  In a list context, it returns the
+unescaped path segments that make up the path.  Path segments that
+have parameters are returned as an anonymous array.  The first element
+is the unescaped path segment proper;  subsequent elements are escaped
+parameter strings.  Such an anonymous array uses overloading so it can
+be treated as a string too, but this string does not include the
+parameters.</p>
+<p>Note that absolute paths have the empty string as their first
+<em>path_segment</em>, i.e. the <em>path</em> <code>/foo/bar</code> have 3
+<em>path_segments</em>; &quot;&quot;, &quot;foo&quot; and &quot;bar&quot;.</p>
+</dd>
+<dt><strong><a name="query" class="item">$uri-&gt;query</a></strong></dt>
+
+<dt><strong>$uri-&gt;query( $new_query )</strong></dt>
+
+<dd>
+<p>Sets and returns the escaped query component of
+the $uri.</p>
+</dd>
+<dt><strong><a name="query_form" class="item">$uri-&gt;query_form</a></strong></dt>
+
+<dt><strong>$uri-&gt;query_form( $key1 =&gt; $val1, $key2 =&gt; $val2, ... )</strong></dt>
+
+<dt><strong>$uri-&gt;query_form( $key1 =&gt; $val1, $key2 =&gt; $val2, ..., $delim )</strong></dt>
+
+<dt><strong>$uri-&gt;query_form( \@key_value_pairs )</strong></dt>
+
+<dt><strong>$uri-&gt;query_form( \@key_value_pairs, $delim )</strong></dt>
+
+<dt><strong>$uri-&gt;query_form( \%hash )</strong></dt>
+
+<dt><strong>$uri-&gt;query_form( \%hash, $delim )</strong></dt>
+
+<dd>
+<p>Sets and returns query components that use the
+<em>application/x-www-form-urlencoded</em> format.  Key/value pairs are
+separated by &quot;&amp;&quot;, and the key is separated from the value by a &quot;=&quot;
+character.</p>
+<p>The form can be set either by passing separate key/value pairs, or via
+an array or hash reference.  Passing an empty array or an empty hash
+removes the query component, whereas passing no arguments at all leaves
+the component unchanged.  The order of keys is undefined if a hash
+reference is passed.  The old value is always returned as a list of
+separate key/value pairs.  Assigning this list to a hash is unwise as
+the keys returned might repeat.</p>
+<p>The values passed when setting the form can be plain strings or
+references to arrays of strings.  Passing an array of values has the
+same effect as passing the key repeatedly with one value at a time.
+All the following statements have the same effect:</p>
+<pre>
+    <span class="variable">$uri</span><span class="operator">-&gt;</span><span class="variable">query_form</span><span class="operator">(</span><span class="string">foo</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
+    <span class="variable">$uri</span><span class="operator">-&gt;</span><span class="variable">query_form</span><span class="operator">(</span><span class="string">foo</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="number">1</span><span class="operator">,</span> <span class="number">2</span><span class="operator">]</span><span class="operator">);</span>
+    <span class="variable">$uri</span><span class="operator">-&gt;</span><span class="variable">query_form</span><span class="operator">(</span><span class="operator">[</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="number">2</span> <span class="operator">]</span><span class="operator">);</span>
+    <span class="variable">$uri</span><span class="operator">-&gt;</span><span class="variable">query_form</span><span class="operator">(</span><span class="operator">[</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="number">1</span><span class="operator">,</span> <span class="number">2</span><span class="operator">]</span> <span class="operator">]</span><span class="operator">);</span>
+    <span class="variable">$uri</span><span class="operator">-&gt;</span><span class="variable">query_form</span><span class="operator">(</span><span class="operator">{</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="operator">[</span><span class="number">1</span><span class="operator">,</span> <span class="number">2</span><span class="operator">]</span> <span class="operator">}</span><span class="operator">);</span>
+</pre>
+<p>The $delim parameter can be passed as &quot;;&quot; to force the key/value pairs
+to be delimited by &quot;;&quot; instead of &quot;&amp;&quot; in the query string.  This
+practice is often recommended for URLs embedded in HTML or XML
+documents as this avoids the trouble of escaping the &quot;&amp;&quot; character.
+You might also set the $URI::DEFAULT_QUERY_FORM_DELIMITER variable to
+&quot;;&quot; for the same global effect.</p>
+<p>The <code>URI::QueryParam</code> module can be loaded to add further methods to
+manipulate the form of a URI.  See <a href="../lib/URI/QueryParam.html">the URI::QueryParam manpage</a> for details.</p>
+</dd>
+<dt><strong><a name="query_keywords" class="item">$uri-&gt;query_keywords</a></strong></dt>
+
+<dt><strong>$uri-&gt;query_keywords( $keywords, ... )</strong></dt>
+
+<dt><strong>$uri-&gt;query_keywords( \@keywords )</strong></dt>
+
+<dd>
+<p>Sets and returns query components that use the
+keywords separated by &quot;+&quot; format.</p>
+<p>The keywords can be set either by passing separate keywords directly
+or by passing a reference to an array of keywords.  Passing an empty
+array removes the query component, whereas passing no arguments at
+all leaves the component unchanged.  The old value is always returned
+as a list of separate words.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="server_methods">SERVER METHODS</a></h1>
+<p>For schemes where the <em>authority</em> component denotes an Internet host,
+the following methods are available in addition to the generic
+methods.</p>
+<dl>
+<dt><strong><a name="userinfo" class="item">$uri-&gt;userinfo</a></strong></dt>
+
+<dt><strong>$uri-&gt;userinfo( $new_userinfo )</strong></dt>
+
+<dd>
+<p>Sets and returns the escaped userinfo part of the
+authority component.</p>
+<p>For some schemes this is a user name and a password separated by
+a colon.  This practice is not recommended. Embedding passwords in
+clear text (such as URI) has proven to be a security risk in almost
+every case where it has been used.</p>
+</dd>
+<dt><strong><a name="host" class="item">$uri-&gt;host</a></strong></dt>
+
+<dt><strong>$uri-&gt;host( $new_host )</strong></dt>
+
+<dd>
+<p>Sets and returns the unescaped hostname.</p>
+<p>If the $new_host string ends with a colon and a number, then this
+number also sets the port.</p>
+<p>For IPv6 addresses the brackets around the raw address is removed in the return
+value from $uri-&gt;host.  When setting the host attribute to an IPv6 address you
+can use a raw address or one enclosed in brackets.  The address needs to be
+enclosed in brackets if you want to pass in a new port value as well.</p>
+</dd>
+<dt><strong><a name="ihost" class="item">$uri-&gt;ihost</a></strong></dt>
+
+<dd>
+<p>Returns the host in Unicode form.  Any IDNA A-labels are turned into U-labels.</p>
+</dd>
+<dt><strong><a name="port" class="item">$uri-&gt;port</a></strong></dt>
+
+<dt><strong>$uri-&gt;port( $new_port )</strong></dt>
+
+<dd>
+<p>Sets and returns the port.  The port is a simple integer
+that should be greater than 0.</p>
+<p>If a port is not specified explicitly in the URI, then the URI scheme's default port
+is returned. If you don't want the default port
+substituted, then you can use the $uri-&gt;_port method instead.</p>
+</dd>
+<dt><strong><a name="host_port" class="item">$uri-&gt;host_port</a></strong></dt>
+
+<dt><strong>$uri-&gt;host_port( $new_host_port )</strong></dt>
+
+<dd>
+<p>Sets and returns the host and port as a single
+unit.  The returned value includes a port, even if it matches the
+default port.  The host part and the port part are separated by a
+colon: &quot;:&quot;.</p>
+<p>For IPv6 addresses the bracketing is preserved; thus
+URI-&gt;new(&quot;http://[::1]/&quot;)-&gt;host_port returns &quot;[::1]:80&quot;.  Contrast this with
+$uri-&gt;host which will remove the brackets.</p>
+</dd>
+<dt><strong><a name="default_port" class="item">$uri-&gt;default_port</a></strong></dt>
+
+<dd>
+<p>Returns the default port of the URI scheme to which $uri
+belongs.  For <em>http</em> this is the number 80, for <em>ftp</em> this
+is the number 21, etc.  The default port for a scheme can not be
+changed.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="scheme_specific_support">SCHEME-SPECIFIC SUPPORT</a></h1>
+<p>Scheme-specific support is provided for the following URI schemes.  For <code>URI</code>
+objects that do not belong to one of these, you can only use the common and
+generic methods.</p>
+<dl>
+<dt><strong><a name="data" class="item"><strong>data</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>data</em> URI scheme is specified in <a href="http://www.ietf.org/rfc/rfc2397.txt" class="rfc">RFC 2397</a>.  It allows inclusion
+of small data items as &quot;immediate&quot; data, as if it had been included
+externally.</p>
+<p><code>URI</code> objects belonging to the data scheme support the common methods
+and two new methods to access their scheme-specific components:
+$uri-&gt;media_type and $uri-&gt;data.  See <a href="../lib/URI/data.html">the URI::data manpage</a> for details.</p>
+</dd>
+<dt><strong><a name="file" class="item"><strong>file</strong>:</a></strong></dt>
+
+<dd>
+<p>An old specification of the <em>file</em> URI scheme is found in <a href="http://www.ietf.org/rfc/rfc1738.txt" class="rfc">RFC 1738</a>.
+A new <a href="http://www.ietf.org/rfc/rfc2396.txt" class="rfc">RFC 2396</a> based specification in not available yet, but file URI
+references are in common use.</p>
+<p><code>URI</code> objects belonging to the file scheme support the common and
+generic methods.  In addition, they provide two methods for mapping file URIs
+back to local file names; $uri-&gt;file and $uri-&gt;dir.  See <a href="../lib/URI/file.html">the URI::file manpage</a>
+for details.</p>
+</dd>
+<dt><strong><a name="ftp" class="item"><strong>ftp</strong>:</a></strong></dt>
+
+<dd>
+<p>An old specification of the <em>ftp</em> URI scheme is found in <a href="http://www.ietf.org/rfc/rfc1738.txt" class="rfc">RFC 1738</a>.  A
+new <a href="http://www.ietf.org/rfc/rfc2396.txt" class="rfc">RFC 2396</a> based specification in not available yet, but ftp URI
+references are in common use.</p>
+<p><code>URI</code> objects belonging to the ftp scheme support the common,
+generic and server methods.  In addition, they provide two methods for
+accessing the userinfo sub-components: $uri-&gt;user and $uri-&gt;password.</p>
+</dd>
+<dt><strong><a name="gopher" class="item"><strong>gopher</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>gopher</em> URI scheme is specified in
+&lt;draft-murali-url-gopher-1996-12-04&gt; and will hopefully be available
+as a <a href="http://www.ietf.org/rfc/rfc2396.txt" class="rfc">RFC 2396</a> based specification.</p>
+<p><code>URI</code> objects belonging to the gopher scheme support the common,
+generic and server methods. In addition, they support some methods for
+accessing gopher-specific path components: $uri-&gt;gopher_type,
+$uri-&gt;selector, $uri-&gt;search, $uri-&gt;string.</p>
+</dd>
+<dt><strong><a name="http" class="item"><strong>http</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>http</em> URI scheme is specified in <a href="http://www.ietf.org/rfc/rfc2616.txt" class="rfc">RFC 2616</a>.
+The scheme is used to reference resources hosted by HTTP servers.</p>
+<p><code>URI</code> objects belonging to the http scheme support the common,
+generic and server methods.</p>
+</dd>
+<dt><strong><a name="https" class="item"><strong>https</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>https</em> URI scheme is a Netscape invention which is commonly
+implemented.  The scheme is used to reference HTTP servers through SSL
+connections.  Its syntax is the same as http, but the default
+port is different.</p>
+</dd>
+<dt><strong><a name="ldap" class="item"><strong>ldap</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>ldap</em> URI scheme is specified in <a href="http://www.ietf.org/rfc/rfc2255.txt" class="rfc">RFC 2255</a>.  LDAP is the
+Lightweight Directory Access Protocol.  An ldap URI describes an LDAP
+search operation to perform to retrieve information from an LDAP
+directory.</p>
+<p><code>URI</code> objects belonging to the ldap scheme support the common,
+generic and server methods as well as ldap-specific methods: $uri-&gt;dn,
+$uri-&gt;attributes, $uri-&gt;scope, $uri-&gt;filter, $uri-&gt;extensions.  See
+<a href="../lib/URI/ldap.html">the URI::ldap manpage</a> for details.</p>
+</dd>
+<dt><strong><a name="ldapi" class="item"><strong>ldapi</strong>:</a></strong></dt>
+
+<dd>
+<p>Like the <em>ldap</em> URI scheme, but uses a UNIX domain socket.  The
+server methods are not supported, and the local socket path is
+available as $uri-&gt;un_path.  The <em>ldapi</em> scheme is used by the
+OpenLDAP package.  There is no real specification for it, but it is
+mentioned in various OpenLDAP manual pages.</p>
+</dd>
+<dt><strong><a name="ldaps" class="item"><strong>ldaps</strong>:</a></strong></dt>
+
+<dd>
+<p>Like the <em>ldap</em> URI scheme, but uses an SSL connection.  This
+scheme is deprecated, as the preferred way is to use the <em>start_tls</em>
+mechanism.</p>
+</dd>
+<dt><strong><a name="mailto" class="item"><strong>mailto</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>mailto</em> URI scheme is specified in <a href="http://www.ietf.org/rfc/rfc2368.txt" class="rfc">RFC 2368</a>.  The scheme was
+originally used to designate the Internet mailing address of an
+individual or service.  It has (in <a href="http://www.ietf.org/rfc/rfc2368.txt" class="rfc">RFC 2368</a>) been extended to allow
+setting of other mail header fields and the message body.</p>
+<p><code>URI</code> objects belonging to the mailto scheme support the common
+methods and the generic query methods.  In addition, they support the
+following mailto-specific methods: $uri-&gt;to, $uri-&gt;headers.</p>
+<p>Note that the <a href="mailto:"foo@example.com"">"foo@example.com"</a> part of a mailto is <em>not</em> the
+<a href="#userinfo"><code>userinfo</code></a> and <a href="#host"><code>host</code></a> but instead the <a href="#path"><code>path</code></a>.  This allows a
+mailto URI to contain multiple comma separated email addresses.</p>
+</dd>
+<dt><strong><a name="mms" class="item"><strong>mms</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>mms</em> URL specification can be found at <a href="http://sdp.ppona.com/">http://sdp.ppona.com/</a>.
+<code>URI</code> objects belonging to the mms scheme support the common,
+generic, and server methods, with the exception of userinfo and
+query-related sub-components.</p>
+</dd>
+<dt><strong><a name="news" class="item"><strong>news</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>news</em>, <em>nntp</em> and <em>snews</em> URI schemes are specified in
+&lt;draft-gilman-news-url-01&gt; and will hopefully be available as an <a href="http://www.ietf.org/rfc/rfc2396.txt" class="rfc">RFC
+2396</a> based specification soon.</p>
+<p><code>URI</code> objects belonging to the news scheme support the common,
+generic and server methods.  In addition, they provide some methods to
+access the path: $uri-&gt;group and $uri-&gt;message.</p>
+</dd>
+<dt><strong><a name="nntp" class="item"><strong>nntp</strong>:</a></strong></dt>
+
+<dd>
+<p>See <em>news</em> scheme.</p>
+</dd>
+<dt><strong><a name="pop2" class="item"><strong>pop</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>pop</em> URI scheme is specified in <a href="http://www.ietf.org/rfc/rfc2384.txt" class="rfc">RFC 2384</a>. The scheme is used to
+reference a POP3 mailbox.</p>
+<p><code>URI</code> objects belonging to the pop scheme support the common, generic
+and server methods.  In addition, they provide two methods to access the
+userinfo components: $uri-&gt;user and $uri-&gt;auth</p>
+</dd>
+<dt><strong><a name="rlogin" class="item"><strong>rlogin</strong>:</a></strong></dt>
+
+<dd>
+<p>An old specification of the <em>rlogin</em> URI scheme is found in <a href="http://www.ietf.org/rfc/rfc1738.txt" class="rfc">RFC
+1738</a>. <code>URI</code> objects belonging to the rlogin scheme support the
+common, generic and server methods.</p>
+</dd>
+<dt><strong><a name="rtsp" class="item"><strong>rtsp</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>rtsp</em> URL specification can be found in section 3.2 of <a href="http://www.ietf.org/rfc/rfc2326.txt" class="rfc">RFC 2326</a>.
+<code>URI</code> objects belonging to the rtsp scheme support the common,
+generic, and server methods, with the exception of userinfo and
+query-related sub-components.</p>
+</dd>
+<dt><strong><a name="rtspu" class="item"><strong>rtspu</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>rtspu</em> URI scheme is used to talk to RTSP servers over UDP
+instead of TCP.  The syntax is the same as rtsp.</p>
+</dd>
+<dt><strong><a name="rsync" class="item"><strong>rsync</strong>:</a></strong></dt>
+
+<dd>
+<p>Information about rsync is available from <a href="http://rsync.samba.org/">http://rsync.samba.org/</a>.
+<code>URI</code> objects belonging to the rsync scheme support the common,
+generic and server methods.  In addition, they provide methods to
+access the userinfo sub-components: $uri-&gt;user and $uri-&gt;password.</p>
+</dd>
+<dt><strong><a name="sip" class="item"><strong>sip</strong>:</a></strong></dt>
+
+<dd>
+<p>The <em>sip</em> URI specification is described in sections 19.1 and 25
+of <a href="http://www.ietf.org/rfc/rfc3261.txt" class="rfc">RFC 3261</a>.  <code>URI</code> objects belonging to the sip scheme support the
+common, generic, and server methods with the exception of path related
+sub-components.  In addition, they provide two methods to get and set
+<em>sip</em> parameters: $uri-&gt;params_form and $uri-&gt;params.</p>
+</dd>
+<dt><strong><a name="sips" class="item"><strong>sips</strong>:</a></strong></dt>
+
+<dd>
+<p>See <em>sip</em> scheme.  Its syntax is the same as sip, but the default
+port is different.</p>
+</dd>
+<dt><strong><a name="snews" class="item"><strong>snews</strong>:</a></strong></dt>
+
+<dd>
+<p>See <em>news</em> scheme.  Its syntax is the same as news, but the default
+port is different.</p>
+</dd>
+<dt><strong><a name="telnet" class="item"><strong>telnet</strong>:</a></strong></dt>
+
+<dd>
+<p>An old specification of the <em>telnet</em> URI scheme is found in <a href="http://www.ietf.org/rfc/rfc1738.txt" class="rfc">RFC
+1738</a>. <code>URI</code> objects belonging to the telnet scheme support the
+common, generic and server methods.</p>
+</dd>
+<dt><strong><a name="tn3270" class="item"><strong>tn3270</strong>:</a></strong></dt>
+
+<dd>
+<p>These URIs are used like <em>telnet</em> URIs but for connections to IBM
+mainframes.  <code>URI</code> objects belonging to the tn3270 scheme support the
+common, generic and server methods.</p>
+</dd>
+<dt><strong><a name="ssh" class="item"><strong>ssh</strong>:</a></strong></dt>
+
+<dd>
+<p>Information about ssh is available at <a href="http://www.openssh.com/">http://www.openssh.com/</a>.
+<code>URI</code> objects belonging to the ssh scheme support the common,
+generic and server methods. In addition, they provide methods to
+access the userinfo sub-components: $uri-&gt;user and $uri-&gt;password.</p>
+</dd>
+<dt><strong><a name="urn" class="item"><strong>urn</strong>:</a></strong></dt>
+
+<dd>
+<p>The syntax of Uniform Resource Names is specified in <a href="http://www.ietf.org/rfc/rfc2141.txt" class="rfc">RFC 2141</a>.  <code>URI</code>
+objects belonging to the urn scheme provide the common methods, and also the
+methods $uri-&gt;nid and $uri-&gt;nss, which return the Namespace Identifier
+and the Namespace-Specific String respectively.</p>
+<p>The Namespace Identifier basically works like the Scheme identifier of
+URIs, and further divides the URN namespace.  Namespace Identifier
+assignments are maintained at
+<a href="http://www.iana.org/assignments/urn-namespaces">http://www.iana.org/assignments/urn-namespaces</a>.</p>
+<p>Letter case is not significant for the Namespace Identifier.  It is
+always returned in lower case by the $uri-&gt;nid method.  The $uri-&gt;_nid
+method can be used if you want it in its original case.</p>
+</dd>
+<dt><strong><a name="urn_isbn" class="item"><strong>urn</strong>:<strong>isbn</strong>:</a></strong></dt>
+
+<dd>
+<p>The <a href="#urn_isbn"><code>urn:isbn:</code></a> namespace contains International Standard Book
+Numbers (ISBNs) and is described in <a href="http://www.ietf.org/rfc/rfc3187.txt" class="rfc">RFC 3187</a>.  A <code>URI</code> object belonging
+to this namespace has the following extra methods (if the
+Business::ISBN module is available): $uri-&gt;isbn,
+$uri-&gt;isbn_publisher_code, $uri-&gt;isbn_group_code (formerly isbn_country_code,
+which is still supported by issues a deprecation warning), $uri-&gt;isbn_as_ean.</p>
+</dd>
+<dt><strong><a name="urn_oid" class="item"><strong>urn</strong>:<strong>oid</strong>:</a></strong></dt>
+
+<dd>
+<p>The <a href="#urn_oid"><code>urn:oid:</code></a> namespace contains Object Identifiers (OIDs) and is
+described in <a href="http://www.ietf.org/rfc/rfc3061.txt" class="rfc">RFC 3061</a>.  An object identifier consists of sequences of digits
+separated by dots.  A <code>URI</code> object belonging to this namespace has an
+additional method called $uri-&gt;oid that can be used to get/set the oid
+value.  In a list context, oid numbers are returned as separate elements.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="configuration_variables">CONFIGURATION VARIABLES</a></h1>
+<p>The following configuration variables influence how the class and its
+methods behave:</p>
+<dl>
+<dt><strong><a name="_uri__abs_allow_relative_scheme" class="item">$URI::ABS_ALLOW_RELATIVE_SCHEME</a></strong></dt>
+
+<dd>
+<p>Some older parsers used to allow the scheme name to be present in the
+relative URL if it was the same as the base URL scheme.  <a href="http://www.ietf.org/rfc/rfc2396.txt" class="rfc">RFC 2396</a> says
+that this should be avoided, but you can enable this old behaviour by
+setting the $URI::ABS_ALLOW_RELATIVE_SCHEME variable to a TRUE value.
+The difference is demonstrated by the following examples:</p>
+<pre>
+  URI-&gt;new(&quot;<a href="http:foo&quot">http:foo&quot</a>;)-&gt;abs(&quot;<a href="http://host/a/b&quot">http://host/a/b&quot</a>;)
+      ==&gt;  &quot;<a href="http:foo&quot">http:foo&quot</a>;</pre>
+<pre>
+  <span class="keyword">local</span> <span class="variable">$URI::ABS_ALLOW_RELATIVE_SCHEME</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+  <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"http:foo"</span><span class="operator">)-&gt;</span><span class="variable">abs</span><span class="operator">(</span><span class="string">"http://host/a/b"</span><span class="operator">)</span>
+      <span class="operator">==&gt;</span>  <span class="string">"http:/host/a/foo"</span>
+</pre>
+</dd>
+<dt><strong><a name="_uri__abs_remote_leading_dots" class="item">$URI::ABS_REMOTE_LEADING_DOTS</a></strong></dt>
+
+<dd>
+<p>You can also have the <a href="#abs"><code>abs()</code></a> method ignore excess &quot;..&quot;
+segments in the relative URI by setting $URI::ABS_REMOTE_LEADING_DOTS
+to a TRUE value.  The difference is demonstrated by the following
+examples:</p>
+<pre>
+  URI-&gt;new(&quot;../../../foo&quot;)-&gt;abs(&quot;<a href="http://host/a/b&quot">http://host/a/b&quot</a>;)
+      ==&gt; &quot;<a href="http://host/../../foo&quot">http://host/../../foo&quot</a>;</pre>
+<pre>
+  <span class="keyword">local</span> <span class="variable">$URI::ABS_REMOTE_LEADING_DOTS</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">;</span>
+  <span class="variable">URI</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">"../../../foo"</span><span class="operator">)-&gt;</span><span class="variable">abs</span><span class="operator">(</span><span class="string">"http://host/a/b"</span><span class="operator">)</span>
+      <span class="operator">==&gt;</span> <span class="string">"http://host/foo"</span>
+</pre>
+</dd>
+<dt><strong><a name="_uri__default_query_form_delimiter" class="item">$URI::DEFAULT_QUERY_FORM_DELIMITER</a></strong></dt>
+
+<dd>
+<p>This value can be set to &quot;;&quot; to have the query form <code>key=value</code> pairs
+delimited by &quot;;&quot; instead of &quot;&amp;&quot; which is the default.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>There are some things that are not quite right:</p>
+<ul>
+<li>
+<p>Using regexp variables like $1 directly as arguments to the URI accessor methods
+does not work too well with current perl implementations.  I would argue
+that this is actually a bug in perl.  The workaround is to quote
+them. Example:</p>
+<pre>
+   <span class="regex">/(...)/</span> <span class="operator">||</span> <span class="keyword">die</span><span class="operator">;</span>
+   <span class="variable">$u</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="string">"</span><span class="variable">$1</span><span class="string">"</span><span class="operator">);</span>
+</pre>
+</li>
+<li>
+<p>The escaping (percent encoding) of chars in the 128 .. 255 range passed to the
+URI constructor or when setting URI parts using the accessor methods depend on
+the state of the internal UTF8 flag (see utf8::is_utf8) of the string passed.
+If the UTF8 flag is set the UTF-8 encoded version of the character is percent
+encoded.  If the UTF8 flag isn't set the Latin-1 version (byte) of the
+character is percent encoded.  This basically exposes the internal encoding of
+Perl strings.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="parsing_uris_with_regexp">PARSING URIs WITH REGEXP</a></h1>
+<p>As an alternative to this module, the following (official) regular
+expression can be used to decode a URI:</p>
+<pre>
+  <span class="keyword">my</span><span class="operator">(</span><span class="variable">$scheme</span><span class="operator">,</span> <span class="variable">$authority</span><span class="operator">,</span> <span class="variable">$path</span><span class="operator">,</span> <span class="variable">$query</span><span class="operator">,</span> <span class="variable">$fragment</span><span class="operator">)</span> <span class="operator">=</span>
+  <span class="variable">$uri</span> <span class="operator">=~</span> <span class="regex">m|(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?|</span><span class="operator">;</span>
+</pre>
+<p>The <code>URI::Split</code> module provides the function <code>uri_split()</code> as a
+readable alternative.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/URI/file.html">the URI::file manpage</a>, <a href="../lib/URI/WithBase.html">the URI::WithBase manpage</a>, <a href="../lib/URI/QueryParam.html">the URI::QueryParam manpage</a>, <a href="../lib/URI/Escape.html">the URI::Escape manpage</a>,
+<a href="../lib/URI/Split.html">the URI::Split manpage</a>, <a href="../lib/URI/Heuristic.html">the URI::Heuristic manpage</a></p>
+<p>RFC 2396: &quot;Uniform Resource Identifiers (URI): Generic Syntax&quot;,
+Berners-Lee, Fielding, Masinter, August 1998.</p>
+<p><a href="http://www.iana.org/assignments/uri-schemes">http://www.iana.org/assignments/uri-schemes</a></p>
+<p><a href="http://www.iana.org/assignments/urn-namespaces">http://www.iana.org/assignments/urn-namespaces</a></p>
+<p><a href="http://www.w3.org/Addressing/">http://www.w3.org/Addressing/</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1995-2009 Gisle Aas.</p>
+<p>Copyright 1995 Martijn Koster.</p>
+<p>This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors___acknowledgments">AUTHORS / ACKNOWLEDGMENTS</a></h1>
+<p>This module is based on the <code>URI::URL</code> module, which in turn was
+(distantly) based on the <code>wwwurl.pl</code> code in the libwww-perl for
+perl4 developed by Roy Fielding, as part of the Arcadia project at the
+University of California, Irvine, with contributions from Brooks
+Cutter.</p>
+<p><code>URI::URL</code> was developed by Gisle Aas, Tim Bunce, Roy Fielding and
+Martijn Koster with input from other people on the libwww-perl mailing
+list.</p>
+<p><code>URI</code> and related subclasses was developed by Gisle Aas.</p>
+
+</body>
+
+</html>

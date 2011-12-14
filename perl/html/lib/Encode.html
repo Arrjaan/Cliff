@@ -1,0 +1,719 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>Encode - character encodings in Perl</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>Encode - character encodings in Perl</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<ul>
+
+		<li><a href="#table_of_contents">Table of Contents</a></li>
+	</ul>
+
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#terminology">TERMINOLOGY</a></li>
+	</ul>
+
+	<li><a href="#the_perl_encoding_api">THE PERL ENCODING API</a></li>
+	<ul>
+
+		<li><a href="#listing_available_encodings">Listing available encodings</a></li>
+		<li><a href="#defining_aliases">Defining Aliases</a></li>
+		<li><a href="#finding_iana_character_set_registry_names">Finding IANA Character Set Registry names</a></li>
+	</ul>
+
+	<li><a href="#encoding_via_perlio">Encoding via PerlIO</a></li>
+	<li><a href="#handling_malformed_data">Handling Malformed Data</a></li>
+	<ul>
+
+		<li><a href="#coderef_for_check">coderef for CHECK</a></li>
+	</ul>
+
+	<li><a href="#defining_encodings">Defining Encodings</a></li>
+	<li><a href="#the_utf8_flag">The UTF8 flag</a></li>
+	<ul>
+
+		<li><a href="#messing_with_perl_s_internals">Messing with Perl's Internals</a></li>
+	</ul>
+
+	<li><a href="#utf_8_vs__utf8_vs__utf8">UTF-8 vs. utf8 vs. UTF8</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#maintainer">MAINTAINER</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Encode - character encodings in Perl</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Encode</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<h2><a name="table_of_contents">Table of Contents</a></h2>
+<p>Encode consists of a collection of modules whose details are too extensive
+to fit in one document.  This one itself explains the top-level APIs
+and general topics at a glance.  For other topics and more details,
+see the documentation for these modules:</p>
+<pre>
+  Name                          Description
+  --------------------------------------------------------
+  Encode::Alias         Alias definitions to encodings
+  Encode::Encoding      Encode Implementation Base Class
+  Encode::Supported     List of Supported Encodings
+  Encode::CN            Simplified Chinese Encodings
+  Encode::JP            Japanese Encodings
+  Encode::KR            Korean Encodings
+  Encode::TW            Traditional Chinese Encodings
+  --------------------------------------------------------</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <code>Encode</code> module provides the interface between Perl strings
+and the rest of the system.  Perl strings are sequences of
+<em>characters</em>.</p>
+<p>The repertoire of characters that Perl can represent is a superset of those
+defined by the Unicode Consortium. On most platforms the ordinal
+values of a character as returned by <a href="../lib/pods/perlfunc.html#ord"><code>ord(S)</code></a> is the <em>Unicode
+codepoint</em> for that character. The exceptions are platforms where
+the legacy encoding is some variant of EBCDIC rather than a superset
+of ASCII; see <a href="../lib/pods/perlebcdic.html">the perlebcdic manpage</a>.</p>
+<p>During recent history, data is moved around a computer in 8-bit chunks,
+often called &quot;bytes&quot; but also known as &quot;octets&quot; in standards documents.
+Perl is widely used to manipulate data of many types: not only strings of
+characters representing human or computer languages, but also &quot;binary&quot;
+data, being the machine's representation of numbers, pixels in an image, or
+just about anything.</p>
+<p>When Perl is processing &quot;binary data&quot;, the programmer wants Perl to
+process &quot;sequences of bytes&quot;. This is not a problem for Perl: because a
+byte has 256 possible values, it easily fits in Perl's much larger
+&quot;logical character&quot;.</p>
+<p>
+</p>
+<h2><a name="terminology">TERMINOLOGY</a></h2>
+<ul>
+<li>
+<p><em>character</em>: a character in the range 0 .. 2**32-1 (or more);
+what Perl's strings are made of.</p>
+</li>
+<li>
+<p><em>byte</em>: a character in the range 0..255;
+A special case of a Perl character.</p>
+</li>
+<li>
+<p><em>octet</em>: 8 bits of data, with ordinal values 0..255;
+Term for bytes passed to or from a non-Perl context, such as a disk file.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="the_perl_encoding_api">THE PERL ENCODING API</a></h1>
+<dl>
+<dt><strong><a name="encode" class="item">$octets  = encode(ENCODING, STRING[, CHECK])</a></strong></dt>
+
+<dd>
+<p>Encodes the scalar value <em>STRING</em> from Perl's internal form into
+<em>ENCODING</em> and returns a sequence of octets.  <em>ENCODING</em> can be either a
+canonical name or an alias.  For encoding names and aliases, see
+<a href="#defining_aliases">Defining Aliases</a>.  For CHECK, see <a href="#handling_malformed_data">Handling Malformed Data</a>.</p>
+<p>For example, to convert a string from Perl's internal format into
+ISO-8859-1, also known as Latin1:</p>
+<pre>
+  <span class="variable">$octets</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">"iso-8859-1"</span><span class="operator">,</span> <span class="variable">$string</span><span class="operator">);</span>
+</pre>
+<p><strong>CAVEAT</strong>: When you run <a href="#encode"><code>$octets = encode(&quot;utf8&quot;, $string)</code></a>, then
+$octets <em>might not be equal to</em> $string.  Though both contain the
+same data, the UTF8 flag for $octets is <em>always</em> off.  When you
+encode anything, the UTF8 flag on the result is always off, even when it
+contains a completely valid utf8 string. See <a href="#the_utf8_flag">The UTF8 flag</a> below.</p>
+<p>If the $string is <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a>, then <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+</dd>
+<dt><strong><a name="decode" class="item">$string = decode(ENCODING, OCTETS[, CHECK])</a></strong></dt>
+
+<dd>
+<p>This function returns the string that results from decoding the scalar
+value <em>OCTETS</em>, assumed to be a sequence of octets in <em>ENCODING</em>, into
+Perl's internal form.  The returns the resulting string.  As with <a href="#encode"><code>encode()</code></a>,
+<em>ENCODING</em> can be either a canonical name or an alias. For encoding names
+and aliases, see <a href="#defining_aliases">Defining Aliases</a>; for <em>CHECK</em>, see <a href="#handling_malformed_data">Handling Malformed Data</a>.</p>
+<p>For example, to convert ISO-8859-1 data into a string in Perl's
+internal format:</p>
+<pre>
+  <span class="variable">$string</span> <span class="operator">=</span> <span class="variable">decode</span><span class="operator">(</span><span class="string">"iso-8859-1"</span><span class="operator">,</span> <span class="variable">$octets</span><span class="operator">);</span>
+</pre>
+<p><strong>CAVEAT</strong>: When you run <a href="#decode"><code>$string = decode(&quot;utf8&quot;, $octets)</code></a>, then $string
+<em>might not be equal to</em> $octets.  Though both contain the same data, the
+UTF8 flag for $string is on unless $octets consists entirely of ASCII data
+on ASCII machines or EBCDIC on EBCDIC machines.  See <a href="#the_utf8_flag">The UTF8 flag</a>
+below.</p>
+<p>If the $string is <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a>, then <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> is returned.</p>
+</dd>
+<dt><strong><a name="find_encoding" class="item">[$obj =] find_encoding(ENCODING)</a></strong></dt>
+
+<dd>
+<p>Returns the <em>encoding object</em> corresponding to <em>ENCODING</em>.  Returns
+<a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> if no matching <em>ENCODING</em> is find.  The returned object is
+what does the actual encoding or decoding.</p>
+<pre>
+  <span class="variable">$utf8</span> <span class="operator">=</span> <span class="variable">decode</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">,</span> <span class="variable">$bytes</span><span class="operator">);</span>
+</pre>
+<p>is in fact</p>
+<pre>
+    <span class="variable">$utf8</span> <span class="operator">=</span> <span class="keyword">do</span> <span class="operator">{</span>
+        <span class="variable">$obj</span> <span class="operator">=</span> <span class="variable">find_encoding</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">);</span>
+        <span class="variable">croak</span> <span class="string">qq(encoding "</span><span class="variable">$name</span><span class="string">" not found)</span> <span class="keyword">unless</span> <span class="keyword">ref</span> <span class="variable">$obj</span><span class="operator">;</span>
+        <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">decode</span><span class="operator">(</span><span class="variable">$bytes</span><span class="operator">);</span>
+    <span class="operator">};</span>
+</pre>
+<p>with more error checking.</p>
+<p>You can therefore save time by reusing this object as follows;</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$enc</span> <span class="operator">=</span> <span class="variable">find_encoding</span><span class="operator">(</span><span class="string">"iso-8859-1"</span><span class="operator">);</span>
+    <span class="keyword">while</span><span class="operator">(&lt;&gt;)</span> <span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$utf8</span> <span class="operator">=</span> <span class="variable">$enc</span><span class="operator">-&gt;</span><span class="variable">decode</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">);</span>
+        <span class="operator">...</span> <span class="comment"># now do something with $utf8;</span>
+    <span class="operator">}</span>
+</pre>
+<p>Besides <a href="#decode"><code>-&gt;decode</code></a> and <a href="#encode"><code>-&gt;encode</code></a>, other methods are
+available as well.  For instance, <code>-&gt;name</code> returns the canonical
+name of the encoding object.</p>
+<pre>
+  <span class="variable">find_encoding</span><span class="operator">(</span><span class="string">"latin1"</span><span class="operator">)-&gt;</span><span class="variable">name</span><span class="operator">;</span> <span class="comment"># iso-8859-1</span>
+</pre>
+<p>See <a href="../lib/Encode/Encoding.html">the Encode::Encoding manpage</a> for details.</p>
+</dd>
+<dt><strong><a name="from_to" class="item">[$length =] from_to($octets, FROM_ENC, TO_ENC [, CHECK])</a></strong></dt>
+
+<dd>
+<p>Converts <em>in-place</em> data between two encodings. The data in $octets
+must be encoded as octets and <em>not</em> as characters in Perl's internal
+format. For example, to convert ISO-8859-1 data into Microsoft's CP1250
+encoding:</p>
+<pre>
+  <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$octets</span><span class="operator">,</span> <span class="string">"iso-8859-1"</span><span class="operator">,</span> <span class="string">"cp1250"</span><span class="operator">);</span>
+</pre>
+<p>and to convert it back:</p>
+<pre>
+  <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$octets</span><span class="operator">,</span> <span class="string">"cp1250"</span><span class="operator">,</span> <span class="string">"iso-8859-1"</span><span class="operator">);</span>
+</pre>
+<p>Because the conversion happens in place, the data to be
+converted cannot be a string constant: it must be a scalar variable.</p>
+<p><a href="#from_to"><code>from_to()</code></a> returns the length of the converted string in octets on success,
+and <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p><strong>CAVEAT</strong>: The following operations may look the same, but are not:</p>
+<pre>
+  <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$data</span><span class="operator">,</span> <span class="string">"iso-8859-1"</span><span class="operator">,</span> <span class="string">"utf8"</span><span class="operator">);</span> <span class="comment">#1</span>
+  <span class="variable">$data</span> <span class="operator">=</span> <span class="variable">decode</span><span class="operator">(</span><span class="string">"iso-8859-1"</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">);</span>  <span class="comment">#2</span>
+</pre>
+<p>Both #1 and #2 make $data consist of a completely valid UTF-8 string,
+but only #2 turns the UTF8 flag on.  #1 is equivalent to:</p>
+<pre>
+  <span class="variable">$data</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">"utf8"</span><span class="operator">,</span> <span class="variable">decode</span><span class="operator">(</span><span class="string">"iso-8859-1"</span><span class="operator">,</span> <span class="variable">$data</span><span class="operator">));</span>
+</pre>
+<p>See <a href="#the_utf8_flag">The UTF8 flag</a> below.</p>
+<p>Also note that:</p>
+<pre>
+  <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$octets</span><span class="operator">,</span> <span class="variable">$from</span><span class="operator">,</span> <span class="variable">$to</span><span class="operator">,</span> <span class="variable">$check</span><span class="operator">);</span>
+</pre>
+<p>is equivalent t:o</p>
+<pre>
+  <span class="variable">$octets</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="variable">$to</span><span class="operator">,</span> <span class="variable">decode</span><span class="operator">(</span><span class="variable">$from</span><span class="operator">,</span> <span class="variable">$octets</span><span class="operator">),</span> <span class="variable">$check</span><span class="operator">);</span>
+</pre>
+<p>Yes, it does <em>not</em> respect the $check during decoding.  It is
+deliberately done that way.  If you need minute control, use <a href="#decode"><code>decode</code></a>
+followed by <a href="#encode"><code>encode</code></a> as follows:</p>
+<pre>
+  <span class="variable">$octets</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="variable">$to</span><span class="operator">,</span> <span class="variable">decode</span><span class="operator">(</span><span class="variable">$from</span><span class="operator">,</span> <span class="variable">$octets</span><span class="operator">,</span> <span class="variable">$check_from</span><span class="operator">),</span> <span class="variable">$check_to</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="encode_utf8" class="item">$octets = encode_utf8($string);</a></strong></dt>
+
+<dd>
+<p>Equivalent to <a href="#encode"><code>$octets = encode(&quot;utf8&quot;, $string)</code></a>.  The characters in
+$string are encoded in Perl's internal format, and the result is returned
+as a sequence of octets.  Because all possible characters in Perl have a
+(loose, not strict) UTF-8 representation, this function cannot fail.</p>
+</dd>
+<dt><strong><a name="decode_utf8" class="item">$string = decode_utf8($octets [, CHECK]);</a></strong></dt>
+
+<dd>
+<p>Equivalent to <a href="#decode"><code>$string = decode(&quot;utf8&quot;, $octets [, CHECK])</code></a>.
+The sequence of octets represented by $octets is decoded
+from UTF-8 into a sequence of logical characters.
+Because not all sequences of octets are valid UTF-8,
+it is quite possible for this function to fail.
+For CHECK, see <a href="#handling_malformed_data">Handling Malformed Data</a>.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="listing_available_encodings">Listing available encodings</a></h2>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Encode</span><span class="operator">;</span>
+  <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">Encode</span><span class="operator">-&gt;</span><span class="variable">encodings</span><span class="operator">();</span>
+</pre>
+<p>Returns a list of canonical names of available encodings that have already
+been loaded.  To get a list of all available encodings including those that
+have not yet been loaded, say:</p>
+<pre>
+  <span class="variable">@all_encodings</span> <span class="operator">=</span> <span class="variable">Encode</span><span class="operator">-&gt;</span><span class="variable">encodings</span><span class="operator">(</span><span class="string">":all"</span><span class="operator">);</span>
+</pre>
+<p>Or you can give the name of a specific module:</p>
+<pre>
+  <span class="variable">@with_jp</span> <span class="operator">=</span> <span class="variable">Encode</span><span class="operator">-&gt;</span><span class="variable">encodings</span><span class="operator">(</span><span class="string">"Encode::JP"</span><span class="operator">);</span>
+</pre>
+<p>When &quot;<code>::</code>&quot; is not in the name, &quot;<code>Encode::</code>&quot; is assumed.</p>
+<pre>
+  <span class="variable">@ebcdic</span> <span class="operator">=</span> <span class="variable">Encode</span><span class="operator">-&gt;</span><span class="variable">encodings</span><span class="operator">(</span><span class="string">"EBCDIC"</span><span class="operator">);</span>
+</pre>
+<p>To find out in detail which encodings are supported by this package,
+see <a href="../lib/Encode/Supported.html">the Encode::Supported manpage</a>.</p>
+<p>
+</p>
+<h2><a name="defining_aliases">Defining Aliases</a></h2>
+<p>To add a new alias to a given encoding, use:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Encode</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Encode::Alias</span><span class="operator">;</span>
+  <span class="variable">define_alias</span><span class="operator">(</span><span class="string">NEWNAME</span> <span class="operator">=&gt;</span> <span class="variable">ENCODING</span><span class="operator">);</span>
+</pre>
+<p>After that, <em>NEWNAME</em> can be used as an alias for <em>ENCODING</em>.
+&lt;ENCODING&gt; may be either the name of an encoding or an
+<em>encoding object</em>.</p>
+<p>Before you do that, first make sure the alias is nonexistent using
+<code>resolve_alias()</code>, which returns the canonical name thereof.
+For example:</p>
+<pre>
+  <span class="variable">Encode::resolve_alias</span><span class="operator">(</span><span class="string">"latin1"</span><span class="operator">)</span> <span class="keyword">eq</span> <span class="string">"iso-8859-1"</span> <span class="comment"># true</span>
+  <span class="variable">Encode::resolve_alias</span><span class="operator">(</span><span class="string">"iso-8859-12"</span><span class="operator">)</span>   <span class="comment"># false; nonexistent</span>
+  <span class="variable">Encode::resolve_alias</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">)</span> <span class="keyword">eq</span> <span class="variable">$name</span>  <span class="comment"># true if $name is canonical</span>
+</pre>
+<p><code>resolve_alias()</code> does not need <code>use Encode::Alias</code>; it can be
+imported via <code>use Encode qw(resolve_alias)</code>.</p>
+<p>See <a href="../lib/Encode/Alias.html">the Encode::Alias manpage</a> for details.</p>
+<p>
+</p>
+<h2><a name="finding_iana_character_set_registry_names">Finding IANA Character Set Registry names</a></h2>
+<p>The canonical name of a given encoding does not necessarily agree with
+IANA Character Set Registry, commonly seen as <code>Content-Type:
+text/plain; charset=WHATEVER</code>.  For most cases, the canonical name
+works, but sometimes it does not, most notably with &quot;utf-8-strict&quot;.</p>
+<p>As of <code>Encode</code> version 2.21, a new method <code>mime_name()</code> is thereforeadded.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Encode</span><span class="operator">;</span>
+  <span class="keyword">my</span> <span class="variable">$enc</span> <span class="operator">=</span> <span class="variable">find_encoding</span><span class="operator">(</span><span class="string">"UTF-8"</span><span class="operator">);</span>
+  <span class="keyword">warn</span> <span class="variable">$enc</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>      <span class="comment"># utf-8-strict</span>
+  <span class="keyword">warn</span> <span class="variable">$enc</span><span class="operator">-&gt;</span><span class="variable">mime_name</span><span class="operator">;</span> <span class="comment"># UTF-8</span>
+</pre>
+<p>See also:  <a href="../lib/Encode/Encoding.html">the Encode::Encoding manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="encoding_via_perlio">Encoding via PerlIO</a></h1>
+<p>If your perl supports <code>PerlIO</code> (which is the default), you can use a
+<code>PerlIO</code> layer to decode and encode directly via a filehandle.  The
+following two examples are fully identical in functionality:</p>
+<pre>
+  <span class="comment">### Version 1 via PerlIO</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">INPUT</span><span class="operator">,</span>  <span class="string">"&lt; :encoding(shiftjis)"</span><span class="operator">,</span> <span class="variable">$infile</span><span class="operator">)</span>
+        <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Can't open &lt; </span><span class="variable">$infile</span><span class="string"> for reading: $!"</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">OUTPUT</span><span class="operator">,</span> <span class="string">"&gt; :encoding(euc-jp)"</span><span class="operator">,</span>  <span class="variable">$outfile</span><span class="operator">)</span>
+        <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Can't open &gt; </span><span class="variable">$output</span><span class="string"> for writing: $!"</span><span class="operator">;</span>
+    <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">INPUT</span><span class="operator">&gt;)</span> <span class="operator">{</span>   <span class="comment"># auto decodes $_</span>
+        <span class="keyword">print</span> <span class="variable">OUTPUT</span><span class="operator">;</span>   <span class="comment"># auto encodes $_</span>
+    <span class="operator">}</span>
+    <span class="keyword">close</span><span class="operator">(</span><span class="variable">INPUT</span><span class="operator">)</span>   <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"can't close </span><span class="variable">$infile</span><span class="string">: $!"</span><span class="operator">;</span>
+    <span class="keyword">close</span><span class="operator">(</span><span class="variable">OUTPUT</span><span class="operator">)</span>  <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"can't close </span><span class="variable">$outfile</span><span class="string">: $!"</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="comment">### Version 2 via from_to()</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">INPUT</span><span class="operator">,</span>  <span class="string">"&lt; :raw"</span><span class="operator">,</span> <span class="variable">$infile</span><span class="operator">)</span>
+        <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Can't open &lt; </span><span class="variable">$infile</span><span class="string"> for reading: $!"</span><span class="operator">;</span>
+    <span class="keyword">open</span><span class="operator">(</span><span class="variable">OUTPUT</span><span class="operator">,</span> <span class="string">"&gt; :raw"</span><span class="operator">,</span>  <span class="variable">$outfile</span><span class="operator">)</span>
+        <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Can't open &gt; </span><span class="variable">$output</span><span class="string"> for writing: $!"</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">while</span> <span class="operator">(&lt;</span><span class="variable">INPUT</span><span class="operator">&gt;)</span> <span class="operator">{</span>
+        <span class="variable">from_to</span><span class="operator">(</span><span class="variable">$_</span><span class="operator">,</span> <span class="string">"shiftjis"</span><span class="operator">,</span> <span class="string">"euc-jp"</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span>  <span class="comment"># switch encoding</span>
+        <span class="keyword">print</span> <span class="variable">OUTPUT</span><span class="operator">;</span>   <span class="comment"># emit raw (but properly encoded) data</span>
+    <span class="operator">}</span>
+    <span class="keyword">close</span><span class="operator">(</span><span class="variable">INPUT</span><span class="operator">)</span>   <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"can't close </span><span class="variable">$infile</span><span class="string">: $!"</span><span class="operator">;</span>
+    <span class="keyword">close</span><span class="operator">(</span><span class="variable">OUTPUT</span><span class="operator">)</span>  <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"can't close </span><span class="variable">$outfile</span><span class="string">: $!"</span><span class="operator">;</span>
+</pre>
+<p>In the first version above, you let the appropriate encoding layer
+handle the conversion.  In the second, you explicitly translate
+from one encoding to the other.</p>
+<p>Unfortunately, it may be that encodings are <code>PerlIO</code>-savvy.  You can check
+to see whether your encoding is supported by <code>PerlIO</code> by invoking the
+<code>perlio_ok</code> method on it:</p>
+<pre>
+  <span class="variable">Encode::perlio_ok</span><span class="operator">(</span><span class="string">"hz"</span><span class="operator">);</span>             <span class="comment"># false</span>
+  <span class="variable">find_encoding</span><span class="operator">(</span><span class="string">"euc-cn"</span><span class="operator">)-&gt;</span><span class="variable">perlio_ok</span><span class="operator">;</span>  <span class="comment"># true wherever PerlIO is available</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Encode</span> <span class="string">qw(perlio_ok)</span><span class="operator">;</span>            <span class="comment"># imported upon request</span>
+  <span class="variable">perlio_ok</span><span class="operator">(</span><span class="string">"euc-jp"</span><span class="operator">)</span>
+</pre>
+<p>Fortunately, all encodings that come with <code>Encode</code> core are <code>PerlIO</code>-savvy
+except for &quot;hz&quot; and &quot;ISO-2022-kr&quot;.  For the gory details, see
+<a href="../lib/Encode/Encoding.html">the Encode::Encoding manpage</a> and <a href="../lib/Encode/PerlIO.html">the Encode::PerlIO manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="handling_malformed_data">Handling Malformed Data</a></h1>
+<p>The optional <em>CHECK</em> argument tells <code>Encode</code> what to do when
+encountering malformed data.  Without <em>CHECK</em>, <code>Encode::FB_DEFAULT</code>
+(== 0) is assumed.</p>
+<p>As of version 2.12, <code>Encode</code> supports coderef values for <a href="../lib/pods/perlvar.html#check"><code>CHECK</code></a>;
+see below.</p>
+<dl>
+<dt><strong><a name="note_not_all_encoding_support_this_feature" class="item"><strong>NOTE:</strong> Not all encoding support this feature</a></strong></dt>
+
+<dd>
+<p>Some encodings ignore <em>CHECK</em> argument.  For example,
+<a href="../lib/Encode/Unicode.html">the Encode::Unicode manpage</a> ignores <em>CHECK</em> and it always croaks on error.</p>
+</dd>
+</dl>
+<p>Now here is the list of <em>CHECK</em> values available</p>
+<dl>
+<dt><strong><a name="fb_default" class="item"><em>CHECK</em> = Encode::FB_DEFAULT ( == 0)</a></strong></dt>
+
+<dd>
+<p>If <em>CHECK</em> is 0, encoding and decoding replace any malformed character
+with a <em>substitution character</em>.  When you encode, <em>SUBCHAR</em> is used.
+When you decode, the Unicode REPLACEMENT CHARACTER, code point U+FFFD, is
+used.  If the data is supposed to be UTF-8, an optional lexical warning of
+warning category <a href="../lib/pods/perlrun.html#utf8"><code>&quot;utf8&quot;</code></a> is given.</p>
+</dd>
+<dt><strong><a name="fb_croak" class="item"><em>CHECK</em> = Encode::FB_CROAK ( == 1)</a></strong></dt>
+
+<dd>
+<p>If <em>CHECK</em> is 1, methods immediately die with an error
+message.  Therefore, when <em>CHECK</em> is 1, you should trap
+exceptions with <a href="../lib/pods/perlfunc.html#eval"><code>eval{}</code></a>, unless you really want to let it <a href="../lib/pods/perlfunc.html#die"><code>die</code></a>.</p>
+</dd>
+<dt><strong><a name="check_encode_fb_quiet" class="item"><em>CHECK</em> = Encode::FB_QUIET</a></strong></dt>
+
+<dd>
+<p>If <em>CHECK</em> is set to <code>Encode::FB_QUIET</code>, encoding and decoding immediately
+return the portion of the data that has been processed so far when an
+error occurs. The data argument is overwritten with everything
+after that point; that is, the unprocessed portion of the data.  This is
+handy when you have to call <a href="#decode"><code>decode</code></a> repeatedly in the case where your
+source data may contain partial multi-byte character sequences,
+(that is, you are reading with a fixed-width buffer). Here's some sample
+code to do exactly that:</p>
+<pre>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">,</span> <span class="variable">$string</span><span class="operator">)</span> <span class="operator">=</span> <span class="operator">(</span><span class="string">""</span><span class="operator">,</span> <span class="string">""</span><span class="operator">);</span>
+    <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">read</span><span class="operator">(</span><span class="variable">$fh</span><span class="operator">,</span> <span class="variable">$buffer</span><span class="operator">,</span> <span class="number">256</span><span class="operator">,</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">$buffer</span><span class="operator">)))</span> <span class="operator">{</span>
+        <span class="variable">$string</span> <span class="operator">.=</span> <span class="variable">decode</span><span class="operator">(</span><span class="variable">$encoding</span><span class="operator">,</span> <span class="variable">$buffer</span><span class="operator">,</span> <span class="variable">Encode::FB_QUIET</span><span class="operator">);</span>
+        <span class="comment"># $buffer now contains the unprocessed partial character</span>
+    <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="check_encode_fb_warn" class="item"><em>CHECK</em> = Encode::FB_WARN</a></strong></dt>
+
+<dd>
+<p>This is the same as <code>FB_QUIET</code> above, except that instead of being silent
+on errors, it issues a warning.  This is handy for when you are debugging.</p>
+</dd>
+<dt><strong><a name="mode" class="item">perlqq mode (<em>CHECK</em> = Encode::FB_PERLQQ)</a></strong></dt>
+
+<dt><strong>HTML charref mode (<em>CHECK</em> = Encode::FB_HTMLCREF)</strong></dt>
+
+<dt><strong>XML charref mode (<em>CHECK</em> = Encode::FB_XMLCREF)</strong></dt>
+
+<dd>
+<p>For encodings that are implemented by the <code>Encode::XS</code> module, <a href="../lib/pods/perlvar.html#check"><code>CHECK</code></a> <code>==</code>
+<code>Encode::FB_PERLQQ</code> puts <a href="#encode"><code>encode</code></a> and <a href="#decode"><code>decode</code></a> into <code>perlqq</code> fallback mode.</p>
+<p>When you decode, <code>\xHH</code> is inserted for a malformed character, where
+<em>HH</em> is the hex representation of the octet that could not be decoded to
+utf8.  When you encode, <code>\x{HHHH}</code> will be inserted, where <em>HHHH</em> is
+the Unicode code point (in any number of hex digits) of the character that
+cannot be found in the character repertoire of the encoding.</p>
+<p>The HTML/XML character reference modes are about the same. In place of
+<code>\x{HHHH}</code>, HTML uses <code>&amp;#NNN;</code> where <em>NNN</em> is a decimal number, and
+XML uses <code>&amp;#xHHHH;</code> where <em>HHHH</em> is the hexadecimal number.</p>
+<p>In <code>Encode</code> 2.10 or later, <code>LEAVE_SRC</code> is also implied.</p>
+</dd>
+<dt><strong><a name="the_bitmask" class="item">The bitmask</a></strong></dt>
+
+<dd>
+<p>These modes are all actually set via a bitmask.  Here is how the <code>FB_XXX</code>
+constants are laid out.  You can import the <code>FB_XXX</code> constants via
+<code>use Encode qw(:fallbacks)</code>, and you can import the generic bitmask
+constants via <code>use Encode qw(:fallback_all)</code>.</p>
+<pre>
+                     FB_DEFAULT FB_CROAK FB_QUIET FB_WARN  FB_PERLQQ
+ DIE_ON_ERR    0x0001             X
+ WARN_ON_ERR   0x0002                               X
+ RETURN_ON_ERR 0x0004                      X        X
+ LEAVE_SRC     0x0008                                        X
+ PERLQQ        0x0100                                        X
+ HTMLCREF      0x0200
+ XMLCREF       0x0400</pre>
+</dd>
+</dl>
+<dl>
+<dt><strong><a name="encode_leave_src" class="item">Encode::LEAVE_SRC</a></strong></dt>
+
+<dd>
+<p>If the <a href="#encode_leave_src"><code>Encode::LEAVE_SRC</code></a> bit is <em>not</em> set but <em>CHECK</em> is set, then the
+second argument to <a href="#encode"><code>encode()</code></a> or <a href="#decode"><code>decode()</code></a> will be overwritten in place.
+If you're not interested in this, then bitwise-OR it with the bitmask.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="coderef_for_check">coderef for CHECK</a></h2>
+<p>As of <code>Encode</code> 2.12, <a href="../lib/pods/perlvar.html#check"><code>CHECK</code></a> can also be a code reference which takes the
+ordinal value of the unmapped caharacter as an argument and returns a string
+that represents the fallback character.  For instance:</p>
+<pre>
+  <span class="variable">$ascii</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">"ascii"</span><span class="operator">,</span> <span class="variable">$utf8</span><span class="operator">,</span> <span class="keyword">sub</span><span class="operator">{</span> <span class="keyword">sprintf</span> <span class="string">"&lt;U+%04X&gt;"</span><span class="operator">,</span> <span class="keyword">shift</span> <span class="operator">});</span>
+</pre>
+<p>Acts like <code>FB_PERLQQ</code> but U+<em>XXXX</em> is used instead of <code>\x{XXXX}</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="defining_encodings">Defining Encodings</a></h1>
+<p>To define a new encoding, use:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Encode</span> <span class="string">qw(define_encoding)</span><span class="operator">;</span>
+    <span class="variable">define_encoding</span><span class="operator">(</span><span class="variable">$object</span><span class="operator">,</span> <span class="variable">CANONICAL_NAME</span> <span class="operator">[</span><span class="operator">,</span> <span class="variable">alias</span><span class="operator">...</span><span class="operator">]</span><span class="operator">);</span>
+</pre>
+<p><em>CANONICAL_NAME</em> will be associated with <em>$object</em>.  The object
+should provide the interface described in <a href="../lib/Encode/Encoding.html">the Encode::Encoding manpage</a>.
+If more than two arguments are provided, additional
+arguments are considered aliases for <em>$object</em>.</p>
+<p>See <a href="../lib/Encode/Encoding.html">the Encode::Encoding manpage</a> for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="the_utf8_flag">The UTF8 flag</a></h1>
+<p>Before the introduction of Unicode support in Perl, The <code>eq</code> operator
+just compared the strings represented by two scalars. Beginning with
+Perl 5.8, <code>eq</code> compares two strings with simultaneous consideration of
+<em>the UTF8 flag</em>. To explain why we made it so, I quote from page 402 of
+<em>Programming Perl, 3rd ed.</em></p>
+<dl>
+<dt><strong><a name="goal_1" class="item">Goal #1:</a></strong></dt>
+
+<dd>
+<p>Old byte-oriented programs should not spontaneously break on the old
+byte-oriented data they used to work on.</p>
+</dd>
+<dt><strong><a name="goal_2" class="item">Goal #2:</a></strong></dt>
+
+<dd>
+<p>Old byte-oriented programs should magically start working on the new
+character-oriented data when appropriate.</p>
+</dd>
+<dt><strong><a name="goal_3" class="item">Goal #3:</a></strong></dt>
+
+<dd>
+<p>Programs should run just as fast in the new character-oriented mode
+as in the old byte-oriented mode.</p>
+</dd>
+<dt><strong><a name="goal_4" class="item">Goal #4:</a></strong></dt>
+
+<dd>
+<p>Perl should remain one language, rather than forking into a
+byte-oriented Perl and a character-oriented Perl.</p>
+</dd>
+</dl>
+<p>When <em>Programming Perl, 3rd ed.</em> was written, not even Perl 5.6.0 had been
+born yet, many features documented in the book remained unimplemented for a
+long time.  Perl 5.8 corrected much of this, and the introduction of the
+UTF8 flag is one of them.  You can think of there being two fundamentally
+different kinds of strings and string-operations in Perl: one a
+byte-oriented mode  for when the internal UTF8 flag is off, and the other a
+character-oriented mode for when the internal UTF8 flag is on.</p>
+<p>Here is how <code>Encode</code> handles the UTF8 flag.</p>
+<ul>
+<li>
+<p>When you <em>encode</em>, the resulting UTF8 flag is always <strong>off</strong>.</p>
+</li>
+<li>
+<p>When you <em>decode</em>, the resulting UTF8 flag is <strong>on</strong>--<em>unless</em> you can
+unambiguously represent data.  Here is what we mean by &quot;unambiguously&quot;.
+After <a href="#decode"><code>$utf8 = decode(&quot;foo&quot;, $octet)</code></a>,</p>
+<pre>
+  When $octet is...   The UTF8 flag in $utf8 is
+  ---------------------------------------------
+  In ASCII only (or EBCDIC only)            OFF
+  In ISO-8859-1                              ON
+  In any other Encoding                      ON
+  ---------------------------------------------</pre>
+<p>As you see, there is one exception: in ASCII.  That way you can assume
+Goal #1.  And with <code>Encode</code>, Goal #2 is assumed but you still have to be
+careful in the cases mentioned in the <strong>CAVEAT</strong> paragraphs above.</p>
+<p>This UTF8 flag is not visible in Perl scripts, exactly for the same reason
+you cannot (or rather, you <em>don't have to</em>) see whether a scalar contains
+a string, an integer, or a floating-point number.   But you can still peek
+and poke these if you will.  See the next section.</p>
+</li>
+</ul>
+<p>
+</p>
+<h2><a name="messing_with_perl_s_internals">Messing with Perl's Internals</a></h2>
+<p>The following API uses parts of Perl's internals in the current
+implementation.  As such, they are efficient but may change in a future
+release.</p>
+<dl>
+<dt><strong><a name="is_utf8" class="item">is_utf8(STRING [, CHECK])</a></strong></dt>
+
+<dd>
+<p>[INTERNAL] Tests whether the UTF8 flag is turned on in the <em>STRING</em>.
+If <em>CHECK</em> is true, also checks whether <em>STRING</em> contains well-formed
+UTF-8.  Returns true if successful, false otherwise.</p>
+<p>As of Perl 5.8.1, <a href="../lib/utf8.html">the utf8 manpage</a> also has the <code>utf8::is_utf8</code> function.</p>
+</dd>
+<dt><strong><a name="_utf8_on" class="item">_utf8_on(STRING)</a></strong></dt>
+
+<dd>
+<p>[INTERNAL] Turns the <em>STRING</em>'s internal UTF8 flag <strong>on</strong>.  The <em>STRING</em>
+is <em>not</em> checked for containing only well-formed UTF-8.  Do not use this
+unless you <em>know with absolute certainty</em> that the STRING holds only
+well-formed UTF-8.  Returns the previous state of the UTF8 flag (so please
+don't treat the return value as indicating success or failure), or <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a>
+if <em>STRING</em> is not a string.</p>
+<p><strong>NOTE</strong>: For security reasons, this function does not work on tainted values.</p>
+</dd>
+<dt><strong><a name="_utf8_off" class="item">_utf8_off(STRING)</a></strong></dt>
+
+<dd>
+<p>[INTERNAL] Turns the <em>STRING</em>'s internal UTF8 flag <strong>off</strong>.  Do not use
+frivolously.  Returns the previous state of the UTF8 flag, or <a href="../lib/pods/perlfunc.html#undef"><code>undef</code></a> if
+<em>STRING</em> is not a string.  Do not treat the return value as indicative of
+success or failure, because that isn't what it means: it is only the
+previous setting.</p>
+<p><strong>NOTE</strong>: For security reasons, this function does not work on tainted values.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="utf_8_vs__utf8_vs__utf8">UTF-8 vs. utf8 vs. UTF8</a></h1>
+<pre>
+  ....We now view strings not as sequences of bytes, but as sequences
+  of numbers in the range 0 .. 2**32-1 (or in the case of 64-bit
+  computers, 0 .. 2**64-1) -- Programming Perl, 3rd ed.</pre>
+<p>That has historically been Perl's notion of UTF-8, as that is how UTF-8 was
+first conceived by Ken Thompson when he invented it. However, thanks to
+later revisions to the applicable standards, official UTF-8 is now rather
+stricter than that. For example, its range is much narrower (0 .. 0x10_FFFF
+to cover only 21 bits instead of 32 or 64 bits) and some sequences
+are not allowed, like those used in surrogate pairs, the 31 non-character
+code points 0xFDD0 .. 0xFDEF, the last two code points in <em>any</em> plane
+(0x<em>XX</em>_FFFE and 0x<em>XX</em>_FFFF), all non-shortest encodings, etc.</p>
+<p>The former default in which Perl would always use a loose interpretation of
+UTF-8 has now been overruled:</p>
+<pre>
+  From: Larry Wall &lt;larry@wall.org&gt;
+  Date: December 04, 2004 11:51:58 JST
+  To: perl-unicode@perl.org
+  Subject: Re: Make Encode.pm support the real UTF-8
+  Message-Id: &lt;20041204025158.GA28754@wall.org&gt;</pre>
+<pre>
+  On Fri, Dec 03, 2004 at 10:12:12PM +0000, Tim Bunce wrote:
+  : I've no problem with 'utf8' being perl's unrestricted uft8 encoding,
+  : but &quot;UTF-8&quot; is the name of the standard and should give the
+  : corresponding behaviour.</pre>
+<pre>
+  For what it's worth, that's how I've always kept them straight in my
+  head.</pre>
+<pre>
+  Also for what it's worth, Perl 6 will mostly default to strict but
+  make it easy to switch back to lax.</pre>
+<pre>
+  Larry</pre>
+<p>Got that?  As of Perl 5.8.7, <strong>&quot;UTF-8&quot;</strong> means UTF-8 in its current
+sense, which is conservative and strict and security-conscious, whereas
+<strong>&quot;utf8&quot;</strong> means UTF-8 in its former sense, which was liberal and loose and
+lax.  <code>Encode</code> version 2.10 or later thus groks this subtle but critically
+important distinction between <code>&quot;UTF-8&quot;</code> and <a href="../lib/pods/perlrun.html#utf8"><code>&quot;utf8&quot;</code></a>.</p>
+<pre>
+  <span class="variable">encode</span><span class="operator">(</span><span class="string">"utf8"</span><span class="operator">,</span>  <span class="string">"\x{FFFF_FFFF}"</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span> <span class="comment"># okay</span>
+  <span class="variable">encode</span><span class="operator">(</span><span class="string">"UTF-8"</span><span class="operator">,</span> <span class="string">"\x{FFFF_FFFF}"</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span> <span class="comment"># croaks</span>
+</pre>
+<p>In the <code>Encode</code> module, <code>&quot;UTF-8&quot;</code> is actually a canonical name for
+<code>&quot;utf-8-strict&quot;</code>.  That hyphen between the <code>&quot;UTF&quot;</code> and the <code>&quot;8&quot;</code> is
+critical; without it, <code>Encode</code> goes &quot;liberal&quot; and (perhaps overly-)permissive:</p>
+<pre>
+  find_encoding(&quot;UTF-8&quot;)-&gt;name # is 'utf-8-strict'
+  find_encoding(&quot;utf-8&quot;)-&gt;name # ditto. names are case insensitive
+  find_encoding(&quot;utf_8&quot;)-&gt;name # ditto. &quot;_&quot; are treated as &quot;-&quot;
+  find_encoding(&quot;UTF8&quot;)-&gt;name  # is 'utf8'.</pre>
+<p>Perl's internal UTF8 flag is called &quot;UTF8&quot;, without a hyphen. It indicates
+whether a string is internally encoded as &quot;utf8&quot;, also without a hyphen.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/Encode/Encoding.html">the Encode::Encoding manpage</a>,
+<a href="../lib/Encode/Supported.html">the Encode::Supported manpage</a>,
+<a href="../lib/Encode/PerlIO.html">the Encode::PerlIO manpage</a>,
+<a href="../lib/encoding.html">the encoding manpage</a>,
+<a href="../lib/pods/perlebcdic.html">the perlebcdic manpage</a>,
+<a href="../lib/pods/perlfunc.html#open">open in the perlfunc manpage</a>,
+<a href="../lib/pods/perlunicode.html">the perlunicode manpage</a>, <a href="../lib/pods/perluniintro.html">the perluniintro manpage</a>, <a href="../lib/pods/perlunifaq.html">the perlunifaq manpage</a>, <a href="../lib/pods/perlunitut.html">the perlunitut manpage</a>
+<a href="../lib/utf8.html">the utf8 manpage</a>,
+the Perl Unicode Mailing List &lt;<a href="mailto:perl-unicode@perl.org">perl-unicode@perl.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="maintainer">MAINTAINER</a></h1>
+<p>This project was originated by the late Nick Ing-Simmons and later
+maintained by Dan Kogai <em><a href="mailto:<dankogai@dan.co.jp"><dankogai@dan.co.jp</a></em> &gt;&gt;.  See AUTHORS
+for a full list of people involved.  For any questions, send mail to
+<em><a href="mailto:<perl-unicode@perl.org"><perl-unicode@perl.org</a></em> &gt;&gt; so that we can all share.</p>
+<p>While Dan Kogai retains the copyright as a maintainer, credit
+should go to all those involved.  See AUTHORS for a list of those
+who submitted code to the project.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2002-2011 Dan Kogai <em><a href="mailto:<dankogai@dan.co.jp"><dankogai@dan.co.jp</a></em> &gt;&gt;.</p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

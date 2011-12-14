@@ -1,0 +1,427 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>autodie - Replace functions with ones that succeed or die with lexical scope</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>autodie - Replace functions with ones that succeed or die with lexical scope</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#exceptions">EXCEPTIONS</a></li>
+	<li><a href="#categories">CATEGORIES</a></li>
+	<li><a href="#function_specific_notes">FUNCTION SPECIFIC NOTES</a></li>
+	<ul>
+
+		<li><a href="#flock">flock</a></li>
+		<li><a href="#system_exec">system/exec</a></li>
+	</ul>
+
+	<li><a href="#gotchas">GOTCHAS</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<ul>
+
+		<li><a href="#autodie_and_string_eval">autodie and string eval</a></li>
+		<li><a href="#reporting_bugs">REPORTING BUGS</a></li>
+	</ul>
+
+	<li><a href="#feedback">FEEDBACK</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>autodie - Replace functions with ones that succeed or die with lexical scope</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie</span><span class="operator">;</span>            <span class="comment"># Recommended: implies 'use autodie qw(:default)'</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw(:all)</span><span class="operator">;</span>   <span class="comment"># Recommended more: defaults and system/exec.</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw(open close)</span><span class="operator">;</span>   <span class="comment"># open/close succeed or die</span>
+</pre>
+<pre>
+    <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">"&lt;"</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">);</span> <span class="comment"># No need to check!</span>
+</pre>
+<pre>
+    <span class="operator">{</span>
+        <span class="keyword">no</span> <span class="variable">autodie</span> <span class="string">qw(open)</span><span class="operator">;</span>          <span class="comment"># open failures won't die</span>
+        <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">"&lt;"</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">);</span> <span class="comment"># Could fail silently!</span>
+        <span class="keyword">no</span> <span class="variable">autodie</span><span class="operator">;</span>                   <span class="comment"># disable all autodies</span>
+    <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<pre>
+        <span class="variable">bIlujDI</span><span class="string">' yIchegh()Qo'</span><span class="operator">;</span> <span class="variable">yIHegh</span><span class="operator">()!</span>
+</pre>
+<pre>
+        It is better to die() than to return() in failure.</pre>
+<pre>
+                -- Klingon programming proverb.</pre>
+<p>The <code>autodie</code> pragma provides a convenient way to replace functions
+that normally return false on failure with equivalents that throw
+an exception on failure.</p>
+<p>The <code>autodie</code> pragma has <em>lexical scope</em>, meaning that functions
+and subroutines altered with <code>autodie</code> will only change their behaviour
+until the end of the enclosing block, file, or <a href="../lib/pods/perlfunc.html#eval"><code>eval</code></a>.</p>
+<p>If <a href="../lib/pods/perlfunc.html#system"><code>system</code></a> is specified as an argument to <code>autodie</code>, then it
+uses <a href="../IPC/System/Simple.html">the IPC::System::Simple manpage</a> to do the heavy lifting.  See the
+description of that module for more information.</p>
+<p>
+</p>
+<hr />
+<h1><a name="exceptions">EXCEPTIONS</a></h1>
+<p>Exceptions produced by the <code>autodie</code> pragma are members of the
+<a href="../lib/autodie/exception.html">the autodie::exception manpage</a> class.  The preferred way to work with
+these exceptions under Perl 5.10 is as follows:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">feature</span> <span class="string">qw(switch)</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">eval</span> <span class="operator">{</span>
+        <span class="keyword">use</span> <span class="variable">autodie</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="variable">$some_file</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">@records</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">$fh</span><span class="operator">&gt;;</span>
+</pre>
+<pre>
+        <span class="comment"># Do things with @records...</span>
+</pre>
+<pre>
+        <span class="keyword">close</span><span class="operator">(</span><span class="variable">$fh</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="keyword">given</span> <span class="operator">(</span><span class="variable">$@</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="keyword">undef</span><span class="operator">)</span>   <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"No error"</span><span class="operator">;</span>                    <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="string">'open'</span><span class="operator">)</span>  <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"Error from open"</span><span class="operator">;</span>             <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="string">':io'</span><span class="operator">)</span>   <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"Non-open, IO error."</span><span class="operator">;</span>         <span class="operator">}</span>
+        <span class="keyword">when</span> <span class="operator">(</span><span class="string">':all'</span><span class="operator">)</span>  <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"All other autodie errors."</span>    <span class="operator">}</span>
+        <span class="keyword">default</span>        <span class="operator">{</span> <span class="keyword">say</span> <span class="string">"Not an autodie error at all."</span> <span class="operator">}</span>
+    <span class="operator">}</span>
+</pre>
+<p>Under Perl 5.8, the <code>given/when</code> structure is not available, so the
+following structure may be used:</p>
+<pre>
+    <span class="keyword">eval</span> <span class="operator">{</span>
+        <span class="keyword">use</span> <span class="variable">autodie</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">open</span><span class="operator">(</span><span class="keyword">my</span> <span class="variable">$fh</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="variable">$some_file</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">@records</span> <span class="operator">=</span> <span class="operator">&lt;</span><span class="variable">$fh</span><span class="operator">&gt;;</span>
+</pre>
+<pre>
+        <span class="comment"># Do things with @records...</span>
+</pre>
+<pre>
+        <span class="keyword">close</span><span class="operator">(</span><span class="variable">$fh</span><span class="operator">);</span>
+            <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$@</span> <span class="keyword">and</span> <span class="variable">$@</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'autodie::exception'</span><span class="operator">))</span> <span class="operator">{</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$@</span><span class="operator">-&gt;</span><span class="variable">matches</span><span class="operator">(</span><span class="string">'open'</span><span class="operator">))</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Error from open\n"</span><span class="operator">;</span>   <span class="operator">}</span>
+        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$@</span><span class="operator">-&gt;</span><span class="variable">matches</span><span class="operator">(</span><span class="string">':io'</span> <span class="operator">))</span> <span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Non-open, IO error."</span><span class="operator">;</span> <span class="operator">}</span>
+    <span class="operator">}</span> <span class="keyword">elsif</span> <span class="operator">(</span><span class="variable">$@</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="comment"># A non-autodie exception.</span>
+    <span class="operator">}</span>
+</pre>
+<p>See <a href="../lib/autodie/exception.html">the autodie::exception manpage</a> for further information on interrogating
+exceptions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="categories">CATEGORIES</a></h1>
+<p>Autodie uses a simple set of categories to group together similar
+built-ins.  Requesting a category type (starting with a colon) will
+enable autodie for all built-ins beneath that category.  For example,
+requesting <code>:file</code> will enable autodie for <a href="../lib/pods/perlfunc.html#close"><code>close</code></a>, <a href="../lib/pods/perlfunc.html#fcntl"><code>fcntl</code></a>,
+<a href="../lib/pods/perlfunc.html#fileno"><code>fileno</code></a>, <a href="../lib/pods/perlfunc.html#open"><code>open</code></a> and <a href="../lib/pods/perlfunc.html#sysopen"><code>sysopen</code></a>.</p>
+<p>The categories are currently:</p>
+<pre>
+    :all
+        :default
+            :io
+                read
+                seek
+                sysread
+                sysseek
+                syswrite
+                :dbm
+                    dbmclose
+                    dbmopen
+                :file
+                    binmode
+                    close
+                    fcntl
+                    fileno
+                    flock
+                    ioctl
+                    open
+                    sysopen
+                    truncate
+                :filesys
+                    chdir
+                    closedir
+                    opendir
+                    link
+                    mkdir
+                    readlink
+                    rename
+                    rmdir
+                    symlink
+                    unlink
+                :ipc
+                    pipe
+                    :msg
+                        msgctl
+                        msgget
+                        msgrcv
+                        msgsnd
+                    :semaphore
+                        semctl
+                        semget
+                        semop
+                    :shm
+                        shmctl
+                        shmget
+                        shmread
+                :socket
+                    accept
+                    bind
+                    connect
+                    getsockopt
+                    listen
+                    recv
+                    send
+                    setsockopt
+                    shutdown
+                    socketpair
+            :threads
+                fork
+        :system
+            system
+            exec</pre>
+<p>Note that while the above category system is presently a strict
+hierarchy, this should not be assumed.</p>
+<p>A plain <code>use autodie</code> implies <code>use autodie qw(:default)</code>.  Note that
+<a href="../lib/pods/perlfunc.html#system"><code>system</code></a> and <a href="../lib/pods/perlfunc.html#exec"><code>exec</code></a> are not enabled by default.  <a href="../lib/pods/perlfunc.html#system"><code>system</code></a> requires
+the optional <a href="../IPC/System/Simple.html">the IPC::System::Simple manpage</a> module to be installed, and enabling
+<a href="../lib/pods/perlfunc.html#system"><code>system</code></a> or <a href="../lib/pods/perlfunc.html#exec"><code>exec</code></a> will invalidate their exotic forms.  See <a href="#bugs">BUGS</a>
+below for more details.</p>
+<p>The syntax:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw(:1.994)</span><span class="operator">;</span>
+</pre>
+<p>allows the <a href="../lib/pods/perlfunc.html#default"><code>:default</code></a> list from a particular version to be used.  This
+provides the convenience of using the default methods, but the surety
+that no behavorial changes will occur if the <code>autodie</code> module is
+upgraded.</p>
+<p><code>autodie</code> can be enabled for all of Perl's built-ins, including
+<a href="../lib/pods/perlfunc.html#system"><code>system</code></a> and <a href="../lib/pods/perlfunc.html#exec"><code>exec</code></a> with:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie</span> <span class="string">qw(:all)</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="function_specific_notes">FUNCTION SPECIFIC NOTES</a></h1>
+<p>
+</p>
+<h2><a name="flock">flock</a></h2>
+<p>It is not considered an error for <a href="../lib/pods/perlfunc.html#flock"><code>flock</code></a> to return false if it fails
+due to an <code>EWOULDBLOCK</code> (or equivalent) condition.  This means one can
+still use the common convention of testing the return value of
+<a href="../lib/pods/perlfunc.html#flock"><code>flock</code></a> when called with the <code>LOCK_NB</code> option:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">autodie</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">flock</span><span class="operator">(</span><span class="variable">$fh</span><span class="operator">,</span> <span class="variable">LOCK_EX</span> <span class="operator">|</span> <span class="variable">LOCK_NB</span><span class="operator">)</span> <span class="operator">)</span> <span class="operator">{</span>
+        <span class="comment"># We have a lock</span>
+    <span class="operator">}</span>
+</pre>
+<p>Autodying <a href="../lib/pods/perlfunc.html#flock"><code>flock</code></a> will generate an exception if <a href="../lib/pods/perlfunc.html#flock"><code>flock</code></a> returns
+false with any other error.</p>
+<p>
+</p>
+<h2><a name="system_exec">system/exec</a></h2>
+<p>The <a href="../lib/pods/perlfunc.html#system"><code>system</code></a> built-in is considered to have failed in the following
+circumstances:</p>
+<ul>
+<li>
+<p>The command does not start.</p>
+</li>
+<li>
+<p>The command is killed by a signal.</p>
+</li>
+<li>
+<p>The command returns a non-zero exit value (but see below).</p>
+</li>
+</ul>
+<p>On success, the autodying form of <a href="../lib/pods/perlfunc.html#system"><code>system</code></a> returns the <em>exit value</em>
+rather than the contents of <a href="../lib/pods/perlvar.html#_"><code>$?</code></a>.</p>
+<p>Additional allowable exit values can be supplied as an optional first
+argument to autodying <a href="../lib/pods/perlfunc.html#system"><code>system</code></a>:</p>
+<pre>
+    <span class="keyword">system</span><span class="operator">(</span> <span class="operator">[</span> <span class="number">0</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">2</span> <span class="operator">]</span><span class="operator">,</span> <span class="variable">$cmd</span><span class="operator">,</span> <span class="variable">@args</span><span class="operator">);</span>  <span class="comment"># 0,1,2 are good exit values</span>
+</pre>
+<p><code>autodie</code> uses the <a href="../IPC/System/Simple.html">the IPC::System::Simple manpage</a> module to change <a href="../lib/pods/perlfunc.html#system"><code>system</code></a>.
+See its documentation for further information.</p>
+<p>Applying <code>autodie</code> to <a href="../lib/pods/perlfunc.html#system"><code>system</code></a> or <a href="../lib/pods/perlfunc.html#exec"><code>exec</code></a> causes the exotic
+forms <code>system { $cmd } @args </code> or <code>exec { $cmd } @args</code>
+to be considered a syntax error until the end of the lexical scope.
+If you really need to use the exotic form, you can call <code>CORE::system</code>
+or <code>CORE::exec</code> instead, or use <code>no autodie qw(system exec)</code> before
+calling the exotic form.</p>
+<p>
+</p>
+<hr />
+<h1><a name="gotchas">GOTCHAS</a></h1>
+<p>Functions called in list context are assumed to have failed if they
+return an empty list, or a list consisting only of a single undef
+element.</p>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<dl>
+<dt><strong><a name="void_cannot_be_used_with_lexical_scope" class="item">:void cannot be used with lexical scope</a></strong></dt>
+
+<dd>
+<p>The <code>:void</code> option is supported in <a href="../lib/Fatal.html">the Fatal manpage</a>, but not
+<code>autodie</code>.  To workaround this, <code>autodie</code> may be explicitly disabled until
+the end of the current block with <code>no autodie</code>.
+To disable autodie for only a single function (eg, open)
+use <code>no autodie qw(open)</code>.</p>
+</dd>
+<dt><strong><a name="no_user_hints_defined_for_s" class="item">No user hints defined for %s</a></strong></dt>
+
+<dd>
+<p>You've insisted on hints for user-subroutines, either by pre-pending
+a <code>!</code> to the subroutine name itself, or earlier in the list of arguments
+to <code>autodie</code>.  However the subroutine in question does not have
+any hints available.</p>
+</dd>
+</dl>
+<p>See also <a href="../lib/Perl/Critic/Exception/Fatal/diagnostics.html">DIAGNOSTICS in the Fatal manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>&quot;Used only once&quot; warnings can be generated when <code>autodie</code> or <code>Fatal</code>
+is used with package filehandles (eg, <code>FILE</code>).  Scalar filehandles are
+strongly recommended instead.</p>
+<p>When using <code>autodie</code> or <code>Fatal</code> with user subroutines, the
+declaration of those subroutines must appear before the first use of
+<code>Fatal</code> or <code>autodie</code>, or have been exported from a module.
+Attempting to use <code>Fatal</code> or <code>autodie</code> on other user subroutines will
+result in a compile-time error.</p>
+<p>Due to a bug in Perl, <code>autodie</code> may &quot;lose&quot; any format which has the
+same name as an autodying built-in or function.</p>
+<p><code>autodie</code> may not work correctly if used inside a file with a
+name that looks like a string eval, such as <em class="file">eval (3)</em>.</p>
+<p>
+</p>
+<h2><a name="autodie_and_string_eval">autodie and string eval</a></h2>
+<p>Due to the current implementation of <code>autodie</code>, unexpected results
+may be seen when used near or with the string version of eval.
+<em>None of these bugs exist when using block eval</em>.</p>
+<p>Under Perl 5.8 only, <code>autodie</code> <em>does not</em> propagate into string <a href="../lib/pods/perlfunc.html#eval"><code>eval</code></a>
+statements, although it can be explicitly enabled inside a string
+<a href="../lib/pods/perlfunc.html#eval"><code>eval</code></a>.</p>
+<p>Under Perl 5.10 only, using a string eval when <code>autodie</code> is in
+effect can cause the autodie behaviour to leak into the surrounding
+scope.  This can be worked around by using a <code>no autodie</code> at the
+end of the scope to explicitly remove autodie's effects, or by
+avoiding the use of string eval.</p>
+<p><em>None of these bugs exist when using block eval</em>.  The use of
+<code>autodie</code> with block eval is considered good practice.</p>
+<p>
+</p>
+<h2><a name="reporting_bugs">REPORTING BUGS</a></h2>
+<p>Please report bugs via the CPAN Request Tracker at
+<a href="http://rt.cpan.org/NoAuth/Bugs.html?Dist=autodie">http://rt.cpan.org/NoAuth/Bugs.html</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="feedback">FEEDBACK</a></h1>
+<p>If you find this module useful, please consider rating it on the
+CPAN Ratings service at
+<a href="http://cpanratings.perl.org/rate?distribution=autodie">http://cpanratings.perl.org/rate</a> .</p>
+<p>The module author loves to hear how <code>autodie</code> has made your life
+better (or worse).  Feedback can be sent to
+&lt;<a href="mailto:pjf@perltraining.com.au">pjf@perltraining.com.au</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Copyright 2008-2009, Paul Fenwick &lt;<a href="mailto:pjf@perltraining.com.au">pjf@perltraining.com.au</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This module is free software.  You may distribute it under the
+same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../lib/Fatal.html">the Fatal manpage</a>, <a href="../lib/autodie/exception.html">the autodie::exception manpage</a>, <a href="../lib/autodie/hints.html">the autodie::hints manpage</a>, <a href="../IPC/System/Simple.html">the IPC::System::Simple manpage</a></p>
+<p><em>Perl tips, autodie</em> at
+<a href="http://perltraining.com.au/tips/2008-08-20.html">http://perltraining.com.au/tips/2008-08-20.html</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>Mark Reed and Roland Giersig -- Klingon translators.</p>
+<p>See the <em class="file">AUTHORS</em> file for full credits.  The latest version of this
+file can be found at
+<a href="http://github.com/pfenwick/autodie/tree/master/AUTHORS">http://github.com/pfenwick/autodie/tree/master/AUTHORS</a> .</p>
+
+</body>
+
+</html>

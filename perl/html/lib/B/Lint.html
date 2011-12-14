@@ -1,0 +1,249 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>B::Lint - Perl lint</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>B::Lint - Perl lint</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options_and_lint_checks">OPTIONS AND LINT CHECKS</a></li>
+	<li><a href="#non_lint_check_options">NON LINT-CHECK OPTIONS</a></li>
+	<li><a href="#extending_lint">EXTENDING LINT</a></li>
+	<li><a href="#todo">TODO</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>B::Lint - Perl lint</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>perl -MO=Lint[,OPTIONS] foo.pl</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The B::Lint module is equivalent to an extended version of the <strong>-w</strong>
+option of <strong>perl</strong>. It is named after the program <em class="file">lint</em> which carries
+out a similar process for C programs.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options_and_lint_checks">OPTIONS AND LINT CHECKS</a></h1>
+<p>Option words are separated by commas (not whitespace) and follow the
+usual conventions of compiler backend options. Following any options
+(indicated by a leading <strong>-</strong>) come lint check arguments. Each such
+argument (apart from the special <strong>all</strong> and <strong>none</strong> options) is a
+word representing one possible lint check (turning on that check) or
+is <strong>no-foo</strong> (turning off that check). Before processing the check
+arguments, a standard list of checks is turned on. Later options
+override earlier ones. Available options are:</p>
+<dl>
+<dt><strong><a name="magic_diamond" class="item"><strong>magic-diamond</strong></a></strong></dt>
+
+<dd>
+<p>Produces a warning whenever the magic <code>&lt;&gt;</code> readline is
+used. Internally it uses perl's two-argument open which itself treats
+filenames with special characters specially. This could allow
+interestingly named files to have unexpected effects when reading.</p>
+<pre>
+  % touch 'rm *|'
+  % perl -pe 1</pre>
+<p>The above creates a file named <code>rm *|</code>. When perl opens it with
+<code>&lt;&gt;</code> it actually executes the shell program <code>rm *</code>. This
+makes <code>&lt;&gt;</code> dangerous to use carelessly.</p>
+</dd>
+<dt><strong><a name="context" class="item"><strong>context</strong></a></strong></dt>
+
+<dd>
+<p>Produces a warning whenever an array is used in an implicit scalar
+context. For example, both of the lines</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="keyword">length</span><span class="operator">(</span><span class="variable">@bar</span><span class="operator">);</span>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="variable">@bar</span><span class="operator">;</span>
+</pre>
+<p>will elicit a warning. Using an explicit <strong>scalar()</strong> silences the
+warning. For example,</p>
+<pre>
+    <span class="variable">$foo</span> <span class="operator">=</span> <span class="keyword">scalar</span><span class="operator">(</span><span class="variable">@bar</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="implicit_read_and_implicit_write" class="item"><strong>implicit-read</strong> and <strong>implicit-write</strong></a></strong></dt>
+
+<dd>
+<p>These options produce a warning whenever an operation implicitly
+reads or (respectively) writes to one of Perl's special variables.
+For example, <strong>implicit-read</strong> will warn about these:</p>
+<pre>
+    <span class="regex">/foo/</span><span class="operator">;</span>
+</pre>
+<p>and <strong>implicit-write</strong> will warn about these:</p>
+<pre>
+    <span class="regex">s/foo/bar/</span><span class="operator">;</span>
+</pre>
+<p>Both <strong>implicit-read</strong> and <strong>implicit-write</strong> warn about this:</p>
+<pre>
+    <span class="keyword">for</span> <span class="operator">(</span><span class="variable">@a</span><span class="operator">)</span> <span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="bare_subs" class="item"><strong>bare-subs</strong></a></strong></dt>
+
+<dd>
+<p>This option warns whenever a bareword is implicitly quoted, but is also
+the name of a subroutine in the current package. Typical mistakes that it will
+trap are:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">constant</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="string">'bar'</span><span class="operator">;</span>
+    <span class="variable">@a</span> <span class="operator">=</span> <span class="operator">(</span> <span class="string">foo</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+    <span class="variable">$b</span><span class="operator">{</span><span class="string">foo</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">2</span><span class="operator">;</span>
+</pre>
+<p>Neither of these will do what a naive user would expect.</p>
+</dd>
+<dt><strong><a name="dollar_underscore" class="item"><strong>dollar-underscore</strong></a></strong></dt>
+
+<dd>
+<p>This option warns whenever <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> is used either explicitly anywhere or
+as the implicit argument of a <strong>print</strong> statement.</p>
+</dd>
+<dt><strong><a name="private_names" class="item"><strong>private-names</strong></a></strong></dt>
+
+<dd>
+<p>This option warns on each use of any variable, subroutine or
+method name that lives in a non-current package but begins with
+an underscore (&quot;_&quot;). Warnings aren't issued for the special case
+of the single character name &quot;_&quot; by itself (e.g. <a href="../../lib/pods/perlvar.html#__"><code>$_</code></a> and <a href="../../lib/pods/perlvar.html#__"><code>@_</code></a>).</p>
+</dd>
+<dt><strong><a name="undefined_subs" class="item"><strong>undefined-subs</strong></a></strong></dt>
+
+<dd>
+<p>This option warns whenever an undefined subroutine is invoked.
+This option will only catch explicitly invoked subroutines such
+as <code>foo()</code> and not indirect invocations such as <code>&amp;$subref()</code>
+or <code>$obj-&gt;meth()</code>. Note that some programs or modules delay
+definition of subs until runtime by means of the AUTOLOAD
+mechanism.</p>
+</dd>
+<dt><strong><a name="regexp_variables" class="item"><strong>regexp-variables</strong></a></strong></dt>
+
+<dd>
+<p>This option warns whenever one of the regexp variables <a href="../../lib/pods/perlvar.html#__"><code>$`</code></a>, <a href="../../lib/pods/perlvar.html#__"><code>$&amp;</code></a> or <a href="../../lib/pods/perlvar.html#__"><code>$'</code></a>
+is used. Any occurrence of any of these variables in your
+program can slow your whole program down. See <a href="../../lib/pods/perlre.html">the perlre manpage</a> for
+details.</p>
+</dd>
+<dt><strong><a name="all" class="item"><strong>all</strong></a></strong></dt>
+
+<dd>
+<p>Turn all warnings on.</p>
+</dd>
+<dt><strong><a name="none" class="item"><strong>none</strong></a></strong></dt>
+
+<dd>
+<p>Turn all warnings off.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="non_lint_check_options">NON LINT-CHECK OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="u_package" class="item"><strong>-u Package</strong></a></strong></dt>
+
+<dd>
+<p>Normally, Lint only checks the main code of the program together
+with all subs defined in package main. The <strong>-u</strong> option lets you
+include other package names whose subs are then checked by Lint.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="extending_lint">EXTENDING LINT</a></h1>
+<p>Lint can be extended by with plugins. Lint uses <a href="../../lib/Module/Pluggable.html">the Module::Pluggable manpage</a>
+to find available plugins. Plugins are expected but not required to
+inform Lint of which checks they are adding.</p>
+<p>The <code>B::Lint-&gt;register_plugin( MyPlugin =&gt; \@new_checks )</code> method
+adds the list of <code>@new_checks</code> to the list of valid checks. If your
+module wasn't loaded by <a href="../../lib/Module/Pluggable.html">the Module::Pluggable manpage</a> then your class name is
+added to the list of plugins.</p>
+<p>You must create a <code>match( \%checks )</code> method in your plugin class or one
+of its parents. It will be called on every op as a regular method call
+with a hash ref of checks as its parameter.</p>
+<p>The class methods <code>B::Lint-&gt;file</code> and <code>B::Lint-&gt;line</code> contain
+the current filename and line number.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Sample</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">B::Lint</span><span class="operator">;</span>
+  <span class="variable">B::Lint</span><span class="operator">-&gt;</span><span class="variable">register_plugin</span><span class="operator">(</span> <span class="string">Sample</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'good_taste'</span> <span class="operator">]</span> <span class="operator">);</span>
+  
+  <span class="keyword">sub</span><span class="variable"> match </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$op</span><span class="operator">,</span> <span class="variable">$checks_href</span> <span class="operator">)</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$checks_href</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">good_taste</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="operator">...</span>
+      <span class="operator">}</span>
+  <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="todo">TODO</a></h1>
+<dl>
+<dt><strong><a name="while" class="item">while(&lt;FH&gt;) stomps $_</a></strong></dt>
+
+<dt><strong><a name="strict_oo" class="item">strict oo</a></strong></dt>
+
+<dt><strong><a name="unchecked_system_calls" class="item">unchecked system calls</a></strong></dt>
+
+<dt><strong><a name="more_tests_validate_against_older_perls" class="item">more tests, validate against older perls</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>This is only a very preliminary version.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Malcolm Beattie, <a href="mailto:mbeattie@sable.ox.ac.uk.">mbeattie@sable.ox.ac.uk.</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>Sebastien Aperghis-Tramoni - bug fixes</p>
+
+</body>
+
+</html>

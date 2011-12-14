@@ -1,0 +1,186 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../../scineplex.css">
+<title>CPANPLUS::Shell::Default::Plugins::HOWTO -- documentation on how to write your own plugins</title>
+<link rel="stylesheet" href="../../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',5);</script>
+<h1><a>CPANPLUS::Shell::Default::Plugins::HOWTO -- documentation on how to write your own plugins</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#howto">HOWTO</a></li>
+	<ul>
+
+		<li><a href="#registering_plugin_modules">Registering Plugin Modules</a></li>
+		<li><a href="#registering_plugin_commands">Registering Plugin Commands</a></li>
+		<li><a href="#registering_plugin_help">Registering Plugin Help</a></li>
+		<li><a href="#arguments_to_plugin_commands">Arguments to Plugin Commands</a></li>
+	</ul>
+
+	<li><a href="#bug_reports">BUG REPORTS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>CPANPLUS::Shell::Default::Plugins::HOWTO -- documentation on how to write your own plugins</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">package</span> <span class="variable">CPANPLUS::Shell::Default::Plugins::MyPlugin</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment">### return command =&gt; method mapping</span>
+    <span class="keyword">sub</span><span class="variable"> plugins </span><span class="operator">{</span> <span class="operator">(</span> <span class="string">myplugin1</span> <span class="operator">=&gt;</span> <span class="string">'mp1'</span><span class="operator">,</span> <span class="string">myplugin2</span> <span class="operator">=&gt;</span> <span class="string">'mp2'</span> <span class="operator">)</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment">### method called when the command '/myplugin1' is issued</span>
+    <span class="keyword">sub</span><span class="variable"> mp1 </span><span class="operator">{</span> <span class="operator">....</span> <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment">### method called when the command '/? myplugin1' is issued</span>
+    <span class="keyword">sub</span><span class="variable"> mp1_help </span><span class="operator">{</span> <span class="keyword">return</span> <span class="string">"Help Text"</span> <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This pod text explains how to write your own plugins for
+<code>CPANPLUS::Shell::Default</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="howto">HOWTO</a></h1>
+<p>
+</p>
+<h2><a name="registering_plugin_modules">Registering Plugin Modules</a></h2>
+<p>Plugins are detected by using <code>Module::Pluggable</code>. Every module in
+the <code>CPANPLUS::Shell::Default::Plugins::*</code> namespace is considered a
+plugin, and is attempted to be loaded.</p>
+<p>Therefor, any plugin must be declared in that namespace, in a corresponding
+<code>.pm</code> file.</p>
+<p>
+</p>
+<h2><a name="registering_plugin_commands">Registering Plugin Commands</a></h2>
+<p>To register any plugin commands, a list of key value pairs must be returned
+by a <code>plugins</code> method in your package. The keys are the commands you wish
+to register, the values are the methods in the plugin package you wish to have
+called when the command is issued.</p>
+<p>For example, a simple 'Hello, World!' plugin:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">CPANPLUS::Shell::Default::Plugins::HW</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> plugins </span><span class="operator">{</span> <span class="keyword">return</span> <span class="operator">(</span> <span class="string">helloworld</span> <span class="operator">=&gt;</span> <span class="string">'hw'</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> hw </span><span class="operator">{</span> <span class="keyword">print</span> <span class="string">"Hello, world!\n"</span> <span class="operator">}</span>
+</pre>
+<p>When the user in the default shell now issues the <code>/helloworld</code> command,
+this command will be dispatched to the plugin, and its <code>hw</code> method will
+be called</p>
+<p>
+</p>
+<h2><a name="registering_plugin_help">Registering Plugin Help</a></h2>
+<p>To provide usage information for your plugin, the user of the default shell
+can type <code>/? PLUGIN_COMMAND</code>. In that case, the function <code>PLUGIN_COMMAND_help</code>
+will be called in your plugin package.</p>
+<p>For example, extending the above example, when a user calls <code>/? helloworld</code>,
+the function <code>hw_help</code> will be called, which might look like this:</p>
+<pre>
+    sub hw_help { &quot;    /helloworld      # prints &quot;Hello, world!\n&quot; }</pre>
+<p>If you dont provide a corresponding _help function to your commands, the
+default shell will handle it gracefully, but the user will be stuck without
+usage information on your commands, so it's considered undesirable to omit
+the help functions.</p>
+<p>
+</p>
+<h2><a name="arguments_to_plugin_commands">Arguments to Plugin Commands</a></h2>
+<p>Any plugin function will receive the following arguments when called, which
+are all positional:</p>
+<dl>
+<dt><strong><a name="classname_the_name_of_your_plugin_class" class="item">Classname -- The name of your plugin class</a></strong></dt>
+
+<dt><strong><a name="shell_the_cpanplus_shell_default_object" class="item">Shell     -- The CPANPLUS::Shell::Default object</a></strong></dt>
+
+<dt><strong><a name="backend_the_cpanplus_backend_object" class="item">Backend   -- The CPANPLUS::Backend object</a></strong></dt>
+
+<dt><strong><a name="command_the_command_issued_by_the_user" class="item">Command   -- The command issued by the user</a></strong></dt>
+
+<dt><strong><a name="input_the_input_string_from_the_user" class="item">Input     -- The input string from the user</a></strong></dt>
+
+<dt><strong><a name="options_a_hashref_of_options_provided_by_the_user" class="item">Options   -- A hashref of options provided by the user</a></strong></dt>
+
+</dl>
+<p>For example, the following command:</p>
+<pre>
+    /helloworld bob --nofoo --bar=2 joe</pre>
+<p>Would yield the following arguments:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> hw </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$class</span>   <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># CPANPLUS::Shell::Default::Plugins::HW</span>
+        <span class="keyword">my</span> <span class="variable">$shell</span>   <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># CPANPLUS::Shell::Default object</span>
+        <span class="keyword">my</span> <span class="variable">$cb</span>      <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># CPANPLUS::Backend object</span>
+        <span class="keyword">my</span> <span class="variable">$cmd</span>     <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># 'helloworld'</span>
+        <span class="keyword">my</span> <span class="variable">$input</span>   <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># 'bob joe'</span>
+        <span class="keyword">my</span> <span class="variable">$opts</span>    <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>    <span class="comment"># { foo =&gt; 0, bar =&gt; 2 }</span>
+</pre>
+<pre>
+        ....
+    }</pre>
+<p>
+</p>
+<hr />
+<h1><a name="bug_reports">BUG REPORTS</a></h1>
+<p>Please report bugs or other issues to &lt;<a href="mailto:bug-cpanplus@rt.cpan.org<gt>">bug-cpanplus@rt.cpan.org<gt></a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This module by Jos Boumans &lt;<a href="mailto:kane@cpan.org">kane@cpan.org</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>The CPAN++ interface (of which this module is a part of) is copyright (c)
+2001 - 2007, Jos Boumans &lt;<a href="mailto:kane@cpan.org">kane@cpan.org</a>&gt;. All rights reserved.</p>
+<p>This library is free software; you may redistribute and/or modify it
+under the same terms as Perl itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../../../lib/CPANPLUS/Shell/Default.html">the CPANPLUS::Shell::Default manpage</a>, <a href="../../../../../lib/CPANPLUS/Shell.html">the CPANPLUS::Shell manpage</a>, <a href="../../../../../bin/cpanp.html">the cpanp manpage</a></p>
+
+</body>
+
+</html>

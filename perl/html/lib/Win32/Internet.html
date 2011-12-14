@@ -1,0 +1,1678 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Win32::Internet - Access to WININET.DLL functions</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Win32::Internet - Access to WININET.DLL functions</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#introduction">INTRODUCTION</a></li>
+	<li><a href="#reference">REFERENCE</a></li>
+	<ul>
+
+		<li><a href="#general_internet_functions">General Internet Functions</a></li>
+		<li><a href="#ftp_functions">FTP Functions</a></li>
+		<li><a href="#http_functions">HTTP Functions</a></li>
+	</ul>
+
+	<li><a href="#appendix">APPENDIX</a></li>
+	<ul>
+
+		<li><a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a></li>
+		<li><a href="#functions_table">Functions Table</a></li>
+		<li><a href="#constants">Constants</a></li>
+	</ul>
+
+	<li><a href="#version_history">VERSION HISTORY</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+	<li><a href="#disclaimer">DISCLAIMER</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Win32::Internet - Access to WININET.DLL functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="introduction">INTRODUCTION</a></h1>
+<p>This extension to Perl implements the Win32 Internet APIs (found in
+<em class="file">WININET.DLL</em>). They give a complete support for HTTP, FTP and GOPHER
+connections.</p>
+<p>See the <a href="#version_history">Version History</a> and the <a href="#functions_table">Functions Table</a> for a list
+of the currently supported features. You should also get a copy of the
+<a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation.</p>
+<p>
+</p>
+<hr />
+<h1><a name="reference">REFERENCE</a></h1>
+<p>To use this module, first add the following line at the beginning of
+your script:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::Internet</span><span class="operator">;</span>
+</pre>
+<p>Then you have to open an Internet connection with this command:</p>
+<pre>
+    <span class="variable">$Connection</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+</pre>
+<p>This is required to use any of the function of this module.  It will
+create an Internet object in Perl on which you can act upon with the
+<a href="#general_internet_functions">General Internet Functions</a> explained later.</p>
+<p>The objects available are:</p>
+<ul>
+<li>
+<p>Internet connections (the main object, see <code>new</code>)</p>
+</li>
+<li>
+<p>URLs (see <code>OpenURL</code>)</p>
+</li>
+<li>
+<p>FTP sessions (see <code>FTP</code>)</p>
+</li>
+<li>
+<p>HTTP sessions (see <code>HTTP</code>)</p>
+</li>
+<li>
+<p>HTTP requests (see <code>OpenRequest</code>)</p>
+</li>
+</ul>
+<p>As in the good Perl tradition, there are in this extension different
+ways to do the same thing; there are, in fact, different levels of
+implementation of the Win32 Internet Functions.  Some routines use
+several Win32 API functions to perform a complex task in a single
+call; they are simpler to use, but of course less powerful.</p>
+<p>There are then other functions that implement nothing more and nothing
+less than the corresponding API function, so you can use all of their
+power, but with some additional programming steps.</p>
+<p>To make an example, there is a function called <code>FetchURL</code> that you
+can use to fetch the content of any HTTP, FTP or GOPHER URL with this
+simple commands:</p>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FetchURL</span><span class="operator">(</span><span class="string">"http://www.yahoo.com"</span><span class="operator">);</span>
+</pre>
+<p>You can have the same result (and this is actually what is done by
+<code>FetchURL</code>) this way:</p>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="variable">$URL</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">OpenURL</span><span class="operator">(</span><span class="string">"http://www.yahoo.com"</span><span class="operator">);</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">ReadFile</span><span class="operator">();</span>
+    <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+</pre>
+<p>Or, you can open a complete HTTP session:</p>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="variable">$HTTP</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">HTTP</span><span class="operator">(</span><span class="string">"www.yahoo.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada</span><span class="variable">@perl</span><span class="string">.it"</span><span class="operator">);</span>
+    <span class="operator">(</span><span class="variable">$statuscode</span><span class="operator">,</span> <span class="variable">$headers</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Request</span><span class="operator">(</span><span class="string">"/"</span><span class="operator">);</span>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+</pre>
+<p>Finally, you can choose to manage even the HTTP request:</p>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="variable">$HTTP</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">HTTP</span><span class="operator">(</span><span class="string">"www.yahoo.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada</span><span class="variable">@perl</span><span class="string">.it"</span><span class="operator">);</span>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQ</span><span class="operator">,</span> <span class="string">"/"</span><span class="operator">);</span>
+    <span class="variable">$REQ</span><span class="operator">-&gt;</span><span class="variable">AddHeader</span><span class="operator">(</span><span class="string">"If-Modified-Since: Saturday, 16-Nov-96 15:58:50 GMT"</span><span class="operator">);</span>
+    <span class="variable">$REQ</span><span class="operator">-&gt;</span><span class="variable">SendRequest</span><span class="operator">();</span>
+    <span class="variable">$statuscode</span> <span class="operator">=</span> <span class="variable">$REQ</span><span class="operator">-&gt;</span><span class="variable">QueryInfo</span><span class="operator">(</span><span class="string">""</span><span class="operator">,</span><span class="variable">HTTP_QUERY_STATUS_CODE</span><span class="operator">);</span>
+    <span class="variable">$lastmodified</span> <span class="operator">=</span> <span class="variable">$REQ</span><span class="operator">-&gt;</span><span class="variable">QueryInfo</span><span class="operator">(</span><span class="string">"Last-Modified"</span><span class="operator">);</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$REQ</span><span class="operator">-&gt;</span><span class="variable">ReadEntireFile</span><span class="operator">();</span>
+    <span class="variable">$REQ</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+</pre>
+<p>To open and control a complete FTP session, type:</p>
+<pre>
+    <span class="variable">$Connection</span><span class="operator">-&gt;</span><span class="variable">FTP</span><span class="operator">(</span><span class="variable">$Session</span><span class="operator">,</span> <span class="string">"ftp://ftp.activeware.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada\@perl.it"</span><span class="operator">);</span>
+</pre>
+<p>This will create an FTP object in Perl to which you can apply the <a href="#ftp_functions">FTP functions</a> provided by the package:</p>
+<pre>
+    <span class="variable">$Session</span><span class="operator">-&gt;</span><span class="variable">Cd</span><span class="operator">(</span><span class="string">"/ntperl/perl5.001m/CurrentBuild"</span><span class="operator">);</span>
+    <span class="variable">$Session</span><span class="operator">-&gt;</span><span class="variable">Ascii</span><span class="operator">();</span>
+    <span class="variable">$Session</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">"110-i86.zip"</span><span class="operator">);</span>
+    <span class="variable">$Session</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+</pre>
+<p>For a more complete example, see the TEST.PL file that comes with the
+package.</p>
+<p>
+</p>
+<h2><a name="general_internet_functions">General Internet Functions</a></h2>
+<p><strong>General Note</strong></p>
+<p>All methods assume that you have the line:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::Internet</span><span class="operator">;</span>
+</pre>
+<p>somewhere before the method calls, and that you have an Internet
+object called $INET which was created using this call:</p>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+</pre>
+<p>See <code>new</code> for more information.</p>
+<p><strong>Methods</strong></p>
+<dl>
+<dt><strong><a name="canonicalizeurl_url_flags" class="item">CanonicalizeURL URL, [flags]</a></strong></dt>
+
+<dd>
+<p>Converts a URL to a canonical format, which includes converting unsafe
+characters to escape sequences.  Returns the canonicalized URL or
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.  For the possible values of <em>flags</em>, refer to the
+<a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> document.  See also
+<code>CombineURL</code> and <code>OpenURL</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$cURL</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">CanonicalizeURL</span><span class="operator">(</span><span class="variable">$URL</span><span class="operator">);</span>
+    <span class="variable">$URL</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">CanonicalizeURL</span><span class="operator">(</span><span class="variable">$cURL</span><span class="operator">,</span> <span class="variable">ICU_DECODE</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="close2" class="item">Close</a></strong></dt>
+
+<dt><strong><a name="close_object" class="item">Close object</a></strong></dt>
+
+<dd>
+<p>Closes an Internet connection.  This can be applied to any
+Win32::Internet object (Internet connections, URLs, FTP sessions,
+etc.).  Note that it is not &quot;strictly&quot; required to close the
+connections you create, since the Win32::Internet objects are
+automatically closed when the program ends (or when you elsehow
+destroy such an object).</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">(</span><span class="variable">$FTP</span><span class="operator">);</span> <span class="comment"># same as above...</span>
+</pre>
+</dd>
+<dt><strong><a name="combineurl_baseurl_relativeurl_flags" class="item">CombineURL baseURL, relativeURL, [flags]</a></strong></dt>
+
+<dd>
+<p>Combines a base and relative URL into a single URL.  Returns the
+(canonicalized) combined URL or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.  For the possible
+values of <em>flags</em>, refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> document.  See also <code>CombineURL</code> and <code>OpenURL</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$URL</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">CombineURL</span><span class="operator">(</span><span class="string">"http://www.divinf.it/dada/perl/internet"</span><span class="operator">,</span> <span class="string">".."</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="connectbackoff_value" class="item">ConnectBackoff [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the delay value, in milliseconds, to wait between
+connection retries.  If no <em>value</em> parameter is specified, the
+current value is returned; otherwise, the delay between retries is set
+to <em>value</em>.  See also <code>ConnectTimeout</code>, <code>ConnectRetries</code>,
+<code>QueryOption</code> and <code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ConnectBackoff</span><span class="operator">(</span><span class="number">2000</span><span class="operator">);</span>
+    <span class="variable">$backoff</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ConnectBackoff</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="connectretries_value" class="item">ConnectRetries [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the number of times a connection is retried before
+considering it failed.  If no <em>value</em> parameter is specified, the
+current value is returned; otherwise, the number of retries is set to
+<em>value</em>.  The default value for <code>ConnectRetries</code> is 5.  See also
+<code>ConnectBackoff</code>, <code>ConnectTimeout</code>, <code>QueryOption</code> and <code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ConnectRetries</span><span class="operator">(</span><span class="number">20</span><span class="operator">);</span>
+    <span class="variable">$retries</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ConnectRetries</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="connecttimeout_value" class="item">ConnectTimeout [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the timeout value (in milliseconds) before a connection
+is considered failed.  If no <em>value</em> parameter is specified, the
+current value is returned; otherwise, the timeout is set to <em>value</em>.
+The default value for <code>ConnectTimeout</code> is infinite.  See also
+<code>ConnectBackoff</code>, <code>ConnectRetries</code>, <code>QueryOption</code> and <code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ConnectTimeout</span><span class="operator">(</span><span class="number">10000</span><span class="operator">);</span>
+    <span class="variable">$timeout</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ConnectTimeout</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="controlreceivetimeout_value" class="item">ControlReceiveTimeout [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the timeout value (in milliseconds) to use for non-data
+(control) receive requests before they are canceled.  Currently, this
+value has meaning only for <code>FTP</code> sessions.  If no <em>value</em> parameter
+is specified, the current value is returned; otherwise, the timeout is
+set to <em>value</em>.  The default value for <code>ControlReceiveTimeout</code> is
+infinite.  See also <code>ControlSendTimeout</code>, <code>QueryOption</code> and
+<code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ControlReceiveTimeout</span><span class="operator">(</span><span class="number">10000</span><span class="operator">);</span>
+    <span class="variable">$timeout</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ControlReceiveTimeout</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="controlsendtimeout_value" class="item">ControlSendTimeout [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the timeout value (in milliseconds) to use for non-data
+(control) send requests before they are canceled.  Currently, this
+value has meaning only for <code>FTP</code> sessions.  If no <em>value</em> parameter
+is specified, the current value is returned; otherwise, the timeout is
+set to <em>value</em>.  The default value for <code>ControlSendTimeout</code> is
+infinite.  See also <code>ControlReceiveTimeout</code>, <code>QueryOption</code> and
+<code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ControlSendTimeout</span><span class="operator">(</span><span class="number">10000</span><span class="operator">);</span>
+    <span class="variable">$timeout</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">ControlSendTimeout</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="crackurl_url_flags" class="item">CrackURL URL, [flags]</a></strong></dt>
+
+<dd>
+<p>Splits an URL into its component parts and returns them in an array.
+Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors, otherwise the array will contain the
+following values: <em>scheme, host, port, username, password, path,
+extrainfo</em>.</p>
+<p>For example, the URL &quot;http://www.divinf.it/index.html#top&quot; can be
+splitted in:</p>
+<pre>
+    http, www.divinf.it, 80, anonymous, dada@perl.it, /index.html, #top</pre>
+<p>If you don't specify a <em>flags</em> parameter, ICU_ESCAPE will be used by
+default; for the possible values of <em>flags</em> refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation.  See also <code>CreateURL</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">@parts</span><span class="operator">=</span><span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">CrackURL</span><span class="operator">(</span><span class="string">"http://www.activeware.com"</span><span class="operator">);</span>
+    <span class="operator">(</span><span class="variable">$scheme</span><span class="operator">,</span> <span class="variable">$host</span><span class="operator">,</span> <span class="variable">$port</span><span class="operator">,</span> <span class="variable">$user</span><span class="operator">,</span> <span class="variable">$pass</span><span class="operator">,</span> <span class="variable">$path</span><span class="operator">,</span> <span class="variable">$extra</span><span class="operator">)</span> <span class="operator">=</span>
+         <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">CrackURL</span><span class="operator">(</span><span class="string">"http://www.divinf.it:80/perl-win32/index.sht#feedback"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="createurl_scheme_hostname_port_username_password_path_extrainfo_flags" class="item">CreateURL scheme, hostname, port, username, password, path, extrainfo, [flags]</a></strong></dt>
+
+<dt><strong><a name="createurl_hashref_flags" class="item">CreateURL hashref, [flags]</a></strong></dt>
+
+<dd>
+<p>Creates a URL from its component parts.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors,
+otherwise the created URL.</p>
+<p>If you pass <em>hashref</em> (a reference to an hash array), the following
+values are taken from the array:</p>
+<pre>
+    <span class="variable">%hash</span><span class="operator">=(</span>
+      <span class="string">"scheme"</span>    <span class="operator">=&gt;</span> <span class="string">"scheme"</span><span class="operator">,</span>
+      <span class="string">"hostname"</span>  <span class="operator">=&gt;</span> <span class="string">"hostname"</span><span class="operator">,</span>
+      <span class="string">"port"</span>      <span class="operator">=&gt;</span> <span class="variable">port</span><span class="operator">,</span>
+      <span class="string">"username"</span>  <span class="operator">=&gt;</span> <span class="string">"username"</span><span class="operator">,</span>
+      <span class="string">"password"</span>  <span class="operator">=&gt;</span> <span class="string">"password"</span><span class="operator">,</span>
+      <span class="string">"path"</span>      <span class="operator">=&gt;</span> <span class="string">"path"</span><span class="operator">,</span>
+      <span class="string">"extrainfo"</span> <span class="operator">=&gt;</span> <span class="string">"extrainfo"</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>If you don't specify a <em>flags</em> parameter, ICU_ESCAPE will be used by
+default; for the other possible values of <em>flags</em> refer to the
+<a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation.  See also
+<code>CrackURL</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$URL</span><span class="operator">=</span><span class="variable">$I</span><span class="operator">-&gt;</span><span class="variable">CreateURL</span><span class="operator">(</span><span class="string">"http"</span><span class="operator">,</span> <span class="string">"www.divinf.it"</span><span class="operator">,</span> <span class="number">80</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="string">""</span><span class="operator">,</span> <span class="string">"/perl-win32/index.sht"</span><span class="operator">,</span> <span class="string">"#feedback"</span><span class="operator">);</span>
+    <span class="variable">$URL</span><span class="operator">=</span><span class="variable">$I</span><span class="operator">-&gt;</span><span class="variable">CreateURL</span><span class="operator">(\</span><span class="variable">%params</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="datareceivetimeout_value" class="item">DataReceiveTimeout [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the timeout value (in milliseconds) to use for data
+receive requests before they are canceled.  If no <em>value</em> parameter
+is specified, the current value is returned; otherwise, the timeout is
+set to <em>value</em>.  The default value for DataReceiveTimeout is
+infinite.  See also <code>DataSendTimeout</code>, <code>QueryOption</code> and
+<code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">DataReceiveTimeout</span><span class="operator">(</span><span class="number">10000</span><span class="operator">);</span>
+    <span class="variable">$timeout</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">DataReceiveTimeout</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="datasendtimeout_value" class="item">DataSendTimeout [value]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the timeout value (in milliseconds) to use for data send
+requests before they are canceled.  If no <em>value</em> parameter is
+specified, the current value is returned; otherwise, the timeout is
+set to <em>value</em>.  The default value for DataSendTimeout is infinite.
+See also <code>DataReceiveTimeout</code>, <code>QueryOption</code> and <code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">DataSendTimeout</span><span class="operator">(</span><span class="number">10000</span><span class="operator">);</span>
+    <span class="variable">$timeout</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">DataSendTimeout</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="error2" class="item">Error</a></strong></dt>
+
+<dd>
+<p>Returns the last recorded error in the form of an array or string
+(depending upon the context) containing the error number and an error
+description.  Can be applied on any Win32::Internet object (FTP
+sessions, etc.).  There are 3 types of error you can encounter; they
+are recognizable by the error number returned:</p>
+<ul>
+<li><strong><a name="118" class="item">-1</a></strong>
+
+<p>A &quot;trivial&quot; error has occurred in the package.  For example, you tried
+to use a method on the wrong type of object.</p>
+</li>
+<li><strong><a name="1_11999" class="item">1 .. 11999</a></strong>
+
+<p>A generic error has occurred and the Win32::GetLastError error message
+is returned.</p>
+</li>
+<li><strong><a name="12000_and_higher" class="item">12000 and higher</a></strong>
+
+<p>An Internet error has occurred; the extended Win32 Internet API error
+message is returned.</p>
+</li>
+</ul>
+<p>See also <a href="#getresponse"><code>GetResponse</code></a>.</p>
+<p>Example:</p>
+<pre>
+    <span class="keyword">die</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Error</span><span class="operator">(),</span> <span class="string">qq(\n)</span><span class="operator">;</span>
+    <span class="operator">(</span><span class="variable">$ErrNum</span><span class="operator">,</span> <span class="variable">$ErrText</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Error</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="fetchurl_url" class="item">FetchURL URL</a></strong></dt>
+
+<dd>
+<p>Fetch the content of an HTTP, FTP or GOPHER URL.  Returns the content
+of the file read (or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if there was an error and nothing was
+read).  See also <code>OpenURL</code> and <code>ReadFile</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FetchURL</span><span class="operator">(</span><span class="string">"http://www.yahoo.com/"</span><span class="operator">);</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FetchURL</span><span class="operator">(</span><span class="string">"ftp://www.activeware.com/contrib/internet.zip"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="ftp_ftpobject_server_username_password_port_pasv_context" class="item">FTP ftpobject, server, username, password, [port, pasv, context]</a></strong></dt>
+
+<dt><strong><a name="ftp_ftpobject_hashref" class="item">FTP ftpobject, hashref</a></strong></dt>
+
+<dd>
+<p>Opens an FTP connection to server logging in with the given
+<em>username</em> and <em>password</em>.</p>
+<p>The parameters and their values are:</p>
+<ul>
+<li><strong><a name="server" class="item">server</a></strong>
+
+<p>The server to connect to.  Default: <em>none</em>.</p>
+</li>
+<li><strong><a name="username" class="item">username</a></strong>
+
+<p>The username used to login to the server.  Default: anonymous.</p>
+</li>
+<li><strong><a name="password" class="item">password</a></strong>
+
+<p>The password used to login to the server.  Default: <em>none</em>.</p>
+</li>
+<li><strong><a name="port" class="item">port</a></strong>
+
+<p>The port of the FTP service on the server.  Default: 21.</p>
+</li>
+<li><strong><a name="pasv" class="item">pasv</a></strong>
+
+<p>If it is a value other than 0, use passive transfer mode.  Default is
+taken from the parent Internet connection object; you can set this
+value with the <code>Pasv</code> method.</p>
+</li>
+<li><strong><a name="context" class="item">context</a></strong>
+
+<p>A number to identify this operation if it is asynchronous.  See
+<a href="#setstatuscallback"><code>SetStatusCallback</code></a> and <code>GetStatusCallback</code> for more info on
+asynchronous operations.  Default: <em>none</em>.</p>
+</li>
+</ul>
+<p>If you pass <em>hashref</em> (a reference to an hash array), the following
+values are taken from the array:</p>
+<pre>
+    <span class="variable">%hash</span><span class="operator">=(</span>
+      <span class="string">"server"</span>   <span class="operator">=&gt;</span> <span class="string">"server"</span><span class="operator">,</span>
+      <span class="string">"username"</span> <span class="operator">=&gt;</span> <span class="string">"username"</span><span class="operator">,</span>
+      <span class="string">"password"</span> <span class="operator">=&gt;</span> <span class="string">"password"</span><span class="operator">,</span>
+      <span class="string">"port"</span>     <span class="operator">=&gt;</span> <span class="variable">port</span><span class="operator">,</span>
+      <span class="string">"pasv"</span>     <span class="operator">=&gt;</span> <span class="variable">pasv</span><span class="operator">,</span>
+      <span class="string">"context"</span>  <span class="operator">=&gt;</span> <span class="variable">context</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>This method returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if the connection failed, a number
+otherwise.  You can then call any of the <a href="#ftp_functions">FTP functions</a> as methods
+of the newly created <em>ftpobject</em>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FTP</span><span class="operator">(</span><span class="variable">$FTP</span><span class="operator">,</span> <span class="string">"ftp.activeware.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada\@perl.it"</span><span class="operator">);</span>
+    <span class="comment"># and then for example...</span>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Cd</span><span class="operator">(</span><span class="string">"/ntperl/perl5.001m/CurrentBuild"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"server"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"ftp.activeware.com"</span><span class="operator">;</span>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"password"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"dada\@perl.it"</span><span class="operator">;</span>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"pasv"</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FTP</span><span class="operator">(</span><span class="variable">$FTP</span><span class="operator">,\</span><span class="variable">%params</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="getresponse" class="item">GetResponse</a></strong></dt>
+
+<dd>
+<p>Returns the text sent by a remote server in response to the last
+function executed.  It applies on any Win32::Internet object,
+particularly of course on <a href="#ftp_functions">FTP sessions</a>.  See also
+the <a href="#error"><code>Error</code></a> function.</p>
+<p>Example:</p>
+<pre>
+    <span class="keyword">print</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">GetResponse</span><span class="operator">();</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FTP</span><span class="operator">(</span><span class="variable">$FTP</span><span class="operator">,</span> <span class="string">"ftp.activeware.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada\@perl.it"</span><span class="operator">);</span>
+    <span class="keyword">print</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">GetResponse</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="getstatuscallback_context" class="item">GetStatusCallback context</a></strong></dt>
+
+<dd>
+<p>Returns information about the progress of the asynchronous operation
+identified by <em>context</em>; those informations consist of two values: a
+status code (one of the INTERNET_STATUS_* <a href="#constants">Constants</a>) and an
+additional value depending on the status code; for example, if the
+status code returned is INTERNET_STATUS_HANDLE_CREATED, the second
+value will hold the handle just created.  For more informations on
+those values, please refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation.  See also <a href="#setstatuscallback"><code>SetStatusCallback</code></a>.</p>
+<p>Example:</p>
+<pre>
+    <span class="operator">(</span><span class="variable">$status</span><span class="operator">,</span> <span class="variable">$info</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">GetStatusCallback</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="http_httpobject_server_username_password_port_flags_context" class="item">HTTP httpobject, server, username, password, [port, flags, context]</a></strong></dt>
+
+<dt><strong><a name="http_httpobject_hashref" class="item">HTTP httpobject, hashref</a></strong></dt>
+
+<dd>
+<p>Opens an HTTP connection to <em>server</em> logging in with the given
+<em>username</em> and <em>password</em>.</p>
+<p>The parameters and their values are:</p>
+<ul>
+<li><strong>server</strong>
+
+<p>The server to connect to.  Default: <em>none</em>.</p>
+</li>
+<li><strong>username</strong>
+
+<p>The username used to login to the server.  Default: anonymous.</p>
+</li>
+<li><strong>password</strong>
+
+<p>The password used to login to the server.  Default: <em>none</em>.</p>
+</li>
+<li><strong>port</strong>
+
+<p>The port of the HTTP service on the server.  Default: 80.</p>
+</li>
+<li><strong><a name="flags" class="item">flags</a></strong>
+
+<p>Additional flags affecting the behavior of the function.  Default:
+<em>none</em>.</p>
+</li>
+<li><strong>context</strong>
+
+<p>A number to identify this operation if it is asynchronous.  See
+<a href="#setstatuscallback"><code>SetStatusCallback</code></a> and <code>GetStatusCallback</code> for more info on
+asynchronous operations.  Default: <em>none</em>.</p>
+</li>
+</ul>
+<p>Refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation for
+more details on those parameters.</p>
+<p>If you pass <em>hashref</em> (a reference to an hash array), the following
+values are taken from the array:</p>
+<pre>
+    <span class="variable">%hash</span><span class="operator">=(</span>
+      <span class="string">"server"</span>   <span class="operator">=&gt;</span> <span class="string">"server"</span><span class="operator">,</span>
+      <span class="string">"username"</span> <span class="operator">=&gt;</span> <span class="string">"username"</span><span class="operator">,</span>
+      <span class="string">"password"</span> <span class="operator">=&gt;</span> <span class="string">"password"</span><span class="operator">,</span>
+      <span class="string">"port"</span>     <span class="operator">=&gt;</span> <span class="variable">port</span><span class="operator">,</span>
+      <span class="string">"flags"</span>    <span class="operator">=&gt;</span> <span class="variable">flags</span><span class="operator">,</span>
+      <span class="string">"context"</span>  <span class="operator">=&gt;</span> <span class="variable">context</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>This method returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if the connection failed, a number
+otherwise.  You can then call any of the <a href="#http_functions">HTTP functions</a> as
+methods of the newly created <em>httpobject</em>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">HTTP</span><span class="operator">(</span><span class="variable">$HTTP</span><span class="operator">,</span><span class="string">"www.activeware.com"</span><span class="operator">,</span><span class="string">"anonymous"</span><span class="operator">,</span><span class="string">"dada\@perl.it"</span><span class="operator">);</span>
+    <span class="comment"># and then for example...</span>
+    <span class="operator">(</span><span class="variable">$statuscode</span><span class="operator">,</span> <span class="variable">$headers</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Request</span><span class="operator">(</span><span class="string">"/gifs/camel.gif"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"server"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"www.activeware.com"</span><span class="operator">;</span>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"password"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"dada\@perl.it"</span><span class="operator">;</span>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"flags"</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">INTERNET_FLAG_RELOAD</span><span class="operator">;</span>
+    <span class="variable">$result</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">HTTP</span><span class="operator">(</span><span class="variable">$HTTP</span><span class="operator">,\</span><span class="variable">%params</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="new_win32_internet_useragent_opentype_proxy_proxybypass_flags" class="item">new Win32::Internet [useragent, opentype, proxy, proxybypass, flags]</a></strong></dt>
+
+<dt><strong><a name="new_win32_internet_hashref" class="item">new Win32::Internet [hashref]</a></strong></dt>
+
+<dd>
+<p>Creates a new Internet object and initializes the use of the Internet
+functions; this is required before any of the functions of this
+package can be used.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if the connection fails, a number
+otherwise.  The parameters and their values are:</p>
+<ul>
+<li><strong><a name="useragent" class="item">useragent</a></strong>
+
+<p>The user agent passed to HTTP requests.  See <code>OpenRequest</code>.  Default:
+Perl-Win32::Internet/<em>version</em>.</p>
+</li>
+<li><strong><a name="opentype" class="item">opentype</a></strong>
+
+<p>How to access to the Internet (eg. directly or using a proxy).
+Default: INTERNET_OPEN_TYPE_DIRECT.</p>
+</li>
+<li><strong><a name="proxy" class="item">proxy</a></strong>
+
+<p>Name of the proxy server (or servers) to use.  Default: <em>none</em>.</p>
+</li>
+<li><strong><a name="proxybypass" class="item">proxybypass</a></strong>
+
+<p>Optional list of host names or IP addresses, or both, that are known
+locally.  Default: <em>none</em>.</p>
+</li>
+<li><strong>flags</strong>
+
+<p>Additional flags affecting the behavior of the function.  Default:
+<em>none</em>.</p>
+</li>
+</ul>
+<p>Refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation for
+more details on those parameters.  If you pass <em>hashref</em> (a reference to
+an hash array), the following values are taken from the array:</p>
+<pre>
+    <span class="variable">%hash</span><span class="operator">=(</span>
+      <span class="string">"useragent"</span>   <span class="operator">=&gt;</span> <span class="string">"useragent"</span><span class="operator">,</span>
+      <span class="string">"opentype"</span>    <span class="operator">=&gt;</span> <span class="string">"opentype"</span><span class="operator">,</span>
+      <span class="string">"proxy"</span>       <span class="operator">=&gt;</span> <span class="string">"proxy"</span><span class="operator">,</span>
+      <span class="string">"proxybypass"</span> <span class="operator">=&gt;</span> <span class="string">"proxybypass"</span><span class="operator">,</span>
+      <span class="string">"flags"</span>       <span class="operator">=&gt;</span> <span class="variable">flags</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="keyword">die</span> <span class="string">qq(Cannot connect to Internet...\n)</span> <span class="keyword">if</span> <span class="operator">!</span> <span class="variable">$INET</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">(</span><span class="string">"Mozilla/3.0"</span><span class="operator">,</span> <span class="variable">INTERNET_OPEN_TYPE_PROXY</span><span class="operator">,</span> <span class="string">"www.microsoft.com"</span><span class="operator">,</span> <span class="string">""</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"flags"</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">INTERNET_FLAG_ASYNC</span><span class="operator">;</span>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">(\</span><span class="variable">%params</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="openurl_urlobject_url" class="item">OpenURL urlobject, URL</a></strong></dt>
+
+<dd>
+<p>Opens a connection to an HTTP, FTP or GOPHER Uniform Resource Location
+(URL).  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors or a number if the connection was
+succesful.  You can then retrieve the URL content by applying the
+methods <a href="#querydataavailable"><code>QueryDataAvailable</code></a> and <code>ReadFile</code> on the newly created
+<em>urlobject</em>.  See also <code>FetchURL</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">OpenURL</span><span class="operator">(</span><span class="variable">$URL</span><span class="operator">,</span> <span class="string">"http://www.yahoo.com/"</span><span class="operator">);</span>
+    <span class="variable">$bytes</span> <span class="operator">=</span> <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">QueryDataAvailable</span><span class="operator">();</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">ReadEntireFile</span><span class="operator">();</span>
+    <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">Close</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="password_password" class="item">Password [password]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the password used for an <code>FTP</code> or <code>HTTP</code> connection.
+If no <em>password</em> parameter is specified, the current value is
+returned; otherwise, the password is set to <em>password</em>.  See also
+<code>Username</code>, <code>QueryOption</code> and <code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Password</span><span class="operator">(</span><span class="string">"splurfgnagbxam"</span><span class="operator">);</span>
+    <span class="variable">$password</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Password</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="querydataavailable" class="item">QueryDataAvailable</a></strong></dt>
+
+<dd>
+<p>Returns the number of bytes of data that are available to be read
+immediately by a subsequent call to <code>ReadFile</code> (or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on
+errors).  Can be applied to URL or HTTP request objects.  See
+<code>OpenURL</code> or <code>OpenRequest</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">OpenURL</span><span class="operator">(</span><span class="variable">$URL</span><span class="operator">,</span> <span class="string">"http://www.yahoo.com/"</span><span class="operator">);</span>
+    <span class="variable">$bytes</span> <span class="operator">=</span> <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">QueryDataAvailable</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="queryoption_option" class="item">QueryOption option</a></strong></dt>
+
+<dd>
+<p>Queries an Internet option.  For the possible values of <em>option</em>,
+refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> document.  See
+also <code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$value</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">QueryOption</span><span class="operator">(</span><span class="variable">INTERNET_OPTION_CONNECT_TIMEOUT</span><span class="operator">);</span>
+    <span class="variable">$value</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">QueryOption</span><span class="operator">(</span><span class="variable">INTERNET_OPTION_USERNAME</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="readentirefile" class="item">ReadEntireFile</a></strong></dt>
+
+<dd>
+<p>Reads all the data available from an opened URL or HTTP request
+object.  Returns what have been read or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.  See also
+<code>OpenURL</code>, <code>OpenRequest</code> and <code>ReadFile</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">OpenURL</span><span class="operator">(</span><span class="variable">$URL</span><span class="operator">,</span> <span class="string">"http://www.yahoo.com/"</span><span class="operator">);</span>
+    <span class="variable">$file</span> <span class="operator">=</span> <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">ReadEntireFile</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="readfile_bytes" class="item">ReadFile bytes</a></strong></dt>
+
+<dd>
+<p>Reads <em>bytes</em> bytes of data from an opened URL or HTTP request
+object.  Returns what have been read or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.  See also
+<code>OpenURL</code>, <code>OpenRequest</code>, <a href="#querydataavailable"><code>QueryDataAvailable</code></a> and
+<a href="#readentirefile"><code>ReadEntireFile</code></a>.</p>
+<p><strong>Note:</strong> be careful to keep <em>bytes</em> to an acceptable value (eg.  don't
+tell him to swallow megabytes at once...).  <a href="#readentirefile"><code>ReadEntireFile</code></a> in fact
+uses <a href="#querydataavailable"><code>QueryDataAvailable</code></a> and <code>ReadFile</code> in a loop to read no more
+than 16k at a time.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">OpenURL</span><span class="operator">(</span><span class="variable">$URL</span><span class="operator">,</span> <span class="string">"http://www.yahoo.com/"</span><span class="operator">);</span>
+    <span class="variable">$chunk</span> <span class="operator">=</span> <span class="variable">$URL</span><span class="operator">-&gt;</span><span class="variable">ReadFile</span><span class="operator">(</span><span class="number">16000</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="setoption_option_value" class="item">SetOption option, value</a></strong></dt>
+
+<dd>
+<p>Sets an Internet option.  For the possible values of <em>option</em>, refer to
+the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> document.  See also
+<code>QueryOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">SetOption</span><span class="operator">(</span><span class="variable">INTERNET_OPTION_CONNECT_TIMEOUT</span><span class="operator">,</span><span class="number">10000</span><span class="operator">);</span>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">SetOption</span><span class="operator">(</span><span class="variable">INTERNET_OPTION_USERNAME</span><span class="operator">,</span><span class="string">"dada"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="setstatuscallback" class="item">SetStatusCallback</a></strong></dt>
+
+<dd>
+<p>Initializes the callback routine used to return data about the
+progress of an asynchronous operation.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">SetStatusCallback</span><span class="operator">();</span>
+</pre>
+<p>This is one of the step required to perform asynchronous operations;
+the complete procedure is:</p>
+<pre>
+    <span class="comment"># use the INTERNET_FLAG_ASYNC when initializing</span>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">'flags'</span><span class="operator">}</span><span class="operator">=</span><span class="variable">INTERNET_FLAG_ASYNC</span><span class="operator">;</span>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">(\</span><span class="variable">%params</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># initialize the callback routine</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">SetStatusCallback</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># specify the context parameter (the last 1 in this case)</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">HTTP</span><span class="operator">(</span><span class="variable">$HTTP</span><span class="operator">,</span> <span class="string">"www.yahoo.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada\@perl.it"</span><span class="operator">,</span> <span class="number">80</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>At this point, control returns immediately to Perl and $INET-&gt;<a href="#error"><code>Error()</code></a>
+will return 997, which means an asynchronous I/O operation is
+pending.  Now, you can call</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">GetStatusCallback</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>in a loop to verify what's happening; see also <code>GetStatusCallback</code>.</p>
+</dd>
+<dt><strong><a name="timeconvert_time" class="item">TimeConvert time</a></strong></dt>
+
+<dt><strong><a name="timeconvert_seconds_minute_hours_day_month_year_day_of_week_rfc" class="item">TimeConvert seconds, minute, hours, day, month, year,
+                  day_of_week, RFC</a></strong></dt>
+
+<dd>
+<p>The first form takes a HTTP date/time string and returns the date/time
+converted in the following array: <em>seconds, minute, hours, day,
+month, year, day_of_week</em>.</p>
+<p>The second form does the opposite (or at least it should, because
+actually seems to be malfunctioning): it takes the values and returns
+an HTTP date/time string, in the RFC format specified by the <em>RFC</em>
+parameter (OK, I didn't find yet any accepted value in the range
+0..2000, let me know if you have more luck with it).</p>
+<p>Example:</p>
+<pre>
+    <span class="operator">(</span><span class="variable">$sec</span><span class="operator">,</span> <span class="variable">$min</span><span class="operator">,</span> <span class="variable">$hour</span><span class="operator">,</span> <span class="variable">$day</span><span class="operator">,</span> <span class="variable">$mday</span><span class="operator">,</span> <span class="variable">$year</span><span class="operator">,</span> <span class="variable">$wday</span><span class="operator">)</span> <span class="operator">=</span>
+       <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">TimeConvert</span><span class="operator">(</span><span class="string">"Sun, 26 Jan 1997 20:01:52 GMT"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># the opposite DOESN'T WORK! which value should $RFC have???</span>
+    <span class="variable">$time</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">TimeConvert</span><span class="operator">(</span><span class="number">52</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">20</span><span class="operator">,</span> <span class="number">26</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="number">1997</span><span class="operator">,</span> <span class="number">0</span><span class="operator">,</span> <span class="variable">$RFC</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="useragent_name" class="item">UserAgent [name]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the user agent used for HTTP requests.  If no <em>name</em>
+parameter is specified, the current value is returned; otherwise, the
+user agent is set to <em>name</em>.  See also <code>QueryOption</code> and
+<code>SetOption</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">UserAgent</span><span class="operator">(</span><span class="string">"Mozilla/3.0"</span><span class="operator">);</span>
+    <span class="variable">$useragent</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">UserAgent</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="username_name" class="item">Username [name]</a></strong></dt>
+
+<dd>
+<p>Reads or sets the username used for an <code>FTP</code> or <code>HTTP</code> connection.
+If no <em>name</em> parameter is specified, the current value is returned;
+otherwise, the username is set to <em>name</em>.  See also <code>Password</code>,
+<code>QueryOption</code> and SetOption.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Username</span><span class="operator">(</span><span class="string">"dada"</span><span class="operator">);</span>
+    <span class="variable">$username</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Username</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="version2" class="item">Version</a></strong></dt>
+
+<dd>
+<p>Returns the version numbers for the Win32::Internet package and the
+WININET.DLL version, as an array or string, depending on the context.
+The string returned will contain &quot;package_version/DLL_version&quot;, while
+the array will contain: &quot;package_version&quot;, &quot;DLL_version&quot;.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$version</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Version</span><span class="operator">();</span> <span class="comment"># should return "0.06/4.70.1215"</span>
+    <span class="variable">@version</span> <span class="operator">=</span> <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Version</span><span class="operator">();</span> <span class="comment"># should return ("0.06", "4.70.1215")</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="ftp_functions">FTP Functions</a></h2>
+<p><strong>General Note</strong></p>
+<p>All methods assume that you have the following lines:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::Internet</span><span class="operator">;</span>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FTP</span><span class="operator">(</span><span class="variable">$FTP</span><span class="operator">,</span> <span class="string">"hostname"</span><span class="operator">,</span> <span class="string">"username"</span><span class="operator">,</span> <span class="string">"password"</span><span class="operator">);</span>
+</pre>
+<p>somewhere before the method calls; in other words, we assume that you
+have an Internet object called $INET and an open FTP session called
+$FTP.</p>
+<p>See <code>new</code> and <code>FTP</code> for more information.</p>
+<p><strong>Methods</strong></p>
+<dl>
+<dt><strong><a name="ascii" class="item">Ascii</a></strong></dt>
+
+<dt><strong><a name="asc" class="item">Asc</a></strong></dt>
+
+<dd>
+<p>Sets the ASCII transfer mode for this FTP session.  It will be applied
+to the subsequent <code>Get</code> functions.  See also the <a href="#binary"><code>Binary</code></a> and
+<code>Mode</code> function.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Ascii</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="binary" class="item">Binary</a></strong></dt>
+
+<dt><strong><a name="bin" class="item">Bin</a></strong></dt>
+
+<dd>
+<p>Sets the binary transfer mode for this FTP session.  It will be
+applied to the subsequent <code>Get</code> functions.  See also the <a href="#ascii"><code>Ascii</code></a> and
+<code>Mode</code> function.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Binary</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="cd_path" class="item">Cd path</a></strong></dt>
+
+<dt><strong><a name="cwd_path" class="item">Cwd path</a></strong></dt>
+
+<dt><strong><a name="chdir_path" class="item">Chdir path</a></strong></dt>
+
+<dd>
+<p>Changes the current directory on the FTP remote host.  Returns <em>path</em>
+or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Cd</span><span class="operator">(</span><span class="string">"/pub"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="delete_file" class="item">Delete file</a></strong></dt>
+
+<dt><strong><a name="del_file" class="item">Del file</a></strong></dt>
+
+<dd>
+<p>Deletes a file on the FTP remote host.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Delete</span><span class="operator">(</span><span class="string">"110-i86.zip"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="get_remote_local_overwrite_flags_context" class="item">Get remote, [local, overwrite, flags, context]</a></strong></dt>
+
+<dd>
+<p>Gets the <em>remote</em> FTP file and saves it locally in <em>local</em>.  If
+<em>local</em> is not specified, it will be the same name as <em>remote</em>.
+Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.  The parameters and their values are:</p>
+<ul>
+<li><strong><a name="remote" class="item">remote</a></strong>
+
+<p>The name of the remote file on the FTP server.  Default: <em>none</em>.</p>
+</li>
+<li><strong><a name="local" class="item">local</a></strong>
+
+<p>The name of the local file to create.  Default: remote.</p>
+</li>
+<li><strong><a name="overwrite" class="item">overwrite</a></strong>
+
+<p>If 0, overwrites <em>local</em> if it exists; with any other value, the
+function fails if the <em>local</em> file already exists.  Default: 0.</p>
+</li>
+<li><strong>flags</strong>
+
+<p>Additional flags affecting the behavior of the function.  Default:
+<em>none</em>.</p>
+</li>
+<li><strong>context</strong>
+
+<p>A number to identify this operation if it is asynchronous.  See
+<a href="#setstatuscallback"><code>SetStatusCallback</code></a> and <code>GetStatusCallback</code> for more info on
+asynchronous operations.  Default: <em>none</em>.</p>
+</li>
+</ul>
+<p>Refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation for
+more details on those parameters.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">"110-i86.zip"</span><span class="operator">);</span>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">"/pub/perl/languages/CPAN/00index.html"</span><span class="operator">,</span> <span class="string">"CPAN_index.html"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="list_pattern_listmode" class="item">List [pattern, listmode]</a></strong></dt>
+
+<dt><strong><a name="ls_pattern_listmode" class="item">Ls [pattern, listmode]</a></strong></dt>
+
+<dt><strong><a name="dir_pattern_listmode" class="item">Dir [pattern, listmode]</a></strong></dt>
+
+<dd>
+<p>Returns a list containing the files found in this directory,
+eventually matching the given <em>pattern</em> (which, if omitted, is
+considered &quot;*.*&quot;).  The content of the returned list depends on the
+<em>listmode</em> parameter, which can have the following values:</p>
+<ul>
+<li><strong><a name="1" class="item">listmode=1 (or omitted)</a></strong>
+
+<p>the list contains the names of the files found.  Example:</p>
+<pre>
+    <span class="variable">@files</span> <span class="operator">=</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">List</span><span class="operator">();</span>
+    <span class="variable">@textfiles</span> <span class="operator">=</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">List</span><span class="operator">(</span><span class="string">"*.txt"</span><span class="operator">);</span>
+    <span class="keyword">foreach</span> <span class="variable">$file</span> <span class="operator">(</span><span class="variable">@textfiles</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"Name: "</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</li>
+<li><strong><a name="listmode_2" class="item">listmode=2</a></strong>
+
+<p>the list contains 7 values for each file, which respectively are:</p>
+<ul>
+<li><strong><a name="the_file_name" class="item">the file name</a></strong>
+
+</li>
+<li><strong><a name="the_dos_short_file_name_aka_8_3" class="item">the DOS short file name, aka 8.3</a></strong>
+
+</li>
+<li><strong><a name="the_size" class="item">the size</a></strong>
+
+</li>
+<li><strong><a name="the_attributes" class="item">the attributes</a></strong>
+
+</li>
+<li><strong><a name="the_creation_time" class="item">the creation time</a></strong>
+
+</li>
+<li><strong><a name="the_last_access_time" class="item">the last access time</a></strong>
+
+</li>
+<li><strong><a name="the_last_modified_time" class="item">the last modified time</a></strong>
+
+</li>
+</ul>
+<p>Example:</p>
+<pre>
+    <span class="variable">@files</span> <span class="operator">=</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">List</span><span class="operator">(</span><span class="string">"*.*"</span><span class="operator">,</span> <span class="number">2</span><span class="operator">);</span>
+    <span class="keyword">for</span><span class="operator">(</span><span class="variable">$i</span><span class="operator">=</span><span class="number">0</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">&lt;=</span><span class="variable">$#files</span><span class="operator">;</span> <span class="variable">$i</span><span class="operator">+=</span><span class="number">7</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="string">"Name: "</span><span class="operator">,</span> <span class="variable">@files</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">]</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+      <span class="keyword">print</span> <span class="string">"Size: "</span><span class="operator">,</span> <span class="variable">@files</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">+</span><span class="number">2</span><span class="operator">]</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+      <span class="keyword">print</span> <span class="string">"Attr: "</span><span class="operator">,</span> <span class="variable">@files</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">+</span><span class="number">3</span><span class="operator">]</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+</li>
+<li><strong><a name="listmode_3" class="item">listmode=3</a></strong>
+
+<p>the list contains a reference to an hash array for each found file;
+each hash contains:</p>
+<ul>
+<li><strong><a name="name_the_file_name" class="item">name =&gt; the file name</a></strong>
+
+</li>
+<li><strong><a name="altname_the_dos_short_file_name_aka_8_3" class="item">altname =&gt; the DOS short file name, aka 8.3</a></strong>
+
+</li>
+<li><strong><a name="size_the_size" class="item">size =&gt; the size</a></strong>
+
+</li>
+<li><strong><a name="attr_the_attributes" class="item">attr =&gt; the attributes</a></strong>
+
+</li>
+<li><strong><a name="ctime_the_creation_time" class="item">ctime =&gt; the creation time</a></strong>
+
+</li>
+<li><strong><a name="atime_the_last_access_time" class="item">atime =&gt; the last access time</a></strong>
+
+</li>
+<li><strong><a name="mtime_the_last_modified_time" class="item">mtime =&gt; the last modified time</a></strong>
+
+</li>
+</ul>
+<p>Example:</p>
+<pre>
+    <span class="variable">@files</span> <span class="operator">=</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">List</span><span class="operator">(</span><span class="string">"*.*"</span><span class="operator">,</span> <span class="number">3</span><span class="operator">);</span>
+    <span class="keyword">foreach</span> <span class="variable">$file</span> <span class="operator">(</span><span class="variable">@files</span><span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="variable">$file</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'name'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'size'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">" "</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'attr'</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<p><strong>Note:</strong> all times are reported as strings of the following format:
+<em>second, hour, minute, day, month, year</em>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$file</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">'mtime'</span><span class="operator">}</span> <span class="operator">==</span> <span class="string">"0,10,58,9,12,1996"</span> <span class="variable">stands</span> <span class="keyword">for</span> <span class="number">09</span> <span class="variable">Dec</span> <span class="number">1996</span> <span class="variable">at</span> <span class="number">10</span><span class="operator">:</span><span class="number">58</span><span class="operator">:</span><span class="number">00</span>
+</pre>
+</li>
+</ul>
+</dd>
+<dt><strong><a name="mkdir_name" class="item">Mkdir name</a></strong></dt>
+
+<dt><strong><a name="md_name" class="item">Md name</a></strong></dt>
+
+<dd>
+<p>Creates a directory on the FTP remote host.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Mkdir</span><span class="operator">(</span><span class="string">"NextBuild"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="mode_mode" class="item">Mode [mode]</a></strong></dt>
+
+<dd>
+<p>If called with no arguments, returns the current transfer mode for
+this FTP session (&quot;asc&quot; for ASCII or &quot;bin&quot; for binary).  The <em>mode</em>
+argument can be &quot;asc&quot; or &quot;bin&quot;, in which case the appropriate transfer
+mode is selected.  See also the Ascii and Binary functions.  Returns
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.</p>
+<p>Example:</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Current mode is: "</span><span class="operator">,</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Mode</span><span class="operator">();</span>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Mode</span><span class="operator">(</span><span class="string">"asc"</span><span class="operator">);</span> <span class="comment"># ...  same as $FTP-&gt;Ascii();</span>
+</pre>
+</dd>
+<dt><strong><a name="pasv_mode" class="item">Pasv [mode]</a></strong></dt>
+
+<dd>
+<p>If called with no arguments, returns 1 if the current FTP session has
+passive transfer mode enabled, 0 if not.</p>
+<p>You can call it with a <em>mode</em> parameter (0/1) only as a method of a
+Internet object (see <code>new</code>), in which case it will set the default
+value for the next <code>FTP</code> objects you create (read: set it before,
+because you can't change this value once you opened the FTP session).</p>
+<p>Example:</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"Pasv is: "</span><span class="operator">,</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Pasv</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">Pasv</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">FTP</span><span class="operator">(</span><span class="variable">$FTP</span><span class="operator">,</span><span class="string">"ftp.activeware.com"</span><span class="operator">,</span> <span class="string">"anonymous"</span><span class="operator">,</span> <span class="string">"dada\@perl.it"</span><span class="operator">);</span>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Pasv</span><span class="operator">(</span><span class="number">0</span><span class="operator">);</span> <span class="comment"># this will be ignored...</span>
+</pre>
+</dd>
+<dt><strong><a name="put_local_remote_context" class="item">Put local, [remote, context]</a></strong></dt>
+
+<dd>
+<p>Upload the <em>local</em> file to the FTP server saving it under the name
+<em>remote</em>, which if if omitted is the same name as <em>local</em>.  Returns
+<a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p><em>context</em> is a number to identify this operation if it is asynchronous.
+See <a href="#setstatuscallback"><code>SetStatusCallback</code></a> and <code>GetStatusCallback</code> for more info on
+asynchronous operations.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Put</span><span class="operator">(</span><span class="string">"internet.zip"</span><span class="operator">);</span>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Put</span><span class="operator">(</span><span class="string">"d:/users/dada/temp.zip"</span><span class="operator">,</span> <span class="string">"/temp/dada.zip"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="pwd" class="item">Pwd</a></strong></dt>
+
+<dd>
+<p>Returns the current directory on the FTP server or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$path</span> <span class="operator">=</span> <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Pwd</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="rename_oldfile_newfile" class="item">Rename oldfile, newfile</a></strong></dt>
+
+<dt><strong><a name="ren_oldfile_newfile" class="item">Ren oldfile, newfile</a></strong></dt>
+
+<dd>
+<p>Renames a file on the FTP remote host.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Rename</span><span class="operator">(</span><span class="string">"110-i86.zip"</span><span class="operator">,</span> <span class="string">"68i-011.zip"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="rmdir_name" class="item">Rmdir name</a></strong></dt>
+
+<dt><strong><a name="rd_name" class="item">Rd name</a></strong></dt>
+
+<dd>
+<p>Removes a directory on the FTP remote host.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on error.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$FTP</span><span class="operator">-&gt;</span><span class="variable">Rmdir</span><span class="operator">(</span><span class="string">"CurrentBuild"</span><span class="operator">);</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="http_functions">HTTP Functions</a></h2>
+<p><strong>General Note</strong></p>
+<p>All methods assume that you have the following lines:</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Win32::Internet</span><span class="operator">;</span>
+    <span class="variable">$INET</span> <span class="operator">=</span> <span class="variable">new</span> <span class="variable">Win32::Internet</span><span class="operator">();</span>
+    <span class="variable">$INET</span><span class="operator">-&gt;</span><span class="variable">HTTP</span><span class="operator">(</span><span class="variable">$HTTP</span><span class="operator">,</span> <span class="string">"hostname"</span><span class="operator">,</span> <span class="string">"username"</span><span class="operator">,</span> <span class="string">"password"</span><span class="operator">);</span>
+</pre>
+<p>somewhere before the method calls; in other words, we assume that you
+have an Internet object called $INET and an open HTTP session called
+$HTTP.</p>
+<p>See <code>new</code> and <code>HTTP</code> for more information.</p>
+<p><strong>Methods</strong></p>
+<dl>
+<dt><strong><a name="addheader_header_flags" class="item">AddHeader header, [flags]</a></strong></dt>
+
+<dd>
+<p>Adds HTTP request headers to an HTTP request object created with
+<code>OpenRequest</code>.  For the possible values of <em>flags</em> refer to the
+<a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> document.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQUEST</span><span class="operator">,</span><span class="string">"/index.html"</span><span class="operator">);</span>
+    <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">AddHeader</span><span class="operator">(</span><span class="string">"If-Modified-Since:  Sunday, 17-Nov-96 11:40:03 GMT"</span><span class="operator">);</span>
+    <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">AddHeader</span><span class="operator">(</span><span class="string">"Accept: text/html\r\n"</span><span class="operator">,</span> <span class="variable">HTTP_ADDREQ_FLAG_REPLACE</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="openrequest_requestobject_path_method_version_referer_accept_flags_context" class="item">OpenRequest requestobject, [path, method, version, referer, accept, flags, context]</a></strong></dt>
+
+<dt><strong><a name="openrequest_requestobject_hashref" class="item">OpenRequest requestobject, hashref</a></strong></dt>
+
+<dd>
+<p>Opens an HTTP request.  Returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> on errors or a number if the
+connection was succesful.  You can then use one of the <code>AddHeader</code>,
+<code>SendRequest</code>, <code>QueryInfo</code>, <a href="#querydataavailable"><code>QueryDataAvailable</code></a> and <code>ReadFile</code>
+methods on the newly created <em>requestobject</em>.  The parameters and
+their values are:</p>
+<ul>
+<li><strong><a name="path" class="item">path</a></strong>
+
+<p>The object to request.  This is generally a file name, an executable
+module, etc.  Default: /</p>
+</li>
+<li><strong><a name="method" class="item">method</a></strong>
+
+<p>The method to use; can actually be GET, POST, HEAD or PUT.  Default:
+GET</p>
+</li>
+<li><strong><a name="version" class="item">version</a></strong>
+
+<p>The HTTP version.  Default: HTTP/1.0</p>
+</li>
+<li><strong><a name="referer" class="item">referer</a></strong>
+
+<p>The URL of the document from which the URL in the request was
+obtained.  Default: <em>none</em></p>
+</li>
+<li><strong><a name="accept" class="item">accept</a></strong>
+
+<p>A single string with &quot;\0&quot; (ASCII zero) delimited list of content
+types accepted.  The string must be terminated by &quot;\0\0&quot;.
+Default: &quot;text/*\0image/gif\0image/jpeg\0\0&quot;</p>
+</li>
+<li><strong>flags</strong>
+
+<p>Additional flags affecting the behavior of the function.  Default:
+<em>none</em></p>
+</li>
+<li><strong>context</strong>
+
+<p>A number to identify this operation if it is asynchronous.  See
+<a href="#setstatuscallback"><code>SetStatusCallback</code></a> and <code>GetStatusCallback</code> for more info on
+asynchronous operations.  Default: <em>none</em></p>
+</li>
+</ul>
+<p>Refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> documentation for
+more details on those parameters.  If you pass <em>hashref</em> (a reference to
+an hash array), the following values are taken from the array:</p>
+<pre>
+    <span class="variable">%hash</span><span class="operator">=(</span>
+      <span class="string">"path"</span>        <span class="operator">=&gt;</span> <span class="string">"path"</span><span class="operator">,</span>
+      <span class="string">"method"</span>      <span class="operator">=&gt;</span> <span class="string">"method"</span><span class="operator">,</span>
+      <span class="string">"version"</span>     <span class="operator">=&gt;</span> <span class="string">"version"</span><span class="operator">,</span>
+      <span class="string">"referer"</span>     <span class="operator">=&gt;</span> <span class="string">"referer"</span><span class="operator">,</span>
+      <span class="string">"accept"</span>      <span class="operator">=&gt;</span> <span class="string">"accept"</span><span class="operator">,</span>
+      <span class="string">"flags"</span>       <span class="operator">=&gt;</span> <span class="variable">flags</span><span class="operator">,</span>
+      <span class="string">"context"</span>     <span class="operator">=&gt;</span> <span class="variable">context</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>See also <code>Request</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQUEST</span><span class="operator">,</span> <span class="string">"/index.html"</span><span class="operator">);</span>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQUEST</span><span class="operator">,</span> <span class="string">"/index.html"</span><span class="operator">,</span> <span class="string">"GET"</span><span class="operator">,</span> <span class="string">"HTTP/0.9"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"path"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"/index.html"</span><span class="operator">;</span>
+    <span class="variable">$params</span><span class="operator">{</span><span class="string">"flags"</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"
+    </span><span class="variable">$HTTP</span><span class="string">-&gt;OpenRequest(</span><span class="variable">$REQUEST</span><span class="string">, \%params);
+    </span>
+</pre>
+</dd>
+<dt><strong><a name="queryinfo_header_flags" class="item">QueryInfo header, [flags]</a></strong></dt>
+
+<dd>
+<p>Queries information about an HTTP request object created with
+<code>OpenRequest</code>.  You can specify an <em>header</em> (for example,
+&quot;Content-type&quot;) and/or one or more <em>flags</em>.  If you don't specify
+<em>flags</em>, HTTP_QUERY_CUSTOM will be used by default; this means that
+<em>header</em> should contain a valid HTTP header name.  For the possible
+values of <em>flags</em> refer to the <a href="#microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a> document.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQUEST</span><span class="operator">,</span><span class="string">"/index.html"</span><span class="operator">);</span>
+    <span class="variable">$statuscode</span> <span class="operator">=</span> <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">QueryInfo</span><span class="operator">(</span><span class="string">""</span><span class="operator">,</span> <span class="variable">HTTP_QUERY_STATUS_CODE</span><span class="operator">);</span>
+    <span class="variable">$headers</span> <span class="operator">=</span> <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">QueryInfo</span><span class="operator">(</span><span class="string">""</span><span class="operator">,</span> <span class="variable">HTTP_QUERY_RAW_HEADERS_CRLF</span><span class="operator">);</span> <span class="comment"># will get all the headers</span>
+    <span class="variable">$length</span> <span class="operator">=</span> <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">QueryInfo</span><span class="operator">(</span><span class="string">"Content-length"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="request_path_method_version_referer_accept_flags" class="item">Request [path, method, version, referer, accept, flags]</a></strong></dt>
+
+<dt><strong><a name="request_hashref" class="item">Request hashref</a></strong></dt>
+
+<dd>
+<p>Performs an HTTP request and returns an array containing the status
+code, the headers and the content of the file.  It is a one-step
+procedure that makes an <code>OpenRequest</code>, a <code>SendRequest</code>, some
+<code>QueryInfo</code>, <code>ReadFile</code> and finally <a href="#close"><code>Close</code></a>.  For a description of
+the parameters, see <code>OpenRequest</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="operator">(</span><span class="variable">$statuscode</span><span class="operator">,</span> <span class="variable">$headers</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Request</span><span class="operator">(</span><span class="string">"/index.html"</span><span class="operator">);</span>
+    <span class="operator">(</span><span class="variable">$s</span><span class="operator">,</span> <span class="variable">$h</span><span class="operator">,</span> <span class="variable">$f</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">Request</span><span class="operator">(</span><span class="string">"/index.html"</span><span class="operator">,</span> <span class="string">"GET"</span><span class="operator">,</span> <span class="string">"HTTP/1.0"</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="sendrequest_postdata" class="item">SendRequest [postdata]</a></strong></dt>
+
+<dd>
+<p>Send an HTTP request to the destination server.  <em>postdata</em> are any
+optional data to send immediately after the request header; this is
+generally used for POST or PUT requests.  See also <code>OpenRequest</code>.</p>
+<p>Example:</p>
+<pre>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQUEST</span><span class="operator">,</span> <span class="string">"/index.html"</span><span class="operator">);</span>
+    <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">SendRequest</span><span class="operator">();</span>
+</pre>
+<pre>
+    <span class="comment"># A POST request...</span>
+    <span class="variable">$HTTP</span><span class="operator">-&gt;</span><span class="variable">OpenRequest</span><span class="operator">(</span><span class="variable">$REQUEST</span><span class="operator">,</span> <span class="string">"/cgi-bin/somescript.pl"</span><span class="operator">,</span> <span class="string">"POST"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment">#This line is a must -&gt; (thanks Philip :)</span>
+    <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">AddHeader</span><span class="operator">(</span><span class="string">"Content-Type: application/x-www-form-urlencoded"</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$REQUEST</span><span class="operator">-&gt;</span><span class="variable">SendRequest</span><span class="operator">(</span><span class="string">"key1=value1&amp;key2=value2&amp;key3=value3"</span><span class="operator">);</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="appendix">APPENDIX</a></h1>
+<p>
+</p>
+<h2><a name="microsoft_win32_internet_functions">Microsoft Win32 Internet Functions</a></h2>
+<p>Complete documentation for the Microsoft Win32 Internet Functions can
+be found, in both HTML and zipped Word format, at this address:</p>
+<pre>
+    <a href="http://www.microsoft.com/intdev/sdk/docs/wininet/">http://www.microsoft.com/intdev/sdk/docs/wininet/</a></pre>
+<p>
+</p>
+<h2><a name="functions_table">Functions Table</a></h2>
+<p>This table reports the correspondence between the functions offered by
+WININET.DLL and their implementation in the Win32::Internet
+extension. Functions showing a &quot;---&quot; are not currently
+implemented. Functions enclosed in parens ( ) aren't implemented
+straightforwardly, but in a higher-level routine, eg. together with
+other functions.</p>
+<pre>
+    WININET.DLL                     Win32::Internet</pre>
+<pre>
+    InternetOpen                    new Win32::Internet
+    InternetConnect                 FTP / HTTP
+    InternetCloseHandle             Close
+    InternetQueryOption             QueryOption
+    InternetSetOption               SetOption
+    InternetSetOptionEx             ---
+    InternetSetStatusCallback       SetStatusCallback
+    InternetStatusCallback          GetStatusCallback
+    InternetConfirmZoneCrossing     ---
+    InternetTimeFromSystemTime      TimeConvert
+    InternetTimeToSystemTime        TimeConvert
+    InternetAttemptConnect          ---
+    InternetReadFile                ReadFile
+    InternetSetFilePointer          ---
+    InternetFindNextFile            (List)
+    InternetQueryDataAvailable      QueryDataAvailable
+    InternetGetLastResponseInfo     GetResponse
+    InternetWriteFile               ---
+    InternetCrackUrl                CrackURL
+    InternetCreateUrl               CreateURL
+    InternetCanonicalizeUrl         CanonicalizeURL
+    InternetCombineUrl              CombineURL
+    InternetOpenUrl                 OpenURL
+    FtpFindFirstFile                (List)
+    FtpGetFile                      Get
+    FtpPutFile                      Put
+    FtpDeleteFile                   Delete
+    FtpRenameFile                   Rename
+    FtpOpenFile                     ---
+    FtpCreateDirectory              Mkdir
+    FtpRemoveDirectory              Rmdir
+    FtpSetCurrentDirectory          Cd
+    FtpGetCurrentDirectory          Pwd
+    HttpOpenRequest                 OpenRequest
+    HttpAddRequestHeaders           AddHeader
+    HttpSendRequest                 SendRequest
+    HttpQueryInfo                   QueryInfo
+    InternetErrorDlg                ---</pre>
+<p>Actually, I don't plan to add support for Gopher, Cookie and Cache
+functions. I will if there will be consistent requests to do so.</p>
+<p>There are a number of higher-level functions in the Win32::Internet
+that simplify some usual procedures, calling more that one WININET API
+function. This table reports those functions and the relative WININET
+functions they use.</p>
+<pre>
+    Win32::Internet                 WININET.DLL</pre>
+<pre>
+    FetchURL                        InternetOpenUrl
+                                    InternetQueryDataAvailable
+                                    InternetReadFile
+                                    InternetCloseHandle</pre>
+<pre>
+    ReadEntireFile                  InternetQueryDataAvailable
+                                    InternetReadFile</pre>
+<pre>
+    Request                         HttpOpenRequest
+                                    HttpSendRequest
+                                    HttpQueryInfo
+                                    InternetQueryDataAvailable
+                                    InternetReadFile
+                                    InternetCloseHandle</pre>
+<pre>
+    List                            FtpFindFirstFile
+                                    InternetFindNextFile</pre>
+<p>
+</p>
+<h2><a name="constants">Constants</a></h2>
+<p>Those are the constants exported by the package in the main namespace
+(eg. you can use them in your scripts); for their meaning and proper
+use, refer to the Microsoft Win32 Internet Functions document.</p>
+<pre>
+    HTTP_ADDREQ_FLAG_ADD
+    HTTP_ADDREQ_FLAG_REPLACE
+    HTTP_QUERY_ALLOW
+    HTTP_QUERY_CONTENT_DESCRIPTION
+    HTTP_QUERY_CONTENT_ID
+    HTTP_QUERY_CONTENT_LENGTH
+    HTTP_QUERY_CONTENT_TRANSFER_ENCODING
+    HTTP_QUERY_CONTENT_TYPE
+    HTTP_QUERY_COST
+    HTTP_QUERY_CUSTOM
+    HTTP_QUERY_DATE
+    HTTP_QUERY_DERIVED_FROM
+    HTTP_QUERY_EXPIRES
+    HTTP_QUERY_FLAG_REQUEST_HEADERS
+    HTTP_QUERY_FLAG_SYSTEMTIME
+    HTTP_QUERY_LANGUAGE
+    HTTP_QUERY_LAST_MODIFIED
+    HTTP_QUERY_MESSAGE_ID
+    HTTP_QUERY_MIME_VERSION
+    HTTP_QUERY_PRAGMA
+    HTTP_QUERY_PUBLIC
+    HTTP_QUERY_RAW_HEADERS
+    HTTP_QUERY_RAW_HEADERS_CRLF
+    HTTP_QUERY_REQUEST_METHOD
+    HTTP_QUERY_SERVER
+    HTTP_QUERY_STATUS_CODE
+    HTTP_QUERY_STATUS_TEXT
+    HTTP_QUERY_URI
+    HTTP_QUERY_USER_AGENT
+    HTTP_QUERY_VERSION
+    HTTP_QUERY_WWW_LINK
+    ICU_BROWSER_MODE
+    ICU_DECODE
+    ICU_ENCODE_SPACES_ONLY
+    ICU_ESCAPE
+    ICU_NO_ENCODE
+    ICU_NO_META
+    ICU_USERNAME
+    INTERNET_FLAG_PASSIVE
+    INTERNET_FLAG_ASYNC
+    INTERNET_FLAG_HYPERLINK
+    INTERNET_FLAG_KEEP_CONNECTION
+    INTERNET_FLAG_MAKE_PERSISTENT
+    INTERNET_FLAG_NO_AUTH
+    INTERNET_FLAG_NO_AUTO_REDIRECT
+    INTERNET_FLAG_NO_CACHE_WRITE
+    INTERNET_FLAG_NO_COOKIES
+    INTERNET_FLAG_READ_PREFETCH
+    INTERNET_FLAG_RELOAD
+    INTERNET_FLAG_RESYNCHRONIZE
+    INTERNET_FLAG_TRANSFER_ASCII
+    INTERNET_FLAG_TRANSFER_BINARY
+    INTERNET_INVALID_PORT_NUMBER
+    INTERNET_INVALID_STATUS_CALLBACK
+    INTERNET_OPEN_TYPE_DIRECT
+    INTERNET_OPEN_TYPE_PROXY
+    INTERNET_OPEN_TYPE_PROXY_PRECONFIG
+    INTERNET_OPTION_CONNECT_BACKOFF
+    INTERNET_OPTION_CONNECT_RETRIES
+    INTERNET_OPTION_CONNECT_TIMEOUT
+    INTERNET_OPTION_CONTROL_SEND_TIMEOUT
+    INTERNET_OPTION_CONTROL_RECEIVE_TIMEOUT
+    INTERNET_OPTION_DATA_SEND_TIMEOUT
+    INTERNET_OPTION_DATA_RECEIVE_TIMEOUT
+    INTERNET_OPTION_HANDLE_TYPE
+    INTERNET_OPTION_LISTEN_TIMEOUT
+    INTERNET_OPTION_PASSWORD
+    INTERNET_OPTION_READ_BUFFER_SIZE
+    INTERNET_OPTION_USER_AGENT
+    INTERNET_OPTION_USERNAME
+    INTERNET_OPTION_VERSION
+    INTERNET_OPTION_WRITE_BUFFER_SIZE
+    INTERNET_SERVICE_FTP
+    INTERNET_SERVICE_GOPHER
+    INTERNET_SERVICE_HTTP
+    INTERNET_STATUS_CLOSING_CONNECTION
+    INTERNET_STATUS_CONNECTED_TO_SERVER
+    INTERNET_STATUS_CONNECTING_TO_SERVER
+    INTERNET_STATUS_CONNECTION_CLOSED
+    INTERNET_STATUS_HANDLE_CLOSING
+    INTERNET_STATUS_HANDLE_CREATED
+    INTERNET_STATUS_NAME_RESOLVED
+    INTERNET_STATUS_RECEIVING_RESPONSE
+    INTERNET_STATUS_REDIRECT
+    INTERNET_STATUS_REQUEST_COMPLETE
+    INTERNET_STATUS_REQUEST_SENT
+    INTERNET_STATUS_RESOLVING_NAME
+    INTERNET_STATUS_RESPONSE_RECEIVED
+    INTERNET_STATUS_SENDING_REQUEST</pre>
+<p>
+</p>
+<hr />
+<h1><a name="version_history">VERSION HISTORY</a></h1>
+<ul>
+<li><strong><a name="084" class="item">0.084 (13 Jun 2008)</a></strong>
+
+<p>Move sample.pl and test-async.pl into the eg/ subdirectory to avoid
+installing them into the Perl/bin directory.</p>
+<p>Use T_BOOL instead of T_IV for BOOL typemap entry so that the code
+doesn't warn on undef.</p>
+</li>
+<li><strong><a name="083" class="item">0.083 (15 Apr 2008)</a></strong>
+
+<p>This release unfortunately did not update $Win32::Internet::VERSION.
+Only META.yml reffered to this release as version 0.083.</p>
+<ul>
+<li>
+<p>New version for separate upload to CPAN.</p>
+</li>
+<li>
+<p>Updated email addresses (but some stale references to divinf.it still remain).</p>
+</li>
+<li>
+<p>Simplified Makefile.PL; added META.yml; added ppport.h.</p>
+</li>
+<li>
+<p>Renamed test.pl to sample.pl because it doesn't generate TAP output.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="082" class="item">0.082 (4 Sep 2001)</a></strong>
+
+<ul>
+<li>
+<p>Fix passive FTP mode.  INTERNET_FLAG_PASSIVE was misspelled in earlier
+versions (as INTERNET_CONNECT_FLAG_PASSIVE) and wouldn't work.  Found
+by Steve Raynesford &lt;<a href="mailto:stever@evolvecomm.com">stever@evolvecomm.com</a>&gt;.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="081" class="item">0.081 (25 Sep 1999)</a></strong>
+
+<ul>
+<li>
+<p>Documentation converted to pod format by Jan Dubois &lt;<a href="mailto:JanD@ActiveState.com">JanD@ActiveState.com</a>&gt;.</p>
+</li>
+<li>
+<p>Minor changes from Perl 5.005xx compatibility.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="08" class="item">0.08 (14 Feb 1997)</a></strong>
+
+<ul>
+<li>
+<p>fixed 2 more bugs in Option(s) related subs (thanks to Brian
+Helterline!).</p>
+</li>
+<li>
+<p><a href="#error"><code>Error()</code></a> now gets error messages directly from WININET.DLL.</p>
+</li>
+<li>
+<p>The PLL file now comes in 2 versions, one for Perl version 5.001
+(build 100) and one for Perl version 5.003 (build 300 and
+higher). Everybody should be happy now :)</p>
+</li>
+<li>
+<p>added an installation program.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="07" class="item">0.07 (10 Feb 1997)</a></strong>
+
+<ul>
+<li>
+<p>fixed a bug in <a href="#version"><code>Version()</code></a> introduced with 0.06...</p>
+</li>
+<li>
+<p>completely reworked PM file, fixed *lots* of minor bugs, and removed
+almost all the warnings with &quot;perl -w&quot;.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="06" class="item">0.06 (26 Jan 1997)</a></strong>
+
+<ul>
+<li>
+<p>fixed another hideous bug in &quot;new&quot; (the 'class' parameter was still
+missing).</p>
+</li>
+<li>
+<p>added support for asynchronous operations (work still in embryo).</p>
+</li>
+<li>
+<p>removed the ending \0 (ASCII zero) from the DLL version returned by
+&quot;Version&quot;.</p>
+</li>
+<li>
+<p>added a lot of constants.</p>
+</li>
+<li>
+<p>added <code>safefree()</code> after every <code>safemalloc()</code> in C... wonder why I didn't
+it before :)</p>
+</li>
+<li>
+<p>added TimeConvert, which actually works one way only.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="05f" class="item">0.05f (29 Nov 1996)</a></strong>
+
+<ul>
+<li>
+<p>fixed a bug in &quot;new&quot; (parameters passed were simply ignored).</p>
+</li>
+<li>
+<p>fixed another bug: &quot;Chdir&quot; and &quot;Cwd&quot; were aliases of RMDIR instead of
+CD..</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="05" class="item">0.05 (29 Nov 1996)</a></strong>
+
+<ul>
+<li>
+<p>added &quot;CrackURL&quot; and &quot;CreateURL&quot;.</p>
+</li>
+<li>
+<p>corrected an error in TEST.PL (there was a GetUserAgent instead of
+UserAgent).</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="04" class="item">0.04 (25 Nov 1996)</a></strong>
+
+<ul>
+<li>
+<p>added &quot;Version&quot; to retrieve package and DLL versions.</p>
+</li>
+<li>
+<p>added proxies and other options to &quot;new&quot;.</p>
+</li>
+<li>
+<p>changed &quot;OpenRequest&quot; and &quot;Request&quot; to read parameters from a hash.</p>
+</li>
+<li>
+<p>added &quot;SetOption/QueryOption&quot; and a lot of relative functions
+(connect, username, password, useragent, etc.).</p>
+</li>
+<li>
+<p>added &quot;CanonicalizeURL&quot; and &quot;CombineURL&quot;.</p>
+</li>
+<li>
+<p>&quot;Error&quot; covers a wider spectrum of errors.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="02" class="item">0.02 (18 Nov 1996)</a></strong>
+
+<ul>
+<li>
+<p>added support for HTTP sessions and requests.</p>
+</li>
+</ul>
+</li>
+<li><strong><a name="01" class="item">0.01 (11 Nov 1996)</a></strong>
+
+<ul>
+<li>
+<p>fetching of HTTP, FTP and GOPHER URLs.</p>
+</li>
+<li>
+<p>complete set of commands to manage an FTP session.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Version 0.08 (14 Feb 1997) by Aldo Calpini &lt;<a href="mailto:a.calpini@romagiubileo.it">a.calpini@romagiubileo.it</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Win32::Internet is based on the Win32::Registry code written by Jesse
+Dougherty.</p>
+<p>Additional thanks to: Carl Tichler for his help in the initial
+development; Tore Haraldsen, Brian Helterline for the bugfixes; Dave
+Roth for his great source code examples.</p>
+<p>
+</p>
+<hr />
+<h1><a name="disclaimer">DISCLAIMER</a></h1>
+<p>This program is FREE; you can redistribute, modify, disassemble, or
+even reverse engineer this software at your will. Keep in mind,
+however, that NOTHING IS GUARANTEED to work and everything you do is
+AT YOUR OWN RISK - I will not take responsability for any damage, loss
+of money and/or health that may arise from the use of this program!</p>
+<p>This is distributed under the terms of Larry Wall's Artistic License.</p>
+
+</body>
+
+</html>

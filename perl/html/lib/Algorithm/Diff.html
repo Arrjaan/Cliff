@@ -1,0 +1,960 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Algorithm::Diff - Compute `intelligent' differences between two files / lists</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Algorithm::Diff - Compute `intelligent' differences between two files / lists</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#introduction">INTRODUCTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<ul>
+
+		<li><a href="#lcs"><code>LCS</code></a></li>
+		<li><a href="#lcs_length"><code>LCS_length</code></a></li>
+		<li><a href="#lcsidx"><code>LCSidx</code></a></li>
+		<li><a href="#new"><code>new</code></a></li>
+		<li><a href="#prepare"><code>prepare</code></a></li>
+		<li><a href="#diff"><code>diff</code></a></li>
+		<li><a href="#sdiff"><code>sdiff</code></a></li>
+		<li><a href="#compact_diff"><code>compact_diff</code></a></li>
+		<li><a href="#traverse_sequences"><code>traverse_sequences</code></a></li>
+		<li><a href="#traverse_balanced"><code>traverse_balanced</code></a></li>
+	</ul>
+
+	<li><a href="#key_generation_functions">KEY GENERATION FUNCTIONS</a></li>
+	<li><a href="#error_checking">ERROR CHECKING</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#mailing_list">MAILING LIST</a></li>
+	<li><a href="#credits">CREDITS</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Algorithm::Diff - Compute `intelligent' differences between two files / lists</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">require</span> <span class="variable">Algorithm::Diff</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="comment"># This example produces traditional 'diff' output:</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">Algorithm::Diff</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Base</span><span class="operator">(</span> <span class="number">1</span> <span class="operator">);</span>   <span class="comment"># Return line numbers, not indices</span>
+    <span class="keyword">while</span><span class="operator">(</span>  <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Next</span><span class="operator">()</span>  <span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">next</span>   <span class="keyword">if</span>  <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Same</span><span class="operator">();</span>
+        <span class="keyword">my</span> <span class="variable">$sep</span> <span class="operator">=</span> <span class="string">''</span><span class="operator">;</span>
+        <span class="keyword">if</span><span class="operator">(</span>  <span class="operator">!</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">2</span><span class="operator">)</span>  <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">printf</span> <span class="string">"%d,%dd%d\n"</span><span class="operator">,</span>
+                <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">qw( Min1 Max1 Max2 )</span><span class="operator">);</span>
+        <span class="operator">}</span> <span class="keyword">elsif</span><span class="operator">(</span>  <span class="operator">!</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">1</span><span class="operator">)</span>  <span class="operator">)</span> <span class="operator">{</span>
+            <span class="keyword">printf</span> <span class="string">"%da%d,%d\n"</span><span class="operator">,</span>
+                <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">qw( Max1 Min2 Max2 )</span><span class="operator">);</span>
+        <span class="operator">}</span> <span class="keyword">else</span> <span class="operator">{</span>
+            <span class="variable">$sep</span> <span class="operator">=</span> <span class="string">"---\n"</span><span class="operator">;</span>
+            <span class="keyword">printf</span> <span class="string">"%d,%dc%d,%d\n"</span><span class="operator">,</span>
+                <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">qw( Min1 Max1 Min2 Max2 )</span><span class="operator">);</span>
+        <span class="operator">}</span>
+        <span class="keyword">print</span> <span class="string">"&lt; </span><span class="variable">$_</span><span class="string">"</span>   <span class="keyword">for</span>  <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+        <span class="keyword">print</span> <span class="variable">$sep</span><span class="operator">;</span>
+        <span class="keyword">print</span> <span class="string">"&gt; </span><span class="variable">$_</span><span class="string">"</span>   <span class="keyword">for</span>  <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">2</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="comment"># Alternate interfaces:</span>
+</pre>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Algorithm::Diff</span> <span class="string">qw(
+        LCS LCS_length LCSidx
+        diff sdiff compact_diff
+        traverse_sequences traverse_balanced )</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="variable">@lcs</span>    <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="variable">$lcsref</span> <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="variable">$count</span>  <span class="operator">=</span> <span class="variable">LCS_length</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="operator">(</span> <span class="variable">$seq1idxref</span><span class="operator">,</span> <span class="variable">$seq2idxref</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">LCSidx</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="comment"># Complicated interfaces:</span>
+</pre>
+<pre>
+    <span class="variable">@diffs</span>  <span class="operator">=</span> <span class="variable">diff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">@sdiffs</span> <span class="operator">=</span> <span class="variable">sdiff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">@cdiffs</span> <span class="operator">=</span> <span class="variable">compact_diff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">traverse_sequences</span><span class="operator">(</span>
+        <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span>
+        <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span>
+        <span class="operator">{</span>   <span class="string">MATCH</span>     <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback1</span><span class="operator">,</span>
+            <span class="string">DISCARD_A</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback2</span><span class="operator">,</span>
+            <span class="string">DISCARD_B</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback3</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+        <span class="operator">\&amp;</span><span class="variable">key_generator</span><span class="operator">,</span>
+        <span class="variable">@extra_args</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">traverse_balanced</span><span class="operator">(</span>
+        <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span>
+        <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span>
+        <span class="operator">{</span>   <span class="string">MATCH</span>     <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback1</span><span class="operator">,</span>
+            <span class="string">DISCARD_A</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback2</span><span class="operator">,</span>
+            <span class="string">DISCARD_B</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback3</span><span class="operator">,</span>
+            <span class="string">CHANGE</span>    <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">callback4</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+        <span class="operator">\&amp;</span><span class="variable">key_generator</span><span class="operator">,</span>
+        <span class="variable">@extra_args</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="introduction">INTRODUCTION</a></h1>
+<p>(by Mark-Jason Dominus)</p>
+<p>I once read an article written by the authors of <code>diff</code>; they said
+that they worked very hard on the algorithm until they found the
+right one.</p>
+<p>I think what they ended up using (and I hope someone will correct me,
+because I am not very confident about this) was the `longest common
+subsequence' method.  In the LCS problem, you have two sequences of
+items:</p>
+<pre>
+    a b c d f g h j q z</pre>
+<pre>
+    a b c d e f g i j k r x y z</pre>
+<p>and you want to find the longest sequence of items that is present in
+both original sequences in the same order.  That is, you want to find
+a new sequence <em>S</em> which can be obtained from the first sequence by
+deleting some items, and from the secend sequence by deleting other
+items.  You also want <em>S</em> to be as long as possible.  In this case <em>S</em>
+is</p>
+<pre>
+    a b c d f g j z</pre>
+<p>From there it's only a small step to get diff-like output:</p>
+<pre>
+    e   h i   k   q r x y
+    +   - +   +   - + + +</pre>
+<p>This module solves the LCS problem.  It also includes a canned function
+to generate <code>diff</code>-like output.</p>
+<p>It might seem from the example above that the LCS of two sequences is
+always pretty obvious, but that's not always the case, especially when
+the two sequences have many repeated elements.  For example, consider</p>
+<pre>
+    a x b y c z p d q
+    a b c a x b y c z</pre>
+<p>A naive approach might start by matching up the <a href="../../lib/pods/perlrun.html#a"><code>a</code></a> and <a href="../../lib/pods/perlguts.html#b"><code>b</code></a> that
+appear at the beginning of each sequence, like this:</p>
+<pre>
+    a x b y c         z p d q
+    a   b   c a b y c z</pre>
+<p>This finds the common subsequence <code>a b c z</code>.  But actually, the LCS
+is <code>a x b y c z</code>:</p>
+<pre>
+          a x b y c z p d q
+    a b c a x b y c z</pre>
+<p>or</p>
+<pre>
+    a       x b y c z p d q
+    a b c a x b y c z</pre>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>(See also the README file and several example
+scripts include with this module.)</p>
+<p>This module now provides an object-oriented interface that uses less
+memory and is easier to use than most of the previous procedural
+interfaces.  It also still provides several exportable functions.  We'll
+deal with these in ascending order of difficulty:  <code>LCS</code>,
+<code>LCS_length</code>, <code>LCSidx</code>, OO interface, <code>prepare</code>, <code>diff</code>, <code>sdiff</code>,
+<code>traverse_sequences</code>, and <code>traverse_balanced</code>.</p>
+<p>
+</p>
+<h2><a name="lcs"><code>LCS</code></a></h2>
+<p>Given references to two lists of items, LCS returns an array containing
+their longest common subsequence.  In scalar context, it returns a
+reference to such a list.</p>
+<pre>
+    <span class="variable">@lcs</span>    <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="variable">$lcsref</span> <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<p><code>LCS</code> may be passed an optional third parameter; this is a CODE
+reference to a key generation function.  See <a href="#key_generation_functions">KEY GENERATION FUNCTIONS</a>.</p>
+<pre>
+    <span class="variable">@lcs</span>    <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">keyGen</span><span class="operator">,</span> <span class="variable">@args</span> <span class="operator">);</span>
+    <span class="variable">$lcsref</span> <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">keyGen</span><span class="operator">,</span> <span class="variable">@args</span> <span class="operator">);</span>
+</pre>
+<p>Additional parameters, if any, will be passed to the key generation
+routine.</p>
+<p>
+</p>
+<h2><a name="lcs_length"><code>LCS_length</code></a></h2>
+<p>This is just like <code>LCS</code> except it only returns the length of the
+longest common subsequence.  This provides a performance gain of about
+9% compared to <code>LCS</code>.</p>
+<p>
+</p>
+<h2><a name="lcsidx"><code>LCSidx</code></a></h2>
+<p>Like <code>LCS</code> except it returns references to two arrays.  The first array
+contains the indices into @seq1 where the LCS items are located.  The
+second array contains the indices into @seq2 where the LCS items are located.</p>
+<p>Therefore, the following three lists will contain the same values:</p>
+<pre>
+    <span class="keyword">my</span><span class="operator">(</span> <span class="variable">$idx1</span><span class="operator">,</span> <span class="variable">$idx2</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">LCSidx</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@list1</span> <span class="operator">=</span> <span class="variable">@seq1</span><span class="operator">[</span> <span class="variable">@$idx1</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">@list2</span> <span class="operator">=</span> <span class="variable">@seq2</span><span class="operator">[</span> <span class="variable">@$idx2</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">@list3</span> <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="new"><code>new</code></a></h2>
+<pre>
+    <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">Algorithm::Diffs</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="variable">$diff</span> <span class="operator">=</span> <span class="variable">Algorithm::Diffs</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%opts</span> <span class="operator">);</span>
+</pre>
+<p><code>new</code> computes the smallest set of additions and deletions necessary
+to turn the first sequence into the second and compactly records them
+in the object.</p>
+<p>You use the object to iterate over <em>hunks</em>, where each hunk represents
+a contiguous section of items which should be added, deleted, replaced,
+or left unchanged.</p>
+<p>The following summary of all of the methods looks a lot like Perl code
+but some of the symbols have different meanings:</p>
+<pre>
+    [ ]     Encloses optional arguments
+    :       Is followed by the default value for an optional argument
+    |       Separates alternate return results</pre>
+<p>Method summary:</p>
+<pre>
+    <span class="variable">$obj</span>        <span class="operator">=</span> <span class="variable">Algorithm::Diff</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span> <span class="operator">[</span> <span class="operator">\</span><span class="variable">%opts</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$pos</span>        <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Next</span><span class="operator">(</span>  <span class="operator">[</span> <span class="variable">$count</span> <span class="operator">:</span> <span class="number">1</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$revPos</span>     <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Prev</span><span class="operator">(</span>  <span class="operator">[</span> <span class="variable">$count</span> <span class="operator">:</span> <span class="number">1</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$obj</span>        <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Reset</span><span class="operator">(</span> <span class="operator">[</span> <span class="variable">$pos</span> <span class="operator">:</span> <span class="number">0</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$copy</span>       <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">(</span>  <span class="operator">[</span> <span class="variable">$pos</span><span class="operator">,</span> <span class="operator">[</span> <span class="variable">$newBase</span> <span class="operator">]</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$oldBase</span>    <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Base</span><span class="operator">(</span>  <span class="operator">[</span> <span class="variable">$newBase</span> <span class="operator">]</span> <span class="operator">);</span>
+</pre>
+<p>Note that all of the following methods <a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> if used on an object that
+is &quot;reset&quot; (not currently pointing at any hunk).</p>
+<pre>
+    <span class="variable">$bits</span>       <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Diff</span><span class="operator">(</span>  <span class="operator">);</span>
+    <span class="variable">@items</span><span class="operator">|</span><span class="variable">$cnt</span> <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Same</span><span class="operator">(</span>  <span class="operator">);</span>
+    <span class="variable">@items</span><span class="operator">|</span><span class="variable">$cnt</span> <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span> <span class="variable">$seqNum</span> <span class="operator">);</span>
+    <span class="variable">@idxs</span> <span class="operator">|</span><span class="variable">$cnt</span> <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Range</span><span class="operator">(</span> <span class="variable">$seqNum</span><span class="operator">,</span> <span class="operator">[</span> <span class="variable">$base</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$minIdx</span>     <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Min</span><span class="operator">(</span>   <span class="variable">$seqNum</span><span class="operator">,</span> <span class="operator">[</span> <span class="variable">$base</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">$maxIdx</span>     <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Max</span><span class="operator">(</span>   <span class="variable">$seqNum</span><span class="operator">,</span> <span class="operator">[</span> <span class="variable">$base</span> <span class="operator">]</span> <span class="operator">);</span>
+    <span class="variable">@values</span>     <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span>   <span class="variable">@names</span> <span class="operator">);</span>
+</pre>
+<p>Passing in <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> for an optional argument is always treated the same
+as if no argument were passed in.</p>
+<dl>
+<dt><strong><a name="next" class="item"><code>Next</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$pos</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Next</span><span class="operator">();</span>    <span class="comment"># Move forward 1 hunk</span>
+    <span class="variable">$pos</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Next</span><span class="operator">(</span> <span class="number">2</span> <span class="operator">);</span> <span class="comment"># Move forward 2 hunks</span>
+    <span class="variable">$pos</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Next</span><span class="operator">(-</span><span class="number">5</span><span class="operator">);</span>  <span class="comment"># Move backward 5 hunks</span>
+</pre>
+<p><a href="#next"><code>Next</code></a> moves the object to point at the next hunk.  The object starts
+out &quot;reset&quot;, which means it isn't pointing at any hunk.  If the object
+is reset, then <a href="#next"><code>Next()</code></a> moves to the first hunk.</p>
+<p><a href="#next"><code>Next</code></a> returns a true value iff the move didn't go past the last hunk.
+So <a href="#next"><code>Next(0)</code></a> will return true iff the object is not reset.</p>
+<p>Actually, <a href="#next"><code>Next</code></a> returns the object's new position, which is a number
+between 1 and the number of hunks (inclusive), or returns a false value.</p>
+</dd>
+<dt><strong><a name="prev" class="item"><code>Prev</code></a></strong></dt>
+
+<dd>
+<p><a href="#prev"><code>Prev($N)</code></a> is almost identical to <a href="#next"><code>Next(-$N)</code></a>; it moves to the $Nth
+previous hunk.  On a 'reset' object, <a href="#prev"><code>Prev()</code></a> [and <a href="#next"><code>Next(-1)</code></a>] move
+to the last hunk.</p>
+<p>The position returned by <a href="#prev"><code>Prev</code></a> is relative to the <em>end</em> of the
+hunks; -1 for the last hunk, -2 for the second-to-last, etc.</p>
+</dd>
+<dt><strong><a name="reset" class="item"><code>Reset</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Reset</span><span class="operator">();</span>     <span class="comment"># Reset the object's position</span>
+    <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Reset</span><span class="operator">(</span><span class="variable">$pos</span><span class="operator">);</span> <span class="comment"># Move to the specified hunk</span>
+    <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Reset</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>    <span class="comment"># Move to the first hunk</span>
+    <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Reset</span><span class="operator">(-</span><span class="number">1</span><span class="operator">);</span>   <span class="comment"># Move to the last hunk</span>
+</pre>
+<p><a href="#reset"><code>Reset</code></a> returns the object, so, for example, you could use
+<a href="#reset"><code>$diff-&gt;Reset()-&gt;Next(-1)</code></a> to get the number of hunks.</p>
+</dd>
+<dt><strong><a name="copy" class="item"><code>Copy</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">(</span> <span class="variable">$newPos</span><span class="operator">,</span> <span class="variable">$newBase</span> <span class="operator">);</span>
+</pre>
+<p><a href="#copy"><code>Copy</code></a> returns a copy of the object.  The copy and the orignal object
+share most of their data, so making copies takes very little memory.
+The copy maintains its own position (separate from the original), which
+is the main purpose of copies.  It also maintains its own base.</p>
+<p>By default, the copy's position starts out the same as the original
+object's position.  But <a href="#copy"><code>Copy</code></a> takes an optional first argument to set the
+new position, so the following three snippets are equivalent:</p>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">(</span><span class="variable">$pos</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">();</span>
+    <span class="variable">$copy</span><span class="operator">-&gt;</span><span class="variable">Reset</span><span class="operator">(</span><span class="variable">$pos</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">()-&gt;</span><span class="variable">Reset</span><span class="operator">(</span><span class="variable">$pos</span><span class="operator">);</span>
+</pre>
+<p><a href="#copy"><code>Copy</code></a> takes an optional second argument to set the base for
+the copy.  If you wish to change the base of the copy but leave
+the position the same as in the original, here are two
+equivalent ways:</p>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">();</span>
+    <span class="variable">$copy</span><span class="operator">-&gt;</span><span class="variable">Base</span><span class="operator">(</span> <span class="number">0</span> <span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">(</span><span class="keyword">undef</span><span class="operator">,</span><span class="number">0</span><span class="operator">);</span>
+</pre>
+<p>Here are two equivalent way to get a &quot;reset&quot; copy:</p>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">(</span><span class="number">0</span><span class="operator">);</span>
+</pre>
+<pre>
+    <span class="variable">$copy</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Copy</span><span class="operator">()-&gt;</span><span class="variable">Reset</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="diff" class="item"><code>Diff</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$bits</span> <span class="operator">=</span> <span class="variable">$obj</span><span class="operator">-&gt;</span><span class="variable">Diff</span><span class="operator">();</span>
+</pre>
+<p><a href="#diff"><code>Diff</code></a> returns a true value iff the current hunk contains items that are
+different between the two sequences.  It actually returns one of the
+follow 4 values:</p>
+<ol>
+<li>
+<p><code>3==(1|2)</code>.  This hunk contains items from @seq1 and the items
+from @seq2 that should replace them.  Both sequence 1 and 2
+contain changed items so both the 1 and 2 bits are set.</p>
+</li>
+<li>
+<p>This hunk only contains items from @seq2 that should be inserted (not
+items from @seq1).  Only sequence 2 contains changed items so only the 2
+bit is set.</p>
+</li>
+<li>
+<p>This hunk only contains items from @seq1 that should be deleted (not
+items from @seq2).  Only sequence 1 contains changed items so only the 1
+bit is set.</p>
+</li>
+<li>
+<p>This means that the items in this hunk are the same in both sequences.
+Neither sequence 1 nor 2 contain changed items so neither the 1 nor the
+2 bits are set.</p>
+</li>
+</ol>
+</dd>
+<dt><strong><a name="same" class="item"><code>Same</code></a></strong></dt>
+
+<dd>
+<p><a href="#same"><code>Same</code></a> returns a true value iff the current hunk contains items that
+are the same in both sequences.  It actually returns the list of items
+if they are the same or an emty list if they aren't.  In a scalar
+context, it returns the size of the list.</p>
+</dd>
+<dt><strong><a name="items" class="item"><code>Items</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">2</span><span class="operator">);</span>
+    <span class="variable">@items</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="variable">$seqNum</span><span class="operator">);</span>
+</pre>
+<p><a href="#items"><code>Items</code></a> returns the (number of) items from the specified sequence that
+are part of the current hunk.</p>
+<p>If the current hunk contains only insertions, then
+<a href="#items"><code>$diff-&gt;Items(1)</code></a> will return an empty list (0 in a scalar conext).
+If the current hunk contains only deletions, then <a href="#items"><code>$diff-&gt;Items(2)</code></a>
+will return an empty list (0 in a scalar conext).</p>
+<p>If the hunk contains replacements, then both <a href="#items"><code>$diff-&gt;Items(1)</code></a> and
+<a href="#items"><code>$diff-&gt;Items(2)</code></a> will return different, non-empty lists.</p>
+<p>Otherwise, the hunk contains identical items and all of the following
+will return the same lists:</p>
+<pre>
+    <span class="variable">@items</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="variable">@items</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">2</span><span class="operator">);</span>
+    <span class="variable">@items</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Same</span><span class="operator">();</span>
+</pre>
+</dd>
+<dt><strong><a name="range" class="item"><code>Range</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Range</span><span class="operator">(</span> <span class="variable">$seqNum</span> <span class="operator">);</span>
+    <span class="variable">@indices</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Range</span><span class="operator">(</span> <span class="variable">$seqNum</span> <span class="operator">);</span>
+    <span class="variable">@indices</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Range</span><span class="operator">(</span> <span class="variable">$seqNum</span><span class="operator">,</span> <span class="variable">$base</span> <span class="operator">);</span>
+</pre>
+<p><a href="#range"><code>Range</code></a> is like <a href="#items"><code>Items</code></a> except that it returns a list of <em>indices</em> to
+the items rather than the items themselves.  By default, the index of
+the first item (in each sequence) is 0 but this can be changed by
+calling the <a href="#base"><code>Base</code></a> method.  So, by default, the following two snippets
+return the same lists:</p>
+<pre>
+    <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">2</span><span class="operator">);</span>
+    <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">@seq2</span><span class="operator">[</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Range</span><span class="operator">(</span><span class="number">2</span><span class="operator">)</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>You can also specify the base to use as the second argument.  So the
+following two snippets <em>always</em> return the same lists:</p>
+<pre>
+    <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Items</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="variable">@list</span> <span class="operator">=</span> <span class="variable">@seq1</span><span class="operator">[</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Range</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span><span class="number">0</span><span class="operator">)</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="base" class="item"><code>Base</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$curBase</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Base</span><span class="operator">();</span>
+    <span class="variable">$oldBase</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Base</span><span class="operator">(</span><span class="variable">$newBase</span><span class="operator">);</span>
+</pre>
+<p><a href="#base"><code>Base</code></a> sets and/or returns the current base (usually 0 or 1) that is
+used when you request range information.  The base defaults to 0 so
+that range information is returned as array indices.  You can set the
+base to 1 if you want to report traditional line numbers instead.</p>
+</dd>
+<dt><strong><a name="min" class="item"><code>Min</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$min1</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Min</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+    <span class="variable">$min</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Min</span><span class="operator">(</span> <span class="variable">$seqNum</span><span class="operator">,</span> <span class="variable">$base</span> <span class="operator">);</span>
+</pre>
+<p><a href="#min"><code>Min</code></a> returns the first value that <a href="#range"><code>Range</code></a> would return (given the
+same arguments) or returns <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if <a href="#range"><code>Range</code></a> would return an empty
+list.</p>
+</dd>
+<dt><strong><a name="max" class="item"><code>Max</code></a></strong></dt>
+
+<dd>
+<p><a href="#max"><code>Max</code></a> returns the last value that <a href="#range"><code>Range</code></a> would return or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+</dd>
+<dt><strong><a name="get" class="item"><code>Get</code></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="operator">(</span> <span class="variable">$n</span><span class="operator">,</span> <span class="variable">$x</span><span class="operator">,</span> <span class="variable">$r</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">qw( min1 max1 range1 )</span><span class="operator">);</span>
+    <span class="variable">@values</span> <span class="operator">=</span> <span class="variable">$diff</span><span class="operator">-&gt;</span><span class="variable">Get</span><span class="operator">(</span><span class="string">qw( 0min2 1max2 range2 same base )</span><span class="operator">);</span>
+</pre>
+<p><a href="#get"><code>Get</code></a> returns one or more scalar values.  You pass in a list of the
+names of the values you want returned.  Each name must match one of the
+following regexes:</p>
+<pre>
+    /^(-?\d+)?(min|max)[12]$/i
+    /^(range[12]|same|diff|base)$/i</pre>
+<p>The 1 or 2 after a name says which sequence you want the information
+for (and where allowed, it is required).  The optional number before
+&quot;min&quot; or &quot;max&quot; is the base to use.  So the following equalities hold:</p>
+<pre>
+    $diff-&gt;Get('min1') == $diff-&gt;Min(1)
+    $diff-&gt;Get('0min2') == $diff-&gt;Min(2,0)</pre>
+<p>Using <a href="#get"><code>Get</code></a> in a scalar context when you've passed in more than one
+name is a fatal error (<a href="../../lib/pods/perlfunc.html#die"><code>die</code></a> is called).</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="prepare"><code>prepare</code></a></h2>
+<p>Given a reference to a list of items, <code>prepare</code> returns a reference
+to a hash which can be used when comparing this sequence to other
+sequences with <code>LCS</code> or <code>LCS_length</code>.</p>
+<pre>
+    <span class="variable">$prep</span> <span class="operator">=</span> <span class="variable">prepare</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span> <span class="operator">);</span>
+    <span class="keyword">for</span> <span class="variable">$i</span> <span class="operator">(</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">10_000</span> <span class="operator">)</span>
+    <span class="operator">{</span>
+        <span class="variable">@lcs</span> <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="variable">$prep</span><span class="operator">,</span> <span class="variable">$seq</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">]</span> <span class="operator">);</span>
+        <span class="comment"># do something useful with @lcs</span>
+    <span class="operator">}</span>
+</pre>
+<p><code>prepare</code> may be passed an optional third parameter; this is a CODE
+reference to a key generation function.  See <a href="#key_generation_functions">KEY GENERATION FUNCTIONS</a>.</p>
+<pre>
+    <span class="variable">$prep</span> <span class="operator">=</span> <span class="variable">prepare</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">keyGen</span> <span class="operator">);</span>
+    <span class="keyword">for</span> <span class="variable">$i</span> <span class="operator">(</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">10_000</span> <span class="operator">)</span>
+    <span class="operator">{</span>
+        <span class="variable">@lcs</span> <span class="operator">=</span> <span class="variable">LCS</span><span class="operator">(</span> <span class="variable">$seq</span><span class="operator">[</span><span class="variable">$i</span><span class="operator">]</span><span class="operator">,</span> <span class="variable">$prep</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">keyGen</span> <span class="operator">);</span>
+        <span class="comment"># do something useful with @lcs</span>
+    <span class="operator">}</span>
+</pre>
+<p>Using <code>prepare</code> provides a performance gain of about 50% when calling LCS
+many times compared with not preparing.</p>
+<p>
+</p>
+<h2><a name="diff"><code>diff</code></a></h2>
+<pre>
+    <span class="variable">@diffs</span>     <span class="operator">=</span> <span class="variable">diff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="variable">$diffs_ref</span> <span class="operator">=</span> <span class="variable">diff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<p><code>diff</code> computes the smallest set of additions and deletions necessary
+to turn the first sequence into the second, and returns a description
+of these changes.  The description is a list of <em>hunks</em>; each hunk
+represents a contiguous section of items which should be added,
+deleted, or replaced.  (Hunks containing unchanged items are not
+included.)</p>
+<p>The return value of <code>diff</code> is a list of hunks, or, in scalar context, a
+reference to such a list.  If there are no differences, the list will be
+empty.</p>
+<p>Here is an example.  Calling <code>diff</code> for the following two sequences:</p>
+<pre>
+    a b c e h j l m n p
+    b c d e f j k l m r s t</pre>
+<p>would produce the following list:</p>
+<pre>
+    (
+      [ [ '-', 0, 'a' ] ],</pre>
+<pre>
+      [ [ '+', 2, 'd' ] ],</pre>
+<pre>
+      [ [ '-', 4, 'h' ],
+        [ '+', 4, 'f' ] ],</pre>
+<pre>
+      [ [ '+', 6, 'k' ] ],</pre>
+<pre>
+      [ [ '-',  8, 'n' ],
+        [ '-',  9, 'p' ],
+        [ '+',  9, 'r' ],
+        [ '+', 10, 's' ],
+        [ '+', 11, 't' ] ],
+    )</pre>
+<p>There are five hunks here.  The first hunk says that the <a href="../../lib/pods/perlrun.html#a"><code>a</code></a> at
+position 0 of the first sequence should be deleted (<code>-</code>).  The second
+hunk says that the <a href="../../lib/pods/perlrun.html#d"><code>d</code></a> at position 2 of the second sequence should
+be inserted (<code>+</code>).  The third hunk says that the <a href="../../lib/pods/perlrun.html#h"><code>h</code></a> at position 4
+of the first sequence should be removed and replaced with the <a href="../../lib/pods/perlrun.html#f"><code>f</code></a>
+from position 4 of the second sequence.  And so on.</p>
+<p><code>diff</code> may be passed an optional third parameter; this is a CODE
+reference to a key generation function.  See <a href="#key_generation_functions">KEY GENERATION FUNCTIONS</a>.</p>
+<p>Additional parameters, if any, will be passed to the key generation
+routine.</p>
+<p>
+</p>
+<h2><a name="sdiff"><code>sdiff</code></a></h2>
+<pre>
+    <span class="variable">@sdiffs</span>     <span class="operator">=</span> <span class="variable">sdiff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+    <span class="variable">$sdiffs_ref</span> <span class="operator">=</span> <span class="variable">sdiff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span> <span class="operator">);</span>
+</pre>
+<p><code>sdiff</code> computes all necessary components to show two sequences
+and their minimized differences side by side, just like the
+Unix-utility <em>sdiff</em> does:</p>
+<pre>
+    same             same
+    before     |     after
+    old        &lt;     -
+    -          &gt;     new</pre>
+<p>It returns a list of array refs, each pointing to an array of
+display instructions. In scalar context it returns a reference
+to such a list. If there are no differences, the list will have one
+entry per item, each indicating that the item was unchanged.</p>
+<p>Display instructions consist of three elements: A modifier indicator
+(<code>+</code>: Element added, <code>-</code>: Element removed, <a href="../../lib/pods/perlrun.html#u"><code>u</code></a>: Element unmodified,
+<a href="../../lib/pods/perlrun.html#c"><code>c</code></a>: Element changed) and the value of the old and new elements, to
+be displayed side-by-side.</p>
+<p>An <code>sdiff</code> of the following two sequences:</p>
+<pre>
+    a b c e h j l m n p
+    b c d e f j k l m r s t</pre>
+<p>results in</p>
+<pre>
+    ( [ '-', 'a', ''  ],
+      [ 'u', 'b', 'b' ],
+      [ 'u', 'c', 'c' ],
+      [ '+', '',  'd' ],
+      [ 'u', 'e', 'e' ],
+      [ 'c', 'h', 'f' ],
+      [ 'u', 'j', 'j' ],
+      [ '+', '',  'k' ],
+      [ 'u', 'l', 'l' ],
+      [ 'u', 'm', 'm' ],
+      [ 'c', 'n', 'r' ],
+      [ 'c', 'p', 's' ],
+      [ '+', '',  't' ],
+    )</pre>
+<p><code>sdiff</code> may be passed an optional third parameter; this is a CODE
+reference to a key generation function.  See <a href="#key_generation_functions">KEY GENERATION FUNCTIONS</a>.</p>
+<p>Additional parameters, if any, will be passed to the key generation
+routine.</p>
+<p>
+</p>
+<h2><a name="compact_diff"><code>compact_diff</code></a></h2>
+<p><code>compact_diff</code> is much like <code>sdiff</code> except it returns a much more
+compact description consisting of just one flat list of indices.  An
+example helps explain the format:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@a</span> <span class="operator">=</span> <span class="string">qw( a b c   e  h j   l m n p      )</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">@b</span> <span class="operator">=</span> <span class="string">qw(   b c d e f  j k l m    r s t )</span><span class="operator">;</span>
+    <span class="variable">@cdiff</span> <span class="operator">=</span> <span class="variable">compact_diff</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">@a</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@b</span> <span class="operator">);</span>
+    <span class="comment"># Returns:</span>
+    <span class="comment">#   @a      @b       @a       @b</span>
+    <span class="comment">#  start   start   values   values</span>
+    <span class="operator">(</span>    <span class="number">0</span><span class="operator">,</span>      <span class="number">0</span><span class="operator">,</span>   <span class="comment">#       =</span>
+         <span class="number">0</span><span class="operator">,</span>      <span class="number">0</span><span class="operator">,</span>   <span class="comment">#    a  !</span>
+         <span class="number">1</span><span class="operator">,</span>      <span class="number">0</span><span class="operator">,</span>   <span class="comment">#  b c  =  b c</span>
+         <span class="number">3</span><span class="operator">,</span>      <span class="number">2</span><span class="operator">,</span>   <span class="comment">#       !  d</span>
+         <span class="number">3</span><span class="operator">,</span>      <span class="number">3</span><span class="operator">,</span>   <span class="comment">#    e  =  e</span>
+         <span class="number">4</span><span class="operator">,</span>      <span class="number">4</span><span class="operator">,</span>   <span class="comment">#    f  !  h</span>
+         <span class="number">5</span><span class="operator">,</span>      <span class="number">5</span><span class="operator">,</span>   <span class="comment">#    j  =  j</span>
+         <span class="number">6</span><span class="operator">,</span>      <span class="number">6</span><span class="operator">,</span>   <span class="comment">#       !  k</span>
+         <span class="number">6</span><span class="operator">,</span>      <span class="number">7</span><span class="operator">,</span>   <span class="comment">#  l m  =  l m</span>
+         <span class="number">8</span><span class="operator">,</span>      <span class="number">9</span><span class="operator">,</span>   <span class="comment">#  n p  !  r s t</span>
+        <span class="number">10</span><span class="operator">,</span>     <span class="number">12</span><span class="operator">,</span>   <span class="comment">#</span>
+    <span class="operator">);</span>
+</pre>
+<p>The 0th, 2nd, 4th, etc. entries are all indices into @seq1 (@a in the
+above example) indicating where a hunk begins.  The 1st, 3rd, 5th, etc.
+entries are all indices into @seq2 (@b in the above example) indicating
+where the same hunk begins.</p>
+<p>So each pair of indices (except the last pair) describes where a hunk
+begins (in each sequence).  Since each hunk must end at the item just
+before the item that starts the next hunk, the next pair of indices can
+be used to determine where the hunk ends.</p>
+<p>So, the first 4 entries (0..3) describe the first hunk.  Entries 0 and 1
+describe where the first hunk begins (and so are always both 0).
+Entries 2 and 3 describe where the next hunk begins, so subtracting 1
+from each tells us where the first hunk ends.  That is, the first hunk
+contains items <code>$diff[0]</code> through <code>$diff[2] - 1</code> of the first sequence
+and contains items <code>$diff[1]</code> through <code>$diff[3] - 1</code> of the second
+sequence.</p>
+<p>In other words, the first hunk consists of the following two lists of items:</p>
+<pre>
+               <span class="comment">#  1st pair     2nd pair</span>
+               <span class="comment"># of indices   of indices</span>
+                   <span class="variable">@list1</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span> <span class="operator">..</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+                   <span class="variable">@list2</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">1</span><span class="operator">]</span> <span class="operator">..</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+               <span class="comment"># Hunk start   Hunk end</span>
+</pre>
+<p>Note that the hunks will always alternate between those that are part of
+the LCS (those that contain unchanged items) and those that contain
+changes.  This means that all we need to be told is whether the first
+hunk is a 'same' or 'diff' hunk and we can determine which of the other
+hunks contain 'same' items or 'diff' items.</p>
+<p>By convention, we always make the first hunk contain unchanged items.
+So the 1st, 3rd, 5th, etc. hunks (all odd-numbered hunks if you start
+counting from 1) all contain unchanged items.  And the 2nd, 4th, 6th,
+etc. hunks (all even-numbered hunks if you start counting from 1) all
+contain changed items.</p>
+<p>Since @a and @b don't begin with the same value, the first hunk in our
+example is empty (otherwise we'd violate the above convention).  Note
+that the first 4 index values in our example are all zero.  Plug these
+values into our previous code block and we get:</p>
+<pre>
+    <span class="variable">@hunk1a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">0</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="variable">@hunk1b</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">0</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>And <code>0..-1</code> returns the empty list.</p>
+<p>Move down one pair of indices (2..5) and we get the offset ranges for
+the second hunk, which contains changed items.</p>
+<p>Since <code>@diff[2..5]</code> contains (0,0,1,0) in our example, the second hunk
+consists of these two lists of items:</p>
+<pre>
+        <span class="variable">@hunk2a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">2</span><span class="operator">]</span> <span class="operator">..</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@hunk2b</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">3</span><span class="operator">]</span> <span class="operator">..</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">5</span><span class="operator">]</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+            <span class="comment"># or</span>
+        <span class="variable">@hunk2a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">1</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@hunk2b</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">0</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+            <span class="comment"># or</span>
+        <span class="variable">@hunk2a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">0</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@hunk2b</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+            <span class="comment"># or</span>
+        <span class="variable">@hunk2a</span> <span class="operator">=</span> <span class="operator">(</span> <span class="string">'a'</span> <span class="operator">);</span>
+        <span class="variable">@hunk2b</span> <span class="operator">=</span> <span class="operator">(</span> <span class="operator">);</span>
+</pre>
+<p>That is, we would delete item 0 ('a') from @a.</p>
+<p>Since <code>@diff[4..7]</code> contains (1,0,3,2) in our example, the third hunk
+consists of these two lists of items:</p>
+<pre>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">4</span><span class="operator">]</span> <span class="operator">..</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">6</span><span class="operator">]</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">5</span><span class="operator">]</span> <span class="operator">..</span> <span class="variable">$cdiff</span><span class="operator">[</span><span class="number">7</span><span class="operator">]</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+            <span class="comment"># or</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="number">1</span> <span class="operator">..</span> <span class="number">3</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">2</span><span class="operator">-</span><span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+            <span class="comment"># or</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="variable">@a</span><span class="operator">[</span> <span class="number">1</span> <span class="operator">..</span> <span class="number">2</span> <span class="operator">]</span><span class="operator">;</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="variable">@b</span><span class="operator">[</span> <span class="number">0</span> <span class="operator">..</span> <span class="number">1</span> <span class="operator">]</span><span class="operator">;</span>
+            <span class="comment"># or</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="string">qw( b c )</span><span class="operator">;</span>
+        <span class="variable">@hunk3a</span> <span class="operator">=</span> <span class="string">qw( b c )</span><span class="operator">;</span>
+</pre>
+<p>Note that this third hunk contains unchanged items as our convention demands.</p>
+<p>You can continue this process until you reach the last two indices,
+which will always be the number of items in each sequence.  This is
+required so that subtracting one from each will give you the indices to
+the last items in each sequence.</p>
+<p>
+</p>
+<h2><a name="traverse_sequences"><code>traverse_sequences</code></a></h2>
+<p><code>traverse_sequences</code> used to be the most general facility provided by
+this module (the new OO interface is more powerful and much easier to
+use).</p>
+<p>Imagine that there are two arrows.  Arrow A points to an element of
+sequence A, and arrow B points to an element of the sequence B. 
+Initially, the arrows point to the first elements of the respective
+sequences.  <code>traverse_sequences</code> will advance the arrows through the
+sequences one element at a time, calling an appropriate user-specified
+callback function before each advance.  It willadvance the arrows in
+such a way that if there are equal elements <code>$A[$i]</code> and <code>$B[$j]</code>
+which are equal and which are part of the LCS, there will be some moment
+during the execution of <code>traverse_sequences</code> when arrow A is pointing
+to <code>$A[$i]</code> and arrow B is pointing to <code>$B[$j]</code>.  When this happens,
+<code>traverse_sequences</code> will call the <code>MATCH</code> callback function and then
+it will advance both arrows.</p>
+<p>Otherwise, one of the arrows is pointing to an element of its sequence
+that is not part of the LCS.  <code>traverse_sequences</code> will advance that
+arrow and will call the <code>DISCARD_A</code> or the <code>DISCARD_B</code> callback,
+depending on which arrow it advanced.  If both arrows point to elements
+that are not part of the LCS, then <code>traverse_sequences</code> will advance
+one of them and call the appropriate callback, but it is not specified
+which it will call.</p>
+<p>The arguments to <code>traverse_sequences</code> are the two sequences to
+traverse, and a hash which specifies the callback functions, like this:</p>
+<pre>
+    <span class="variable">traverse_sequences</span><span class="operator">(</span>
+        <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span>
+        <span class="operator">{</span>   <span class="string">MATCH</span> <span class="operator">=&gt;</span> <span class="variable">$callback_1</span><span class="operator">,</span>
+            <span class="string">DISCARD_A</span> <span class="operator">=&gt;</span> <span class="variable">$callback_2</span><span class="operator">,</span>
+            <span class="string">DISCARD_B</span> <span class="operator">=&gt;</span> <span class="variable">$callback_3</span><span class="operator">,</span>
+        <span class="operator">}</span>
+    <span class="operator">);</span>
+</pre>
+<p>Callbacks for MATCH, DISCARD_A, and DISCARD_B are invoked with at least
+the indices of the two arrows as their arguments.  They are not expected
+to return any values.  If a callback is omitted from the table, it is
+not called.</p>
+<p>Callbacks for A_FINISHED and B_FINISHED are invoked with at least the
+corresponding index in A or B.</p>
+<p>If arrow A reaches the end of its sequence, before arrow B does,
+<code>traverse_sequences</code> will call the <code>A_FINISHED</code> callback when it
+advances arrow B, if there is such a function; if not it will call
+<code>DISCARD_B</code> instead.  Similarly if arrow B finishes first. 
+<code>traverse_sequences</code> returns when both arrows are at the ends of their
+respective sequences.  It returns true on success and false on failure. 
+At present there is no way to fail.</p>
+<p><code>traverse_sequences</code> may be passed an optional fourth parameter; this
+is a CODE reference to a key generation function.  See <a href="#key_generation_functions">KEY GENERATION FUNCTIONS</a>.</p>
+<p>Additional parameters, if any, will be passed to the key generation function.</p>
+<p>If you want to pass additional parameters to your callbacks, but don't
+need a custom key generation function, you can get the default by
+passing undef:</p>
+<pre>
+    <span class="variable">traverse_sequences</span><span class="operator">(</span>
+        <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span>
+        <span class="operator">{</span>   <span class="string">MATCH</span> <span class="operator">=&gt;</span> <span class="variable">$callback_1</span><span class="operator">,</span>
+            <span class="string">DISCARD_A</span> <span class="operator">=&gt;</span> <span class="variable">$callback_2</span><span class="operator">,</span>
+            <span class="string">DISCARD_B</span> <span class="operator">=&gt;</span> <span class="variable">$callback_3</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+        <span class="keyword">undef</span><span class="operator">,</span>     <span class="comment"># default key-gen</span>
+        <span class="variable">$myArgument1</span><span class="operator">,</span>
+        <span class="variable">$myArgument2</span><span class="operator">,</span>
+        <span class="variable">$myArgument3</span><span class="operator">,</span>
+    <span class="operator">);</span>
+</pre>
+<p><code>traverse_sequences</code> does not have a useful return value; you are
+expected to plug in the appropriate behavior with the callback
+functions.</p>
+<p>
+</p>
+<h2><a name="traverse_balanced"><code>traverse_balanced</code></a></h2>
+<p><code>traverse_balanced</code> is an alternative to <code>traverse_sequences</code>. It
+uses a different algorithm to iterate through the entries in the
+computed LCS. Instead of sticking to one side and showing element changes
+as insertions and deletions only, it will jump back and forth between
+the two sequences and report <em>changes</em> occurring as deletions on one
+side followed immediatly by an insertion on the other side.</p>
+<p>In addition to the <code>DISCARD_A</code>, <code>DISCARD_B</code>, and <code>MATCH</code> callbacks
+supported by <code>traverse_sequences</code>, <code>traverse_balanced</code> supports
+a <code>CHANGE</code> callback indicating that one element got <code>replaced</code> by another:</p>
+<pre>
+    <span class="variable">traverse_balanced</span><span class="operator">(</span>
+        <span class="operator">\</span><span class="variable">@seq1</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">@seq2</span><span class="operator">,</span>
+        <span class="operator">{</span>   <span class="string">MATCH</span> <span class="operator">=&gt;</span> <span class="variable">$callback_1</span><span class="operator">,</span>
+            <span class="string">DISCARD_A</span> <span class="operator">=&gt;</span> <span class="variable">$callback_2</span><span class="operator">,</span>
+            <span class="string">DISCARD_B</span> <span class="operator">=&gt;</span> <span class="variable">$callback_3</span><span class="operator">,</span>
+            <span class="string">CHANGE</span>    <span class="operator">=&gt;</span> <span class="variable">$callback_4</span><span class="operator">,</span>
+        <span class="operator">}</span>
+    <span class="operator">);</span>
+</pre>
+<p>If no <code>CHANGE</code> callback is specified, <code>traverse_balanced</code>
+will map <code>CHANGE</code> events to <code>DISCARD_A</code> and <code>DISCARD_B</code> actions,
+therefore resulting in a similar behaviour as <code>traverse_sequences</code>
+with different order of events.</p>
+<p><code>traverse_balanced</code> might be a bit slower than <code>traverse_sequences</code>,
+noticable only while processing huge amounts of data.</p>
+<p>The <code>sdiff</code> function of this module 
+is implemented as call to <code>traverse_balanced</code>.</p>
+<p><code>traverse_balanced</code> does not have a useful return value; you are expected to
+plug in the appropriate behavior with the callback functions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="key_generation_functions">KEY GENERATION FUNCTIONS</a></h1>
+<p>Most of the functions accept an optional extra parameter.  This is a
+CODE reference to a key generating (hashing) function that should return
+a string that uniquely identifies a given element.  It should be the
+case that if two elements are to be considered equal, their keys should
+be the same (and the other way around).  If no key generation function
+is provided, the key will be the element as a string.</p>
+<p>By default, comparisons will use &quot;eq&quot; and elements will be turned into keys
+using the default stringizing operator '&quot;&quot;'.</p>
+<p>Where this is important is when you're comparing something other than
+strings.  If it is the case that you have multiple different objects
+that should be considered to be equal, you should supply a key
+generation function. Otherwise, you have to make sure that your arrays
+contain unique references.</p>
+<p>For instance, consider this example:</p>
+<pre>
+    <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> new
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$package</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">return</span> <span class="keyword">bless</span> <span class="operator">{</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">''</span><span class="operator">,</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">''</span><span class="operator">,</span> <span class="variable">@_</span> <span class="operator">}</span><span class="operator">,</span> <span class="variable">$package</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> clone
+    </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$old</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$new</span> <span class="operator">=</span> <span class="keyword">bless</span> <span class="operator">{</span> <span class="variable">%$old</span> <span class="operator">}</span><span class="operator">,</span> <span class="keyword">ref</span><span class="operator">(</span><span class="variable">$old</span><span class="operator">);</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> hash
+    </span><span class="operator">{</span>
+        <span class="keyword">return</span> <span class="keyword">shift</span><span class="operator">()-&gt;</span><span class="operator">{</span><span class="string">'ssn'</span><span class="operator">}</span><span class="operator">;</span>
+    <span class="operator">}</span>
+</pre>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$person1</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Joe'</span><span class="operator">,</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">'123-45-6789'</span> <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$person2</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Mary'</span><span class="operator">,</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">'123-47-0000'</span> <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$person3</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Pete'</span><span class="operator">,</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">'999-45-2222'</span> <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$person4</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Peggy'</span><span class="operator">,</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">'123-45-9999'</span> <span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$person5</span> <span class="operator">=</span> <span class="variable">Person</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">'Frank'</span><span class="operator">,</span> <span class="string">ssn</span> <span class="operator">=&gt;</span> <span class="string">'000-45-9999'</span> <span class="operator">);</span>
+</pre>
+<p>If you did this:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$array1</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$person1</span><span class="operator">,</span> <span class="variable">$person2</span><span class="operator">,</span> <span class="variable">$person4</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$array2</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$person1</span><span class="operator">,</span> <span class="variable">$person3</span><span class="operator">,</span> <span class="variable">$person4</span><span class="operator">,</span> <span class="variable">$person5</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="variable">Algorithm::Diff::diff</span><span class="operator">(</span> <span class="variable">$array1</span><span class="operator">,</span> <span class="variable">$array2</span> <span class="operator">);</span>
+</pre>
+<p>everything would work out OK (each of the objects would be converted
+into a string like &quot;Person=HASH(0x82425b0)&quot; for comparison).</p>
+<p>But if you did this:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$array1</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$person1</span><span class="operator">,</span> <span class="variable">$person2</span><span class="operator">,</span> <span class="variable">$person4</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$array2</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$person1</span><span class="operator">,</span> <span class="variable">$person3</span><span class="operator">,</span> <span class="variable">$person4</span><span class="operator">-&gt;</span><span class="variable">clone</span><span class="operator">(),</span> <span class="variable">$person5</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="variable">Algorithm::Diff::diff</span><span class="operator">(</span> <span class="variable">$array1</span><span class="operator">,</span> <span class="variable">$array2</span> <span class="operator">);</span>
+</pre>
+<p>$person4 and $person4-&gt;<code>clone()</code> (which have the same name and SSN)
+would be seen as different objects. If you wanted them to be considered
+equivalent, you would have to pass in a key generation function:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$array1</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$person1</span><span class="operator">,</span> <span class="variable">$person2</span><span class="operator">,</span> <span class="variable">$person4</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$array2</span> <span class="operator">=</span> <span class="operator">[</span> <span class="variable">$person1</span><span class="operator">,</span> <span class="variable">$person3</span><span class="operator">,</span> <span class="variable">$person4</span><span class="operator">-&gt;</span><span class="variable">clone</span><span class="operator">(),</span> <span class="variable">$person5</span> <span class="operator">]</span><span class="operator">;</span>
+    <span class="variable">Algorithm::Diff::diff</span><span class="operator">(</span> <span class="variable">$array1</span><span class="operator">,</span> <span class="variable">$array2</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">Person::hash</span> <span class="operator">);</span>
+</pre>
+<p>This would use the 'ssn' field in each Person as a comparison key, and
+so would consider $person4 and $person4-&gt;<code>clone()</code> as equal.</p>
+<p>You may also pass additional parameters to the key generation function
+if you wish.</p>
+<p>
+</p>
+<hr />
+<h1><a name="error_checking">ERROR CHECKING</a></h1>
+<p>If you pass these routines a non-reference and they expect a reference,
+they will die with a message.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>This version released by Tye McQueen (http://perlmonks.org/?node=tye).</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>Parts Copyright (c) 2000-2004 Ned Konz.  All rights reserved.
+Parts by Tye McQueen.</p>
+<p>This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl.</p>
+<p>
+</p>
+<hr />
+<h1><a name="mailing_list">MAILING LIST</a></h1>
+<p>Mark-Jason still maintains a mailing list.  To join a low-volume mailing
+list for announcements related to diff and Algorithm::Diff, send an
+empty mail message to <a href="mailto:mjd-perl-diff-request@plover.com.">mjd-perl-diff-request@plover.com.</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="credits">CREDITS</a></h1>
+<p>Versions through 0.59 (and much of this documentation) were written by:</p>
+<p>Mark-Jason Dominus, <a href="mailto:mjd-perl-diff@plover.com">mjd-perl-diff@plover.com</a></p>
+<p>This version borrows some documentation and routine names from
+Mark-Jason's, but Diff.pm's code was completely replaced.</p>
+<p>This code was adapted from the Smalltalk code of Mario Wolczko
+&lt;<a href="mailto:mario@wolczko.com">mario@wolczko.com</a>&gt;, which is available at
+<a href="ftp://st.cs.uiuc.edu/pub/Smalltalk/MANCHESTER/manchester/4.0/diff.st">ftp://st.cs.uiuc.edu/pub/Smalltalk/MANCHESTER/manchester/4.0/diff.st</a></p>
+<p><code>sdiff</code> and <code>traverse_balanced</code> were written by Mike Schilli
+&lt;<a href="mailto:m@perlmeister.com">m@perlmeister.com</a>&gt;.</p>
+<p>The algorithm is that described in
+<em>A Fast Algorithm for Computing Longest Common Subsequences</em>,
+CACM, vol.20, no.5, pp.350-353, May 1977, with a few
+minor improvements to improve the speed.</p>
+<p>Much work was done by Ned Konz (<a href="mailto:perl@bike-nomad.com">perl@bike-nomad.com</a>)</p>
+<p>The OO interface and some other changes are by Tye McQueen.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,583 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>DBI::ProxyServer - a server for the DBD::Proxy driver</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>DBI::ProxyServer - a server for the DBD::Proxy driver</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#shutdown">SHUTDOWN</a></li>
+	<li><a href="#configuration_file">CONFIGURATION FILE</a></li>
+	<li><a href="#proxyserver_configuration_file__bigger_example_">Proxyserver Configuration file (bigger example)</a></li>
+	<ul>
+
+		<li><a href="#testing_the_connection_from_a_remote_machine">Testing the connection from a remote machine</a></li>
+		<li><a href="#testing_the_connection_with_a_perl_script">Testing the connection with a perl-script</a></li>
+		<li><a href="#how_the_configuration_works">How the configuration works</a></li>
+		<li><a href="#problems">Problems</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>DBI::ProxyServer - a server for the DBD::Proxy driver</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">DBI::ProxyServer</span><span class="operator">;</span>
+    <span class="variable">DBI::ProxyServer::main</span><span class="operator">(</span><span class="variable">@ARGV</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>DBI::Proxy Server is a module for implementing a proxy for the DBI proxy
+driver, DBD::Proxy. It allows access to databases over the network if the
+DBMS does not offer networked operations. But the proxy server might be
+useful for you, even if you have a DBMS with integrated network
+functionality: It can be used as a DBI proxy in a firewalled environment.</p>
+<p>DBI::ProxyServer runs as a daemon on the machine with the DBMS or on the
+firewall. The client connects to the agent using the DBI driver DBD::Proxy,
+thus in the exactly same way than using DBD::mysql, DBD::mSQL or any other
+DBI driver.</p>
+<p>The agent is implemented as a RPC::PlServer application. Thus you have
+access to all the possibilities of this module, in particular encryption
+and a similar configuration file. DBI::ProxyServer adds the possibility of
+query restrictions: You can define a set of queries that a client may
+execute and restrict access to those. (Requires a DBI driver that supports
+parameter binding.) See <a href="#configuration_file">CONFIGURATION FILE</a>.</p>
+<p>The provided driver script, <a href="../../bin/dbiproxy.html">the dbiproxy manpage</a>, may either be used as it is or
+used as the basis for a local version modified to meet your needs.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<p>When calling the DBI::ProxyServer::main() function, you supply an
+array of options. These options are parsed by the Getopt::Long module.
+The ProxyServer inherits all of RPC::PlServer's and hence Net::Daemon's
+options and option handling, in particular the ability to read
+options from either the command line or a config file. See
+<a href="../../RPC/PlServer.html">the RPC::PlServer manpage</a>. See <a href="../../Net/Daemon.html">the Net::Daemon manpage</a>. Available options include</p>
+<dl>
+<dt><strong><a name="chroot" class="item"><em>chroot</em> (<strong>--chroot=dir</strong>)</a></strong></dt>
+
+<dd>
+<p>(UNIX only)  After doing a <a href="../../lib/pods/perlfunc.html#bind"><code>bind()</code></a>, change root directory to the given
+directory by doing a <a href="#chroot"><code>chroot()</code></a>. This is useful for security, but it
+restricts the environment a lot. For example, you need to load DBI
+drivers in the config file or you have to create hard links to Unix
+sockets, if your drivers are using them. For example, with MySQL, a
+config file might contain the following lines:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$rootdir</span> <span class="operator">=</span> <span class="string">'/var/dbiproxy'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$unixsockdir</span> <span class="operator">=</span> <span class="string">'/tmp'</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$unixsockfile</span> <span class="operator">=</span> <span class="string">'mysql.sock'</span><span class="operator">;</span>
+    <span class="keyword">foreach</span> <span class="variable">$dir</span> <span class="operator">(</span><span class="variable">$rootdir</span><span class="operator">,</span> <span class="string">"</span><span class="variable">$rootdir$unixsockdir</span><span class="string">"</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="keyword">mkdir</span> <span class="number">0755</span><span class="operator">,</span> <span class="variable">$dir</span><span class="operator">;</span>
+    <span class="operator">}</span>
+    <span class="keyword">link</span><span class="operator">(</span><span class="string">"</span><span class="variable">$unixsockdir</span><span class="string">/</span><span class="variable">$unixsockfile</span><span class="string">"</span><span class="operator">,</span>
+         <span class="string">"</span><span class="variable">$rootdir$unixsockdir</span><span class="string">/</span><span class="variable">$unixsockfile</span><span class="string">"</span><span class="operator">);</span>
+    <span class="keyword">require</span> <span class="variable">DBD::mysql</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="operator">{</span>
+        <span class="string">'chroot'</span> <span class="operator">=&gt;</span> <span class="variable">$rootdir</span><span class="operator">,</span>
+        <span class="operator">...</span>
+    <span class="operator">}</span>
+</pre>
+<p>If you don't know <a href="#chroot"><code>chroot()</code></a>, think of an FTP server where you can see a
+certain directory tree only after logging in. See also the --group and
+--user options.</p>
+</dd>
+<dt><strong><a name="clients" class="item"><em>clients</em></a></strong></dt>
+
+<dd>
+<p>An array ref with a list of clients. Clients are hash refs, the attributes
+<em>accept</em> (0 for denying access and 1 for permitting) and <em>mask</em>, a Perl
+regular expression for the clients IP number or its host name.</p>
+</dd>
+<dt><strong><a name="configfile" class="item"><em>configfile</em> (<strong>--configfile=file</strong>)</a></strong></dt>
+
+<dd>
+<p>Config files are assumed to return a single hash ref that overrides the
+arguments of the new method. However, command line arguments in turn take
+precedence over the config file. See the <a href="#configuration_file">CONFIGURATION FILE</a> section
+below for details on the config file.</p>
+</dd>
+<dt><strong><a name="debug" class="item"><em>debug</em> (<strong>--debug</strong>)</a></strong></dt>
+
+<dd>
+<p>Turn debugging mode on. Mainly this asserts that logging messages of
+level &quot;debug&quot; are created.</p>
+</dd>
+<dt><strong><a name="facility" class="item"><em>facility</em> (<strong>--facility=mode</strong>)</a></strong></dt>
+
+<dd>
+<p>(UNIX only) Facility to use for <a href="../../lib/Sys/Syslog.html">the Sys::Syslog manpage</a>. The default is
+<strong>daemon</strong>.</p>
+</dd>
+<dt><strong><a name="group" class="item"><em>group</em> (<strong>--group=gid</strong>)</a></strong></dt>
+
+<dd>
+<p>After doing a <a href="../../lib/pods/perlfunc.html#bind"><code>bind()</code></a>, change the real and effective GID to the given.
+This is useful, if you want your server to bind to a privileged port
+(&lt;1024), but don't want the server to execute as root. See also
+the --user option.</p>
+<p>GID's can be passed as group names or numeric values.</p>
+</dd>
+<dt><strong><a name="localaddr" class="item"><em>localaddr</em> (<strong>--localaddr=ip</strong>)</a></strong></dt>
+
+<dd>
+<p>By default a daemon is listening to any IP number that a machine
+has. This attribute allows to restrict the server to the given
+IP number.</p>
+</dd>
+<dt><strong><a name="localport" class="item"><em>localport</em> (<strong>--localport=port</strong>)</a></strong></dt>
+
+<dd>
+<p>This attribute sets the port on which the daemon is listening. It
+must be given somehow, as there's no default.</p>
+</dd>
+<dt><strong><a name="logfile" class="item"><em>logfile</em> (<strong>--logfile=file</strong>)</a></strong></dt>
+
+<dd>
+<p>Be default logging messages will be written to the syslog (Unix) or
+to the event log (Windows NT). On other operating systems you need to
+specify a log file. The special value &quot;STDERR&quot; forces logging to
+stderr. See <a href="../../Net/Daemon/Log.html">the Net::Daemon::Log manpage</a> for details.</p>
+</dd>
+<dt><strong><a name="mode" class="item"><em>mode</em> (<strong>--mode=modename</strong>)</a></strong></dt>
+
+<dd>
+<p>The server can run in three different modes, depending on the environment.</p>
+<p>If you are running Perl 5.005 and did compile it for threads, then the
+server will create a new thread for each connection. The thread will
+execute the server's <code>Run()</code> method and then terminate. This mode is the
+default, you can force it with &quot;--mode=threads&quot;.</p>
+<p>If threads are not available, but you have a working <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>, then the
+server will behave similar by creating a new process for each connection.
+This mode will be used automatically in the absence of threads or if
+you use the &quot;--mode=fork&quot; option.</p>
+<p>Finally there's a single-connection mode: If the server has accepted a
+connection, he will enter the <code>Run()</code> method. No other connections are
+accepted until the <code>Run()</code> method returns (if the client disconnects).
+This operation mode is useful if you have neither threads nor <a href="../../lib/pods/perlfunc.html#fork"><code>fork()</code></a>,
+for example on the Macintosh. For debugging purposes you can force this
+mode with &quot;--mode=single&quot;.</p>
+</dd>
+<dt><strong><a name="pidfile" class="item"><em>pidfile</em> (<strong>--pidfile=file</strong>)</a></strong></dt>
+
+<dd>
+<p>(UNIX only) If this option is present, a PID file will be created at the
+given location. Default is to not create a pidfile.</p>
+</dd>
+<dt><strong><a name="user" class="item"><em>user</em> (<strong>--user=uid</strong>)</a></strong></dt>
+
+<dd>
+<p>After doing a <a href="../../lib/pods/perlfunc.html#bind"><code>bind()</code></a>, change the real and effective UID to the given.
+This is useful, if you want your server to bind to a privileged port
+(&lt;1024), but don't want the server to execute as root. See also
+the --group and the --chroot options.</p>
+<p>UID's can be passed as group names or numeric values.</p>
+</dd>
+<dt><strong><a name="version" class="item"><em>version</em> (<strong>--version</strong>)</a></strong></dt>
+
+<dd>
+<p>Suppresses startup of the server; instead the version string will
+be printed and the program exits immediately.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="shutdown">SHUTDOWN</a></h1>
+<p>DBI::ProxyServer is built on <a href="../../RPC/PlServer.html">the RPC::PlServer manpage</a> which is, in turn, built on <a href="../../Net/Daemon.html">the Net::Daemon manpage</a>.</p>
+<p>You should refer to <a href="../../Net/Daemon.html">the Net::Daemon manpage</a> for how to shutdown the server, except that
+you can't because it's not currently documented there (as of v0.43).
+The bottom-line is that it seems that there's no support for graceful shutdown.</p>
+<p>
+</p>
+<hr />
+<h1><a name="configuration_file">CONFIGURATION FILE</a></h1>
+<p>The configuration file is just that of <em>RPC::PlServer</em> or <em>Net::Daemon</em>
+with some additional attributes in the client list.</p>
+<p>The config file is a Perl script. At the top of the file you may include
+arbitrary Perl source, for example load drivers at the start (useful
+to enhance performance), prepare a chroot environment and so on.</p>
+<p>The important thing is that you finally return a hash ref of option
+name/value pairs. The possible options are listed above.</p>
+<p>All possibilities of Net::Daemon and RPC::PlServer apply, in particular</p>
+<dl>
+<dt><strong><a name="host_and_or_user_dependent_access_control" class="item">Host and/or User dependent access control</a></strong></dt>
+
+<dt><strong><a name="host_and_or_user_dependent_encryption" class="item">Host and/or User dependent encryption</a></strong></dt>
+
+<dt><strong><a name="changing_uid_and_or_gid_after_binding_to_the_port" class="item">Changing UID and/or GID after binding to the port</a></strong></dt>
+
+<dt><strong>Running in a <code>chroot()</code> environment</strong></dt>
+
+</dl>
+<p>Additionally the server offers you query restrictions. Suggest the
+following client list:</p>
+<pre>
+    <span class="string">'clients'</span> <span class="operator">=&gt;</span> <span class="operator">[</span>
+        <span class="operator">{</span> <span class="string">'mask'</span> <span class="operator">=&gt;</span> <span class="string">'^admin\.company\.com$'</span><span class="operator">,</span>
+          <span class="string">'accept'</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+          <span class="string">'users'</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'root'</span><span class="operator">,</span> <span class="string">'wwwrun'</span> <span class="operator">]</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">,</span>
+        <span class="operator">{</span>
+          <span class="string">'mask'</span> <span class="operator">=&gt;</span> <span class="string">'^admin\.company\.com$'</span><span class="operator">,</span>
+          <span class="string">'accept'</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+          <span class="string">'users'</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'root'</span><span class="operator">,</span> <span class="string">'wwwrun'</span> <span class="operator">]</span><span class="operator">,</span>
+          <span class="string">'sql'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+               <span class="string">'select'</span> <span class="operator">=&gt;</span> <span class="string">'SELECT * FROM foo'</span><span class="operator">,</span>
+               <span class="string">'insert'</span> <span class="operator">=&gt;</span> <span class="string">'INSERT INTO foo VALUES (?, ?, ?)'</span>
+               <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<p>then only the users root and wwwrun may connect from admin.company.com,
+executing arbitrary queries, but only wwwrun may connect from other
+hosts and is restricted to</p>
+<pre>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"select"</span><span class="operator">);</span>
+</pre>
+<p>or</p>
+<pre>
+    <span class="variable">$sth</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="string">"insert"</span><span class="operator">);</span>
+</pre>
+<p>which in fact are &quot;SELECT * FROM foo&quot; or &quot;INSERT INTO foo VALUES (?, ?, ?)&quot;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="proxyserver_configuration_file__bigger_example_">Proxyserver Configuration file (bigger example)</a></h1>
+<p>This section tells you how to restrict a DBI-Proxy: Not every user from
+every workstation shall be able to execute every query.</p>
+<p>There is a perl program &quot;dbiproxy&quot; which runs on a machine which is able
+to connect to all the databases we wish to reach. All Perl-DBD-drivers must
+be installed on this machine. You can also reach databases for which drivers 
+are not available on the machine where you run the program querying the 
+database, e.g. ask MS-Access-database from Linux.</p>
+<p>Create a configuration file &quot;proxy_oracle.cfg&quot; at the dbproxy-server:</p>
+<pre>
+    <span class="operator">{</span>
+        <span class="comment"># This shall run in a shell or a DOS-window </span>
+        <span class="comment"># facility =&gt; 'daemon',</span>
+        <span class="string">pidfile</span> <span class="operator">=&gt;</span> <span class="string">'your_dbiproxy.pid'</span><span class="operator">,</span>
+        <span class="string">logfile</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+        <span class="string">debug</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+        <span class="string">mode</span> <span class="operator">=&gt;</span> <span class="string">'single'</span><span class="operator">,</span>
+        <span class="string">localport</span> <span class="operator">=&gt;</span> <span class="string">'12400'</span><span class="operator">,</span>
+</pre>
+<pre>
+        # Access control, the first match in this list wins!
+        # So the order is important
+        clients =&gt; [
+                # hint to organize:
+                # the most specialized rules for single machines/users are 1st
+                # then the denying rules
+                # the the rules about whole networks</pre>
+<pre>
+                <span class="comment"># rule: internal_webserver</span>
+                <span class="comment"># desc: to get statistical information</span>
+                <span class="operator">{</span>
+                        <span class="comment"># this IP-address only is meant</span>
+                        <span class="string">mask</span> <span class="operator">=&gt;</span> <span class="string">'^10\.95\.81\.243$'</span><span class="operator">,</span>
+                        <span class="comment"># accept (not defer) connections like this</span>
+                        <span class="string">accept</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+                        <span class="comment"># only users from this list </span>
+                        <span class="comment"># are allowed to log on</span>
+                        <span class="string">users</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'informationdesk'</span> <span class="operator">]</span><span class="operator">,</span>
+                        <span class="comment"># only this statistical query is allowed</span>
+                        <span class="comment"># to get results for a web-query</span>
+                        <span class="string">sql</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+                                <span class="string">alive</span> <span class="operator">=&gt;</span> <span class="string">'select count(*) from dual'</span><span class="operator">,</span>
+                                <span class="string">statistic_area</span> <span class="operator">=&gt;</span> <span class="string">'select count(*) from e01admin.e01e203 where geb_bezei like ?'</span><span class="operator">,</span>
+                        <span class="operator">}</span>
+                <span class="operator">},</span>
+</pre>
+<pre>
+                <span class="comment"># rule: internal_bad_guy_1</span>
+                <span class="operator">{</span>
+                        <span class="string">mask</span> <span class="operator">=&gt;</span> <span class="string">'^10\.95\.81\.1$'</span><span class="operator">,</span>
+                        <span class="string">accept</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+                <span class="operator">},</span>
+</pre>
+<pre>
+                <span class="comment"># rule: employee_workplace</span>
+                <span class="comment"># desc: get detailled information</span>
+                <span class="operator">{</span>
+                        <span class="comment"># any IP-address is meant here</span>
+                        <span class="string">mask</span> <span class="operator">=&gt;</span> <span class="string">'^10\.95\.81\.(\d+)$'</span><span class="operator">,</span>
+                        <span class="comment"># accept (not defer) connections like this</span>
+                        <span class="string">accept</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+                        <span class="comment"># only users from this list </span>
+                        <span class="comment"># are allowed to log on</span>
+                        <span class="string">users</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'informationdesk'</span><span class="operator">,</span> <span class="string">'lippmann'</span> <span class="operator">]</span><span class="operator">,</span>
+                        <span class="comment"># all these queries are allowed:</span>
+                        <span class="string">sql</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+                                <span class="string">search_city</span> <span class="operator">=&gt;</span> <span class="string">'select ort_nr, plz, ort from e01admin.e01e200 where plz like ?'</span><span class="operator">,</span>
+                                <span class="string">search_area</span> <span class="operator">=&gt;</span> <span class="string">'select gebiettyp, geb_bezei from e01admin.e01e203 where geb_bezei like ? or geb_bezei like ?'</span><span class="operator">,</span>
+                        <span class="operator">}</span>
+                <span class="operator">},</span>
+</pre>
+<pre>
+                <span class="comment"># rule: internal_bad_guy_2 </span>
+                <span class="comment"># This does NOT work, because rule "employee_workplace" hits</span>
+                <span class="comment"># with its ip-address-mask of the whole network</span>
+                <span class="operator">{</span>
+                        <span class="comment"># don't accept connection from this ip-address</span>
+                        <span class="string">mask</span> <span class="operator">=&gt;</span> <span class="string">'^10\.95\.81\.5$'</span><span class="operator">,</span>
+                        <span class="string">accept</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+                <span class="operator">}</span>
+                        <span class="operator">]</span>
+                    <span class="operator">}</span>
+</pre>
+<p>Start the proxyserver like this:</p>
+<pre>
+        rem well-set Oracle_home needed for Oracle
+        set ORACLE_HOME=d:\oracle\ora81
+        dbiproxy --configfile proxy_oracle.cfg</pre>
+<p>
+</p>
+<h2><a name="testing_the_connection_from_a_remote_machine">Testing the connection from a remote machine</a></h2>
+<p>Call a program &quot;dbish&quot; from your commandline. I take the machine from rule &quot;internal_webserver&quot;</p>
+<pre>
+        <span class="variable">dbish</span> <span class="string">"dbi:Proxy:hostname=oracle.zdf;port=12400;dsn=dbi:Oracle:e01"</span> <span class="variable">informationdesk</span> <span class="variable">xxx</span>
+</pre>
+<p>There will be a shell-prompt:</p>
+<pre>
+        informationdesk@dbi...&gt; alive</pre>
+<pre>
+        Current statement buffer (enter '/'...):
+        alive</pre>
+<pre>
+        informationdesk@dbi...&gt; /
+        COUNT(*)
+        '1'
+        [1 rows of 1 fields returned]</pre>
+<p>
+</p>
+<h2><a name="testing_the_connection_with_a_perl_script">Testing the connection with a perl-script</a></h2>
+<p>Create a perl-script like this:</p>
+<pre>
+        <span class="comment"># file: oratest.pl</span>
+        <span class="comment"># call me like this: perl oratest.pl user password</span>
+</pre>
+<pre>
+        <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+        <span class="keyword">use</span> <span class="variable">DBI</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$user</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Usage: </span><span class="variable">$0</span><span class="string"> user password"</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$pass</span> <span class="operator">=</span> <span class="keyword">shift</span> <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"Usage: </span><span class="variable">$0</span><span class="string"> user password"</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$config</span> <span class="operator">=</span> <span class="operator">{</span>
+                <span class="string">dsn_at_proxy</span> <span class="operator">=&gt;</span> <span class="string">"dbi:Oracle:e01"</span><span class="operator">,</span>
+                <span class="string">proxy</span> <span class="operator">=&gt;</span> <span class="string">"hostname=oechsle.zdf;port=12400"</span><span class="operator">,</span>
+        <span class="operator">}</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$dsn</span> <span class="operator">=</span> <span class="keyword">sprintf</span> <span class="string">"dbi:Proxy:%s;dsn=%s"</span><span class="operator">,</span>
+                <span class="variable">$config</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">proxy</span><span class="operator">}</span><span class="operator">,</span>
+                <span class="variable">$config</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">dsn_at_proxy</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$dbh</span> <span class="operator">=</span> <span class="variable">DBI</span><span class="operator">-&gt;</span><span class="variable">connect</span><span class="operator">(</span> <span class="variable">$dsn</span><span class="operator">,</span> <span class="variable">$user</span><span class="operator">,</span> <span class="variable">$pass</span> <span class="operator">)</span>
+                <span class="operator">||</span> <span class="keyword">die</span> <span class="string">"connect did not work: </span><span class="variable">$DBI</span><span class="string">::errstr"</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$sql</span> <span class="operator">=</span> <span class="string">"search_city"</span><span class="operator">;</span>
+        <span class="keyword">printf</span> <span class="string">"%s\n%s\n%s\n"</span><span class="operator">,</span> <span class="string">"="</span><span class="variable">x40</span><span class="operator">,</span> <span class="variable">$sql</span><span class="operator">,</span> <span class="string">"="</span><span class="variable">x40</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">);</span>
+        <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">bind_param</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span><span class="string">'905%'</span><span class="operator">);</span>
+        <span class="operator">&amp;</span><span class="variable">show_result</span> <span class="operator">(</span><span class="variable">$cur</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$sql</span> <span class="operator">=</span> <span class="string">"search_area"</span><span class="operator">;</span>
+        <span class="keyword">printf</span> <span class="string">"%s\n%s\n%s\n"</span><span class="operator">,</span> <span class="string">"="</span><span class="variable">x40</span><span class="operator">,</span> <span class="variable">$sql</span><span class="operator">,</span> <span class="string">"="</span><span class="variable">x40</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">);</span>
+        <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">bind_param</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span><span class="string">'Pfarr%'</span><span class="operator">);</span>
+        <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">bind_param</span><span class="operator">(</span><span class="number">2</span><span class="operator">,</span><span class="string">'Bronnamberg%'</span><span class="operator">);</span>
+        <span class="operator">&amp;</span><span class="variable">show_result</span> <span class="operator">(</span><span class="variable">$cur</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$sql</span> <span class="operator">=</span> <span class="string">"statistic_area"</span><span class="operator">;</span>
+        <span class="keyword">printf</span> <span class="string">"%s\n%s\n%s\n"</span><span class="operator">,</span> <span class="string">"="</span><span class="variable">x40</span><span class="operator">,</span> <span class="variable">$sql</span><span class="operator">,</span> <span class="string">"="</span><span class="variable">x40</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">);</span>
+        <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">bind_param</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span><span class="string">'Pfarr%'</span><span class="operator">);</span>
+        <span class="operator">&amp;</span><span class="variable">show_result</span> <span class="operator">(</span><span class="variable">$cur</span><span class="operator">);</span>
+</pre>
+<pre>
+        <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">disconnect</span><span class="operator">;</span>
+        <span class="keyword">exit</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">sub</span><span class="variable"> show_result </span><span class="operator">{</span>
+                <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+                <span class="keyword">unless</span> <span class="operator">(</span><span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">execute</span><span class="operator">())</span> <span class="operator">{</span>
+                        <span class="keyword">print</span> <span class="string">"Could not execute\n"</span><span class="operator">;</span> 
+                        <span class="keyword">return</span><span class="operator">;</span> 
+                <span class="operator">}</span>
+</pre>
+<pre>
+                <span class="keyword">my</span> <span class="variable">$rownum</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span>
+                <span class="keyword">while</span> <span class="operator">(</span><span class="keyword">my</span> <span class="variable">@row</span> <span class="operator">=</span> <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">fetchrow_array</span><span class="operator">())</span> <span class="operator">{</span>
+                        <span class="keyword">printf</span> <span class="string">"Row is: %s\n"</span><span class="operator">,</span> <span class="keyword">join</span><span class="operator">(</span><span class="string">", "</span><span class="operator">,</span><span class="variable">@row</span><span class="operator">);</span>
+                        <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$rownum</span><span class="operator">++</span> <span class="operator">&gt;</span> <span class="number">5</span><span class="operator">)</span> <span class="operator">{</span>
+                                <span class="keyword">print</span> <span class="string">"... and so on\n"</span><span class="operator">;</span>
+                                <span class="keyword">last</span><span class="operator">;</span>
+                        <span class="operator">}</span>       
+                <span class="operator">}</span>
+                <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">finish</span><span class="operator">;</span>
+                        <span class="operator">}</span>
+</pre>
+<p>The result</p>
+<pre>
+        C:\&gt;perl oratest.pl informationdesk xxx
+        ========================================
+        search_city
+        ========================================
+        Row is: 3322, 9050, Chemnitz
+        Row is: 3678, 9051, Chemnitz
+        Row is: 10447, 9051, Chemnitz
+        Row is: 12128, 9051, Chemnitz
+        Row is: 10954, 90513, Zirndorf
+        Row is: 5808, 90513, Zirndorf
+        Row is: 5715, 90513, Zirndorf
+        ... and so on
+        ========================================
+        search_area
+        ========================================
+        Row is: 101, Bronnamberg
+        Row is: 400, Pfarramt Zirndorf
+        Row is: 400, Pfarramt Rosstal
+        Row is: 400, Pfarramt Oberasbach
+        Row is: 401, Pfarramt Zirndorf
+        Row is: 401, Pfarramt Rosstal
+        ========================================
+        statistic_area
+        ========================================
+        DBD::Proxy::st execute failed: Server returned error: Failed to execute method CallMethod: Unknown SQL query: statistic_area at E:/Perl/site/lib/DBI/ProxyServer.pm line 258.
+        Could not execute</pre>
+<p>
+</p>
+<h2><a name="how_the_configuration_works">How the configuration works</a></h2>
+<p>The most important section to control access to your dbi-proxy is &quot;client=&gt;&quot;
+in the file &quot;proxy_oracle.cfg&quot;:</p>
+<p>Controlling which person at which machine is allowed to access</p>
+<ul>
+<li><strong><a name="mask_is_a_perl_regular_expression_against_the_plain_ip_address_of_the_machine_which_wishes_to_connect_or_the_reverse_lookup_from_a_nameserver" class="item">&quot;mask&quot; is a perl regular expression against the plain ip-address of the machine which wishes to connect _or_ the reverse-lookup from a nameserver.</a></strong>
+
+</li>
+<li><strong><a name="not" class="item">&quot;accept&quot; tells the dbiproxy-server wether ip-adresse like in &quot;mask&quot; are allowed to connect or not (0/1)</a></strong>
+
+</li>
+<li><strong><a name="users_is_a_reference_to_a_list_of_usernames_which_must_be_matched_this_is_not_a_regular_expression" class="item">&quot;users&quot; is a reference to a list of usernames which must be matched, this is NOT a regular expression.</a></strong>
+
+</li>
+</ul>
+<p>Controlling which SQL-statements are allowed</p>
+<p>You can put every SQL-statement you like in simply ommiting &quot;sql =&gt; ...&quot;, but the more important thing is to restrict the connection so that only allowed queries are possible.</p>
+<p>If you include an sql-section in your config-file like this:</p>
+<pre>
+        <span class="string">sql</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+                <span class="string">alive</span> <span class="operator">=&gt;</span> <span class="string">'select count(*) from dual'</span><span class="operator">,</span>
+                <span class="string">statistic_area</span> <span class="operator">=&gt;</span> <span class="string">'select count(*) from e01admin.e01e203 where geb_bezei like ?'</span><span class="operator">,</span>
+        <span class="operator">}</span>
+</pre>
+<p>The user is allowed to put two queries against the dbi-proxy. The queries are _not_ &quot;select count(*)...&quot;, the queries are &quot;alive&quot; and &quot;statistic_area&quot;! These keywords are replaced by the real query. So you can run a query for &quot;alive&quot;:</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$sql</span> <span class="operator">=</span> <span class="string">"alive"</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">);</span>
+        <span class="operator">...</span>
+</pre>
+<p>The flexibility is that you can put parameters in the where-part of the query so the query are not static. Simply replace a value in the where-part of the query through a question mark and bind it as a parameter to the query.</p>
+<pre>
+        <span class="keyword">my</span> <span class="variable">$sql</span> <span class="operator">=</span> <span class="string">"statistic_area"</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">);</span>
+        <span class="variable">$cur</span><span class="operator">-&gt;</span><span class="variable">bind_param</span><span class="operator">(</span><span class="number">1</span><span class="operator">,</span><span class="string">'905%'</span><span class="operator">);</span>
+        <span class="comment"># A second parameter would be called like this:</span>
+        <span class="comment"># $cur-&gt;bind_param(2,'98%');</span>
+</pre>
+<p>The result is this query:</p>
+<pre>
+        select count(*) from e01admin.e01e203 
+        where geb_bezei like '905%'</pre>
+<p>Don't try to put parameters into the sql-query like this:</p>
+<pre>
+        <span class="comment"># Does not work like you think.</span>
+        <span class="comment"># Only the first word of the query is parsed,</span>
+        <span class="comment"># so it's changed to "statistic_area", the rest is omitted.</span>
+        <span class="comment"># You _have_ to work with $cur-&gt;bind_param.</span>
+        <span class="keyword">my</span> <span class="variable">$sql</span> <span class="operator">=</span> <span class="string">"statistic_area 905%"</span><span class="operator">;</span>
+        <span class="keyword">my</span> <span class="variable">$cur</span> <span class="operator">=</span> <span class="variable">$dbh</span><span class="operator">-&gt;</span><span class="variable">prepare</span><span class="operator">(</span><span class="variable">$sql</span><span class="operator">);</span>
+        <span class="operator">...</span>
+</pre>
+<p>
+</p>
+<h2><a name="problems">Problems</a></h2>
+<ul>
+<li><strong><a name="i_don_t_know_how_to_restrict_users_to_special_databases" class="item">I don't know how to restrict users to special databases.</a></strong>
+
+</li>
+<li><strong><a name="i_don_t_know_how_to_pass_query_parameters_via_dbish" class="item">I don't know how to pass query-parameters via dbish</a></strong>
+
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<pre>
+    Copyright (c) 1997    Jochen Wiedmann
+                          Am Eisteich 9
+                          72555 Metzingen
+                          Germany</pre>
+<pre>
+                          Email: joe@ispsoft.de
+                          Phone: +49 7123 14881</pre>
+<p>The DBI::ProxyServer module is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself. In particular
+permission is granted to Tim Bunce for distributing this as a part of
+the DBI.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../bin/dbiproxy.html">the dbiproxy manpage</a>, <a href="../../lib/DBD/Proxy.html">the DBD::Proxy manpage</a>, <a href="../../lib/DBI.html">the DBI manpage</a>, <a href="../../RPC/PlServer.html">the RPC::PlServer manpage</a>,
+<a href="../../RPC/PlClient.html">the RPC::PlClient manpage</a>, <a href="../../Net/Daemon.html">the Net::Daemon manpage</a>, <a href="../../Net/Daemon/Log.html">the Net::Daemon::Log manpage</a>,
+<a href="../../lib/Sys/Syslog.html">the Sys::Syslog manpage</a>, <a href="../../lib/Win32/EventLog.html">the Win32::EventLog manpage</a>, <em>syslog</em></p>
+
+</body>
+
+</html>

@@ -1,0 +1,373 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Basics::Recipe9 - Operator overloading, subtypes, and coercion</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Basics::Recipe9 - Operator overloading, subtypes, and coercion</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#introduction">INTRODUCTION</a></li>
+	<ul>
+
+		<li><a href="#what_is_operator_overloading">What is Operator Overloading?</a></li>
+	</ul>
+
+	<li><a href="#genes">GENES</a></li>
+	<ul>
+
+		<li><a href="#human__gene__bey2">Human::Gene::bey2</a></li>
+		<li><a href="#human__gene__gey">Human::Gene::gey</a></li>
+	</ul>
+
+	<li><a href="#eye_color">EYE COLOR</a></li>
+	<li><a href="#adding_eye_color_to_humans">ADDING EYE COLOR TO <code>Human</code>s</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#next_steps">NEXT STEPS</a></li>
+	<li><a href="#license">LICENSE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Basics::Recipe9 - Operator overloading, subtypes, and coercion</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Human</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">subtype</span> <span class="string">'Sex'</span>
+      <span class="operator">=&gt;</span> <span class="variable">as</span> <span class="string">'Str'</span>
+      <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=~</span> <span class="regex">m{^[mf]$}s</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'sex'</span>    <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Sex'</span><span class="operator">,</span> <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'mother'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Human'</span> <span class="operator">);</span>
+  <span class="variable">has</span> <span class="string">'father'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Human'</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">overload</span> <span class="string">'+'</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_overload_add</span><span class="operator">,</span> <span class="string">fallback</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _overload_add </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$one</span><span class="operator">,</span> <span class="variable">$two</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">die</span><span class="operator">(</span><span class="string">'Only male and female humans may create children'</span><span class="operator">)</span>
+          <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$one</span><span class="operator">-&gt;</span><span class="variable">sex</span><span class="operator">()</span> <span class="keyword">eq</span> <span class="variable">$two</span><span class="operator">-&gt;</span><span class="variable">sex</span><span class="operator">()</span> <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$mother</span><span class="operator">,</span> <span class="variable">$father</span> <span class="operator">)</span>
+          <span class="operator">=</span> <span class="operator">(</span> <span class="variable">$one</span><span class="operator">-&gt;</span><span class="variable">sex</span> <span class="keyword">eq</span> <span class="string">'f'</span> <span class="operator">?</span> <span class="operator">(</span> <span class="variable">$one</span><span class="operator">,</span> <span class="variable">$two</span> <span class="operator">)</span> <span class="operator">:</span> <span class="operator">(</span> <span class="variable">$two</span><span class="operator">,</span> <span class="variable">$one</span> <span class="operator">)</span> <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$sex</span> <span class="operator">=</span> <span class="string">'f'</span><span class="operator">;</span>
+      <span class="variable">$sex</span> <span class="operator">=</span> <span class="string">'m'</span> <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">rand</span><span class="operator">()</span> <span class="operator">&gt;=</span> <span class="number">0</span><span class="operator">.</span><span class="number">5</span> <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="variable">Human</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+          <span class="string">sex</span>    <span class="operator">=&gt;</span> <span class="variable">$sex</span><span class="operator">,</span>
+          <span class="string">mother</span> <span class="operator">=&gt;</span> <span class="variable">$mother</span><span class="operator">,</span>
+          <span class="string">father</span> <span class="operator">=&gt;</span> <span class="variable">$father</span><span class="operator">,</span>
+      <span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This Moose cookbook recipe shows how operator overloading, coercion,
+and subtypes can be used to mimic the human reproductive system
+(well, the selection of genes at least).</p>
+<p>
+</p>
+<hr />
+<h1><a name="introduction">INTRODUCTION</a></h1>
+<p>Our <code>Human</code> class uses operator overloading to allow us to &quot;add&quot; two
+humans together and produce a child. Our implementation does require
+that the two objects be of opposite sex. Remember, we're talking
+about biological reproduction, not marriage.</p>
+<p>While this example works as-is, we can take it a lot further by adding
+genes into the mix. We'll add the two genes that control eye color,
+and use overloading to combine the genes from the parent to model the
+biology.</p>
+<p>
+</p>
+<h2><a name="what_is_operator_overloading">What is Operator Overloading?</a></h2>
+<p>Overloading is <em>not</em> a Moose-specific feature. It's a general OO
+concept that is implemented in Perl with the <code>overload</code>
+pragma. Overloading lets objects do something sane when used with
+Perl's built in operators, like addition (<code>+</code>) or when used as a
+string.</p>
+<p>In this example we overload addition so we can write code like
+<code>$child = $mother + $father</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="genes">GENES</a></h1>
+<p>There are many genes which affect eye color, but there are two which
+are most important, <em>gey</em> and <em>bey2</em>. We will start by making a
+class for each gene.</p>
+<p>
+</p>
+<h2><a name="human__gene__bey2">Human::Gene::bey2</a></h2>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Human::Gene::bey2</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">type</span> <span class="string">'bey2_color'</span> <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=~</span> <span class="regex">m{^(?:brown|blue)$}</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'color'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'bey2_color'</span> <span class="operator">);</span>
+</pre>
+<p>This class is trivial. We have a type constraint for the allowed
+colors, and a <code>color</code> attribute.</p>
+<p>
+</p>
+<h2><a name="human__gene__gey">Human::Gene::gey</a></h2>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Human::Gene::gey</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">type</span> <span class="string">'gey_color'</span> <span class="operator">=&gt;</span> <span class="variable">where</span> <span class="operator">{</span> <span class="variable">$_</span> <span class="operator">=~</span> <span class="regex">m{^(?:green|blue)$}</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'color'</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'gey_color'</span> <span class="operator">);</span>
+</pre>
+<p>This is nearly identical to the <code>Humane::Gene::bey2</code> class, except
+that the <em>gey</em> gene allows for different colors.</p>
+<p>
+</p>
+<hr />
+<h1><a name="eye_color">EYE COLOR</a></h1>
+<p>We could just give four attributes (two of each gene) to the
+<code>Human</code> class, but this is a bit messy. Instead, we'll abstract the
+genes into a container class, <code>Human::EyeColor</code>. Then a <code>Human</code> can
+have a single <code>eye_color</code> attribute.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Human::EyeColor</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Util::TypeConstraints</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'Human::Gene::bey2'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'Str'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">Human::Gene::bey2</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">color</span> <span class="operator">=&gt;</span> <span class="variable">$_</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'Human::Gene::gey'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'Str'</span>
+          <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="variable">Human::Gene::gey</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="string">color</span> <span class="operator">=&gt;</span> <span class="variable">$_</span> <span class="operator">)</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="operator">[</span><span class="string">qw( bey2_1 bey2_2 )</span><span class="operator">]</span> <span class="operator">=&gt;</span>
+      <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Human::Gene::bey2'</span><span class="operator">,</span> <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="operator">[</span><span class="string">qw( gey_1 gey_2 )</span><span class="operator">]</span> <span class="operator">=&gt;</span>
+      <span class="operator">(</span> <span class="string">is</span> <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span> <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Human::Gene::gey'</span><span class="operator">,</span> <span class="string">coerce</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">);</span>
+</pre>
+<p>The eye color class has two of each type of gene. We've also created a
+coercion for each class that coerces a string into a new object. Note
+that a coercion will fail if it attempts to coerce a string like
+&quot;indigo&quot;, because that is not a valid color for either type of gene.</p>
+<p>As an aside, you can see that we can define several identical
+attributes at once by supplying an array reference of names as the first
+argument to <code>has</code>.</p>
+<p>We also need a method to calculate the actual eye color that results
+from a set of genes. The <em>bey2</em> brown gene is dominant over both blue
+and green. The <em>gey</em> green gene is dominant over blue.</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> color </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="string">'brown'</span>
+          <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">bey2_1</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">()</span> <span class="keyword">eq</span> <span class="string">'brown'</span>
+          <span class="keyword">or</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">bey2_2</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">()</span> <span class="keyword">eq</span> <span class="string">'brown'</span> <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="string">'green'</span>
+          <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">gey_1</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">()</span> <span class="keyword">eq</span> <span class="string">'green'</span>
+          <span class="keyword">or</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">gey_2</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">()</span> <span class="keyword">eq</span> <span class="string">'green'</span> <span class="operator">);</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="string">'blue'</span><span class="operator">;</span>
+        <span class="operator">}</span>
+</pre>
+<p>We'd like to be able to treat a <code>Human::EyeColor</code> object as a string,
+so we define a string overloading for the class:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">overload</span> <span class="string">'""'</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">color</span><span class="operator">,</span> <span class="string">fallback</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<p>Finally, we need to define overloading for addition. That way we can
+add together two <code>Human::EyeColor</code> objects and get a new one with a
+new (genetically correct) eye color.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">overload</span> <span class="string">'+'</span> <span class="operator">=&gt;</span> <span class="operator">\&amp;</span><span class="variable">_overload_add</span><span class="operator">,</span> <span class="string">fallback</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _overload_add </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span> <span class="variable">$one</span><span class="operator">,</span> <span class="variable">$two</span> <span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$one_bey2</span> <span class="operator">=</span> <span class="string">'bey2_'</span> <span class="operator">.</span> <span class="variable">_rand2</span><span class="operator">();</span>
+      <span class="keyword">my</span> <span class="variable">$two_bey2</span> <span class="operator">=</span> <span class="string">'bey2_'</span> <span class="operator">.</span> <span class="variable">_rand2</span><span class="operator">();</span>
+</pre>
+<pre>
+      <span class="keyword">my</span> <span class="variable">$one_gey</span> <span class="operator">=</span> <span class="string">'gey_'</span> <span class="operator">.</span> <span class="variable">_rand2</span><span class="operator">();</span>
+      <span class="keyword">my</span> <span class="variable">$two_gey</span> <span class="operator">=</span> <span class="string">'gey_'</span> <span class="operator">.</span> <span class="variable">_rand2</span><span class="operator">();</span>
+</pre>
+<pre>
+      <span class="keyword">return</span> <span class="variable">Human::EyeColor</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+          <span class="string">bey2_1</span> <span class="operator">=&gt;</span> <span class="variable">$one</span><span class="operator">-&gt;</span><span class="variable">$one_bey2</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">(),</span>
+          <span class="string">bey2_2</span> <span class="operator">=&gt;</span> <span class="variable">$two</span><span class="operator">-&gt;</span><span class="variable">$two_bey2</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">(),</span>
+          <span class="string">gey_1</span>  <span class="operator">=&gt;</span> <span class="variable">$one</span><span class="operator">-&gt;</span><span class="variable">$one_gey</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">(),</span>
+          <span class="string">gey_2</span>  <span class="operator">=&gt;</span> <span class="variable">$two</span><span class="operator">-&gt;</span><span class="variable">$two_gey</span><span class="operator">-&gt;</span><span class="variable">color</span><span class="operator">(),</span>
+      <span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _rand2 </span><span class="operator">{</span>
+      <span class="keyword">return</span> <span class="number">1</span> <span class="operator">+</span> <span class="keyword">int</span><span class="operator">(</span> <span class="keyword">rand</span><span class="operator">(</span><span class="number">2</span><span class="operator">)</span> <span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+<p>When two eye color objects are added together, the <code>_overload_add()</code>
+method will be passed two <code>Human::EyeColor</code> objects. These are the
+left and right side operands for the <code>+</code> operator. This method
+returns a new <code>Human::EyeColor</code> object.</p>
+<p>
+</p>
+<hr />
+<h1><a name="adding_eye_color_to_humans">ADDING EYE COLOR TO <code>Human</code>s</a></h1>
+<p>Our original <code>Human</code> class requires just a few changes to incorporate
+our new <code>Human::EyeColor</code> class.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">List::MoreUtils</span> <span class="string">qw( zip )</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">coerce</span> <span class="string">'Human::EyeColor'</span>
+      <span class="operator">=&gt;</span> <span class="variable">from</span> <span class="string">'ArrayRef'</span>
+      <span class="operator">=&gt;</span> <span class="variable">via</span> <span class="operator">{</span> <span class="keyword">my</span> <span class="variable">@genes</span> <span class="operator">=</span> <span class="string">qw( bey2_1 bey2_2 gey_1 gey_2 )</span><span class="operator">;</span>
+               <span class="keyword">return</span> <span class="variable">Human::EyeColor</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span> <span class="variable">zip</span><span class="operator">(</span> <span class="variable">@genes</span><span class="operator">,</span> <span class="variable">@</span><span class="operator">{</span><span class="variable">$_</span><span class="operator">}</span> <span class="operator">)</span> <span class="operator">);</span> <span class="operator">};</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'eye_color'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>       <span class="operator">=&gt;</span> <span class="string">'ro'</span><span class="operator">,</span>
+      <span class="string">isa</span>      <span class="operator">=&gt;</span> <span class="string">'Human::EyeColor'</span><span class="operator">,</span>
+      <span class="string">coerce</span>   <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+      <span class="string">required</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>We also need to modify <code>_overload_add()</code> in the <code>Human</code> class to
+account for eye color:</p>
+<pre>
+  <span class="keyword">return</span> <span class="variable">Human</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+      <span class="string">sex</span>       <span class="operator">=&gt;</span> <span class="variable">$sex</span><span class="operator">,</span>
+      <span class="string">eye_color</span> <span class="operator">=&gt;</span> <span class="operator">(</span> <span class="variable">$one</span><span class="operator">-&gt;</span><span class="variable">eye_color</span><span class="operator">()</span> <span class="operator">+</span> <span class="variable">$two</span><span class="operator">-&gt;</span><span class="variable">eye_color</span><span class="operator">()</span> <span class="operator">),</span>
+      <span class="string">mother</span>    <span class="operator">=&gt;</span> <span class="variable">$mother</span><span class="operator">,</span>
+      <span class="string">father</span>    <span class="operator">=&gt;</span> <span class="variable">$father</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>The three techniques we used, overloading, subtypes, and coercion,
+combine to provide a powerful interface.</p>
+<p>If you'd like to learn more about overloading, please read the
+documentation for the <a href="../../../../lib/overload.html">the overload manpage</a> pragma.</p>
+<p>To see all the code we created together, take a look at
+<em class="file">t/recipes/basics_recipe9.t</em>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="next_steps">NEXT STEPS</a></h1>
+<p>Had this been a real project we'd probably want:</p>
+<dl>
+<dt><strong><a name="better_randomization_with_crypt_random" class="item">Better Randomization with Crypt::Random</a></strong></dt>
+
+<dt><strong><a name="characteristic_base_class" class="item">Characteristic Base Class</a></strong></dt>
+
+<dt><strong><a name="mutating_genes" class="item">Mutating Genes</a></strong></dt>
+
+<dt><strong><a name="more_characteristics" class="item">More Characteristics</a></strong></dt>
+
+<dt><strong><a name="artificial_life" class="item">Artificial Life</a></strong></dt>
+
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>This work is licensed under a Creative Commons Attribution 3.0 Unported License.</p>
+<p>License details are at: <a href="http://creativecommons.org/licenses/by/3.0/">http://creativecommons.org/licenses/by/3.0/</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Text::Diff::Table - Text::Diff plugin to generate &quot;table&quot; format output</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Text::Diff::Table - Text::Diff plugin to generate &quot;table&quot; format output</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#unicode">UNICODE</a></li>
+	<li><a href="#limitations">LIMITATIONS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#license">LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<pre>
+  Text::Diff::Table - Text::Diff plugin to generate &quot;table&quot; format output</pre>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Text::Diff</span><span class="operator">;</span>
+  
+  <span class="variable">diff</span> <span class="operator">\</span><span class="variable">@a</span><span class="operator">,</span> <span class="variable">$b</span> <span class="operator">{</span> <span class="string">STYLE</span> <span class="operator">=&gt;</span> <span class="string">"Table"</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This is a plugin output formatter for Text::Diff that generates &quot;table&quot; style
+diffs:</p>
+<pre>
+  +--+----------------------------------+--+------------------------------+
+  |  |../Test-Differences-0.2/MANIFEST  |  |../Test-Differences/MANIFEST  |
+  |  |Thu Dec 13 15:38:49 2001          |  |Sat Dec 15 02:09:44 2001      |
+  +--+----------------------------------+--+------------------------------+
+  |  |                                  * 1|Changes                       *
+  | 1|Differences.pm                    | 2|Differences.pm                |
+  | 2|MANIFEST                          | 3|MANIFEST                      |
+  |  |                                  * 4|MANIFEST.SKIP                 *
+  | 3|Makefile.PL                       | 5|Makefile.PL                   |
+  |  |                                  * 6|t/00escape.t                  *
+  | 4|t/00flatten.t                     | 7|t/00flatten.t                 |
+  | 5|t/01text_vs_data.t                | 8|t/01text_vs_data.t            |
+  | 6|t/10test.t                        | 9|t/10test.t                    |
+  +--+----------------------------------+--+------------------------------+</pre>
+<p>This format also goes to some pains to highlight &quot;invisible&quot; characters on
+differing elements by selectively escaping whitespace.  Each element is split
+in to three segments (leading whitespace, body, trailing whitespace).  If
+whitespace differs in a segement, that segment is whitespace escaped.</p>
+<p>Here is an example of the selective whitespace.</p>
+<pre>
+  +--+--------------------------+--------------------------+
+  |  |demo_ws_A.txt             |demo_ws_B.txt             |
+  |  |Fri Dec 21 08:36:32 2001  |Fri Dec 21 08:36:50 2001  |
+  +--+--------------------------+--------------------------+
+  | 1|identical                 |identical                 |
+  * 2|        spaced in         |        also spaced in    *
+  * 3|embedded space            |embedded        tab       *
+  | 4|identical                 |identical                 |
+  * 5|        spaced in         |\ttabbed in               *
+  * 6|trailing spaces\s\s\n     |trailing tabs\t\t\n       *
+  | 7|identical                 |identical                 |
+  * 8|lf line\n                 |crlf line\r\n             *
+  * 9|embedded ws               |embedded\tws              *
+  +--+--------------------------+--------------------------+</pre>
+<p>Here's why the lines do or do not have whitespace escaped:</p>
+<dl>
+<dt><strong><a name="lines_1_4_7_don_t_differ_no_need" class="item">lines 1, 4, 7 don't differ, no need.</a></strong></dt>
+
+<dt><strong><a name="lines_2_3_differ_in_non_whitespace_no_need" class="item">lines 2, 3 differ in non-whitespace, no need.</a></strong></dt>
+
+<dt><strong><a name="lines_5_6_8_9_all_have_subtle_ws_changes" class="item">lines 5, 6, 8, 9 all have subtle ws changes.</a></strong></dt>
+
+</dl>
+<p>Whether or not line 3 should have that tab character escaped is a judgement
+call; so far I'm choosing not to.</p>
+<p>
+</p>
+<hr />
+<h1><a name="unicode">UNICODE</a></h1>
+<p>To output the raw unicode chracters consult the documentation of
+<a href="../../../lib/Text/Diff/Config.html">the Text::Diff::Config manpage</a>. You can set the <code>DIFF_OUTPUT_UNICODE</code> environment
+variable to 1 to output it from the command line. For more information,
+consult this bug: <a href="https://rt.cpan.org/Ticket/Display.html?id=54214">https://rt.cpan.org/Ticket/Display.html?id=54214</a> .</p>
+<p>
+</p>
+<hr />
+<h1><a name="limitations">LIMITATIONS</a></h1>
+<p>Table formatting requires buffering the entire diff in memory in order to
+calculate column widths.  This format should only be used for smaller
+diffs.</p>
+<p>Assumes tab stops every 8 characters, as $DIETY intended.</p>
+<p>Assumes all character codes &gt;= 127 need to be escaped as hex codes, ie that the
+user's terminal is ASCII, and not even &quot;high bit ASCII&quot;, capable.  This can be
+made an option when the need arises.</p>
+<p>Assumes that control codes (character codes 0..31) that don't have slash-letter
+escapes (&quot;\n&quot;, &quot;\r&quot;, etc) in Perl are best presented as hex escapes (&quot;\x01&quot;)
+instead of octal (&quot;\001&quot;) or control-code (&quot;\cA&quot;) escapes.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Barrie Slaymaker &lt;<a href="mailto:barries@slaysys.com">barries@slaysys.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="license">LICENSE</a></h1>
+<p>Copyright 2001 Barrie Slaymaker, All Rights Reserved.</p>
+<p>You may use this software under the terms of the GNU public license, any
+version, or the Artistic license.</p>
+
+</body>
+
+</html>

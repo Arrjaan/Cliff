@@ -1,0 +1,193 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Module::Build::Bundling - How to bundle Module::Build with a distribution</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Module::Build::Bundling - How to bundle Module::Build with a distribution</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#bundling_other_configuration_dependencies">BUNDLING OTHER CONFIGURATION DEPENDENCIES</a></li>
+	<ul>
+
+		<li><a href="#warning____how_to_manage_dependency_chains">WARNING - How to Manage Dependency Chains</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::Build::Bundling - How to bundle Module::Build with a distribution</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="comment"># Build.PL</span>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Module::Build'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+    <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+    <span class="string">license</span> <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+  <span class="operator">)-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><strong>WARNING -- THIS IS AN EXPERIMENTAL FEATURE</strong></p>
+<p>In order to install a distribution using Module::Build, users must
+have Module::Build available on their systems.  There are two ways
+to do this.  The first way is to include Module::Build in the
+<code>configure_requires</code> metadata field.  This field is supported by
+recent versions <a href="../../../lib/CPAN.html">the CPAN manpage</a> and <a href="../../../lib/CPANPLUS.html">the CPANPLUS manpage</a> and is a standard feature
+in the Perl core as of Perl 5.10.1.  Module::Build now adds itself
+to <code>configure_requires</code> by default.</p>
+<p>The second way supports older Perls that have not upgraded CPAN or
+CPANPLUS and involves bundling an entire copy of Module::Build
+into the distribution's <code>inc/</code> directory.  This is the same approach
+used by <a href="../../../Module/Install.html">the Module::Install manpage</a>, a modern wrapper around ExtUtils::MakeMaker
+for Makefile.PL based distributions.</p>
+<p>The &quot;trick&quot; to making this work for Module::Build is making sure the
+highest version Module::Build is used, whether this is in <code>inc/</code> or
+already installed on the user's system.  This ensures that all necessary
+features are available as well as any new bug fixes.  This is done using
+the new <a href="../../../lib/inc/latest.html">the inc::latest manpage</a> module.</p>
+<p>A &quot;normal&quot; Build.PL looks like this (with only the minimum required
+fields):</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Module::Build</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+    <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+    <span class="string">license</span>     <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+  <span class="operator">)-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>A &quot;bundling&quot; Build.PL replaces the initial &quot;use&quot; line with a nearly
+transparent replacement:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Module::Build'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+    <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+    <span class="string">license</span> <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+  <span class="operator">)-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>For <em>authors</em>, when &quot;Build dist&quot; is run, Module::Build will be
+automatically bundled into <code>inc</code> according to the rules for
+<a href="../../../lib/inc/latest.html">the inc::latest manpage</a>.</p>
+<p>For <em>users</em>, inc::latest will load the latest Module::Build, whether
+installed or bundled in <code>inc/</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bundling_other_configuration_dependencies">BUNDLING OTHER CONFIGURATION DEPENDENCIES</a></h1>
+<p>The same approach works for other configuration dependencies -- modules
+that <em>must</em> be available for Build.PL to run.  All other dependencies can
+be specified as usual in the Build.PL and CPAN or CPANPLUS will install
+them after Build.PL finishes.</p>
+<p>For example, to bundle the <a href="../../../Devel/AssertOS/Unix.html">the Devel::AssertOS::Unix manpage</a> module (which ensures a
+&quot;Unix-like&quot; operating system), one could do this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Devel::AssertOS::Unix'</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Module::Build'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+    <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+    <span class="string">license</span> <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+  <span class="operator">)-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>The <code>inc::latest</code> module creates bundled directories based on the packlist
+file of an installed distribution.  Even though <code>inc::latest</code> takes module
+name arguments, it is better to think of it as bundling and making
+available entire <em>distributions</em>.  When a module is loaded through
+<code>inc::latest</code>, it looks in all bundled distributions in <code>inc/</code> for a
+newer module than can be found in the existing <a href="../../../lib/pods/perlvar.html#_inc"><code>@INC</code></a> array.</p>
+<p>Thus, the module-name provided should usually be the &quot;top-level&quot; module
+name of a distribution, though this is not strictly required.  For example,
+<a href="../../../lib/Module/Build.html">the Module::Build manpage</a> has a number of heuristics to map module names to
+packlists, allowing users to do things like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Devel::AssertOS::Unix'</span><span class="operator">;</span>
+</pre>
+<p>even though Devel::AssertOS::Unix is contained within the Devel-CheckOS
+distribution.</p>
+<p>At the current time, packlists are required.  Thus, bundling dual-core
+modules, <em>including Module::Build</em>, may require a 'forced install' over
+versions in the latest version of perl in order to create the necessary
+packlist for bundling.  This limitation will hopefully be addressed in a
+future version of Module::Build.</p>
+<p>
+</p>
+<h2><a name="warning____how_to_manage_dependency_chains">WARNING -- How to Manage Dependency Chains</a></h2>
+<p>Before bundling a distribution you must ensure that all prerequisites are
+also bundled and load in the correct order.  For Module::Build itself, this
+should not be necessary, but it is necessary for any other distribution.
+(A future release of Module::Build will hopefully address this deficiency.)</p>
+<p>For example, if you need <code>Wibble</code>, but <code>Wibble</code> depends on <code>Wobble</code>,
+your Build.PL might look like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Wobble'</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Wibble'</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">inc::latest</span> <span class="string">'Module::Build'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">Module::Build</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span>
+    <span class="string">module_name</span> <span class="operator">=&gt;</span> <span class="string">'Foo::Bar'</span><span class="operator">,</span>
+    <span class="string">license</span> <span class="operator">=&gt;</span> <span class="string">'perl'</span><span class="operator">,</span>
+  <span class="operator">)-&gt;</span><span class="variable">create_build_script</span><span class="operator">;</span>
+</pre>
+<p>Authors are strongly suggested to limit the bundling of additional
+dependencies if at all possible and to carefully test their distribution
+tarballs on older versions of Perl before uploading to CPAN.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>David Golden &lt;<a href="mailto:dagolden@cpan.org">dagolden@cpan.org</a>&gt;</p>
+<p>Development questions, bug reports, and patches should be sent to the
+Module-Build mailing list at &lt;<a href="mailto:module-build@perl.org">module-build@perl.org</a>&gt;.</p>
+<p>Bug reports are also welcome at
+&lt;http://rt.cpan.org/NoAuth/Bugs.html?Dist=Module-Build&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><code>perl(1)</code>, <a href="../../../lib/inc/latest.html">the inc::latest manpage</a>, <a href="../../../lib/Module/Build.html">the Module::Build manpage</a>(3), <a href="../../../lib/Module/Build/API.html">the Module::Build::API manpage</a>(3),
+<a href="../../../lib/Module/Build/Cookbook.html">the Module::Build::Cookbook manpage</a>(3),</p>
+
+</body>
+
+</html>

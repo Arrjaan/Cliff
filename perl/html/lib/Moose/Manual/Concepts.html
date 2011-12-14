@@ -1,0 +1,423 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Moose::Manual::Concepts - Moose OO concepts</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Moose::Manual::Concepts - Moose OO concepts</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#moose_concepts__vs_old_school_perl_">MOOSE CONCEPTS (VS &quot;OLD SCHOOL&quot; Perl)</a></li>
+	<ul>
+
+		<li><a href="#class">Class</a></li>
+		<li><a href="#attribute">Attribute</a></li>
+		<li><a href="#method">Method</a></li>
+		<li><a href="#role">Role</a></li>
+		<li><a href="#method_modifiers">Method modifiers</a></li>
+		<li><a href="#type">Type</a></li>
+		<li><a href="#delegation">Delegation</a></li>
+		<li><a href="#constructor">Constructor</a></li>
+		<li><a href="#destructor">Destructor</a></li>
+		<li><a href="#object_instance">Object instance</a></li>
+		<li><a href="#moose_vs_old_school_summary">Moose vs old school summary</a></li>
+	</ul>
+
+	<li><a href="#meta_what">META WHAT?</a></li>
+	<li><a href="#but_i_need_to_do_it_my_way_">BUT I NEED TO DO IT MY WAY!</a></li>
+	<li><a href="#what_next">WHAT NEXT?</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Manual::Concepts - Moose OO concepts</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="moose_concepts__vs_old_school_perl_">MOOSE CONCEPTS (VS &quot;OLD SCHOOL&quot; Perl)</a></h1>
+<p>In the past, you may not have thought too much about the difference
+between packages and classes, attributes and methods, constructors and
+methods, etc. With Moose, these are all conceptually separate,
+though under the hood they're implemented with plain old Perl.</p>
+<p>Our meta-object protocol (aka MOP) provides well-defined introspection
+features for each of those concepts, and Moose in turn provides
+distinct sugar for each of them. Moose also introduces additional
+concepts such as roles, method modifiers, and declarative delegation.</p>
+<p>Knowing what these concepts mean in Moose-speak, and how they used to
+be done in old school Perl 5 OO is a good way to start learning to use
+Moose.</p>
+<p>
+</p>
+<h2><a name="class">Class</a></h2>
+<p>When you say &quot;use Moose&quot; in a package, you are making your package a
+class. At its simplest, a class will consist simply of attributes
+and/or methods. It can also include roles, method modifiers, and more.</p>
+<p>A class <em>has</em> zero or more <strong>attributes</strong>.</p>
+<p>A class <em>has</em> zero or more <strong>methods</strong>.</p>
+<p>A class <em>has</em> zero or more superclasses (aka parent classes). A
+class inherits from its superclass(es).</p>
+<p>A class <em>has</em> zero or more <strong>method modifiers</strong>. These modifiers can
+apply to its own methods or methods that are inherited from its
+ancestors.</p>
+<p>A class <em>does</em> (and <em>consumes</em>) zero or more <strong>roles</strong>.</p>
+<p>A class <em>has</em> a <strong>constructor</strong> and a <strong>destructor</strong>. These are
+provided for you &quot;for free&quot; by Moose.</p>
+<p>The <strong>constructor</strong> accepts named parameters corresponding to the
+class's attributes and uses them to initialize an <strong>object instance</strong>.</p>
+<p>A class <em>has</em> a <strong>metaclass</strong>, which in turn has <strong>meta-attributes</strong>,
+<strong>meta-methods</strong>, and <strong>meta-roles</strong>. This metaclass <em>describes</em> the
+class.</p>
+<p>A class is usually analogous to a category of nouns, like &quot;People&quot; or
+&quot;Users&quot;.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Person</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="comment"># now it's a Moose class!</span>
+</pre>
+<p>
+</p>
+<h2><a name="attribute">Attribute</a></h2>
+<p>An attribute is a property of the class that defines it. It <em>always</em>
+has a name, and it <em>may have</em> a number of other properties.</p>
+<p>These properties can include a read/write flag, a <strong>type</strong>, accessor
+method names, <strong>delegations</strong>, a default value, and more.</p>
+<p>Attributes <em>are not</em> methods, but defining them causes various
+accessor methods to be created. At a minimum, a normal attribute will
+have a reader accessor method. Many attributes have other
+methods, such as a writer method, a clearer method, or a predicate method
+(&quot;has it been set?&quot;).</p>
+<p>An attribute may also define <strong>delegations</strong>, which will create
+additional methods based on the delegation mapping.</p>
+<p>By default, Moose stores attributes in the object instance, which is a
+hashref, <em>but this is invisible to the author of a Moose-based
+class</em>!  It is best to think of Moose attributes as &quot;properties&quot; of
+the <em>opaque</em> <strong>object instance</strong>. These properties are accessed
+through well-defined accessor methods.</p>
+<p>An attribute is something that the class's members have. For example,
+People have first and last names. Users have passwords and last login
+datetimes.</p>
+<pre>
+  <span class="variable">has</span> <span class="string">'first_name'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Str'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="method">Method</a></h2>
+<p>A <strong>method</strong> is very straightforward. Any subroutine you define in your
+class is a method.</p>
+<p><strong>Methods</strong> correspond to verbs, and are what your objects can do. For
+example, a User can login.</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> login </span><span class="operator">{</span> <span class="operator">...</span> <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<h2><a name="role">Role</a></h2>
+<p>A role is something that a class <em>does</em>. We also say that classes
+<em>consume</em> roles. For example, a Machine class might do the Breakable
+role, and so could a Bone class. A role is used to define some concept
+that cuts across multiple unrelated classes, like &quot;breakability&quot;, or
+&quot;has a color&quot;.</p>
+<p>A role <em>has</em> zero or more <strong>attributes</strong>.</p>
+<p>A role <em>has</em> zero or more <strong>methods</strong>.</p>
+<p>A role <em>has</em> zero or more <strong>method modifiers</strong>.</p>
+<p>A role <em>has</em> zero or more <strong>required methods</strong>.</p>
+<p>A required method is not implemented by the role. Required methods are a way
+for the role to declare &quot;to use this role you must implement this method&quot;.</p>
+<p>A role <em>has</em> zero or more <strong>excluded roles</strong>.</p>
+<p>An excluded role is a role that the role doing the excluding says it
+cannot be combined with.</p>
+<p>Roles are <em>composed</em> into classes (or other roles). When a role is
+composed into a class, its attributes and methods are &quot;flattened&quot; into
+the class. Roles <em>do not</em> show up in the inheritance hierarchy. When
+a role is composed, its attributes and methods appear as if they were
+defined <em>in the consuming class</em>.</p>
+<p>Role are somewhat like mixins or interfaces in other OO languages.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Breakable</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">requires</span> <span class="string">'break'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'is_broken'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>  <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span> <span class="operator">=&gt;</span> <span class="string">'Bool'</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">after</span> <span class="string">'break'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">is_broken</span><span class="operator">(</span><span class="number">1</span><span class="operator">);</span>
+        <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<h2><a name="method_modifiers">Method modifiers</a></h2>
+<p>A <strong>method modifier</strong> is a hook that is called when a named method is
+called. For example, you could say &quot;before calling <code>login()</code>, call
+this modifier first&quot;. Modifiers come in different flavors like
+&quot;before&quot;, &quot;after&quot;, &quot;around&quot;, and &quot;augment&quot;, and you can apply more
+than one modifier to a single method.</p>
+<p>Method modifiers are often used as an alternative to overriding a
+method in a parent class. They are also used in roles as a way of
+modifying methods in the consuming class.</p>
+<p>Under the hood, a method modifier is just a plain old Perl subroutine
+that gets called before or after (or around, etc.) some named method.</p>
+<pre>
+  <span class="variable">before</span> <span class="string">'login'</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$pw</span>   <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">warn</span> <span class="string">"Called login() with </span><span class="variable">$pw</span><span class="string">\n"</span><span class="operator">;</span>
+        <span class="operator">};</span>
+</pre>
+<p>
+</p>
+<h2><a name="type">Type</a></h2>
+<p>Moose also comes with a (miniature) type system. This allows you to define
+types for attributes. Moose has a set of built-in types based on the types
+Perl provides in its core, such as <code>Str</code>, <code>Num</code>, <code>Bool</code>, <code>HashRef</code>, etc.</p>
+<p>In addition, every class name in your application can also be used as
+a type name.</p>
+<p>Finally, you can define your own types with their own constraints. For
+example, you could define a <code>PosInt</code> type, a subtype of <code>Int</code> which only
+allows positive numbers.</p>
+<p>
+</p>
+<h2><a name="delegation">Delegation</a></h2>
+<p>Moose attributes provide declarative syntax for defining delegations. A
+delegation is a method which in turn calls some method on an attribute to do
+its real work.</p>
+<p>
+</p>
+<h2><a name="constructor">Constructor</a></h2>
+<p>A constructor creates an <strong>object instance</strong> for the class. In old
+school Perl, this was usually done by defining a method called
+<code>new()</code> which in turn called <a href="../../../lib/pods/perlfunc.html#bless"><code>bless</code></a> on a reference.</p>
+<p>With Moose, this <code>new()</code> method is created for you, and it simply
+does the right thing. You should never need to define your own
+constructor!</p>
+<p>Sometimes you want to do something whenever an object is created. In
+those cases, you can provide a <code>BUILD()</code> method in your class. Moose
+will call this for you after creating a new object.</p>
+<p>
+</p>
+<h2><a name="destructor">Destructor</a></h2>
+<p>This is a special method called when an object instance goes out of
+scope. You can specialize what your class does in this method if you
+need to, but you usually don't.</p>
+<p>With old school Perl 5, this is the <code>DESTROY()</code> method, but with
+Moose it is the <code>DEMOLISH()</code> method.</p>
+<p>
+</p>
+<h2><a name="object_instance">Object instance</a></h2>
+<p>An object instance is a specific noun in the class's &quot;category&quot;. For
+example, one specific Person or User. An instance is created by the
+class's <strong>constructor</strong>.</p>
+<p>An instance has values for its attributes. For example, a specific
+person has a first and last name.</p>
+<p>In old school Perl 5, this is often a blessed hash reference. With
+Moose, you should never need to know what your object instance
+actually is. (Okay, it's usually a blessed hashref with Moose, too.)</p>
+<p>
+</p>
+<h2><a name="moose_vs_old_school_summary">Moose vs old school summary</a></h2>
+<ul>
+<li><strong><a name="class" class="item">Class</a></strong>
+
+<p>A package with no introspection other than mucking about in the symbol
+table.</p>
+<p>With Moose, you get well-defined declaration and introspection.</p>
+</li>
+<li><strong><a name="attributes" class="item">Attributes</a></strong>
+
+<p>Hand-written accessor methods, symbol table hackery, or a helper
+module like <code>Class::Accessor</code>.</p>
+<p>With Moose, these are declaratively defined, and distinct from
+methods.</p>
+</li>
+<li><strong><a name="method3" class="item">Method</a></strong>
+
+<p>These are pretty much the same in Moose as in old school Perl.</p>
+</li>
+<li><strong><a name="roles" class="item">Roles</a></strong>
+
+<p><code>Class::Trait</code> or <code>Class::Role</code>, or maybe <code>mixin.pm</code>.</p>
+<p>With Moose, they're part of the core feature set, and are
+introspectable like everything else.</p>
+</li>
+<li><strong><a name="method_modifiers2" class="item">Method Modifiers</a></strong>
+
+<p>Could only be done through serious symbol table wizardry, and you
+probably never saw this before (at least in Perl 5).</p>
+</li>
+<li><strong><a name="type" class="item">Type</a></strong>
+
+<p>Hand-written parameter checking in your <code>new()</code> method and accessors.</p>
+<p>With Moose, you define types declaratively, and then use them by name
+with your attributes.</p>
+</li>
+<li><strong><a name="delegation" class="item">Delegation</a></strong>
+
+<p><code>Class::Delegation</code> or <code>Class::Delegator</code>, but probably even more
+hand-written code.</p>
+<p>With Moose, this is also declarative.</p>
+</li>
+<li><strong><a name="constructor" class="item">Constructor</a></strong>
+
+<p>A <code>new()</code> method which calls <a href="../../../lib/pods/perlfunc.html#bless"><code>bless</code></a> on a reference.</p>
+<p>Comes for free when you define a class with Moose.</p>
+</li>
+<li><strong><a name="destructor" class="item">Destructor</a></strong>
+
+<p>A <code>DESTROY()</code> method.</p>
+<p>With Moose, this is called <code>DEMOLISH()</code>.</p>
+</li>
+<li><strong><a name="object_instance" class="item">Object Instance</a></strong>
+
+<p>A blessed reference, usually a hash reference.</p>
+<p>With Moose, this is an opaque thing which has a bunch of attributes
+and methods, as defined by its class.</p>
+</li>
+<li><strong><a name="immutabilization" class="item">Immutabilization</a></strong>
+
+<p>Moose comes with a feature called &quot;immutabilization&quot;. When you make
+your class immutable, it means you're done adding methods, attributes,
+roles, etc. This lets Moose optimize your class with a bunch of
+extremely dirty in-place code generation tricks that speed up things
+like object construction and so on.</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="meta_what">META WHAT?</a></h1>
+<p>A metaclass is a class that describes classes. With Moose, every class you
+define gets a <code>meta()</code> method. The <code>meta()</code> method returns a
+<a href="../../../lib/Moose/Meta/Class.html">the Moose::Meta::Class manpage</a> object, which has an introspection API that can tell you
+about the class it represents.</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$meta</span> <span class="operator">=</span> <span class="variable">User</span><span class="operator">-&gt;</span><span class="variable">meta</span><span class="operator">();</span>
+</pre>
+<pre>
+  <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$attribute</span> <span class="operator">(</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">get_all_attributes</span> <span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">(),</span> <span class="string">"\n"</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="keyword">if</span> <span class="operator">(</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">has_type_constraint</span> <span class="operator">)</span> <span class="operator">{</span>
+          <span class="keyword">print</span> <span class="string">"  type: "</span><span class="operator">,</span> <span class="variable">$attribute</span><span class="operator">-&gt;</span><span class="variable">type_constraint</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+      <span class="operator">}</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$method</span> <span class="operator">(</span> <span class="variable">$meta</span><span class="operator">-&gt;</span><span class="variable">get_all_methods</span> <span class="operator">)</span> <span class="operator">{</span>
+      <span class="keyword">print</span> <span class="variable">$method</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
+  <span class="operator">}</span>
+</pre>
+<p>Almost every concept we defined earlier has a meta class, so we have
+<a href="../../../lib/Moose/Meta/Class.html">the Moose::Meta::Class manpage</a>, <a href="../../../lib/Moose/Meta/Attribute.html">the Moose::Meta::Attribute manpage</a>,
+<a href="../../../lib/Moose/Meta/Method.html">the Moose::Meta::Method manpage</a>, <a href="../../../lib/Moose/Meta/Role.html">the Moose::Meta::Role manpage</a>,
+<a href="../../../lib/Moose/Meta/TypeConstraint.html">the Moose::Meta::TypeConstraint manpage</a>, <a href="../../../lib/Moose/Meta/Instance.html">the Moose::Meta::Instance manpage</a>, and so on.</p>
+<p>
+</p>
+<hr />
+<h1><a name="but_i_need_to_do_it_my_way_">BUT I NEED TO DO IT MY WAY!</a></h1>
+<p>One of the great things about Moose is that if you dig down and find
+that it does something the &quot;wrong way&quot;, you can change it by extending
+a metaclass. For example, you can have arrayref based objects, you can
+make your constructors strict (no unknown parameters allowed!), you can
+define a naming scheme for attribute accessors, you can make a class a
+Singleton, and much, much more.</p>
+<p>Many of these extensions require surprisingly small amounts of code,
+and once you've done it once, you'll never have to hand-code &quot;your way
+of doing things&quot; again. Instead you'll just load your favorite
+extensions.</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">MyWay::User</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Moose</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::StrictConstructor</span>
+  <span class="keyword">use</span> <span class="variable">MooseX::MyWay</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="operator">...;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="what_next">WHAT NEXT?</a></h1>
+<p>So you're sold on Moose. Time to learn how to really use it.</p>
+<p>If you want to see how Moose would translate directly into old school
+Perl 5 OO code, check out <a href="../../../lib/Moose/Manual/Unsweetened.html">the Moose::Manual::Unsweetened manpage</a>. This might be
+helpful for quickly wrapping your brain around some aspects of &quot;the
+Moose way&quot;.</p>
+<p>Or you can skip that and jump straight to <a href="../../../lib/Moose/Manual/Classes.html">the Moose::Manual::Classes manpage</a>
+and the rest of the <a href="../../../lib/Moose/Manual.html">the Moose::Manual manpage</a>.</p>
+<p>After that we recommend that you start with the <a href="../../../lib/Moose/Cookbook.html">the Moose::Cookbook manpage</a>. If
+you work your way through all the recipes under the basics section,
+you should have a pretty good sense of how Moose works, and all of its
+basic OO features.</p>
+<p>After that, check out the Role recipes. If you're really curious, go
+on and read the Meta and Extending recipes, but those are mostly there
+for people who want to be Moose wizards and extend Moose itself.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

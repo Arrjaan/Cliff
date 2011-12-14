@@ -1,0 +1,911 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Test::Builder - Backend for building test libraries</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Test::Builder - Backend for building test libraries</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#construction">Construction</a></li>
+		<li><a href="#setting_up_tests">Setting up tests</a></li>
+		<li><a href="#running_tests">Running tests</a></li>
+		<li><a href="#other_testing_methods">Other Testing Methods</a></li>
+		<li><a href="#test_building_utility_methods">Test building utility methods</a></li>
+		<li><a href="#test_style">Test style</a></li>
+		<li><a href="#output">Output</a></li>
+		<li><a href="#test_status_and_info">Test Status and Info</a></li>
+	</ul>
+
+	<li><a href="#exit_codes">EXIT CODES</a></li>
+	<li><a href="#threads">THREADS</a></li>
+	<li><a href="#memory">MEMORY</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Test::Builder - Backend for building test libraries</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">My::Test::Module</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">base</span> <span class="string">'Test::Builder::Module'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$CLASS</span> <span class="operator">=</span> <span class="keyword">__PACKAGE__</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> ok </span><span class="operator">{</span>
+      <span class="keyword">my</span><span class="operator">(</span><span class="variable">$test</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$tb</span> <span class="operator">=</span> <span class="variable">$CLASS</span><span class="operator">-&gt;</span><span class="variable">builder</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$tb</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">$test</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Test::Simple and Test::More have proven to be popular testing modules,
+but they're not always flexible enough.  Test::Builder provides a
+building block upon which to write your own test libraries <em>which can
+work together</em>.</p>
+<p>
+</p>
+<h2><a name="construction">Construction</a></h2>
+<dl>
+<dt><strong><a name="new" class="item"><strong>new</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$Test</span> <span class="operator">=</span> <span class="variable">Test::Builder</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">;</span>
+</pre>
+<p>Returns a Test::Builder object representing the current state of the
+test.</p>
+<p>Since you only run one test per program <a href="#new"><code>new</code></a> always returns the same
+Test::Builder object.  No matter how many times you call <a href="#new"><code>new()</code></a>, you're
+getting the same object.  This is called a singleton.  This is done so that
+multiple modules share such global information as the test counter and
+where test output is going.</p>
+<p>If you want a completely new Test::Builder object different from the
+singleton, use <a href="#create"><code>create</code></a>.</p>
+</dd>
+<dt><strong><a name="create" class="item"><strong>create</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$Test</span> <span class="operator">=</span> <span class="variable">Test::Builder</span><span class="operator">-&gt;</span><span class="variable">create</span><span class="operator">;</span>
+</pre>
+<p>Ok, so there can be more than one Test::Builder object and this is how
+you get it.  You might use this instead of <a href="#new"><code>new()</code></a> if you're testing
+a Test::Builder based module, but otherwise you probably want <a href="#new"><code>new</code></a>.</p>
+<p><strong>NOTE</strong>: the implementation is not complete.  <a href="#level"><code>level</code></a>, for example, is
+still shared amongst <strong>all</strong> Test::Builder objects, even ones created using
+this method.  Also, the method name may change in the future.</p>
+</dd>
+<dt><strong><a name="child" class="item"><strong>child</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$child</span> <span class="operator">=</span> <span class="variable">$builder</span><span class="operator">-&gt;</span><span class="variable">child</span><span class="operator">(</span><span class="variable">$name_of_child</span><span class="operator">);</span>
+  <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">plan</span><span class="operator">(</span> <span class="string">tests</span> <span class="operator">=&gt;</span> <span class="number">4</span> <span class="operator">);</span>
+  <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">some_code</span><span class="operator">());</span>
+  <span class="operator">...</span>
+  <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">finalize</span><span class="operator">;</span>
+</pre>
+<p>Returns a new instance of <code>Test::Builder</code>.  Any output from this child will
+be indented four spaces more than the parent's indentation.  When done, the
+<a href="#finalize"><code>finalize</code></a> method <em>must</em> be called explicitly.</p>
+<p>Trying to create a new child with a previous child still active (i.e.,
+<a href="#finalize"><code>finalize</code></a> not called) will <a href="#croak"><code>croak</code></a>.</p>
+<p>Trying to run a test when you have an open child will also <a href="#croak"><code>croak</code></a> and cause
+the test suite to fail.</p>
+</dd>
+<dt><strong><a name="subtest" class="item"><strong>subtest</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$builder</span><span class="operator">-&gt;</span><span class="variable">subtest</span><span class="operator">(</span><span class="variable">$name</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">subtests</span><span class="operator">);</span>
+</pre>
+<p>See documentation of <a href="#subtest"><code>subtest</code></a> in Test::More.</p>
+</dd>
+<dt><strong><a name="finalize" class="item"><strong>finalize</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">finalize</span><span class="operator">;</span>
+</pre>
+<p>When your child is done running tests, you must call <a href="#finalize"><code>finalize</code></a> to clean up
+and tell the parent your pass/fail status.</p>
+<p>Calling finalize on a child with open children will <a href="#croak"><code>croak</code></a>.</p>
+<p>If the child falls out of scope before <a href="#finalize"><code>finalize</code></a> is called, a failure
+diagnostic will be issued and the child is considered to have failed.</p>
+<p>No attempt to call methods on a child after <a href="#finalize"><code>finalize</code></a> is called is
+guaranteed to succeed.</p>
+<p>Calling this on the root builder is a no-op.</p>
+</dd>
+<dt><strong><a name="parent" class="item"><strong>parent</strong></a></strong></dt>
+
+<dd>
+<pre>
+ <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">my</span> <span class="variable">$parent</span> <span class="operator">=</span> <span class="variable">$builder</span><span class="operator">-&gt;</span><span class="variable">parent</span> <span class="operator">)</span> <span class="operator">{</span>
+     <span class="operator">...</span>
+ <span class="operator">}</span>
+</pre>
+<p>Returns the parent <code>Test::Builder</code> instance, if any.  Only used with child
+builders for nested TAP.</p>
+</dd>
+<dt><strong><a name="name" class="item"><strong>name</strong></a></strong></dt>
+
+<dd>
+<pre>
+ <span class="variable">diag</span> <span class="variable">$builder</span><span class="operator">-&gt;</span><span class="variable">name</span><span class="operator">;</span>
+</pre>
+<p>Returns the name of the current builder.  Top level builders default to <a href="../../lib/pods/perlvar.html#_0"><code>$0</code></a>
+(the name of the executable).  Child builders are named via the <a href="#child"><code>child</code></a>
+method.  If no name is supplied, will be named &quot;Child of $parent-&gt;name&quot;.</p>
+</dd>
+<dt><strong><a name="reset" class="item"><strong>reset</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">reset</span><span class="operator">;</span>
+</pre>
+<p>Reinitializes the Test::Builder singleton to its original state.
+Mostly useful for tests run in persistent environments where the same
+test might be run multiple times in the same process.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="setting_up_tests">Setting up tests</a></h2>
+<p>These methods are for setting up tests and declaring how many there
+are.  You usually only want to call one of these methods.</p>
+<dl>
+<dt><strong><a name="plan" class="item"><strong>plan</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">plan</span><span class="operator">(</span><span class="string">'no_plan'</span><span class="operator">);</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">plan</span><span class="operator">(</span> <span class="string">skip_all</span> <span class="operator">=&gt;</span> <span class="variable">$reason</span> <span class="operator">);</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">plan</span><span class="operator">(</span> <span class="string">tests</span> <span class="operator">=&gt;</span> <span class="variable">$num_tests</span> <span class="operator">);</span>
+</pre>
+<p>A convenient way to set up your tests.  Call this and Test::Builder
+will print the appropriate headers and take the appropriate actions.</p>
+<p>If you call <a href="#plan"><code>plan()</code></a>, don't call any of the other methods below.</p>
+<p>If a child calls &quot;skip_all&quot; in the plan, a <code>Test::Builder::Exception</code> is
+thrown.  Trap this error, call <a href="#finalize"><code>finalize()</code></a> and don't run any more tests on
+the child.</p>
+<pre>
+ <span class="keyword">my</span> <span class="variable">$child</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">child</span><span class="operator">(</span><span class="string">'some child'</span><span class="operator">);</span>
+ <span class="keyword">eval</span> <span class="operator">{</span> <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">plan</span><span class="operator">(</span> <span class="variable">$condition</span> <span class="operator">?</span> <span class="operator">(</span> <span class="string">skip_all</span> <span class="operator">=&gt;</span> <span class="variable">$reason</span> <span class="operator">)</span> <span class="operator">:</span> <span class="operator">(</span> <span class="string">tests</span> <span class="operator">=&gt;</span> <span class="number">3</span> <span class="operator">)</span>  <span class="operator">)</span> <span class="operator">};</span>
+ <span class="keyword">if</span> <span class="operator">(</span> <span class="keyword">eval</span> <span class="operator">{</span> <span class="variable">$@</span><span class="operator">-&gt;</span><span class="variable">isa</span><span class="operator">(</span><span class="string">'Test::Builder::Exception'</span><span class="operator">)</span> <span class="operator">}</span> <span class="operator">)</span> <span class="operator">{</span>
+    <span class="variable">$child</span><span class="operator">-&gt;</span><span class="variable">finalize</span><span class="operator">;</span>
+    <span class="keyword">return</span><span class="operator">;</span>
+ <span class="operator">}</span>
+ <span class="comment"># run your tests</span>
+</pre>
+</dd>
+<dt><strong><a name="expected_tests" class="item"><strong>expected_tests</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$max</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">expected_tests</span><span class="operator">;</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">expected_tests</span><span class="operator">(</span><span class="variable">$max</span><span class="operator">);</span>
+</pre>
+<p>Gets/sets the number of tests we expect this test to run and prints out
+the appropriate headers.</p>
+</dd>
+<dt><strong><a name="no_plan" class="item"><strong>no_plan</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">no_plan</span><span class="operator">;</span>
+</pre>
+<p>Declares that this test will run an indeterminate number of tests.</p>
+</dd>
+<dt><strong><a name="done_testing" class="item"><strong>done_testing</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">done_testing</span><span class="operator">();</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">done_testing</span><span class="operator">(</span><span class="variable">$num_tests</span><span class="operator">);</span>
+</pre>
+<p>Declares that you are done testing, no more tests will be run after this point.</p>
+<p>If a plan has not yet been output, it will do so.</p>
+<p>$num_tests is the number of tests you planned to run.  If a numbered
+plan was already declared, and if this contradicts, a failing test
+will be run to reflect the planning mistake.  If <a href="#no_plan"><code>no_plan</code></a> was declared,
+this will override.</p>
+<p>If <a href="#done_testing"><code>done_testing()</code></a> is called twice, the second call will issue a
+failing test.</p>
+<p>If <code>$num_tests</code> is omitted, the number of tests run will be used, like
+no_plan.</p>
+<p><a href="#done_testing"><code>done_testing()</code></a> is, in effect, used when you'd want to use <a href="#no_plan"><code>no_plan</code></a>, but
+safer. You'd use it like so:</p>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">$a</span> <span class="operator">==</span> <span class="variable">$b</span><span class="operator">);</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">done_testing</span><span class="operator">();</span>
+</pre>
+<p>Or to plan a variable number of tests:</p>
+<pre>
+    <span class="keyword">for</span> <span class="keyword">my</span> <span class="variable">$test</span> <span class="operator">(</span><span class="variable">@tests</span><span class="operator">)</span> <span class="operator">{</span>
+        <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">$test</span><span class="operator">);</span>
+    <span class="operator">}</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">done_testing</span><span class="operator">(</span><span class="variable">@tests</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="has_plan" class="item"><strong>has_plan</strong></a></strong></dt>
+
+<dd>
+<pre>
+  $plan = $Test-&gt;has_plan</pre>
+<p>Find out whether a plan has been defined. <code>$plan</code> is either <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> (no plan
+has been set), <a href="#no_plan"><code>no_plan</code></a> (indeterminate # of tests) or an integer (the number
+of expected tests).</p>
+</dd>
+<dt><strong><a name="skip_all" class="item"><strong>skip_all</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">skip_all</span><span class="operator">;</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">skip_all</span><span class="operator">(</span><span class="variable">$reason</span><span class="operator">);</span>
+</pre>
+<p>Skips all the tests, using the given <code>$reason</code>.  Exits immediately with 0.</p>
+</dd>
+<dt><strong><a name="exported_to" class="item"><strong>exported_to</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$pack</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">exported_to</span><span class="operator">;</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">exported_to</span><span class="operator">(</span><span class="variable">$pack</span><span class="operator">);</span>
+</pre>
+<p>Tells Test::Builder what package you exported your functions to.</p>
+<p>This method isn't terribly useful since modules which share the same
+Test::Builder object might get exported to different packages and only
+the last one will be honored.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="running_tests">Running tests</a></h2>
+<p>These actually run the tests, analogous to the functions in Test::More.</p>
+<p>They all return true if the test passed, false if the test failed.</p>
+<p><code>$name</code> is always optional.</p>
+<dl>
+<dt><strong><a name="ok" class="item"><strong>ok</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">$test</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Your basic test.  Pass if <code>$test</code> is true, fail if $test is false.  Just
+like Test::Simple's <a href="#ok"><code>ok()</code></a>.</p>
+</dd>
+<dt><strong><a name="is_eq" class="item"><strong>is_eq</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">is_eq</span><span class="operator">(</span><span class="variable">$got</span><span class="operator">,</span> <span class="variable">$expected</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Like Test::More's <code>is()</code>.  Checks if <code>$got eq $expected</code>.  This is the
+string version.</p>
+<p><a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> only ever matches another <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+</dd>
+<dt><strong><a name="is_num" class="item"><strong>is_num</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">is_num</span><span class="operator">(</span><span class="variable">$got</span><span class="operator">,</span> <span class="variable">$expected</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Like Test::More's <code>is()</code>.  Checks if <code>$got == $expected</code>.  This is the
+numeric version.</p>
+<p><a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> only ever matches another <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+</dd>
+<dt><strong><a name="isnt_eq" class="item"><strong>isnt_eq</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">isnt_eq</span><span class="operator">(</span><span class="variable">$got</span><span class="operator">,</span> <span class="variable">$dont_expect</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Like Test::More's <code>isnt()</code>.  Checks if <code>$got ne $dont_expect</code>.  This is
+the string version.</p>
+</dd>
+<dt><strong><a name="isnt_num" class="item"><strong>isnt_num</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">isnt_num</span><span class="operator">(</span><span class="variable">$got</span><span class="operator">,</span> <span class="variable">$dont_expect</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Like Test::More's <code>isnt()</code>.  Checks if <code>$got ne $dont_expect</code>.  This is
+the numeric version.</p>
+</dd>
+<dt><strong><a name="like" class="item"><strong>like</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">like</span><span class="operator">(</span><span class="variable">$this</span><span class="operator">,</span> <span class="string">qr/</span><span class="variable">$regex</span><span class="string">/</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">like</span><span class="operator">(</span><span class="variable">$this</span><span class="operator">,</span> <span class="string">'/$regex/'</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Like Test::More's <a href="#like"><code>like()</code></a>.  Checks if $this matches the given <code>$regex</code>.</p>
+</dd>
+<dt><strong><a name="unlike" class="item"><strong>unlike</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">unlike</span><span class="operator">(</span><span class="variable">$this</span><span class="operator">,</span> <span class="string">qr/</span><span class="variable">$regex</span><span class="string">/</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">unlike</span><span class="operator">(</span><span class="variable">$this</span><span class="operator">,</span> <span class="string">'/$regex/'</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Like Test::More's <a href="#unlike"><code>unlike()</code></a>.  Checks if $this <strong>does not match</strong> the
+given <code>$regex</code>.</p>
+</dd>
+<dt><strong><a name="cmp_ok" class="item"><strong>cmp_ok</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">cmp_ok</span><span class="operator">(</span><span class="variable">$this</span><span class="operator">,</span> <span class="variable">$type</span><span class="operator">,</span> <span class="variable">$that</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+</pre>
+<p>Works just like Test::More's <a href="#cmp_ok"><code>cmp_ok()</code></a>.</p>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">cmp_ok</span><span class="operator">(</span><span class="variable">$big_num</span><span class="operator">,</span> <span class="string">'!='</span><span class="operator">,</span> <span class="variable">$other_big_num</span><span class="operator">);</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="other_testing_methods">Other Testing Methods</a></h2>
+<p>These are methods which are used in the course of writing a test but are not themselves tests.</p>
+<dl>
+<dt><strong><a name="bail_out" class="item"><strong>BAIL_OUT</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">BAIL_OUT</span><span class="operator">(</span><span class="variable">$reason</span><span class="operator">);</span>
+</pre>
+<p>Indicates to the Test::Harness that things are going so badly all
+testing should terminate.  This includes running any additional test
+scripts.</p>
+<p>It will exit with 255.</p>
+</dd>
+<dt><strong><a name="skip" class="item"><strong>skip</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">skip</span><span class="operator">;</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">skip</span><span class="operator">(</span><span class="variable">$why</span><span class="operator">);</span>
+</pre>
+<p>Skips the current test, reporting <code>$why</code>.</p>
+</dd>
+<dt><strong><a name="todo_skip" class="item"><strong>todo_skip</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_skip</span><span class="operator">;</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_skip</span><span class="operator">(</span><span class="variable">$why</span><span class="operator">);</span>
+</pre>
+<p>Like <a href="#skip"><code>skip()</code></a>, only it will declare the test as failing and TODO.  Similar
+to</p>
+<pre>
+    <span class="keyword">print</span> <span class="string">"not ok </span><span class="variable">$tnum</span><span class="string"> # TODO </span><span class="variable">$why</span><span class="string">\n"</span><span class="operator">;</span>
+</pre>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="test_building_utility_methods">Test building utility methods</a></h2>
+<p>These methods are useful when writing your own test methods.</p>
+<dl>
+<dt><strong><a name="maybe_regex" class="item"><strong>maybe_regex</strong></a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">maybe_regex</span><span class="operator">(</span><span class="string">qr/</span><span class="variable">$regex</span><span class="string">/</span><span class="operator">);</span>
+  <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">maybe_regex</span><span class="operator">(</span><span class="string">'/$regex/'</span><span class="operator">);</span>
+</pre>
+<p>This method used to be useful back when Test::Builder worked on Perls
+before 5.6 which didn't have qr//.  Now its pretty useless.</p>
+<p>Convenience method for building testing functions that take regular
+expressions as arguments.</p>
+<p>Takes a quoted regular expression produced by <a href="../../lib/pods/perlfunc.html#qr_"><code>qr//</code></a>, or a string
+representing a regular expression.</p>
+<p>Returns a Perl value which may be used instead of the corresponding
+regular expression, or <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a> if its argument is not recognised.</p>
+<p>For example, a version of <a href="#like"><code>like()</code></a>, sans the useful diagnostic messages,
+could be written as:</p>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> laconic_like </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$this</span><span class="operator">,</span> <span class="variable">$regex</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+      <span class="keyword">my</span> <span class="variable">$usable_regex</span> <span class="operator">=</span> <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">maybe_regex</span><span class="operator">(</span><span class="variable">$regex</span><span class="operator">);</span>
+      <span class="keyword">die</span> <span class="string">"expecting regex, found '</span><span class="variable">$regex</span><span class="string">'\n"</span>
+          <span class="keyword">unless</span> <span class="variable">$usable_regex</span><span class="operator">;</span>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">$this</span> <span class="operator">=~</span> <span class="regex">m/</span><span class="variable">$usable_regex</span><span class="regex">/</span><span class="operator">,</span> <span class="variable">$name</span><span class="operator">);</span>
+  <span class="operator">}</span>
+</pre>
+</dd>
+<dt><strong><a name="is_fh" class="item"><strong>is_fh</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$is_fh</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">is_fh</span><span class="operator">(</span><span class="variable">$thing</span><span class="operator">);</span>
+</pre>
+<p>Determines if the given <code>$thing</code> can be used as a filehandle.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="test_style">Test style</a></h2>
+<dl>
+<dt><strong><a name="level" class="item"><strong>level</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">level</span><span class="operator">(</span><span class="variable">$how_high</span><span class="operator">);</span>
+</pre>
+<p>How far up the call stack should <code>$Test</code> look when reporting where the
+test failed.</p>
+<p>Defaults to 1.</p>
+<p>Setting <a href="../../$Test/Builder/Level.html">the $Test::Builder::Level manpage</a> overrides.  This is typically useful
+localized:</p>
+<pre>
+    <span class="keyword">sub</span><span class="variable"> my_ok </span><span class="operator">{</span>
+        <span class="keyword">my</span> <span class="variable">$test</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+        <span class="keyword">local</span> <span class="variable">$Test::Builder::Level</span> <span class="operator">=</span> <span class="variable">$Test::Builder::Level</span> <span class="operator">+</span> <span class="number">1</span><span class="operator">;</span>
+        <span class="variable">$TB</span><span class="operator">-&gt;</span><span class="variable">ok</span><span class="operator">(</span><span class="variable">$test</span><span class="operator">);</span>
+            <span class="operator">}</span>
+</pre>
+<p>To be polite to other functions wrapping your own you usually want to increment <code>$Level</code> rather than set it to a constant.</p>
+</dd>
+<dt><strong><a name="use_numbers" class="item"><strong>use_numbers</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">use_numbers</span><span class="operator">(</span><span class="variable">$on_or_off</span><span class="operator">);</span>
+</pre>
+<p>Whether or not the test should output numbers.  That is, this if true:</p>
+<pre>
+  ok 1
+  ok 2
+  ok 3</pre>
+<p>or this if false</p>
+<pre>
+  ok
+  ok
+  ok</pre>
+<p>Most useful when you can't depend on the test output order, such as
+when threads or forking is involved.</p>
+<p>Defaults to on.</p>
+</dd>
+<dt><strong><a name="no_diag" class="item"><strong>no_diag</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">no_diag</span><span class="operator">(</span><span class="variable">$no_diag</span><span class="operator">);</span>
+</pre>
+<p>If set true no diagnostics will be printed.  This includes calls to
+<a href="#diag"><code>diag()</code></a>.</p>
+</dd>
+<dt><strong><a name="no_ending" class="item"><strong>no_ending</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">no_ending</span><span class="operator">(</span><span class="variable">$no_ending</span><span class="operator">);</span>
+</pre>
+<p>Normally, Test::Builder does some extra diagnostics when the test
+ends.  It also changes the exit code as described below.</p>
+<p>If this is true, none of that will be done.</p>
+</dd>
+<dt><strong><a name="no_header" class="item"><strong>no_header</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">no_header</span><span class="operator">(</span><span class="variable">$no_header</span><span class="operator">);</span>
+</pre>
+<p>If set to true, no &quot;1..N&quot; header will be printed.</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="output">Output</a></h2>
+<p>Controlling where the test output goes.</p>
+<p>It's ok for your test to change where STDOUT and STDERR point to,
+Test::Builder's default output settings will not be affected.</p>
+<dl>
+<dt><strong><a name="diag" class="item"><strong>diag</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">diag</span><span class="operator">(</span><span class="variable">@msgs</span><span class="operator">);</span>
+</pre>
+<p>Prints out the given <code>@msgs</code>.  Like <a href="../../lib/pods/perlfunc.html#print"><code>print</code></a>, arguments are simply
+appended together.</p>
+<p>Normally, it uses the <a href="#failure_output"><code>failure_output()</code></a> handle, but if this is for a
+TODO test, the <a href="#todo_output"><code>todo_output()</code></a> handle is used.</p>
+<p>Output will be indented and marked with a # so as not to interfere
+with test output.  A newline will be put on the end if there isn't one
+already.</p>
+<p>We encourage using this rather than calling print directly.</p>
+<p>Returns false.  Why?  Because <a href="#diag"><code>diag()</code></a> is often used in conjunction with
+a failing test (<a href="#ok"><code>ok() || diag()</code></a>) it &quot;passes through&quot; the failure.</p>
+<pre>
+    <span class="keyword">return</span> <span class="variable">ok</span><span class="operator">(...)</span> <span class="operator">||</span> <span class="variable">diag</span><span class="operator">(...);</span>
+</pre>
+</dd>
+<dt><strong><a name="note" class="item"><strong>note</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">note</span><span class="operator">(</span><span class="variable">@msgs</span><span class="operator">);</span>
+</pre>
+<p>Like <a href="#diag"><code>diag()</code></a>, but it prints to the <a href="#output"><code>output()</code></a> handle so it will not
+normally be seen by the user except in verbose mode.</p>
+</dd>
+<dt><strong><a name="explain" class="item"><strong>explain</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@dump</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">explain</span><span class="operator">(</span><span class="variable">@msgs</span><span class="operator">);</span>
+</pre>
+<p>Will dump the contents of any references in a human readable format.
+Handy for things like...</p>
+<pre>
+    <span class="variable">is_deeply</span><span class="operator">(</span><span class="variable">$have</span><span class="operator">,</span> <span class="variable">$want</span><span class="operator">)</span> <span class="operator">||</span> <span class="variable">diag</span> <span class="variable">explain</span> <span class="variable">$have</span><span class="operator">;</span>
+</pre>
+<p>or</p>
+<pre>
+    <span class="variable">is_deeply</span><span class="operator">(</span><span class="variable">$have</span><span class="operator">,</span> <span class="variable">$want</span><span class="operator">)</span> <span class="operator">||</span> <span class="variable">note</span> <span class="variable">explain</span> <span class="variable">$have</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="output" class="item"><strong>output</strong></a></strong></dt>
+
+<dt><strong><a name="failure_output" class="item"><strong>failure_output</strong></a></strong></dt>
+
+<dt><strong><a name="todo_output" class="item"><strong>todo_output</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$filehandle</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">output</span><span class="operator">;</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">output</span><span class="operator">(</span><span class="variable">$filehandle</span><span class="operator">);</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">output</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">);</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">output</span><span class="operator">(\</span><span class="variable">$scalar</span><span class="operator">);</span>
+</pre>
+<p>These methods control where Test::Builder will print its output.
+They take either an open <code>$filehandle</code>, a <code>$filename</code> to open and write to
+or a <code>$scalar</code> reference to append to.  It will always return a <code>$filehandle</code>.</p>
+<p><strong>output</strong> is where normal &quot;ok/not ok&quot; test output goes.</p>
+<p>Defaults to STDOUT.</p>
+<p><strong>failure_output</strong> is where diagnostic output on test failures and
+<a href="#diag"><code>diag()</code></a> goes.  It is normally not read by Test::Harness and instead is
+displayed to the user.</p>
+<p>Defaults to STDERR.</p>
+<p><a href="#todo_output"><code>todo_output</code></a> is used instead of <a href="#failure_output"><code>failure_output()</code></a> for the
+diagnostics of a failing TODO test.  These will not be seen by the
+user.</p>
+<p>Defaults to STDOUT.</p>
+</dd>
+<dt><strong><a name="reset_outputs" class="item">reset_outputs</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$tb</span><span class="operator">-&gt;</span><span class="variable">reset_outputs</span><span class="operator">;</span>
+</pre>
+<p>Resets all the output filehandles back to their defaults.</p>
+</dd>
+<dt><strong><a name="carp" class="item">carp</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$tb</span><span class="operator">-&gt;</span><span class="variable">carp</span><span class="operator">(</span><span class="variable">@message</span><span class="operator">);</span>
+</pre>
+<p>Warns with <code>@message</code> but the message will appear to come from the
+point where the original test function was called (<a href="#caller"><code>$tb-&gt;caller</code></a>).</p>
+</dd>
+<dt><strong><a name="croak" class="item">croak</a></strong></dt>
+
+<dd>
+<pre>
+  <span class="variable">$tb</span><span class="operator">-&gt;</span><span class="variable">croak</span><span class="operator">(</span><span class="variable">@message</span><span class="operator">);</span>
+</pre>
+<p>Dies with <code>@message</code> but the message will appear to come from the
+point where the original test function was called (<a href="#caller"><code>$tb-&gt;caller</code></a>).</p>
+</dd>
+</dl>
+<p>
+</p>
+<h2><a name="test_status_and_info">Test Status and Info</a></h2>
+<dl>
+<dt><strong><a name="current_test" class="item"><strong>current_test</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$curr_test</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">current_test</span><span class="operator">;</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">current_test</span><span class="operator">(</span><span class="variable">$num</span><span class="operator">);</span>
+</pre>
+<p>Gets/sets the current test number we're on.  You usually shouldn't
+have to set this.</p>
+<p>If set forward, the details of the missing tests are filled in as 'unknown'.
+if set backward, the details of the intervening tests are deleted.  You
+can erase history if you really want to.</p>
+</dd>
+<dt><strong><a name="is_passing" class="item"><strong>is_passing</strong></a></strong></dt>
+
+<dd>
+<pre>
+   <span class="keyword">my</span> <span class="variable">$ok</span> <span class="operator">=</span> <span class="variable">$builder</span><span class="operator">-&gt;</span><span class="variable">is_passing</span><span class="operator">;</span>
+</pre>
+<p>Indicates if the test suite is currently passing.</p>
+<p>More formally, it will be false if anything has happened which makes
+it impossible for the test suite to pass.  True otherwise.</p>
+<p>For example, if no tests have run <a href="#is_passing"><code>is_passing()</code></a> will be true because
+even though a suite with no tests is a failure you can add a passing
+test to it and start passing.</p>
+<p>Don't think about it too much.</p>
+</dd>
+<dt><strong><a name="summary" class="item"><strong>summary</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@tests</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">summary</span><span class="operator">;</span>
+</pre>
+<p>A simple summary of the tests so far.  True for pass, false for fail.
+This is a logical pass/fail, so todos are passes.</p>
+<p>Of course, test #1 is $tests[0], etc...</p>
+</dd>
+<dt><strong><a name="details" class="item"><strong>details</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">@tests</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">details</span><span class="operator">;</span>
+</pre>
+<p>Like <a href="#summary"><code>summary()</code></a>, but with a lot more detail.</p>
+<pre>
+    <span class="variable">$tests</span><span class="operator">[</span><span class="variable">$test_num</span> <span class="operator">-</span> <span class="number">1</span><span class="operator">]</span> <span class="operator">=</span> 
+            <span class="operator">{</span> <span class="string">'ok'</span>       <span class="operator">=&gt;</span> <span class="variable">is</span> <span class="variable">the</span> <span class="variable">test</span> <span class="variable">considered</span> <span class="variable">a</span> <span class="variable">pass</span><span class="operator">?</span>
+              <span class="string">actual_ok</span>  <span class="operator">=&gt;</span> <span class="variable">did</span> <span class="variable">it</span> <span class="variable">literally</span> <span class="keyword">say</span> <span class="string">'ok'</span><span class="operator">?</span>
+              <span class="string">name</span>       <span class="operator">=&gt;</span> <span class="variable">name</span> <span class="variable">of</span> <span class="variable">the</span> <span class="variable">test</span> <span class="operator">(</span><span class="keyword">if</span> <span class="variable">any</span><span class="operator">)</span>
+              <span class="string">type</span>       <span class="operator">=&gt;</span> <span class="variable">type</span> <span class="variable">of</span> <span class="variable">test</span> <span class="operator">(</span><span class="keyword">if</span> <span class="variable">any</span><span class="operator">,</span> <span class="variable">see</span> <span class="variable">below</span><span class="operator">).</span>
+              <span class="string">reason</span>     <span class="operator">=&gt;</span> <span class="variable">reason</span> <span class="keyword">for</span> <span class="variable">the</span> <span class="variable">above</span> <span class="operator">(</span><span class="keyword">if</span> <span class="variable">any</span><span class="operator">)</span>
+            <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>'ok' is true if Test::Harness will consider the test to be a pass.</p>
+<p>'actual_ok' is a reflection of whether or not the test literally
+printed 'ok' or 'not ok'.  This is for examining the result of 'todo'
+tests.</p>
+<p>'name' is the name of the test.</p>
+<p>'type' indicates if it was a special test.  Normal tests have a type
+of ''.  Type can be one of the following:</p>
+<pre>
+    skip        see skip()
+    todo        see todo()
+    todo_skip   see todo_skip()
+    unknown     see below</pre>
+<p>Sometimes the Test::Builder test counter is incremented without it
+printing any test output, for example, when <a href="#current_test"><code>current_test()</code></a> is changed.
+In these cases, Test::Builder doesn't know the result of the test, so
+its type is 'unknown'.  These details for these tests are filled in.
+They are considered ok, but the name and actual_ok is left <a href="../../lib/pods/perlfunc.html#undef"><code>undef</code></a>.</p>
+<p>For example &quot;not ok 23 - hole count # TODO insufficient donuts&quot; would
+result in this structure:</p>
+<pre>
+    <span class="variable">$tests</span><span class="operator">[</span><span class="number">22</span><span class="operator">]</span> <span class="operator">=</span>    <span class="comment"># 23 - 1, since arrays start from 0.</span>
+      <span class="operator">{</span> <span class="string">ok</span>        <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span>   <span class="comment"># logically, the test passed since its todo</span>
+        <span class="string">actual_ok</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>   <span class="comment"># in absolute terms, it failed</span>
+        <span class="string">name</span>      <span class="operator">=&gt;</span> <span class="string">'hole count'</span><span class="operator">,</span>
+        <span class="string">type</span>      <span class="operator">=&gt;</span> <span class="string">'todo'</span><span class="operator">,</span>
+        <span class="string">reason</span>    <span class="operator">=&gt;</span> <span class="string">'insufficient donuts'</span>
+      <span class="operator">}</span><span class="operator">;</span>
+</pre>
+</dd>
+<dt><strong><a name="todo" class="item"><strong>todo</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$todo_reason</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$todo_reason</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo</span><span class="operator">(</span><span class="variable">$pack</span><span class="operator">);</span>
+</pre>
+<p>If the current tests are considered &quot;TODO&quot; it will return the reason,
+if any.  This reason can come from a <code>$TODO</code> variable or the last call
+to <a href="#todo_start"><code>todo_start()</code></a>.</p>
+<p>Since a TODO test does not need a reason, this function can return an
+empty string even when inside a TODO block.  Use <a href="#in_todo"><code>$Test-&gt;in_todo</code></a>
+to determine if you are currently inside a TODO block.</p>
+<p><a href="#todo"><code>todo()</code></a> is about finding the right package to look for <code>$TODO</code> in.  It's
+pretty good at guessing the right package to look at.  It first looks for
+the caller based on <code>$Level + 1</code>, since <a href="#todo"><code>todo()</code></a> is usually called inside
+a test function.  As a last resort it will use <a href="#exported_to"><code>exported_to()</code></a>.</p>
+<p>Sometimes there is some confusion about where <a href="#todo"><code>todo()</code></a> should be looking
+for the <code>$TODO</code> variable.  If you want to be sure, tell it explicitly
+what $pack to use.</p>
+</dd>
+<dt><strong><a name="find_todo" class="item"><strong>find_TODO</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$todo_reason</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">find_TODO</span><span class="operator">();</span>
+    <span class="keyword">my</span> <span class="variable">$todo_reason</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">find_TODO</span><span class="operator">(</span><span class="variable">$pack</span><span class="operator">);</span>
+</pre>
+<p>Like <a href="#todo"><code>todo()</code></a> but only returns the value of <code>$TODO</code> ignoring
+<a href="#todo_start"><code>todo_start()</code></a>.</p>
+<p>Can also be used to set <code>$TODO</code> to a new value while returning the
+old value:</p>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$old_reason</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">find_TODO</span><span class="operator">(</span><span class="variable">$pack</span><span class="operator">,</span> <span class="number">1</span><span class="operator">,</span> <span class="variable">$new_reason</span><span class="operator">);</span>
+</pre>
+</dd>
+<dt><strong><a name="in_todo" class="item"><strong>in_todo</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$in_todo</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">in_todo</span><span class="operator">;</span>
+</pre>
+<p>Returns true if the test is currently inside a TODO block.</p>
+</dd>
+<dt><strong><a name="todo_start" class="item"><strong>todo_start</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_start</span><span class="operator">();</span>
+    <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_start</span><span class="operator">(</span><span class="variable">$message</span><span class="operator">);</span>
+</pre>
+<p>This method allows you declare all subsequent tests as TODO tests, up until
+the <a href="#todo_end"><code>todo_end</code></a> method has been called.</p>
+<p>The <code>TODO:</code> and <code>$TODO</code> syntax is generally pretty good about figuring out
+whether or not we're in a TODO test.  However, often we find that this is not
+possible to determine (such as when we want to use <code>$TODO</code> but
+the tests are being executed in other packages which can't be inferred
+beforehand).</p>
+<p>Note that you can use this to nest &quot;todo&quot; tests</p>
+<pre>
+ <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_start</span><span class="operator">(</span><span class="string">'working on this'</span><span class="operator">);</span>
+ <span class="comment"># lots of code</span>
+ <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_start</span><span class="operator">(</span><span class="string">'working on that'</span><span class="operator">);</span>
+ <span class="comment"># more code</span>
+ <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_end</span><span class="operator">;</span>
+ <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_end</span><span class="operator">;</span>
+</pre>
+<p>This is generally not recommended, but large testing systems often have weird
+internal needs.</p>
+<p>We've tried to make this also work with the TODO: syntax, but it's not
+guaranteed and its use is also discouraged:</p>
+<pre>
+ <span class="variable">TODO</span><span class="operator">:</span> <span class="operator">{</span>
+     <span class="keyword">local</span> <span class="variable">$TODO</span> <span class="operator">=</span> <span class="string">'We have work to do!'</span><span class="operator">;</span>
+     <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_start</span><span class="operator">(</span><span class="string">'working on this'</span><span class="operator">);</span>
+     <span class="comment"># lots of code</span>
+     <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_start</span><span class="operator">(</span><span class="string">'working on that'</span><span class="operator">);</span>
+     <span class="comment"># more code</span>
+     <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_end</span><span class="operator">;</span>
+     <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_end</span><span class="operator">;</span>
+ <span class="operator">}</span>
+</pre>
+<p>Pick one style or another of &quot;TODO&quot; to be on the safe side.</p>
+</dd>
+<dt><strong><a name="todo_end" class="item"><code>todo_end</code></a></strong></dt>
+
+<dd>
+<pre>
+ <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">todo_end</span><span class="operator">;</span>
+</pre>
+<p>Stops running tests as &quot;TODO&quot; tests.  This method is fatal if called without a
+preceding <a href="#todo_start"><code>todo_start</code></a> method call.</p>
+</dd>
+<dt><strong><a name="caller" class="item"><strong>caller</strong></a></strong></dt>
+
+<dd>
+<pre>
+    <span class="keyword">my</span> <span class="variable">$package</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">caller</span><span class="operator">;</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$pack</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">,</span> <span class="variable">$line</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">caller</span><span class="operator">;</span>
+    <span class="keyword">my</span><span class="operator">(</span><span class="variable">$pack</span><span class="operator">,</span> <span class="variable">$file</span><span class="operator">,</span> <span class="variable">$line</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">$Test</span><span class="operator">-&gt;</span><span class="variable">caller</span><span class="operator">(</span><span class="variable">$height</span><span class="operator">);</span>
+</pre>
+<p>Like the normal <a href="#caller"><code>caller()</code></a>, except it reports according to your <a href="#level"><code>level()</code></a>.</p>
+<p><code>$height</code> will be added to the <a href="#level"><code>level()</code></a>.</p>
+<p>If <a href="#caller"><code>caller()</code></a> winds up off the top of the stack it report the highest context.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="exit_codes">EXIT CODES</a></h1>
+<p>If all your tests passed, Test::Builder will exit with zero (which is
+normal).  If anything failed it will exit with how many failed.  If
+you run less (or more) tests than you planned, the missing (or extras)
+will be considered failures.  If no tests were ever run Test::Builder
+will throw a warning and exit with 255.  If the test died, even after
+having successfully completed all its tests, it will still be
+considered a failure and will exit with 255.</p>
+<p>So the exit codes are...</p>
+<pre>
+    0                   all tests successful
+    255                 test died or all passed but wrong # of tests run
+    any other number    how many failed (including missing or extras)</pre>
+<p>If you fail more than 254 tests, it will be reported as 254.</p>
+<p>
+</p>
+<hr />
+<h1><a name="threads">THREADS</a></h1>
+<p>In perl 5.8.1 and later, Test::Builder is thread-safe.  The test
+number is shared amongst all threads.  This means if one thread sets
+the test number using <a href="#current_test"><code>current_test()</code></a> they will all be effected.</p>
+<p>While versions earlier than 5.8.1 had threads they contain too many
+bugs to support.</p>
+<p>Test::Builder is only thread-aware if threads.pm is loaded <em>before</em>
+Test::Builder.</p>
+<p>
+</p>
+<hr />
+<h1><a name="memory">MEMORY</a></h1>
+<p>An informative hash, accessible via <a href="#details"><code>&lt;details()</code></a>&gt;, is stored for each
+test you perform.  So memory usage will scale linearly with each test
+run. Although this is not a problem for most test suites, it can
+become an issue if you do large (hundred thousands to million)
+combinatorics tests in the same run.</p>
+<p>In such cases, you are advised to either split the test file into smaller
+ones, or use a reverse approach, doing &quot;normal&quot; (code) compares and
+triggering <code>fail()</code> should anything go unexpected.</p>
+<p>Future versions of Test::Builder will have a way to turn history off.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>CPAN can provide the best examples.  Test::Simple, Test::More,
+Test::Exception and Test::Differences all use Test::Builder.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Test::Simple, Test::More, Test::Harness</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p>Original code by chromatic, maintained by Michael G Schwern
+&lt;<a href="mailto:schwern@pobox.com">schwern@pobox.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2002-2008 by chromatic &lt;<a href="mailto:chromatic@wgz.org">chromatic@wgz.org</a>&gt; and
+                       Michael G Schwern &lt;<a href="mailto:schwern@pobox.com">schwern@pobox.com</a>&gt;.</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+<p>See <em class="file"><a href="http://www.perl.com/perl/misc/Artistic.html">http://www.perl.com/perl/misc/Artistic.html</a></em></p>
+
+</body>
+
+</html>

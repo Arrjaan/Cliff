@@ -1,0 +1,205 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../../scineplex.css">
+<title>Moose::Cookbook::Roles::Recipe2 - Advanced Role Composition - method exclusion and aliasing</title>
+<link rel="stylesheet" href="../../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',4);</script>
+<h1><a>Moose::Cookbook::Roles::Recipe2 - Advanced Role Composition - method exclusion and aliasing</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#conclusion">CONCLUSION</a></li>
+	<li><a href="#footnotes">FOOTNOTES</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>Moose::Cookbook::Roles::Recipe2 - Advanced Role Composition - method exclusion and aliasing</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<p>version 2.0205</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Restartable</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">has</span> <span class="string">'is_paused'</span> <span class="operator">=&gt;</span> <span class="operator">(</span>
+      <span class="string">is</span>      <span class="operator">=&gt;</span> <span class="string">'rw'</span><span class="operator">,</span>
+      <span class="string">isa</span>     <span class="operator">=&gt;</span> <span class="string">'Bool'</span><span class="operator">,</span>
+      <span class="string">default</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span>
+  <span class="operator">);</span>
+</pre>
+<pre>
+  <span class="variable">requires</span> <span class="string">'save_state'</span><span class="operator">,</span> <span class="string">'load_state'</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> stop </span><span class="operator">{</span> <span class="number">1</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> start </span><span class="operator">{</span> <span class="number">1</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Restartable::ButUnreliable</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Restartable'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">-alias</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">stop</span>  <span class="operator">=&gt;</span> <span class="string">'_stop'</span><span class="operator">,</span>
+          <span class="string">start</span> <span class="operator">=&gt;</span> <span class="string">'_start'</span>
+      <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">-excludes</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'stop'</span><span class="operator">,</span> <span class="string">'start'</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> stop </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">explode</span><span class="operator">()</span> <span class="keyword">if</span> <span class="keyword">rand</span><span class="operator">(</span><span class="number">1</span><span class="operator">)</span> <span class="operator">&gt;</span> <span class="number">.5</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">_stop</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> start </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">explode</span><span class="operator">()</span> <span class="keyword">if</span> <span class="keyword">rand</span><span class="operator">(</span><span class="number">1</span><span class="operator">)</span> <span class="operator">&gt;</span> <span class="number">.5</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">_start</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Restartable::ButBroken</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Moose::Role</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">with</span> <span class="string">'Restartable'</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-excludes</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'stop'</span><span class="operator">,</span> <span class="string">'start'</span> <span class="operator">]</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> stop </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">explode</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> start </span><span class="operator">{</span>
+      <span class="keyword">my</span> <span class="variable">$self</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+</pre>
+<pre>
+      <span class="variable">$self</span><span class="operator">-&gt;</span><span class="variable">explode</span><span class="operator">();</span>
+        <span class="operator">}</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>In this example, we demonstrate how to exercise fine-grained control
+over what methods we consume from a role. We have a <code>Restartable</code>
+role which provides an <code>is_paused</code> attribute, and two methods,
+<code>stop</code> and <code>start</code>.</p>
+<p>Then we have two more roles which implement the same interface, each
+putting their own spin on the <code>stop</code> and <code>start</code> methods.</p>
+<p>In the <code>Restartable::ButUnreliable</code> role, we want to provide a new
+implementation of <code>stop</code> and <code>start</code>, but still have access to the
+original implementation. To do this, we alias the methods from
+<code>Restartable</code> to private methods, and provide wrappers around the
+originals (1).</p>
+<p>Note that aliasing simply <em>adds</em> a name, so we also need to exclude the
+methods with their original names.</p>
+<pre>
+  <span class="variable">with</span> <span class="string">'Restartable'</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">-alias</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+          <span class="string">stop</span>  <span class="operator">=&gt;</span> <span class="string">'_stop'</span><span class="operator">,</span>
+          <span class="string">start</span> <span class="operator">=&gt;</span> <span class="string">'_start'</span>
+      <span class="operator">}</span><span class="operator">,</span>
+      <span class="string">-excludes</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'stop'</span><span class="operator">,</span> <span class="string">'start'</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>In the <code>Restartable::ButBroken</code> role, we want to provide an entirely
+new behavior for <code>stop</code> and <code>start</code>. We exclude them entirely when
+composing the <code>Restartable</code> role into <code>Restartable::ButBroken</code>.</p>
+<p>It's worth noting that the <code>-excludes</code> parameter also accepts a single
+string as an argument if you just want to exclude one method.</p>
+<pre>
+  <span class="variable">with</span> <span class="string">'Restartable'</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-excludes</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">'stop'</span><span class="operator">,</span> <span class="string">'start'</span> <span class="operator">]</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="conclusion">CONCLUSION</a></h1>
+<p>Exclusion and renaming are a power tool that can be handy, especially
+when building roles out of other roles. In this example, all of our
+roles implement the <code>Restartable</code> role. Each role provides same API,
+but each has a different implementation under the hood.</p>
+<p>You can also use the method aliasing and excluding features when
+composing a role into a class.</p>
+<p>
+</p>
+<hr />
+<h1><a name="footnotes">FOOTNOTES</a></h1>
+<dl>
+<dt><strong><a name="112" class="item">(1)</a></strong></dt>
+
+<dd>
+<p>The mention of wrapper should tell you that we could do the same thing
+using method modifiers, but for the sake of this example, we don't.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Stevan Little &lt;<a href="mailto:stevan@iinteractive.com">stevan@iinteractive.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This software is copyright (c) 2011 by Infinity Interactive, Inc..</p>
+<p>This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.</p>
+
+</body>
+
+</html>

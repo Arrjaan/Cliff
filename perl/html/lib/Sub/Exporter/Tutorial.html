@@ -1,0 +1,320 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Sub::Exporter::Tutorial - a friendly guide to exporting with Sub::Exporter</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Sub::Exporter::Tutorial - a friendly guide to exporting with Sub::Exporter</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#what_s_an_exporter">What's an Exporter?</a></li>
+		<li><a href="#the_basics_of_sub__exporter">The Basics of Sub::Exporter</a></li>
+		<li><a href="#using_export_groups">Using Export Groups</a></li>
+		<li><a href="#renaming_your_imports">Renaming Your Imports</a></li>
+		<li><a href="#building_subroutines_to_order">Building Subroutines to Order</a></li>
+		<li><a href="#argument_collectors">Argument Collectors</a></li>
+		<li><a href="#generating_many_routines_in_one_scope">Generating Many Routines in One Scope</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Sub::Exporter::Tutorial - a friendly guide to exporting with Sub::Exporter</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>
+</p>
+<h2><a name="what_s_an_exporter">What's an Exporter?</a></h2>
+<p>When you <a href="../../../lib/pods/perlfunc.html#use"><code>use</code></a> a module, first it is required, then its <a href="../../../lib/pods/perlfunc.html#import"><code>import</code></a> method is
+called.  The Perl documentation tells us that the following two lines are
+equivalent:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Module</span> <span class="variable">LIST</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">BEGIN</span> <span class="operator">{</span> <span class="keyword">require</span> <span class="variable">Module</span><span class="operator">;</span> <span class="variable">Module</span><span class="operator">-&gt;</span><span class="variable">import</span><span class="operator">(</span><span class="variable">LIST</span><span class="operator">);</span> <span class="operator">}</span>
+</pre>
+<p>The import method is the module's <em>exporter</em>.</p>
+<p>
+</p>
+<h2><a name="the_basics_of_sub__exporter">The Basics of Sub::Exporter</a></h2>
+<p>Sub::Exporter builds a custom exporter which can then be installed into your
+module.  It builds this method based on configuration passed to its
+<code>setup_exporter</code> method.</p>
+<p>A very basic use case might look like this:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Addition</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span><span class="operator">;</span>
+  <span class="variable">Sub::Exporter::setup_exporter</span><span class="operator">(</span><span class="operator">{</span> <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(plus)</span> <span class="operator">]}</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> plus </span><span class="operator">{</span> <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$x</span><span class="operator">,</span> <span class="variable">$y</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span> <span class="keyword">return</span> <span class="variable">$x</span> <span class="operator">+</span> <span class="variable">$y</span><span class="operator">;</span> <span class="operator">}</span>
+</pre>
+<p>This would mean that when someone used your Addition module, they could have
+its <code>plus</code> routine imported into their package:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Addition</span> <span class="string">qw(plus)</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$z</span> <span class="operator">=</span> <span class="variable">plus</span><span class="operator">(</span><span class="number">2</span><span class="operator">,</span> <span class="number">2</span><span class="operator">);</span> <span class="comment"># this works, because now plus is in the main package</span>
+</pre>
+<p>That syntax to set up the exporter, above, is a little verbose, so for the
+simple case of just naming some exports, you can write this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(plus)</span> <span class="operator">]</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>...which is the same as the original example -- except that now the exporter is
+built and installed at compile time.  Well, that and you typed less.</p>
+<p>
+</p>
+<h2><a name="using_export_groups">Using Export Groups</a></h2>
+<p>You can specify whole groups of things that should be exportable together.
+These are called groups.  <a href="../../../lib/Exporter.html">the Exporter manpage</a> calls these tags.  To specify groups, you
+just pass a <code>groups</code> key in your exporter configuration:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Food</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(apple banana beef fluff lox rabbit)</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">groups</span>  <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">fauna</span>  <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(beef lox rabbit)</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="string">flora</span>  <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(apple banana)</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Now, to import all that delicious foreign meat, your consumer needs only to
+write:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Food</span> <span class="string">qw(:fauna)</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Food</span> <span class="string">qw(-fauna)</span><span class="operator">;</span>
+</pre>
+<p>Either one of the above is acceptable.  A colon is more traditional, but
+barewords with a leading colon can't be enquoted by a fat arrow.  We'll see why
+that matters later on.</p>
+<p>Groups can contain other groups.  If you include a group name (with the leading
+dash or colon) in a group definition, it will be expanded recursively when the
+exporter is called.  The exporter will <strong>not</strong> recurse into the same group twice
+while expanding groups.</p>
+<p>There are two special groups:  <code>all</code> and <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a>.  The <code>all</code> group is
+defined by default, and contains all exportable subs.  You can redefine it,
+if you want to export only a subset when all exports are requested.  The
+<a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> group is the set of routines to export when nothing specific is
+requested.  By default, there is no <a href="../../../lib/pods/perlfunc.html#default"><code>default</code></a> group.</p>
+<p>
+</p>
+<h2><a name="renaming_your_imports">Renaming Your Imports</a></h2>
+<p>Sometimes you want to import something, but you don't like the name as which
+it's imported.  Sub::Exporter can rename your imports for you.  If you wanted
+to import <code>lox</code> from the Food package, but you don't like the name, you could
+write this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Food</span> <span class="string">lox</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-as</span> <span class="operator">=&gt;</span> <span class="string">'salmon'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Now you'd get the <code>lox</code> routine, but it would be called salmon in your
+package.  You can also rename entire groups by using the <code>prefix</code> option:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Food</span> <span class="operator">-</span><span class="string">fauna</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-prefix</span> <span class="operator">=&gt;</span> <span class="string">'cute_little_'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Now you can call your <code>cute_little_rabbit</code> routine.  (You can also call
+<code>cute_little_beef</code>, but that hardly seems as enticing.)</p>
+<p>When you define groups, you can include renaming.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(apple banana beef fluff lox rabbit)</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">groups</span>  <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">fauna</span>  <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(beef lox)</span><span class="operator">,</span> <span class="string">rabbit</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-as</span> <span class="operator">=&gt;</span> <span class="string">'coney'</span> <span class="operator">}</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>A prefix on a group like that does the right thing.  This is when it's useful
+to use a dash instead of a colon to indicate a group: you can put a fat arrow
+between the group and its arguments, then.</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Food</span> <span class="operator">-</span><span class="string">fauna</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-prefix</span> <span class="operator">=&gt;</span> <span class="string">'lovely_'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">eat</span><span class="operator">(</span> <span class="variable">lovely_coney</span> <span class="operator">);</span> <span class="comment"># this works</span>
+</pre>
+<p>Prefixes also apply recursively.  That means that this code works:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(apple banana beef fluff lox rabbit)</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">groups</span>  <span class="operator">=&gt;</span> <span class="operator">{</span>
+      <span class="string">fauna</span>   <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(beef lox)</span><span class="operator">,</span> <span class="string">rabbit</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-as</span> <span class="operator">=&gt;</span> <span class="string">'coney'</span> <span class="operator">}</span> <span class="operator">]</span><span class="operator">,</span>
+      <span class="string">allowed</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">-fauna</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-prefix</span> <span class="operator">=&gt;</span> <span class="string">'willing_'</span> <span class="operator">}</span><span class="operator">,</span> <span class="string">'banana'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="operator">}</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  ...</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Food</span> <span class="operator">-</span><span class="string">allowed</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">-prefix</span> <span class="operator">=&gt;</span> <span class="string">'any_'</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="variable">$dinner</span> <span class="operator">=</span> <span class="variable">any_willing_coney</span><span class="operator">;</span> <span class="comment"># yum!</span>
+</pre>
+<p>Groups can also be passed a <code>-suffix</code> argument.</p>
+<p>Finally, if the <code>-as</code> argument to an exported routine is a reference to a
+scalar, a reference to the routine will be placed in that scalar.</p>
+<p>
+</p>
+<h2><a name="building_subroutines_to_order">Building Subroutines to Order</a></h2>
+<p>Sometimes, you want to export things that you don't have on hand.  You might
+want to offer customized routines built to the specification of your consumer;
+that's just good business!  With Sub::Exporter, this is easy.</p>
+<p>To offer subroutines to order, you need to provide a generator when you set up
+your exporter.  A generator is just a routine that returns a new routine.
+<a href="../../../lib/pods/perlref.html">the perlref manpage</a> is talking about these when it discusses closures and function
+templates. The canonical example of a generator builds a unique incrementor;
+here's how you'd do that with Sub::Exporter;</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Package::Counter</span><span class="operator">;</span>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">counter</span> <span class="operator">=&gt;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">;</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$i</span><span class="operator">++</span> <span class="operator">}</span> <span class="operator">}</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">groups</span>  <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">default</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(counter)</span> <span class="operator">]</span> <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Now anyone can use your Package::Counter module and he'll receive a <code>counter</code>
+in his package.  It will count up by one, and will never interfere with anyone
+else's counter.</p>
+<p>This isn't very useful, though, unless the consumer can explain what he wants.
+This is done, in part, by supplying arguments when importing.  The following
+example shows how a generator can take and use arguments:</p>
+<pre>
+  <span class="keyword">package</span> <span class="variable">Package::Counter</span><span class="operator">;</span>
+</pre>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> _build_counter </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$class</span><span class="operator">,</span> <span class="variable">$arg</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+    <span class="variable">$arg</span> <span class="operator">||=</span> <span class="operator">{}</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">$i</span> <span class="operator">=</span> <span class="variable">$arg</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">start</span><span class="operator">}</span> <span class="operator">||</span> <span class="number">0</span><span class="operator">;</span>
+    <span class="keyword">return</span> <span class="keyword">sub</span><span class="variable"> </span><span class="operator">{</span> <span class="variable">$i</span><span class="operator">++</span> <span class="operator">};</span>
+  <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">exports</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">counter</span> <span class="operator">=&gt;</span> <span class="operator">\</span><span class="string">'_build_counter'</span> <span class="operator">]</span><span class="operator">,</span>
+    <span class="string">groups</span>  <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">default</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(counter)</span> <span class="operator">]</span> <span class="operator">}</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Now, the consumer can (if he wants) specify a starting value for his counter:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Package::Counter</span> <span class="string">counter</span> <span class="operator">=&gt;</span> <span class="operator">{</span> <span class="string">start</span> <span class="operator">=&gt;</span> <span class="number">10</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Arguments to a group are passed along to the generators of routines in that
+group, but Sub::Exporter arguments -- anything beginning with a dash -- are
+never passed in.  When groups are nested, the arguments are merged as the
+groups are expanded.</p>
+<p>Notice, too, that in the example above, we gave a reference to a method <em>name</em>
+rather than a method <em>implementation</em>.  By giving the name rather than the
+subroutine, we make it possible for subclasses of our &quot;Package::Counter&quot; module
+to replace the <code>_build_counter</code> method.</p>
+<p>When a generator is called, it is passed four parameters:</p>
+<ul>
+<li><strong><a name="the_invocant_on_which_the_exporter_was_called" class="item">the invocant on which the exporter was called</a></strong>
+
+</li>
+<li><strong><a name="generated" class="item">the name of the export being generated (not the name it's being installed as)</a></strong>
+
+</li>
+<li><strong><a name="the_arguments_supplied_for_the_routine" class="item">the arguments supplied for the routine</a></strong>
+
+</li>
+<li><strong><a name="the_collection_of_generic_arguments" class="item">the collection of generic arguments</a></strong>
+
+</li>
+</ul>
+<p>The fourth item is the last major feature that hasn't been covered.</p>
+<p>
+</p>
+<h2><a name="argument_collectors">Argument Collectors</a></h2>
+<p>Sometimes you will want to accept arguments once that can then be available to
+any subroutine that you're going to export.  To do this, you specify
+collectors, like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Menu::Airline</span>
+  <span class="keyword">use</span> <span class="variable">Sub::Exporter</span> <span class="operator">-</span><span class="string">setup</span> <span class="operator">=&gt;</span> <span class="operator">{</span>
+    <span class="string">exports</span> <span class="operator">=&gt;</span>  <span class="operator">...</span> <span class="operator">,</span>
+    <span class="string">groups</span>  <span class="operator">=&gt;</span>  <span class="operator">...</span> <span class="operator">,</span>
+    <span class="string">collectors</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(allergies ethics)</span> <span class="operator">]</span><span class="operator">,</span>
+  <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>Collectors look like normal exports in the import call, but they don't do
+anything but collect data which can later be passed to generators.  If the
+module was used like this:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">Menu::Airline</span> <span class="string">allergies</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(peanuts)</span> <span class="operator">]</span><span class="operator">,</span> <span class="string">ethics</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(vegan)</span> <span class="operator">]</span><span class="operator">;</span>
+</pre>
+<p>...the consumer would get a salad.  Also, all the generators would be passed,
+as their fourth argument, something like this:</p>
+<pre>
+  <span class="operator">{</span> <span class="string">allerges</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(peanuts)</span> <span class="operator">]</span><span class="operator">,</span> <span class="string">ethics</span> <span class="operator">=&gt;</span> <span class="operator">[</span> <span class="string">qw(vegan)</span> <span class="operator">]</span> <span class="operator">}</span>
+</pre>
+<p>Generators may have arguments in their definition, as well.  These must be code
+refs that perform validation of the collected values.  They are passed the
+collection value and may return true or false.  If they return false, the
+exporter will throw an exception.</p>
+<p>
+</p>
+<h2><a name="generating_many_routines_in_one_scope">Generating Many Routines in One Scope</a></h2>
+<p>Sometimes it's useful to have multiple routines generated in one scope.  This
+way they can share lexical data which is otherwise unavailable.  To do this,
+you can supply a generator for a group which returns a hashref of names and
+code references.  This generator is passed all the usual data, and the group
+may receive the usual <code>-prefix</code> or <code>-suffix</code> arguments.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Ricardo SIGNES, <code>&lt;rjbs@cpan.org&gt;</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<ul>
+<li><strong><a name="sub_exporter_for_complete_documentation_and_references_to_other_exporters" class="item"><a href="../../../lib/Sub/Exporter.html">the Sub::Exporter manpage</a> for complete documentation and references to other exporters.</a></strong>
+
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2007 Ricardo SIGNES.  This program is free software;  you can
+redistribute it and/or modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

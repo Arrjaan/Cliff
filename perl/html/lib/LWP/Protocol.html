@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>LWP::Protocol - Base class for LWP protocols</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>LWP::Protocol - Base class for LWP protocols</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>LWP::Protocol - Base class for LWP protocols</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">package</span> <span class="variable">LWP::Protocol::foo</span><span class="operator">;</span>
+ <span class="keyword">require</span> <span class="variable">LWP::Protocol</span><span class="operator">;</span>
+ <span class="variable">@ISA</span><span class="operator">=</span><span class="string">qw(LWP::Protocol)</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This class is used a the base class for all protocol implementations
+supported by the LWP library.</p>
+<p>When creating an instance of this class using
+<a href="#create"><code>LWP::Protocol::create($url)</code></a>, and you get an initialised subclass
+appropriate for that access method. In other words, the
+LWP::Protocol::create() function calls the constructor for one of its
+subclasses.</p>
+<p>All derived LWP::Protocol classes need to override the <a href="#request"><code>request()</code></a>
+method which is used to service a request. The overridden method can
+make use of the <a href="#collect"><code>collect()</code></a> function to collect together chunks of data
+as it is received.</p>
+<p>The following methods and functions are provided:</p>
+<dl>
+<dt><strong><a name="new" class="item">$prot = LWP::Protocol-&gt;<code>new()</code></a></strong></dt>
+
+<dd>
+<p>The LWP::Protocol constructor is inherited by subclasses. As this is a
+virtual base class this method should <strong>not</strong> be called directly.</p>
+</dd>
+<dt><strong><a name="create" class="item">$prot = LWP::Protocol::create($scheme)</a></strong></dt>
+
+<dd>
+<p>Create an object of the class implementing the protocol to handle the
+given scheme. This is a function, not a method. It is more an object
+factory than a constructor. This is the function user agents should
+use to access protocols.</p>
+</dd>
+<dt><strong><a name="implementor" class="item">$class = LWP::Protocol::implementor($scheme, [$class])</a></strong></dt>
+
+<dd>
+<p>Get and/or set implementor class for a scheme.  Returns '' if the
+specified scheme is not supported.</p>
+</dd>
+<dt><strong><a name="request" class="item">$prot-&gt;request(...)</a></strong></dt>
+
+<dd>
+<pre>
+ <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$protocol</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$request</span><span class="operator">,</span> <span class="variable">$proxy</span><span class="operator">,</span> <span class="keyword">undef</span><span class="operator">);</span>
+ <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$protocol</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$request</span><span class="operator">,</span> <span class="variable">$proxy</span><span class="operator">,</span> <span class="string">'/tmp/sss'</span><span class="operator">);</span>
+ <span class="variable">$response</span> <span class="operator">=</span> <span class="variable">$protocol</span><span class="operator">-&gt;</span><span class="variable">request</span><span class="operator">(</span><span class="variable">$request</span><span class="operator">,</span> <span class="variable">$proxy</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">callback</span><span class="operator">,</span> <span class="number">1024</span><span class="operator">);</span>
+</pre>
+<p>Dispatches a request over the protocol, and returns a response
+object. This method needs to be overridden in subclasses.  Refer to
+<a href="../../lib/CPAN/LWP/UserAgent.html">the LWP::UserAgent manpage</a> for description of the arguments.</p>
+</dd>
+<dt><strong><a name="collect" class="item">$prot-&gt;collect($arg, $response, $collector)</a></strong></dt>
+
+<dd>
+<p>Called to collect the content of a request, and process it
+appropriately into a scalar, file, or by calling a callback.  If $arg
+is undefined, then the content is stored within the $response.  If
+$arg is a simple scalar, then $arg is interpreted as a file name and
+the content is written to this file.  If $arg is a reference to a
+routine, then content is passed to this routine.</p>
+<p>The $collector is a routine that will be called and which is
+responsible for returning pieces (as ref to scalar) of the content to
+process.  The $collector signals EOF by returning a reference to an
+empty sting.</p>
+<p>The return value from <a href="#collect"><code>collect()</code></a> is the $response object reference.</p>
+<p><strong>Note:</strong> We will only use the callback or file argument if
+$response-&gt;<code>is_success()</code>.  This avoids sending content data for
+redirects and authentication responses to the callback which would be
+confusing.</p>
+</dd>
+<dt><strong><a name="collect_once" class="item">$prot-&gt;collect_once($arg, $response, $content)</a></strong></dt>
+
+<dd>
+<p>Can be called when the whole response content is available as
+$content.  This will invoke <a href="#collect"><code>collect()</code></a> with a collector callback that
+returns a reference to $content the first time and an empty string the
+next.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Inspect the <em class="file">LWP/Protocol/file.pm</em> and <em class="file">LWP/Protocol/http.pm</em> files
+for examples of usage.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 1995-2001 Gisle Aas.</p>
+<p>This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

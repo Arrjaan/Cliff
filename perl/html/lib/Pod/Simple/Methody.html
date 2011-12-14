@@ -1,0 +1,156 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../../displayToc.js"></script>
+<script language="JavaScript" src="../../../tocParas.js"></script>
+<script language="JavaScript" src="../../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../scineplex.css">
+<title>Pod::Simple::Methody -- turn Pod::Simple events into method calls</title>
+<link rel="stylesheet" href="../../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',3);</script>
+<h1><a>Pod::Simple::Methody -- turn Pod::Simple events into method calls</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#method_calling">METHOD CALLING</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#support">SUPPORT</a></li>
+	<li><a href="#copyright_and_disclaimers">COPYRIGHT AND DISCLAIMERS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Pod::Simple::Methody -- turn Pod::Simple events into method calls</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ <span class="keyword">require</span> <span class="number">5</span><span class="operator">;</span>
+ <span class="keyword">use</span> <span class="variable">strict</span><span class="operator">;</span>
+ <span class="keyword">package</span> <span class="variable">SomePodFormatter</span><span class="operator">;</span>
+ <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw(Pod::Simple::Methody)</span><span class="operator">;</span>
+</pre>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> handle_text </span><span class="operator">{</span>
+   <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$text</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+   <span class="operator">...</span>
+ <span class="operator">}</span>
+</pre>
+<pre>
+ <span class="keyword">sub</span><span class="variable"> start_head1 </span><span class="operator">{</span>
+   <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">,</span> <span class="variable">$attrs</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+   <span class="operator">...</span>
+ <span class="operator">}</span>
+ <span class="keyword">sub</span><span class="variable"> end_head1 </span><span class="operator">{</span>
+   <span class="keyword">my</span><span class="operator">(</span><span class="variable">$self</span><span class="operator">)</span> <span class="operator">=</span> <span class="variable">@_</span><span class="operator">;</span>
+   <span class="operator">...</span>
+ <span class="operator">}</span>
+</pre>
+<p>...and start_/end_ methods for whatever other events you want to catch.</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This class is of
+interest to people writing Pod formatters based on Pod::Simple.</p>
+<p>This class (which is very small -- read the source) overrides
+Pod::Simple's _handle_element_start, _handle_text, and
+_handle_element_end methods so that parser events are turned into method
+calls. (Otherwise, this is a subclass of <a href="../../../lib/Pod/Simple.html">the Pod::Simple manpage</a> and inherits all
+its methods.)</p>
+<p>You can use this class as the base class for a Pod formatter/processor.</p>
+<p>
+</p>
+<hr />
+<h1><a name="method_calling">METHOD CALLING</a></h1>
+<p>When Pod::Simple sees a &quot;=head1 Hi there&quot;, for example, it basically does
+this:</p>
+<pre>
+  <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">_handle_element_start</span><span class="operator">(</span> <span class="string">"head1"</span><span class="operator">,</span> <span class="operator">\</span><span class="variable">%attributes</span> <span class="operator">);</span>
+  <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">_handle_text</span><span class="operator">(</span> <span class="string">"Hi there"</span> <span class="operator">);</span>
+  <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">_handle_element_end</span><span class="operator">(</span> <span class="string">"head1"</span> <span class="operator">);</span>
+</pre>
+<p>But if you subclass Pod::Simple::Methody, it will instead do this
+when it sees a &quot;=head1 Hi there&quot;:</p>
+<pre>
+  <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">start_head1</span><span class="operator">(</span> <span class="operator">\</span><span class="variable">%attributes</span> <span class="operator">)</span> <span class="keyword">if</span> <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">can</span><span class="operator">(</span><span class="string">'start_head1'</span><span class="operator">);</span>
+  <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">handle_text</span><span class="operator">(</span> <span class="string">"Hi there"</span> <span class="operator">)</span>   <span class="keyword">if</span> <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">can</span><span class="operator">(</span><span class="string">'handle_text'</span><span class="operator">);</span>
+  <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">end_head1</span><span class="operator">()</span>                 <span class="keyword">if</span> <span class="variable">$parser</span><span class="operator">-&gt;</span><span class="variable">can</span><span class="operator">(</span><span class="string">'end_head1'</span><span class="operator">);</span>
+</pre>
+<p>If Pod::Simple sends an event where the element name has a dash,
+period, or colon, the corresponding method name will have a underscore
+in its place.  For example, &quot;foo.bar:baz&quot; becomes start_foo_bar_baz
+and end_foo_bar_baz.</p>
+<p>See the source for Pod::Simple::Text for an example of using this class.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../../lib/Pod/Simple.html">the Pod::Simple manpage</a>, <a href="../../../lib/Pod/Simple/Subclassing.html">the Pod::Simple::Subclassing manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="support">SUPPORT</a></h1>
+<p>Questions or discussion about POD and Pod::Simple should be sent to the
+<a href="mailto:pod-people@perl.org">pod-people@perl.org</a> mail list. Send an empty email to
+<a href="mailto:pod-people-subscribe@perl.org">pod-people-subscribe@perl.org</a> to subscribe.</p>
+<p>This module is managed in an open GitHub repository,
+<a href="http://github.com/theory/pod-simple/">http://github.com/theory/pod-simple/</a>. Feel free to fork and contribute, or
+to clone <a href="git://github.com/theory/pod-simple.git">git://github.com/theory/pod-simple.git</a> and send patches!</p>
+<p>Patches against Pod::Simple are welcome. Please send bug reports to
+&lt;<a href="mailto:bug-pod-simple@rt.cpan.org">bug-pod-simple@rt.cpan.org</a>&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_disclaimers">COPYRIGHT AND DISCLAIMERS</a></h1>
+<p>Copyright (c) 2002 Sean M. Burke.</p>
+<p>This library is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+<p>This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Pod::Simple was created by Sean M. Burke &lt;<a href="mailto:sburke@cpan.org">sburke@cpan.org</a>&gt;.
+But don't bother him, he's retired.</p>
+<p>Pod::Simple is maintained by:</p>
+<ul>
+<li><strong><a name="allison_randal_allison_perl_org9" class="item">Allison Randal <code>allison@perl.org</code></a></strong>
+
+</li>
+<li><strong><a name="hans_dieter_pearcey_hdp_cpan_org9" class="item">Hans Dieter Pearcey <code>hdp@cpan.org</code></a></strong>
+
+</li>
+<li><strong><a name="david_e_wheeler_dwheeler_cpan_org9" class="item">David E. Wheeler <code>dwheeler@cpan.org</code></a></strong>
+
+</li>
+</ul>
+
+</body>
+
+</html>

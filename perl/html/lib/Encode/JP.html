@@ -1,0 +1,127 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Encode::JP - Japanese Encodings</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Encode::JP - Japanese Encodings</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#abstract">ABSTRACT</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#note_on_iso_2022_jp__1_">Note on ISO-2022-JP(-1)?</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Encode::JP - Japanese Encodings</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">Encode</span> <span class="string">qw/encode decode/</span><span class="operator">;</span> 
+    <span class="variable">$euc_jp</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">"euc-jp"</span><span class="operator">,</span> <span class="variable">$utf8</span><span class="operator">);</span>   <span class="comment"># loads Encode::JP implicitly</span>
+    <span class="variable">$utf8</span>   <span class="operator">=</span> <span class="variable">decode</span><span class="operator">(</span><span class="string">"euc-jp"</span><span class="operator">,</span> <span class="variable">$euc_jp</span><span class="operator">);</span> <span class="comment"># ditto</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="abstract">ABSTRACT</a></h1>
+<p>This module implements Japanese charset encodings.  Encodings
+supported are as follows.</p>
+<pre>
+  Canonical   Alias             Description
+  --------------------------------------------------------------------
+  euc-jp      /\beuc.*jp$/i     EUC (Extended Unix Character)
+              /\bjp.*euc/i   
+          /\bujis$/i
+  shiftjis    /\bshift.*jis$/i  Shift JIS (aka MS Kanji)
+          /\bsjis$/i
+  7bit-jis    /\bjis$/i         7bit JIS
+  iso-2022-jp                   ISO-2022-JP                  [RFC1468]
+                = 7bit JIS with all Halfwidth Kana 
+                  converted to Fullwidth
+  iso-2022-jp-1                 ISO-2022-JP-1                [RFC2237]
+                                = ISO-2022-JP with JIS X 0212-1990
+                  support.  See below
+  MacJapanese                   Shift JIS + Apple vendor mappings
+  cp932       /\bwindows-31j$/i Code Page 932
+                                = Shift JIS + MS/IBM vendor mappings
+  jis0201-raw                   JIS0201, raw format
+  jis0208-raw                   JIS0201, raw format
+  jis0212-raw                   JIS0201, raw format
+  --------------------------------------------------------------------</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>To find out how to use this module in detail, see <a href="../../lib/Encode.html">the Encode manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="note_on_iso_2022_jp__1_">Note on ISO-2022-JP(-1)?</a></h1>
+<p>ISO-2022-JP-1 (<a href="http://www.ietf.org/rfc/rfc2237.txt" class="rfc">RFC2237</a>) is a superset of ISO-2022-JP (<a href="http://www.ietf.org/rfc/rfc1468.txt" class="rfc">RFC1468</a>) which
+adds support for JIS X 0212-1990.  That means you can use the same
+code to decode to utf8 but not vice versa.</p>
+<pre>
+  <span class="variable">$utf8</span> <span class="operator">=</span> <span class="variable">decode</span><span class="operator">(</span><span class="string">'iso-2022-jp-1'</span><span class="operator">,</span> <span class="variable">$stream</span><span class="operator">);</span>
+</pre>
+<p>and</p>
+<pre>
+  <span class="variable">$utf8</span> <span class="operator">=</span> <span class="variable">decode</span><span class="operator">(</span><span class="string">'iso-2022-jp'</span><span class="operator">,</span>   <span class="variable">$stream</span><span class="operator">);</span>
+</pre>
+<p>yield the same result but</p>
+<pre>
+  <span class="variable">$with_0212</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">'iso-2022-jp-1'</span><span class="operator">,</span> <span class="variable">$utf8</span><span class="operator">);</span>
+</pre>
+<p>is now different from</p>
+<pre>
+  <span class="variable">$without_0212</span> <span class="operator">=</span> <span class="variable">encode</span><span class="operator">(</span><span class="string">'iso-2022-jp'</span><span class="operator">,</span> <span class="variable">$utf8</span> <span class="operator">);</span>
+</pre>
+<p>In the latter case, characters that map to 0212 are first converted
+to U+3013 (0xA2AE in EUC-JP; a white square also known as 'Tofu' or
+'geta mark') then fed to the decoding engine.  U+FFFD is not used,
+in order to preserve text layout as much as possible.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>The ASCII region (0x00-0x7f) is preserved for all encodings, even
+though this conflicts with mappings by the Unicode Consortium.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/Encode.html">the Encode manpage</a></p>
+
+</body>
+
+</html>

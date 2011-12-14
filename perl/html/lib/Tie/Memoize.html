@@ -1,0 +1,125 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>Tie::Memoize - add data to hash when needed</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>Tie::Memoize - add data to hash when needed</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#inheriting_from_tie__memoize">Inheriting from <strong>Tie::Memoize</strong></a></li>
+	<li><a href="#example">EXAMPLE</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Tie::Memoize - add data to hash when needed</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="keyword">require</span> <span class="variable">Tie::Memoize</span><span class="operator">;</span>
+  <span class="keyword">tie</span> <span class="variable">%hash</span><span class="operator">,</span> <span class="string">'Tie::Memoize'</span><span class="operator">,</span>
+      <span class="operator">\&amp;</span><span class="variable">fetch</span><span class="operator">,</span>                  <span class="comment"># The rest is optional</span>
+      <span class="variable">$DATA</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="keyword">exists</span><span class="operator">,</span>
+      <span class="operator">{</span><span class="variable">%ini_value</span><span class="operator">}</span><span class="operator">,</span> <span class="operator">{</span><span class="variable">%ini_existence</span><span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This package allows a tied hash to autoload its values on the first access,
+and to use the cached value on the following accesses.</p>
+<p>Only read-accesses (via fetching the value or <a href="../../lib/pods/perlfunc.html#exists"><code>exists</code></a>) result in calls to
+the functions; the modify-accesses are performed as on a normal hash.</p>
+<p>The required arguments during <a href="../../lib/pods/perlfunc.html#tie"><code>tie</code></a> are the hash, the package, and
+the reference to the <code>FETCH</code>ing function.  The optional arguments are
+an arbitrary scalar $data, the reference to the <code>EXISTS</code> function,
+and initial values of the hash and of the existence cache.</p>
+<p>Both the <code>FETCH</code>ing function and the <code>EXISTS</code> functions have the
+same signature: the arguments are <code>$key, $data</code>; $data is the same
+value as given as argument during tie()ing.  Both functions should
+return an empty list if the value does not exist.  If <code>EXISTS</code>
+function is different from the <code>FETCH</code>ing function, it should return
+a TRUE value on success.  The <code>FETCH</code>ing function should return the
+intended value if the key is valid.</p>
+<p>
+</p>
+<hr />
+<h1><a name="inheriting_from_tie__memoize">Inheriting from <strong>Tie::Memoize</strong></a></h1>
+<p>The structure of the <a href="../../lib/pods/perlfunc.html#tied"><code>tied()</code></a> data is an array reference with elements</p>
+<pre>
+  0:  cache of known values
+  1:  cache of known existence of keys
+  2:  FETCH  function
+  3:  EXISTS function
+  4:  $data</pre>
+<p>The rest is for internal usage of this package.  In particular, if
+TIEHASH is overwritten, it should call SUPER::TIEHASH.</p>
+<p>
+</p>
+<hr />
+<h1><a name="example">EXAMPLE</a></h1>
+<pre>
+  <span class="keyword">sub</span><span class="variable"> slurp </span><span class="operator">{</span>
+    <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$key</span><span class="operator">,</span> <span class="variable">$dir</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span>
+    <span class="keyword">open</span> <span class="keyword">my</span> <span class="variable">$h</span><span class="operator">,</span> <span class="string">'&lt;'</span><span class="operator">,</span> <span class="string">"</span><span class="variable">$dir</span><span class="string">/</span><span class="variable">$key</span><span class="string">"</span> <span class="keyword">or</span> <span class="keyword">return</span><span class="operator">;</span>
+    <span class="keyword">local</span> <span class="variable">$/</span><span class="operator">;</span> <span class="operator">&lt;</span><span class="variable">$h</span><span class="operator">&gt;</span>                      <span class="comment"># slurp it all</span>
+  <span class="operator">}</span>
+  <span class="keyword">sub</span><span class="variable"> exists </span><span class="operator">{</span> <span class="keyword">my</span> <span class="operator">(</span><span class="variable">$key</span><span class="operator">,</span> <span class="variable">$dir</span><span class="operator">)</span> <span class="operator">=</span> <span class="keyword">shift</span><span class="operator">;</span> <span class="keyword">return</span> <span class="keyword">-f</span> <span class="string">"</span><span class="variable">$dir</span><span class="string">/</span><span class="variable">$key</span><span class="string">"</span> <span class="operator">}</span>
+</pre>
+<pre>
+  <span class="keyword">tie</span> <span class="variable">%hash</span><span class="operator">,</span> <span class="string">'Tie::Memoize'</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="variable">slurp</span><span class="operator">,</span> <span class="variable">$directory</span><span class="operator">,</span> <span class="operator">\&amp;</span><span class="keyword">exists</span><span class="operator">,</span>
+      <span class="operator">{</span> <span class="string">fake_file1</span> <span class="operator">=&gt;</span> <span class="variable">$content1</span><span class="operator">,</span> <span class="string">fake_file2</span> <span class="operator">=&gt;</span> <span class="variable">$content2</span> <span class="operator">}</span><span class="operator">,</span>
+      <span class="operator">{</span> <span class="string">pretend_does_not_exists</span> <span class="operator">=&gt;</span> <span class="number">0</span><span class="operator">,</span> <span class="string">known_to_exist</span> <span class="operator">=&gt;</span> <span class="number">1</span> <span class="operator">}</span><span class="operator">;</span>
+</pre>
+<p>This example treats the slightly modified contents of $directory as a
+hash.  The modifications are that the keys <em class="file">fake_file1</em> and
+<em class="file">fake_file2</em> fetch values $content1 and $content2, and
+<em class="file">pretend_does_not_exists</em> will never be accessed.  Additionally, the
+existence of <em class="file">known_to_exist</em> is never checked (so if it does not
+exists when its content is needed, the user of %hash may be confused).</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>FIRSTKEY and NEXTKEY methods go through the keys which were already read,
+not all the possible keys of the hash.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Ilya Zakharevich <em><a href="mailto:mailto:perl-module-hash-memoize@ilyaz.org">mailto:perl-module-hash-memoize@ilyaz.org</a></em>.</p>
+
+</body>
+
+</html>

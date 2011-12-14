@@ -1,0 +1,175 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../displayToc.js"></script>
+<script language="JavaScript" src="../tocParas.js"></script>
+<script language="JavaScript" src="../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../scineplex.css">
+<title>lib - manipulate @INC at compile time</title>
+<link rel="stylesheet" href="../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',1);</script>
+<h1><a>lib - manipulate @INC at compile time</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#adding_directories_to__inc">Adding directories to @INC</a></li>
+		<li><a href="#deleting_directories_from__inc">Deleting directories from @INC</a></li>
+		<li><a href="#restoring_original__inc">Restoring original @INC</a></li>
+	</ul>
+
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>lib - manipulate @INC at compile time</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    <span class="keyword">use</span> <span class="variable">lib</span> <span class="variable">LIST</span><span class="operator">;</span>
+</pre>
+<pre>
+    <span class="keyword">no</span> <span class="variable">lib</span> <span class="variable">LIST</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This is a small simple module which simplifies the manipulation of @INC
+at compile time.</p>
+<p>It is typically used to add extra directories to perl's search path so
+that later <a href="../lib/pods/perlfunc.html#use"><code>use</code></a> or <a href="../lib/pods/perlfunc.html#require"><code>require</code></a> statements will find modules which are
+not located on perl's default search path.</p>
+<p>
+</p>
+<h2><a name="adding_directories_to__inc">Adding directories to @INC</a></h2>
+<p>The parameters to <code>use lib</code> are added to the start of the perl search
+path. Saying</p>
+<pre>
+    <span class="keyword">use</span> <span class="variable">lib</span> <span class="variable">LIST</span><span class="operator">;</span>
+</pre>
+<p>is <em>almost</em> the same as saying</p>
+<pre>
+    <span class="keyword">BEGIN</span> <span class="operator">{</span> <span class="keyword">unshift</span><span class="operator">(</span><span class="variable">@INC</span><span class="operator">,</span> <span class="variable">LIST</span><span class="operator">)</span> <span class="operator">}</span>
+</pre>
+<p>For each directory in LIST (called $dir here) the lib module also
+checks to see if a directory called $dir/$archname/auto exists.
+If so the $dir/$archname directory is assumed to be a corresponding
+architecture specific directory and is added to @INC in front of $dir.
+lib.pm also checks if directories called $dir/$version and $dir/$version/$archname
+exist and adds these directories to @INC.</p>
+<p>The current value of <code>$archname</code> can be found with this command:</p>
+<pre>
+    perl -V:archname</pre>
+<p>The corresponding command to get the current value of <code>$version</code> is:</p>
+<pre>
+    perl -V:version</pre>
+<p>To avoid memory leaks, all trailing duplicate entries in @INC are
+removed.</p>
+<p>
+</p>
+<h2><a name="deleting_directories_from__inc">Deleting directories from @INC</a></h2>
+<p>You should normally only add directories to @INC.  If you need to
+delete directories from @INC take care to only delete those which you
+added yourself or which you are certain are not needed by other modules
+in your script.  Other modules may have added directories which they
+need for correct operation.</p>
+<p>The <code>no lib</code> statement deletes all instances of each named directory
+from @INC.</p>
+<p>For each directory in LIST (called $dir here) the lib module also
+checks to see if a directory called $dir/$archname/auto exists.
+If so the $dir/$archname directory is assumed to be a corresponding
+architecture specific directory and is also deleted from @INC.</p>
+<p>
+</p>
+<h2><a name="restoring_original__inc">Restoring original @INC</a></h2>
+<p>When the lib module is first loaded it records the current value of @INC
+in an array <code>@lib::ORIG_INC</code>. To restore @INC to that value you
+can say</p>
+<pre>
+    <span class="variable">@INC</span> <span class="operator">=</span> <span class="variable">@lib::ORIG_INC</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>In order to keep lib.pm small and simple, it only works with Unix
+filepaths.  This doesn't mean it only works on Unix, but non-Unix
+users must first translate their file paths to Unix conventions.</p>
+<pre>
+    <span class="comment"># VMS users wanting to put [.stuff.moo] into </span>
+    <span class="comment"># their @INC would write</span>
+    <span class="keyword">use</span> <span class="variable">lib</span> <span class="string">'stuff/moo'</span><span class="operator">;</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>In the future, this module will likely use File::Spec for determining
+paths, as it does now for Mac OS (where Unix-style or Mac-style paths
+work, and Unix-style paths are converted properly to Mac-style paths
+before being added to @INC).</p>
+<p>If you try to add a file to @INC as follows:</p>
+<pre>
+  <span class="keyword">use</span> <span class="variable">lib</span> <span class="string">'this_is_a_file.txt'</span><span class="operator">;</span>
+</pre>
+<p><code>lib</code> will warn about this. The sole exceptions are files with the
+<code>.par</code> extension which are intended to be used as libraries.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>FindBin - optional module which deals with paths relative to the source file.</p>
+<p>PAR - optional module which can treat <code>.par</code> files as Perl libraries.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Tim Bunce, 2nd June 1995.</p>
+<p><code>lib</code> is maintained by the perl5-porters. Please direct
+any questions to the canonical mailing list. Anything that
+is applicable to the CPAN release can be sent to its maintainer,
+though.</p>
+<p>Maintainer: The Perl5-Porters &lt;<a href="mailto:perl5-porters@perl.org">perl5-porters@perl.org</a>&gt;</p>
+<p>Maintainer of the CPAN release: Steffen Mueller &lt;<a href="mailto:smueller@cpan.org">smueller@cpan.org</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>This package has been part of the perl core since perl 5.001.
+It has been released separately to CPAN so older installations
+can benefit from bug fixes.</p>
+<p>This package has the same copyright and license as the perl core.</p>
+
+</body>
+
+</html>

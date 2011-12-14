@@ -1,0 +1,358 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>ExtUtils::Typemaps - Read/Write/Modify Perl/XS typemap files</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>ExtUtils::Typemaps - Read/Write/Modify Perl/XS typemap files</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#new">new</a></li>
+		<li><a href="#file">file</a></li>
+		<li><a href="#add_typemap">add_typemap</a></li>
+		<li><a href="#add_inputmap">add_inputmap</a></li>
+		<li><a href="#add_outputmap">add_outputmap</a></li>
+		<li><a href="#add_string">add_string</a></li>
+		<li><a href="#remove_typemap">remove_typemap</a></li>
+		<li><a href="#remove_inputmap">remove_inputmap</a></li>
+		<li><a href="#remove_inputmap">remove_inputmap</a></li>
+		<li><a href="#get_typemap">get_typemap</a></li>
+		<li><a href="#get_inputmap">get_inputmap</a></li>
+		<li><a href="#get_outputmap">get_outputmap</a></li>
+		<li><a href="#write">write</a></li>
+		<li><a href="#as_string">as_string</a></li>
+		<li><a href="#merge">merge</a></li>
+		<li><a href="#is_empty">is_empty</a></li>
+		<li><a href="#_get_typemap_hash">_get_typemap_hash</a></li>
+		<li><a href="#_get_inputmap_hash">_get_inputmap_hash</a></li>
+		<li><a href="#_get_outputmap_hash">_get_outputmap_hash</a></li>
+		<li><a href="#_get_prototype_hash">_get_prototype_hash</a></li>
+	</ul>
+
+	<li><a href="#caveats">CAVEATS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright___license">COPYRIGHT &amp; LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>ExtUtils::Typemaps - Read/Write/Modify Perl/XS typemap files</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+  <span class="comment"># read/create file</span>
+  <span class="keyword">my</span> <span class="variable">$typemap</span> <span class="operator">=</span> <span class="variable">ExtUtils::Typemaps</span><span class="operator">-&gt;</span><span class="variable">new</span><span class="operator">(</span><span class="string">file</span> <span class="operator">=&gt;</span> <span class="string">'typemap'</span><span class="operator">);</span>
+  <span class="comment"># alternatively create an in-memory typemap</span>
+  <span class="comment"># $typemap = ExtUtils::Typemaps-&gt;new();</span>
+  <span class="comment"># alternatively create an in-memory typemap by parsing a string</span>
+  <span class="comment"># $typemap = ExtUtils::Typemaps-&gt;new(string =&gt; $sometypemap);</span>
+  
+  <span class="comment"># add a mapping</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">add_typemap</span><span class="operator">(</span><span class="string">ctype</span> <span class="operator">=&gt;</span> <span class="string">'NV'</span><span class="operator">,</span> <span class="string">xstype</span> <span class="operator">=&gt;</span> <span class="string">'T_NV'</span><span class="operator">);</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">add_inputmap</span><span class="operator">(</span>
+     <span class="string">xstype</span> <span class="operator">=&gt;</span> <span class="string">'T_NV'</span><span class="operator">,</span> <span class="string">code</span> <span class="operator">=&gt;</span> <span class="string">'$var = ($type)SvNV($arg);'</span>
+  <span class="operator">);</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">add_outputmap</span><span class="operator">(</span>
+     <span class="string">xstype</span> <span class="operator">=&gt;</span> <span class="string">'T_NV'</span><span class="operator">,</span> <span class="string">code</span> <span class="operator">=&gt;</span> <span class="string">'sv_setnv($arg, (NV)$var);'</span>
+  <span class="operator">);</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">add_string</span><span class="operator">(</span><span class="string">string</span> <span class="operator">=&gt;</span> <span class="variable">$typemapstring</span><span class="operator">);</span>
+                                           <span class="comment"># will be parsed and merged</span>
+  
+  <span class="comment"># remove a mapping (same for remove_typemap and remove_outputmap...)</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">remove_inputmap</span><span class="operator">(</span><span class="string">xstype</span> <span class="operator">=&gt;</span> <span class="string">'SomeType'</span><span class="operator">);</span>
+  
+  <span class="comment"># save a typemap to a file</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">write</span><span class="operator">(</span><span class="string">file</span> <span class="operator">=&gt;</span> <span class="string">'anotherfile.map'</span><span class="operator">);</span>
+  
+  <span class="comment"># merge the other typemap into this one</span>
+  <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">merge</span><span class="operator">(</span><span class="string">typemap</span> <span class="operator">=&gt;</span> <span class="variable">$another_typemap</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module can read, modify, create and write Perl XS typemap files. If you don't know
+what a typemap is, please confer the <a href="../../lib/pods/perlxstut.html">the perlxstut manpage</a> and <a href="../../lib/pods/perlxs.html">the perlxs manpage</a> manuals.</p>
+<p>The module is not entirely round-trip safe: For example it currently simply strips all comments.
+The order of entries in the maps is, however, preserved.</p>
+<p>We check for duplicate entries in the typemap, but do not check for missing
+<code>TYPEMAP</code> entries for <code>INPUTMAP</code> or <code>OUTPUTMAP</code> entries since these might be hidden
+in a different typemap.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="new">new</a></h2>
+<p>Returns a new typemap object. Takes an optional <code>file</code> parameter.
+If set, the given file will be read. If the file doesn't exist, an empty typemap
+is returned.</p>
+<p>Alternatively, if the <code>string</code> parameter is given, the supplied
+string will be parsed instead of a file.</p>
+<p>
+</p>
+<h2><a name="file">file</a></h2>
+<p>Get/set the file that the typemap is written to when the
+<a href="../../lib/pods/perlfunc.html#write"><code>write</code></a> method is called.</p>
+<p>
+</p>
+<h2><a name="add_typemap">add_typemap</a></h2>
+<p>Add a <code>TYPEMAP</code> entry to the typemap.</p>
+<p>Required named arguments: The <code>ctype</code> (e.g. <code>ctype =&gt; 'double'</code>)
+and the <code>xstype</code> (e.g. <code>xstype =&gt; 'T_NV'</code>).</p>
+<p>Optional named arguments: <code>replace =&gt; 1</code> forces removal/replacement of
+existing <code>TYPEMAP</code> entries of the same <code>ctype</code>. <code>skip =&gt; 1</code>
+triggers a <em>&quot;first come first serve&quot;</em> logic by which new entries that conflict
+with existing entries are silently ignored.</p>
+<p>As an alternative to the named parameters usage, you may pass in
+an <code>ExtUtils::Typemaps::Type</code> object as first argument, a copy of which will be
+added to the typemap. In that case, only the <code>replace</code> or <code>skip</code> named parameters
+may be used after the object. Example:</p>
+<pre>
+  <span class="variable">$map</span><span class="operator">-&gt;</span><span class="variable">add_typemap</span><span class="operator">(</span><span class="variable">$type_obj</span><span class="operator">,</span> <span class="string">replace</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="add_inputmap">add_inputmap</a></h2>
+<p>Add an <code>INPUT</code> entry to the typemap.</p>
+<p>Required named arguments:
+The <code>xstype</code> (e.g. <code>xstype =&gt; 'T_NV'</code>)
+and the <code>code</code> to associate with it for input.</p>
+<p>Optional named arguments: <code>replace =&gt; 1</code> forces removal/replacement of
+existing <code>INPUT</code> entries of the same <code>xstype</code>. <code>skip =&gt; 1</code>
+triggers a <em>&quot;first come first serve&quot;</em> logic by which new entries that conflict
+with existing entries are silently ignored.</p>
+<p>As an alternative to the named parameters usage, you may pass in
+an <code>ExtUtils::Typemaps::InputMap</code> object as first argument, a copy of which will be
+added to the typemap. In that case, only the <code>replace</code> or <code>skip</code> named parameters
+may be used after the object. Example:</p>
+<pre>
+  <span class="variable">$map</span><span class="operator">-&gt;</span><span class="variable">add_inputmap</span><span class="operator">(</span><span class="variable">$type_obj</span><span class="operator">,</span> <span class="string">replace</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">);</span>
+</pre>
+<p>
+</p>
+<h2><a name="add_outputmap">add_outputmap</a></h2>
+<p>Add an <code>OUTPUT</code> entry to the typemap.
+Works exactly the same as <code>add_inputmap</code>.</p>
+<p>
+</p>
+<h2><a name="add_string">add_string</a></h2>
+<p>Parses a string as a typemap and merge it into the typemap object.</p>
+<p>Required named argument: <code>string</code> to specify the string to parse.</p>
+<p>
+</p>
+<h2><a name="remove_typemap">remove_typemap</a></h2>
+<p>Removes a <code>TYPEMAP</code> entry from the typemap.</p>
+<p>Required named argument: <code>ctype</code> to specify the entry to remove from the typemap.</p>
+<p>Alternatively, you may pass a single <code>ExtUtils::Typemaps::Type</code> object.</p>
+<p>
+</p>
+<h2><a name="remove_inputmap">remove_inputmap</a></h2>
+<p>Removes an <code>INPUT</code> entry from the typemap.</p>
+<p>Required named argument: <code>xstype</code> to specify the entry to remove from the typemap.</p>
+<p>Alternatively, you may pass a single <code>ExtUtils::Typemaps::InputMap</code> object.</p>
+<p>
+</p>
+<h2><a name="remove_inputmap">remove_inputmap</a></h2>
+<p>Removes an <code>OUTPUT</code> entry from the typemap.</p>
+<p>Required named argument: <code>xstype</code> to specify the entry to remove from the typemap.</p>
+<p>Alternatively, you may pass a single <code>ExtUtils::Typemaps::OutputMap</code> object.</p>
+<p>
+</p>
+<h2><a name="get_typemap">get_typemap</a></h2>
+<p>Fetches an entry of the TYPEMAP section of the typemap.</p>
+<p>Mandatory named arguments: The <code>ctype</code> of the entry.</p>
+<p>Returns the <code>ExtUtils::Typemaps::Type</code>
+object for the entry if found.</p>
+<p>
+</p>
+<h2><a name="get_inputmap">get_inputmap</a></h2>
+<p>Fetches an entry of the INPUT section of the
+typemap.</p>
+<p>Mandatory named arguments: The <code>xstype</code> of the
+entry or the <code>ctype</code> of the typemap that can be used to find
+the <code>xstype</code>. To wit, the following pieces of code
+are equivalent:</p>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$type</span> <span class="operator">=</span> <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">get_typemap</span><span class="operator">(</span><span class="string">ctype</span> <span class="operator">=&gt;</span> <span class="variable">$ctype</span><span class="operator">)</span>
+  <span class="keyword">my</span> <span class="variable">$input_map</span> <span class="operator">=</span> <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">get_inputmap</span><span class="operator">(</span><span class="string">xstype</span> <span class="operator">=&gt;</span> <span class="variable">$type</span><span class="operator">-&gt;</span><span class="variable">xstype</span><span class="operator">);</span>
+</pre>
+<pre>
+  <span class="keyword">my</span> <span class="variable">$input_map</span> <span class="operator">=</span> <span class="variable">$typemap</span><span class="operator">-&gt;</span><span class="variable">get_inputmap</span><span class="operator">(</span><span class="string">ctype</span> <span class="operator">=&gt;</span> <span class="variable">$ctype</span><span class="operator">);</span>
+</pre>
+<p>Returns the <code>ExtUtils::Typemaps::InputMap</code>
+object for the entry if found.</p>
+<p>
+</p>
+<h2><a name="get_outputmap">get_outputmap</a></h2>
+<p>Fetches an entry of the OUTPUT section of the
+typemap.</p>
+<p>Mandatory named arguments: The <code>xstype</code> of the
+entry or the <code>ctype</code> of the typemap that can be used to
+resolve the <code>xstype</code>. (See above for an example.)</p>
+<p>Returns the <code>ExtUtils::Typemaps::InputMap</code>
+object for the entry if found.</p>
+<p>
+</p>
+<h2><a name="write">write</a></h2>
+<p>Write the typemap to a file. Optionally takes a <code>file</code> argument. If given, the
+typemap will be written to the specified file. If not, the typemap is written
+to the currently stored file name (see <code>-&gt;file</code> above, this defaults to the file
+it was read from if any).</p>
+<p>
+</p>
+<h2><a name="as_string">as_string</a></h2>
+<p>Generates and returns the string form of the typemap.</p>
+<p>
+</p>
+<h2><a name="merge">merge</a></h2>
+<p>Merges a given typemap into the object. Note that a failed merge
+operation leaves the object in an inconsistent state so clone it if necessary.</p>
+<p>Mandatory named arguments: Either <code>typemap =&gt; $another_typemap_obj</code>
+or <code>file =&gt; $path_to_typemap_file</code> but not both.</p>
+<p>Optional arguments: <code>replace =&gt; 1</code> to force replacement
+of existing typemap entries without warning or <code>skip =&gt; 1</code>
+to skip entries that exist already in the typemap.</p>
+<p>
+</p>
+<h2><a name="is_empty">is_empty</a></h2>
+<p>Returns a bool indicating whether this typemap is entirely empty.</p>
+<p>
+</p>
+<h2><a name="_get_typemap_hash">_get_typemap_hash</a></h2>
+<p>Returns a hash mapping the C types to the XS types:</p>
+<pre>
+  <span class="operator">{</span>
+    <span class="string">'char **'</span> <span class="operator">=&gt;</span> <span class="string">'T_PACKEDARRAY'</span><span class="operator">,</span>
+    <span class="string">'bool_t'</span> <span class="operator">=&gt;</span> <span class="string">'T_IV'</span><span class="operator">,</span>
+    <span class="string">'AV *'</span> <span class="operator">=&gt;</span> <span class="string">'T_AVREF'</span><span class="operator">,</span>
+    <span class="string">'InputStream'</span> <span class="operator">=&gt;</span> <span class="string">'T_IN'</span><span class="operator">,</span>
+    <span class="string">'double'</span> <span class="operator">=&gt;</span> <span class="string">'T_DOUBLE'</span><span class="operator">,</span>
+    <span class="comment"># ...</span>
+  <span class="operator">}</span>
+</pre>
+<p>This is documented because it is used by <code>ExtUtils::ParseXS</code>,
+but it's not intended for general consumption. May be removed
+at any time.</p>
+<p>
+</p>
+<h2><a name="_get_inputmap_hash">_get_inputmap_hash</a></h2>
+<p>Returns a hash mapping the XS types (identifiers) to the
+corresponding INPUT code:</p>
+<pre>
+  {
+    'T_CALLBACK' =&gt; '   $var = make_perl_cb_$type($arg)
+  ',
+    'T_OUT' =&gt; '    $var = IoOFP(sv_2io($arg))
+  ',
+    'T_REF_IV_PTR' =&gt; '   if (sv_isa($arg, \\&quot;${ntype}\\&quot;)) {
+    # ...
+  }</pre>
+<p>This is documented because it is used by <code>ExtUtils::ParseXS</code>,
+but it's not intended for general consumption. May be removed
+at any time.</p>
+<p>
+</p>
+<h2><a name="_get_outputmap_hash">_get_outputmap_hash</a></h2>
+<p>Returns a hash mapping the XS types (identifiers) to the
+corresponding OUTPUT code:</p>
+<pre>
+  <span class="operator">{</span>
+    <span class="string">'T_CALLBACK'</span> <span class="operator">=&gt;</span> <span class="string">'   sv_setpvn($arg, $var.context.value().chp(),
+                $var.context.value().size());
+  '</span><span class="operator">,</span>
+    <span class="string">'T_OUT'</span> <span class="operator">=&gt;</span> <span class="string">'    {
+            GV *gv = newGVgen("$Package");
+            if ( do_open(gv, "+&gt;&amp;", 3, FALSE, 0, 0, $var) )
+                sv_setsv(
+                  $arg,
+                  sv_bless(newRV((SV*)gv), gv_stashpv("$Package",1))
+                );
+            else
+                $arg = &amp;PL_sv_undef;
+         }
+  '</span><span class="operator">,</span>
+    <span class="comment"># ...</span>
+  <span class="operator">}</span>
+</pre>
+<p>This is documented because it is used by <code>ExtUtils::ParseXS</code>,
+but it's not intended for general consumption. May be removed
+at any time.</p>
+<p>
+</p>
+<h2><a name="_get_prototype_hash">_get_prototype_hash</a></h2>
+<p>Returns a hash mapping the C types of the typemap to their
+corresponding prototypes.</p>
+<pre>
+  <span class="operator">{</span>
+    <span class="string">'char **'</span> <span class="operator">=&gt;</span> <span class="string">'$'</span><span class="operator">,</span>
+    <span class="string">'bool_t'</span> <span class="operator">=&gt;</span> <span class="string">'$'</span><span class="operator">,</span>
+    <span class="string">'AV *'</span> <span class="operator">=&gt;</span> <span class="string">'$'</span><span class="operator">,</span>
+    <span class="string">'InputStream'</span> <span class="operator">=&gt;</span> <span class="string">'$'</span><span class="operator">,</span>
+    <span class="string">'double'</span> <span class="operator">=&gt;</span> <span class="string">'$'</span><span class="operator">,</span>
+    <span class="comment"># ...</span>
+  <span class="operator">}</span>
+</pre>
+<p>This is documented because it is used by <code>ExtUtils::ParseXS</code>,
+but it's not intended for general consumption. May be removed
+at any time.</p>
+<p>
+</p>
+<hr />
+<h1><a name="caveats">CAVEATS</a></h1>
+<p>Inherits some evil code from <code>ExtUtils::ParseXS</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The parser is heavily inspired from the one in <a href="../../lib/ExtUtils/ParseXS.html">the ExtUtils::ParseXS manpage</a>.</p>
+<p>For details on typemaps: <a href="../../lib/pods/perlxstut.html">the perlxstut manpage</a>, <a href="../../lib/pods/perlxs.html">the perlxs manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Steffen Mueller <code>&lt;smueller@cpan.org</code>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright___license">COPYRIGHT &amp; LICENSE</a></h1>
+<p>Copyright 2009-2011 Steffen Mueller</p>
+<p>This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>

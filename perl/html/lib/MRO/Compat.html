@@ -1,0 +1,221 @@
+<?xml version="1.0" ?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<!-- saved from url=(0017)http://localhost/ -->
+<script language="JavaScript" src="../../displayToc.js"></script>
+<script language="JavaScript" src="../../tocParas.js"></script>
+<script language="JavaScript" src="../../tocTab.js"></script>
+<link rel="stylesheet" type="text/css" href="../../scineplex.css">
+<title>MRO::Compat - mro::* interface compatibility for Perls &lt; 5.9.5</title>
+<link rel="stylesheet" href="../../Active.css" type="text/css" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:" />
+</head>
+
+<body>
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<script>writelinks('__top__',2);</script>
+<h1><a>MRO::Compat - mro::* interface compatibility for Perls &lt; 5.9.5</a></h1>
+<p><a name="__index__"></a></p>
+
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#functions">Functions</a></li>
+	<ul>
+
+		<li><a href="#mro__get_linear_isa__classname____type__">mro::get_linear_isa($classname[, $type])</a></li>
+		<li><a href="#mro__import">mro::import</a></li>
+		<li><a href="#mro__set_mro__classname___type_">mro::set_mro($classname, $type)</a></li>
+		<li><a href="#mro__get_mro__classname_">mro::get_mro($classname)</a></li>
+		<li><a href="#mro__get_isarev__classname_">mro::get_isarev($classname)</a></li>
+		<li><a href="#mro__is_universal__classname_">mro::is_universal($classname)</a></li>
+		<li><a href="#mro__invalidate_all_method_caches">mro::invalidate_all_method_caches</a></li>
+		<li><a href="#mro__method_changed_in__classname_">mro::method_changed_in($classname)</a></li>
+		<li><a href="#mro__get_pkg_gen__classname_">mro::get_pkg_gen($classname)</a></li>
+	</ul>
+
+	<li><a href="#using_c3">USING C3</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright_and_license">COPYRIGHT AND LICENSE</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>MRO::Compat - mro::* interface compatibility for Perls &lt; 5.9.5</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+   <span class="keyword">package</span> <span class="variable">FooClass</span><span class="operator">;</span> <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw/X Y Z/</span><span class="operator">;</span>
+   <span class="keyword">package</span> <span class="variable">X</span><span class="operator">;</span>        <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw/ZZZ/</span><span class="operator">;</span>
+   <span class="keyword">package</span> <span class="variable">Y</span><span class="operator">;</span>        <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw/ZZZ/</span><span class="operator">;</span>
+   <span class="keyword">package</span> <span class="variable">Z</span><span class="operator">;</span>        <span class="keyword">use</span> <span class="variable">base</span> <span class="string">qw/ZZZ/</span><span class="operator">;</span>
+</pre>
+<pre>
+   <span class="keyword">package</span> <span class="variable">main</span><span class="operator">;</span>
+   <span class="keyword">use</span> <span class="variable">MRO::Compat</span><span class="operator">;</span>
+   <span class="keyword">my</span> <span class="variable">$linear</span> <span class="operator">=</span> <span class="variable">mro::get_linear_isa</span><span class="operator">(</span><span class="string">'FooClass'</span><span class="operator">);</span>
+   <span class="keyword">print</span> <span class="keyword">join</span><span class="operator">(</span><span class="string">q{, }</span><span class="operator">,</span> <span class="variable">@$linear</span><span class="operator">);</span>
+</pre>
+<pre>
+   <span class="comment"># Prints: "FooClass, X, ZZZ, Y, Z"</span>
+</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The &quot;mro&quot; namespace provides several utilities for dealing
+with method resolution order and method caching in general
+in Perl 5.9.5 and higher.</p>
+<p>This module provides those interfaces for
+earlier versions of Perl (back to 5.6.0 anyways).</p>
+<p>It is a harmless no-op to use this module on 5.9.5+.  That
+is to say, code which properly uses <a href="../../lib/MRO/Compat.html">the MRO::Compat manpage</a> will work
+unmodified on both older Perls and 5.9.5+.</p>
+<p>If you're writing a piece of software that would like to use
+the parts of 5.9.5+'s mro:: interfaces that are supported
+here, and you want compatibility with older Perls, this
+is the module for you.</p>
+<p>Some parts of this code will work better and/or faster with
+<a href="../../Class/C3/XS.html">the Class::C3::XS manpage</a> installed (which is an optional prereq
+of <a href="../../lib/Class/C3.html">the Class::C3 manpage</a>, which is in turn a prereq of this
+package), but it's not a requirement.</p>
+<p>This module never exports any functions.  All calls must
+be fully qualified with the <code>mro::</code> prefix.</p>
+<p>The interface documentation here serves only as a quick
+reference of what the function basically does, and what
+differences between <a href="../../lib/MRO/Compat.html">the MRO::Compat manpage</a> and 5.9.5+ one should
+look out for.  The main docs in 5.9.5's <a href="../../lib/mro.html">the mro manpage</a> are the real
+interface docs, and contain a lot of other useful information.</p>
+<p>
+</p>
+<hr />
+<h1><a name="functions">Functions</a></h1>
+<p>
+</p>
+<h2><a name="mro__get_linear_isa__classname____type__">mro::get_linear_isa($classname[, $type])</a></h2>
+<p>Returns an arrayref which is the linearized &quot;ISA&quot; of the given class.
+Uses whichever MRO is currently in effect for that class by default,
+or the given MRO (either <code>c3</code> or <code>dfs</code> if specified as <code>$type</code>).</p>
+<p>The linearized ISA of a class is a single ordered list of all of the
+classes that would be visited in the process of resolving a method
+on the given class, starting with itself.  It does not include any
+duplicate entries.</p>
+<p>Note that <code>UNIVERSAL</code> (and any members of <code>UNIVERSAL</code>'s MRO) are not
+part of the MRO of a class, even though all classes implicitly inherit
+methods from <code>UNIVERSAL</code> and its parents.</p>
+<p>
+</p>
+<h2><a name="mro__import">mro::import</a></h2>
+<p>This allows the <code>use mro 'dfs'</code> and
+<code>use mro 'c3'</code> syntaxes, providing you
+<a href="#use_mro__compat">use MRO::Compat</a> first.  Please see the
+<a href="#using_c3">USING C3</a> section for additional details.</p>
+<p>
+</p>
+<h2><a name="mro__set_mro__classname___type_">mro::set_mro($classname, $type)</a></h2>
+<p>Sets the mro of <code>$classname</code> to one of the types
+<code>dfs</code> or <code>c3</code>.  Please see the <a href="#using_c3">USING C3</a>
+section for additional details.</p>
+<p>
+</p>
+<h2><a name="mro__get_mro__classname_">mro::get_mro($classname)</a></h2>
+<p>Returns the MRO of the given class (either <code>c3</code> or <code>dfs</code>).</p>
+<p>It considers any Class::C3-using class to have C3 MRO
+even before <a href="../../Class/C3/initialize().html">the Class::C3::initialize() manpage</a> is called.</p>
+<p>
+</p>
+<h2><a name="mro__get_isarev__classname_">mro::get_isarev($classname)</a></h2>
+<p>Returns an arrayref of classes who are subclasses of the
+given classname.  In other words, classes in whose @ISA
+hierarchy we appear, no matter how indirectly.</p>
+<p>This is much slower on pre-5.9.5 Perls with MRO::Compat
+than it is on 5.9.5+, as it has to search the entire
+package namespace.</p>
+<p>
+</p>
+<h2><a name="mro__is_universal__classname_">mro::is_universal($classname)</a></h2>
+<p>Returns a boolean status indicating whether or not
+the given classname is either <code>UNIVERSAL</code> itself,
+or one of <code>UNIVERSAL</code>'s parents by <code>@ISA</code> inheritance.</p>
+<p>Any class for which this function returns true is
+&quot;universal&quot; in the sense that all classes potentially
+inherit methods from it.</p>
+<p>
+</p>
+<h2><a name="mro__invalidate_all_method_caches">mro::invalidate_all_method_caches</a></h2>
+<p>Increments <code>PL_sub_generation</code>, which invalidates method
+caching in all packages.</p>
+<p>Please note that this is rarely necessary, unless you are
+dealing with a situation which is known to confuse Perl's
+method caching.</p>
+<p>
+</p>
+<h2><a name="mro__method_changed_in__classname_">mro::method_changed_in($classname)</a></h2>
+<p>Invalidates the method cache of any classes dependent on the
+given class.  In <a href="../../lib/MRO/Compat.html">the MRO::Compat manpage</a> on pre-5.9.5 Perls, this is
+an alias for <code>mro::invalidate_all_method_caches</code> above, as
+pre-5.9.5 Perls have no other way to do this.  It will still
+enforce the requirement that you pass it a classname, for
+compatibility.</p>
+<p>Please note that this is rarely necessary, unless you are
+dealing with a situation which is known to confuse Perl's
+method caching.</p>
+<p>
+</p>
+<h2><a name="mro__get_pkg_gen__classname_">mro::get_pkg_gen($classname)</a></h2>
+<p>Returns an integer which is incremented every time a local
+method of or the <code>@ISA</code> of the given package changes on
+Perl 5.9.5+.  On earlier Perls with this <a href="../../lib/MRO/Compat.html">the MRO::Compat manpage</a> module,
+it will probably increment a lot more often than necessary.</p>
+<p>
+</p>
+<hr />
+<h1><a name="using_c3">USING C3</a></h1>
+<p>While this module makes the 5.9.5+ syntaxes
+<code>use mro 'c3'</code> and <code>mro::set_mro(&quot;Foo&quot;, 'c3')</code> available
+on older Perls, it does so merely by passing off the work
+to <a href="../../lib/Class/C3.html">the Class::C3 manpage</a>.</p>
+<p>It does not remove the need for you to call
+<code>Class::C3::initialize()</code>, <code>Class::C3::reinitialize()</code>, and/or
+<code>Class::C3::uninitialize()</code> at the appropriate times
+as documented in the <a href="../../lib/Class/C3.html">the Class::C3 manpage</a> docs.  These three functions
+are always provided by <a href="../../lib/MRO/Compat.html">the MRO::Compat manpage</a>, either via <a href="../../lib/Class/C3.html">the Class::C3 manpage</a>
+itself on older Perls, or directly as no-ops on 5.9.5+.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="../../lib/Class/C3.html">the Class::C3 manpage</a></p>
+<p><a href="../../lib/mro.html">the mro manpage</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Brandon L. Black, &lt;<a href="mailto:blblack@gmail.com">blblack@gmail.com</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright_and_license">COPYRIGHT AND LICENSE</a></h1>
+<p>Copyright 2007-2008 Brandon L. Black &lt;<a href="mailto:blblack@gmail.com">blblack@gmail.com</a>&gt;</p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</body>
+
+</html>
