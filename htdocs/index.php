@@ -16,7 +16,7 @@ if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="nl" lang="nl"> 
  
 <head> 
-	<title>Myst</title>
+	<title>Cliff</title>
   	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
     <script src="http://cdn.jquerytools.org/1.2.5/full/jquery.tools.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="html/style.css" />
@@ -43,7 +43,7 @@ if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 	</script>
 	<div id="container">
 		<div id="logo">
-			<a href="/home"><img src="http://adfari.com/images/logo.png" alt="Adfari" /></a>
+			<a href="/home"><img src="html/img/logo.png" alt="Cliff" /></a>
 		</div>
 		
 		<?php if ( $_SERVER["SERVER_ADDR"] == "127.0.0.1" ) { ?>
@@ -87,8 +87,8 @@ if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 		<?php } ?>
 		
 		<div id="footer">
-			<p class="left">&copy; Adfari 2011</p>
-			<p class="right">Powered by <a href="/proPHP">ProPHP framework</a></p>
+			<p class="left">Cliff Server v1.0a</p>
+			<p class="right"><a href="#help">Help</a> - <a href="#about">About</a></p>
 			<br />
 			<br />
 		</div>
