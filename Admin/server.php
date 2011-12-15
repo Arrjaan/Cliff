@@ -96,6 +96,6 @@ echo "<td>0.9.40</td><td><a href=\"javascript:reset('FTP');\">Herstart FTP</a></
 
 <br />
 
-<a href="javascript:exit();" onclick="return confirm('Weet u zeker dat u ALLE services van Myst wilt be&euml;indigen?');">&raquo; Sluit Myst Server af</a><br />
+<a href="javascript:exit();" onclick="return confirm('Weet u zeker dat u ALLE services van Myst wilt be&euml;indigen?');">&raquo; Sluit Cliff Server af</a><br />
 </div>
 <div class="bottom_long"></div>
