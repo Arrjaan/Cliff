@@ -1,5 +1,7 @@
 <?php 
-/* Cliff Server */
+$ini = parse_ini_file ("../conf.ini", true);
+define("ROOTDIR",$ini["Global"]["rootdir"]);
+
 if ( isset($_GET['exit']) ) {
 	exec("sc config apache2.2 start= demand");
 	exec("sc config MySQL start= demand");
@@ -53,7 +55,7 @@ function restartService($sName) {
 }
 
 function find_SQL_Version() {
-   $output = shell_exec('C:\Myst\mysql\bin\mysql -V');
+   $output = shell_exec(ROOTDIR .'\mysql\bin\mysql -V');
    preg_match('@[0-9]+\.[0-9]+\.[0-9]+@', $output, $version);
    return $version[0];
 }

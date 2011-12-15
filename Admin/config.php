@@ -1,11 +1,14 @@
 <?php
+	$ini = parse_ini_file ("../conf.ini", true);
+	define("ROOTDIR",$ini["Global"]["rootdir"]);
+	
 	if ( !empty($_POST['mysqlpass']) && !empty($_POST['mysqlpassold']) ) {
-		echo system("C:/Myst/mysql/bin/mysqladmin.exe -u root -p'".$_POST['mysqlpassold']."' password '".$_POST['mysqlpass']."'",$passi);
+		echo system(ROOTDIR ."/mysql/bin/mysqladmin.exe -u root -p'".$_POST['mysqlpassold']."' password '".$_POST['mysqlpass']."'",$passi);
 		die();
 	}
 	if ( !empty($_POST['name']) && !empty($_POST['url']) && !empty($_POST['email']) ) {
 		$f = fopen("../conf.ini", "w");
-		$wr = fwrite($f, "[Apache]\r\nname=".$_POST['name']."\r\nurl=".$_POST['url']."\r\nemail=".$_POST['email']."\r\n");
+		$wr = fwrite($f, "[Global]\r\nrootdir=".$ini["Global"]["rootdir"]."\r\n\r\n[Apache]\r\nname=".$_POST['name']."\r\nurl=".$_POST['url']."\r\nemail=".$_POST['email']."\r\n");
 		fclose($f);
 		if ( $wr ) echo "Instellingen opgeslagen!<br />";
 		else echo "Opslaan van instellingen mislukt.<br />";

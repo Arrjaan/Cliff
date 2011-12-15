@@ -1,4 +1,4 @@
-#!C:/Myst/perl/bin/perl.exe
+#!C:/Cliff/perl/bin/perl.exe
 #------------------------------------------------------------------------------
 # Free realtime web server logfile analyzer to show advanced web statistics.
 # Works from command line or as a CGI. You must use this script as often as

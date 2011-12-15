@@ -1,9 +1,11 @@
 <?php
+$ini = parse_ini_file ("../conf.ini", true);
+define("ROOTDIR",$ini["Global"]["rootdir"]);
 
 if ( !empty($_GET['dir']) ) $path = $_GET['dir'];
 else $path = "";
 
-$dir = scandir("C:/Myst/htdocs/".$path);
+$dir = scandir(ROOTDIR ."/htdocs/".$path);
 array_shift($dir);
 array_shift($dir);
 
