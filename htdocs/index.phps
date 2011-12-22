@@ -1,8 +1,7 @@
 <?php 
 $ini = parse_ini_file ("../conf.ini", true);
 define("ROOTDIR",$ini["Global"]["rootdir"]);
-
-if ( isset($_GET['maplist']) && $ini["Global"]["maplist"] ) {
+if ( isset($_GET['maplist']) && true ) {
 	$f = file_get_contents('../Admin/dir.php');
 	eval("?><div class=\"top_long\"><h2>Mappenlijst</h2></div>
 <div class=\"middle_long\">".str_replace(":dir",":dirH",$f)."</div>
