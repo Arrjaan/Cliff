@@ -14,3 +14,9 @@ Contributing
 ------------
 
 If you're interested in contributing/testing, feel free to contact me!
+
+Download
+------------
+Because of the size of the installers, all previous versions are hosted elsewhere.
+
+[Download Cliff 1.0 Alpha 1](http://bit.ly/Cliffv1_0a1 "Cliff v1.0a1")
