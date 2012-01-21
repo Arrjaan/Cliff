@@ -71,24 +71,12 @@ if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 		<div id="sidebar">
 			<div class="top_small" id="loginmenutop"><h2>Index</h2></div>
 			<div class="middle_small" id="dir"></div>
-			
-			<div class="bottom_small"></div>
-			
-			<div class="top_small">
-				<h2>Nieuws</h2>
-			</div>
-			<div class="middle_small">
-				<span>Laatste vijf nieuwsberichten</span><br /><br />
-
-				<a class="linksidebar" href="/news/<?php echo str_replace(" ","",strtolower($n['topic'])); ?>"><strong>&raquo; <?php echo date("d-m-Y H:i"); ?> - <?php echo $n['topic']; ?></strong></a>
-				<br />
-			</div>
 			<div class="bottom_small"></div>
 		</div>
 		<?php } ?>
 		
 		<div id="footer">
-			<p class="left">Cliff Server v1.0a</p>
+			<p class="left">Cliff Server <?php echo file_get_contents("../version.txt"); ?></p>
 			<p class="right"><a href="#help">Help</a> - <a href="#about">About</a></p>
 			<br />
 			<br />

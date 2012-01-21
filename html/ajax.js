@@ -90,16 +90,14 @@ function openAdmin(service)
 	xmlhttp.send(null);
 }
 
-function confApache()
+function confCliff()
 {
-	var name=encodeURIComponent(document.getElementById("name").value);
-	var url=encodeURIComponent(document.getElementById("url").value);
-	var email=encodeURIComponent(document.getElementById("email").value);
+	var name=encodeURIComponent(document.getElementById("maplist").value);
 	xmlhttp=Ajax();
-	xmlhttp.onreadystatechange=iStateChangedA;
+	xmlhttp.onreadystatechange=iStateChangedC;
 	xmlhttp.open("POST","admin/config.php",true);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-	xmlhttp.send("name="+name+"&url="+url+"&email="+email);
+	xmlhttp.send("maplist="+name);
 }
 function confMySQL()
 {
@@ -110,17 +108,6 @@ function confMySQL()
 	xmlhttp.open("POST","admin/config.php",true);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("mysqlpass="+pass+"&mysqlpassold="+passold);
-}
-function confFTP()
-{
-	var name=encodeURIComponent(document.getElementById("name").value);
-	var url=encodeURIComponent(document.getElementById("url").value);
-	var email=encodeURIComponent(document.getElementById("email").value);
-	xmlhttp=Ajax();
-	xmlhttp.onreadystatechange=iStateChanged;
-	xmlhttp.open("POST","admin/config.php",true);
-	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-	xmlhttp.send("name="+name+"&url="+url+"&email="+email);
 }
 
 function dStateChanged()
@@ -147,7 +134,7 @@ if (xmlhttp.readyState==4)
   }
 }
 
-function iStateChangedA()
+function iStateChangedC()
 {
 if (xmlhttp.readyState==1)
   {

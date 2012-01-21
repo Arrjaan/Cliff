@@ -6,9 +6,9 @@
 		echo system(ROOTDIR ."/mysql/bin/mysqladmin.exe -u root -p'".$_POST['mysqlpassold']."' password '".$_POST['mysqlpass']."'",$passi);
 		die();
 	}
-	if ( !empty($_POST['name']) && !empty($_POST['url']) && !empty($_POST['email']) ) {
+	if ( !empty($_POST['maplist']) ) {
 		$f = fopen("../conf.ini", "w");
-		$wr = fwrite($f, "[Global]\r\nrootdir=".$ini["Global"]["rootdir"]."\r\n\r\n[Apache]\r\nname=".$_POST['name']."\r\nurl=".$_POST['url']."\r\nemail=".$_POST['email']."\r\n");
+		$wr = fwrite($f, "[Cliff]\r\nrootdir=".$ini["Global"]["rootdir"]."\r\nmaplist=".$_POST['maplist']."\r\n");
 		fclose($f);
 		if ( $wr ) echo "Instellingen opgeslagen!<br />";
 		else echo "Opslaan van instellingen mislukt.<br />";
@@ -22,24 +22,18 @@ $ini = parse_ini_file ("../conf.ini", true);
 </div>
 <div class="bottom_long"></div>
 
-<div class="top_long"><h2>Apache</h2></div>
-<div class="middle_long" id="apache">
+<div class="top_long"><h2>Cliff</h2></div>
+<div class="middle_long" id="cliff">
 	<form method="post" action="" onsubmit="false">
 		<table>
 			<tr>
-				<td>Server naam:</td>
-				<td><input id="name" value="<?php echo $ini["Apache"]["name"]; ?>" /></td>
-			</tr>
-			<tr>
-				<td>Server url:</td>
-				<td><input id="url" value="<?php echo $ini["Apache"]["url"]; ?>" /></td>
-			</tr>
-			<tr>
-				<td>E-mail administrator:</td>
-				<td><input id="email" value="<?php echo $ini["Apache"]["email"]; ?>" /></td>
+				<td>Mappenlijst zichtbaar voor gasten:</td>
+				<td>
+					<input id="maplist" name="maplist" type="radio" value="checked" checked="<?php echo $ini["Cliff"]["mapdir"]; ?>" /> Ja
+					<input id="maplist" name="maplist" type="radio" value="unchecked" checked="<?php echo $ini["Cliff"]["mapdir"]; ?>" /> Nee</td>
 			</tr>
 		</table>
-		<input type="submit" value="Update" onclick="confApache();" />
+		<input type="submit" value="Update" onclick="confCliff();" />
 	</form>
 </div>
 <div class="bottom_long"></div>
@@ -58,24 +52,6 @@ $ini = parse_ini_file ("../conf.ini", true);
 			</tr>
 		</table>
 		<input type="submit" value="Update" onclick="confMySQL();" />
-	</form>
-</div>
-<div class="bottom_long"></div>
-
-<div class="top_long"><h2>FTP</h2></div>
-<div class="middle_long" id="ftp">
-	<form method="post" action="" onsubmit="confFTP();">
-		<table>
-			<tr>
-				<td>Huidig wachtwoord admin:</td>
-				<td><input id="passftpold" type="password" /></td>
-			</tr>
-			<tr>
-				<td>Nieuw achtwoord admin:</td>
-				<td><input id="passftp" type="password" /></td>
-			</tr>
-		</table>
-		<input type="submit" value="Update" />
 	</form>
 </div>
 <div class="bottom_long"></div>
