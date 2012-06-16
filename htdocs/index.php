@@ -3,7 +3,7 @@ $ini = parse_ini_file ("../conf.ini", true);
 define("ROOTDIR",$ini["Global"]["rootdir"]);
 
 if ( isset($_GET['maplist']) && $ini["Global"]["maplist"] ) {
-	$f = file_get_contents('../Admin/dir.php');
+	$f = file_get_contents('../adminCliff/dir.php');
 	eval("?><div class=\"top_long\"><h2>Mappenlijst</h2></div>
 <div class=\"middle_long\">".str_replace(":dir",":dirH",$f)."</div>
 <div class=\"bottom_long\"></div>");
@@ -11,19 +11,19 @@ if ( isset($_GET['maplist']) && $ini["Global"]["maplist"] ) {
 }
 if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
-      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XhtmlCliff 1.0 Strict//EN" 
+      "http://www.w3.org/TR/xhtml1/DTD/xhtmlCliff1-strict.dtd"> 
  
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="nl" lang="nl"> 
+<htmlCliff xmlns="http://www.w3.org/1999/xhtml" xml:lang="nl" lang="nl"> 
  
 <head> 
 	<title>Cliff</title>
   	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
     <script src="http://cdn.jquerytools.org/1.2.5/full/jquery.tools.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="html/style.css" />
-    <link rel="shortcut icon" href="html/favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="htmlCliff/style.css" />
+    <link rel="shortcut icon" href="htmlCliff/favicon.ico" />
 	
-	<script src="html/ajax.js"></script>
+	<script src="htmlCliff/ajax.js"></script>
 </head> 
  
 <body>
@@ -44,14 +44,14 @@ if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 	</script>
 	<div id="container">
 		<div id="logo">
-			<a href="/home"><img src="html/img/logo.png" alt="Cliff" /></a>
+			<a href="/home"><img src="htmlCliff/img/logo.png" alt="Cliff" /></a>
 		</div>
 		
 		<?php if ( $_SERVER["SERVER_ADDR"] == "127.0.0.1" ) { ?>
 		<div id="menu">
 			<ul>
 				<li id="mHome" class="active"><a href="#home"><b>Home</b></a></li>
-				<li><a href="/phpmyadmin"><b>phpMyAdmin</b></a></li>
+				<li><a href="/phpmyadminCliff"><b>phpMyadminCliff</b></a></li>
 				<li id="mServer" class=""><a href="#server"><b>Server Status</b></a></li>
 				<li id="mConfig" class=""><a href="#config"><b>Instellingen</b></a></li>
 				<li class=""><a href="/stats"><b>Statistieken</b></a></li>
@@ -62,7 +62,7 @@ if ( isset($_GET['maplist']) && !$ini["Apache"]["maplist"] ) die();
 		<div id="content">
 			<div class="top_long"><h2>Laden...</h2></div>
 			<div class="middle_long">
-				<img src="html/img/loader.gif" alt="Laden..." border="0" /> 
+				<img src="htmlCliff/img/loader.gif" alt="Laden..." border="0" /> 
 			</div>
 			<div class="bottom_long"></div>
 		</div>

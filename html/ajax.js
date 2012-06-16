@@ -33,7 +33,7 @@ function load()
 	}
 
 	page = page.replace("#","");
-	var url="admin/"+ page +".php";
+	var url="adminCliff/"+ page +".php";
 	xmlhttp.onreadystatechange=cStateChanged;
 	xmlhttp.open("GET",url,true);
 	xmlhttp.send(null);
@@ -43,7 +43,7 @@ function dir(d)
 {
 	xmlhttp2=Ajax();
 	xmlhttp2.onreadystatechange=dStateChanged;
-	xmlhttp2.open("GET","admin/dir.php?dir="+encodeURIComponent(d),true);
+	xmlhttp2.open("GET","adminCliff/dir.php?dir="+encodeURIComponent(d),true);
 	xmlhttp2.send(null);
 }
 
@@ -59,34 +59,34 @@ function reset(s)
 {
 	xmlhttp=Ajax();
 	xmlhttp.onreadystatechange=cStateChanged;
-	xmlhttp.open("GET","admin/server.php?r="+encodeURIComponent(s),true);
+	xmlhttp.open("GET","adminCliff/server.php?r="+encodeURIComponent(s),true);
 	xmlhttp.send(null);
 }
 function exit()
 {
 	xmlhttp=Ajax();
 	xmlhttp.onreadystatechange=cStateChanged;
-	xmlhttp.open("GET","admin/server.php?exit",true);
+	xmlhttp.open("GET","adminCliff/server.php?exit",true);
 	xmlhttp.send(null);
 }
 function switchStart(service,mode)
 {
 	xmlhttp=Ajax();
 	xmlhttp.onreadystatechange=cStateChanged;
-	xmlhttp.open("GET","admin/server.php?service="+service+"&mode="+mode,true);
+	xmlhttp.open("GET","adminCliff/server.php?service="+service+"&mode="+mode,true);
 	xmlhttp.send(null);
 }
 function switchRunning(service,mode)
 {
 	xmlhttp=Ajax();
 	xmlhttp.onreadystatechange=cStateChanged;
-	xmlhttp.open("GET","admin/server.php?serv="+service+"&mode="+mode,true);
+	xmlhttp.open("GET","adminCliff/server.php?serv="+service+"&mode="+mode,true);
 	xmlhttp.send(null);
 }
-function openAdmin(service)
+function openadminCliff(service)
 {
 	xmlhttp=Ajax();
-	xmlhttp.open("GET","admin/server.php?admin="+service,true);
+	xmlhttp.open("GET","adminCliff/server.php?adminCliff="+service,true);
 	xmlhttp.send(null);
 }
 
@@ -95,7 +95,7 @@ function confCliff()
 	var name=encodeURIComponent(document.getElementById("maplist").value);
 	xmlhttp=Ajax();
 	xmlhttp.onreadystatechange=iStateChangedC;
-	xmlhttp.open("POST","admin/config.php",true);
+	xmlhttp.open("POST","adminCliff/config.php",true);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("maplist="+name);
 }
@@ -105,7 +105,7 @@ function confMySQL()
 	var passold=encodeURIComponent(document.getElementById("mysqlpassold").value);
 	xmlhttp=Ajax();
 	xmlhttp.onreadystatechange=iStateChangedM;
-	xmlhttp.open("POST","admin/config.php",true);
+	xmlhttp.open("POST","adminCliff/config.php",true);
 	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	xmlhttp.send("mysqlpass="+pass+"&mysqlpassold="+passold);
 }
@@ -114,7 +114,7 @@ function dStateChanged()
 {
 if (xmlhttp.readyState==1)
   {
-  document.getElementById("dir").innerHTML='<img src="html/img/loader.gif" alt="Laden..." border=0 />';
+  document.getElementById("dir").innerHTML='<img src="htmlCliff/img/loader.gif" alt="Laden..." border=0 />';
   } 
 if (xmlhttp.readyState==4)
   {
@@ -126,7 +126,7 @@ function cStateChanged()
 {
 if (xmlhttp.readyState==1)
   {
-  document.getElementById("content").innerHTML='<img src="html/img/loader.gif" alt="Laden..." border=0 />';
+  document.getElementById("content").innerHTML='<img src="htmlCliff/img/loader.gif" alt="Laden..." border=0 />';
   } 
 if (xmlhttp.readyState==4)
   {
@@ -138,7 +138,7 @@ function iStateChangedC()
 {
 if (xmlhttp.readyState==1)
   {
-  document.getElementById("apache").innerHTML='<img src="html/img/loader.gif" alt="Laden..." border=0 />';
+  document.getElementById("apache").innerHTML='<img src="htmlCliff/img/loader.gif" alt="Laden..." border=0 />';
   } 
 if (xmlhttp.readyState==4)
   {
@@ -150,7 +150,7 @@ function iStateChangedM()
 {
 if (xmlhttp.readyState==1)
   {
-  document.getElementById("mysql").innerHTML='<img src="html/img/loader.gif" alt="Laden..." border=0 />';
+  document.getElementById("mysql").innerHTML='<img src="htmlCliff/img/loader.gif" alt="Laden..." border=0 />';
   } 
 if (xmlhttp.readyState==4)
   {

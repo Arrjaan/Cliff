@@ -6,14 +6,14 @@
 <head> 
 	<title>Cliff</title>
   	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-	<link rel="stylesheet" type="text/css" href="/html/style.css" />
-    <link rel="shortcut icon" href="/html/favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="/htmlCliff/style.css" />
+    <link rel="shortcut icon" href="/htmlCliff/favicon.ico" />
 </head> 
  
 <body>
 	<div id="container">
 		<div id="logo">
-			<a href="/home"><img src="/html/img/logo.png" alt="Cliff" /></a>
+			<a href="/home"><img src="/htmlCliff/img/logo.png" alt="Cliff" /></a>
 		</div>
 				
 		<div id="content">
